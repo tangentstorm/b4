@@ -1,0 +1,51 @@
+#+TITLE: b4.00 : tasklist
+
+* GOAL get a single pixel to display
+** TODO pixel.hex : draw a pixel in the middle of the screen
+*** TODO hand-build the machine code program                          
+** TODO test program on existing ngaro vm
+*** TODO get the C/C++ one to compile on ubuntu
+*** TODO name the file retroImage and make retro execute it
+** TODO implement just enough vm to run this program                   :pas:
+*** TODO load the image into an array
+*** TODO implement instruction pointer
+*** TODO implement each of the bytecodes
+*** TODO implement a pixel in sdl
+*** TODO halt the program
+
+* GOAL simple assembler in pascal
+** TODO port pixel.hex to pixel.nga
+*** NOTE Just use the syntax retro gives when you type =see=
+#+begin_src example
+Retro 11.0 (1309798464)
+
+ok  see ok 
+1423 nop   
+1424 nop   
+1425 lit   4
+1427 @     
+1428 call  167
+1429 0;    
+1430 drop  
+1431 call  421
+1432 lit   54
+1434 call  443
+1435 ;     
+
+ok  
+
+#+end_src
+
+* GOAL flesh out vm with more ngaro assembly programs
+** TODO square : draw a square                                         :nga:
+** TODO color  : draw the palette                                      :nga:
+** TODO click  : click screen to change color                          :nga:
+** TODO keys   : press any key to change color                         :nga:
+** TODO hello  : show the word hello                                   :nga:
+** TODO caps   : letters on screen (lowercase)                         :nga:
+** TODO shift  : captital letters / shift key                          :nga:
+** TODO color  : colored text input                                    :nga:
+** TODO read   : read a file from disk                                 :nga:
+** TODO write  : write a file to disk                                  :nga:
+** TODO ngasm  : assembler for ngaro                                   :nga:
+
