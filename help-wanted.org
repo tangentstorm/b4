@@ -1,0 +1,58 @@
+#+TITLE: help wanted
+
+* NOTE about this file
+** ~[#A]~ is easy, ~[#B]~ medium, ~[#C]~ advanced
+** i'm working through file:b4.00.tasklist.org from top to bottom
+*** usually discover i need something out of order though
+*** probably best to chat on freenode/#b4 if you want to work on main tasklist
+
+
+* TODO licensing issues?
+- if you contribute / port something, make sure license is MIT/ [[http://en.wikipedia.org/wiki/ISC_license][ISC]] compatible ([[http://retroforth.org/license.html][retroforth license]] is ISC)
+- [[http://www.freepascal.org/faq.var#general-license][freepascal]] license notes
+
+
+* Things b4 will need soon
+
+** assembler in pascal
+*** probably similar to  [[https://github.com/oriontransfer/PL0-Language-Tools/blob/master/pl0_assemblera.py][pl/0 language tools assembler.py]]
+**** [#A] not clear what license is. author seems like nice guy. ask?
+**** [#B] port to pascal, or write our own. (should be small code)
+
+** need to be in ngaro assembly language
+*** database (b4 has tiny relational database)
+**** [#C] [[http://en.wikipedia.org/wiki/B-tree][b-tree]] or [[http://en.wikipedia.org/wiki/B%2B_tree][b+-tree]] implementation                           :nga:
+**** [#A] codd's 8 relational operators                              :nga:
+
+There is psuedocode for all 8 here.
+
+http://science.kennesaw.edu/~mguimara/3310/RA_SQL.htm
+
+*** [#A] recode the font from [[http://256.io/escapes.js/][escapes.js]] 
+
+*** [#B] repl - probably follow itsyforth model
+**** [#A] track down itsyforth license - ask john metcalf?
+***** [[http://www.retroprogramming.com/2012/03/itsy-forth-1k-tiny-compiler.html][itsyforth interpreter]]
+
+
+* forth-like code
+** NOTE if you write in python, module [[http://docs.python.org/library/dis.html][dis]] converts to stack-based code
+** NOTE if you write the code in ANS forth we can (hopefully) translate directly
+** NOTE retro / joy / factor / ngaro
+
+
+* Things that would just be nice to have
+** emacs mode for colorforth-like languages
+
+B4 is a a colorized language: you syntax-highlight it yourself, to simplify the parser, and words change meaning (verb tense) based on color.
+
+This looks promising:
+
+http://www.strangegizmo.com/forth/ColorForth/msg00263.html
+
+** render org-files to something more readable.                      :elisp:
+*** github makes org-code ugly
+*** [#A] org itself does better job... make me a macro?
+**** http://orgmode.org/
+**** http://orgmode.org/worg/org-contrib/babel/ 
+**** 
