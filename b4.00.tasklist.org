@@ -1,11 +1,152 @@
 #+TITLE: b4.00 : tasklist
 
 * GOAL get a single pixel to display
-** TODO pixel.hex : draw a pixel in the middle of the screen
-*** TODO hand-build the machine code program                          
-** TODO test program on existing ngaro vm
-*** TODO get the C/C++ one to compile on ubuntu
-*** TODO name the file retroImage and make retro execute it
+** DONE pixel.rx : draw a red pixel on the screen                        :rx:
+
+We'll do this in retro first, so we know our vm works.
+
+- You can test this at http://rx-core.org/demo/ 
+- or unpack retro-11.4 and open ~www/demo/index.html~
+
+#+begin_src retro
+( pixel.rx : draw a pixel - rx is the customary retroforth extention )
+
+( define the word "rx:pixel" )
+: rx:pixel clear 320 200  ^canvas'red ^canvas'pixel ;
+
+( now run it: )
+rx:pixel
+#+end_src
+
+** DONE do it again, with the retro primitives
+
+We can type ngaro assembler directly into retro.
+
+It's actually doing something different than assembly: these words don't translate directly to the ngaro opcodes. Rather, they're retroforth words that /wrap/ the opcodes. But the result is the same.
+
+How to do this came from this page:
+  http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html
+
+
+*** Strike One.
+
+I expected this to work 
+
+#+begin_src retro
+
+( -- clear screen ---- ) 
+( port 2 is "character generator" )
+(  - draws num on TOS as letter/number/etc )
+(  - clears screen when TOS is negative )
+-1 1 2 out,   ( write #1 to port #2 and let it pull the #-1 )
+0 0 out, wait, ( port 0 requests a callback i/o event )
+
+#+end_src
+
+
+It didn't. Why? I'm thinking because each word is being executed as soon as the space is ecountered, and retro's saying "ok" is interfering with the port protocol.
+
+So it looks like we have to define words. No problem, though. We can still use primitevs.
+
+*** Creating a word works.
+
+This works:
+
+#+begin_src retro
+( clear the screen)
+: cls -1 1 2 out 0 0 out wait ;
+#+end_src
+
+(Just type ~cls~ after this definition... Will assume anyone reading this gets the idea by now and won't keep repeating. )
+
+*** so we might as well refactor it:
+
+#+begin_src retro
+
+: send out wait ;
+: to:callback 0 send;
+: yield 0 to:callback send ;
+
+: to:dumb-term  2 out ; ( because there's a smart one with color )
+: cls -1 1 to:dumb-term yield ;
+
+( now the color stuff )
+( Ngaro colors are not the ANSI numbering I expect. But that's okay. The colors are all there. )
+
+: to:canvas 6 send ;
+: setink 1 to:canvas ;
+: |r 4 setink ; ( |r was how I wrote "red" in the 90's )
+
+( draw the pixel )
+: putpx 2 to:canvas ;
+
+( altogether now: one red pixel )
+: 1rpx |r 320 200 putpx ; 
+
+( and a blue one , in raw code: )
+: 1bpx 1 1 6  out wait 325 200 2 6 out wait ;
+
+: go cls 1rpx 1bpx ;
+
+#+end_src
+
+** DONE now do same in raw ngaro machine code
+*** DONE hand-coded machine instructions in retroImage.js
+:PROPERTIES:
+:TS: <2012-08-02 07:34PM>
+:ID: 8gkg3o50ntf0
+:END:
+
+/(marking this done even though it doesn't show the pixel in js, because this was really a fact-finding task)/
+
+I spent /way/ too much time on this, and it still doesn't work. 
+
+I can see it's doing everything I expect it to do in the js debugger, but nothing ever shows up.
+
+I kind of think the JS implementation is relying on some hidden side effect inside the retroforth mainloop to flip the bit in port[ 0 ].
+
+That is my only explanation for why this code doesn't work.
+
+#+begin_src javascript
+
+function loadImage()
+{
+  var lit = vm.LIT, wait=vm.WAIT, out=vm.OUT; // from ngaro.js
+
+  image = [ 
+
+      // set color to red:
+      // : 4 1 6 out wait ;
+      lit, 4, lit, 1, lit, 6, out, wait,
+
+      // draw a pixel
+      // : 320 200 2 6 out wait ;
+      lit, 320, lit, 200, lit, 2, lit, 6, out, wait,
+
+      // write 0 to port 3 to force video update. 
+      lit, 0, lit, 3, out, // no wait necessary
+
+      // infinite loop
+      vm.JUMP, 0
+  ];
+ 
+  // change the jump target to the vm.JUMP instruction
+  // so the code I'm trying to debug doesn't loop :)
+  image[ image.length - 1 ] = image.length - 2;
+
+  ip = 0;
+}
+
+#+end_src
+
+On the plus side, I've learned a /ton/ about the vm's internals (especially thanks to crc (retro's main developer) on the #retro IRC channel. )
+
+Will proceed with pascal vm interpretation
+
+** DONE test program on existing ngaro vm
+*** NOTE wound up tesing pretty thoroughly with ngaro.js
+*** SKIP +get the C one to compile on ubuntu+
+*** SKIP +name the file retroImage and make retro execute it+
 ** TODO implement just enough vm to run this program                   :pas:
 *** TODO load the image into an array
 *** TODO implement instruction pointer
@@ -13,10 +154,11 @@
 *** TODO implement a pixel in sdl
 *** TODO halt the program
 
+
 * GOAL simple assembler in pascal
 ** TODO port pixel.hex to pixel.nga
 *** NOTE Just use the syntax retro gives when you type =see=
-#+begin_src example
+#+begin_example
 Retro 11.0 (1309798464)
 
 ok  see ok 
@@ -34,7 +176,7 @@ ok  see ok
 
 ok  
 
-#+end_src
+#+end_example
 
 * GOAL flesh out vm with more ngaro assembly programs
 ** TODO square : draw a square                                         :nga:
