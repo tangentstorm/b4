@@ -1,5 +1,9 @@
 #+TITLE: help wanted
 
+* #1 biggest need right now : volunteer coordinator! 
+
+For the game jam, I need to focus on code and technical decisions. Someone needs to manage this task list and help volunteers find work.
+
 * NOTE about this file
 ** ~[#A]~ is easy, ~[#B]~ medium, ~[#C]~ advanced
 ** i'm working through file:b4.00.tasklist.org from top to bottom
@@ -8,7 +12,6 @@
 ** licensing issues
 - if you contribute / port something, make sure license is MIT/ [[http://en.wikipedia.org/wiki/ISC_license][ISC]] compatible ([[http://retroforth.org/license.html][retroforth license]] is ISC)
 - [[http://www.freepascal.org/faq.var#general-license][freepascal]] code has a tendency to use MPL/LGPL style. I'm okay with that, too.
-
 
 * Things b4 will need soon
 
@@ -33,8 +36,28 @@ http://science.kennesaw.edu/~mguimara/3310/RA_SQL.htm
 ***** [[http://www.retroprogramming.com/2012/03/itsy-forth-1k-tiny-compiler.html][itsyforth interpreter]]
 
 
+** TODO port gamesketchlib to ngaro/retroforth/b4
+
+I made the java/processing game library at http://gamesketchlib.org/ and will try to follow the same design patterns as I work on this system.
+
+
+** WANT python bytecode -> ngaro translator
+*** [#A] research step : match up the two sets of bytecode
+
+ngaro only has 30 instructions, i python has around the same. There is much overlap, and in forth-like languages, it's very easy to translate things like this.
+
+So it's possible that at least some python code should be able to run here. 
+
+The first step would be to compile a table that compares and contrasts the two sets of bytecode:
+
+[[http://docs.python.org/library/dis.html][python dis module]] and the opcode section in [[http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html][ngaro-vm reference]]
+
+*** ?? pending above step, add new primitives to let us run python
+
+probably the most dynamic aspects of python will not run well, but simpler python code probably can. 
+
+
 * forth-like code
-** NOTE if you write in python, module [[http://docs.python.org/library/dis.html][dis]] converts to stack-based code
 ** NOTE if you write the code in ANS forth we can (hopefully) translate directly
 ** NOTE retro / joy / factor / ngaro
 
@@ -72,4 +95,4 @@ I have already written a partial retroforth mode in file://etc/retro-mode.el
 *** [#A] org itself does better job... make me a macro?
 **** http://orgmode.org/
 **** http://orgmode.org/worg/org-contrib/babel/ 
-**** 
+
