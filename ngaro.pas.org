@@ -1,0 +1,547 @@
+#+TITLE: ngaro implementation in free pascal
+
+* PROGRAM ~ngaro.pas~
+#+begin_src delphi :tangle "gen/ngaro.pas" :noweb tangle
+  {$mode objfpc}
+    
+  program ngaro;
+  uses sdl, crt, stacks;
+  
+  type int32 = longint;
+  
+  <<@interface>>
+  <<@opcodes>>
+  <<@stack>>
+  <<@vmcode>>
+  <<@devices>>
+
+  var vm : ngarovm;
+  begin
+    vm.init();
+    vm.loop();
+  end.
+  
+#+end_src
+
+
+* OVERVIEW :
+** TYPE stack
+#+name: @interface
+#+begin_src delphi
+
+  type stack = object
+    sp   : integer;          // stack pointer
+    cell: array of int32;   // a standard forth term
+    constructor init( len:word );
+    procedure dup;
+    procedure swap;
+    procedure drop;
+    procedure overflow;
+    procedure underflow;
+    procedure dump;
+    procedure push( v: int32 );
+    function tos: int32;
+    function nos: int32;
+    function pop: int32;
+  end;
+
+#+end_src
+
+** TYPE ngarovm
+#+name: @interface
+#+begin_src delphi
+  
+  type ngarovm = object
+    ip    : integer;
+    port  : array [ 0 .. 16 ] of int32;
+    data, addr : stack;
+    <<machine-code>>
+    constructor init;
+    procedure loop;
+    procedure dump;
+    procedure runop( op:int32 );
+    procedure runio;
+  end;
+    
+#+end_src
+
+** TYPE device
+#+name: @interface
+#+begin_src delphi
+  
+  type device = object
+    function send( msg:int32 ):int32; virtual;
+  end;
+    
+#+end_src
+
+** LIST opcodes
+#+name: @opcodes
+#+begin_src delphi
+
+  const 
+    oNOP  = 00;  oLIT  = 01;  oDUP = 02;   oDROP = 03;
+    oSWAP = 04;  oPUSH = 05;  oPOP = 06;   oLOOP = 07;
+    oJMP  = 08;  oRET  = 09;  oJLT = 10;   oJGT  = 11;
+    oJNE  = 12;  oJEQ  = 13;  oLOD = 14;   oSTO = 15;
+    oADD  = 16;  oSUB  = 17;  oMUL = 18;   oDIVM = 19;
+    oAND  = 20;  oOR   = 21;  oXOR = 22;   oSHL = 23;
+    oSHR  = 24;  oZEX  = 25;  oINC = 26;   oDEC = 27;
+    oIN   = 28;  oOUT  = 29;  oWAIT = 30;
+  
+#+END_SRC
+
+
+* SECTION stacks
+** DEF init
+#+name: @stack
+#+begin_src delphi
+
+  constructor stack.init( len: word );
+  begin
+    sp := 0;
+    setlength( cell, len );
+  end;
+
+#+end_src
+
+** DEF tos : top of stack
+#+name: @stack
+#+begin_src delphi
+
+  function stack.tos : int32;
+  begin
+    result := cell[ sp ];
+  end;
+
+#+end_src
+
+** DEF nos : next on stack
+#+name: @stack
+#+begin_src delphi
+
+  function stack.nos : int32;
+  begin
+    result := cell[ sp - 1 ];
+  end;
+
+#+end_src
+
+** DEF dup : duplicate
+#+name: @stack
+#+begin_src delphi
+
+  procedure stack.dup;
+  begin
+    push( tos );
+  end;
+
+#+end_src
+
+** DEF push 
+#+name: @stack
+#+begin_src delphi
+
+  procedure stack.push( v : int32 );
+  begin
+    inc( sp );
+    if sp >= length( cell ) then overflow
+    else cell[ sp ] := v;
+  end;
+
+#+end_src
+
+** DEF pop
+#+name: @stack
+#+begin_src delphi
+
+  function stack.pop : int32;
+  begin
+    result := tos;
+    drop;
+  end;
+
+#+end_src
+
+** DEF drop
+#+name: @stack
+#+begin_src delphi
+
+  procedure stack.drop;
+  begin
+    dec( sp );
+    if sp < 0 then underflow;
+  end;
+
+#+end_src
+
+** DEF swap
+#+name: @stack
+#+begin_src delphi
+
+  procedure stack.swap;
+    var t : int32;
+  begin
+    if sp >= 2 then
+      begin
+        t := tos;
+        cell[ sp ] := nos;
+        cell[ sp - 1 ] := t;
+      end
+    else underflow;
+  end;
+
+#+end_src
+
+** DEF overflow
+#+name: @stack
+#+begin_src delphi
+
+  procedure stack.overflow;
+  begin
+    writeln( 'warning: stack overflow' );
+    sp := length( cell ) - 1;
+  end;
+
+#+end_src
+
+** DEF underflow
+#+name: @stack
+#+begin_src delphi
+
+  procedure stack.underflow;
+  begin
+    writeln( 'warning: stack underflow' );
+    sp := 0;
+  end;
+
+#+end_src
+
+
+* SECTION processor
+** DEF init
+#+name: @vmcode
+#+begin_src delphi
+
+  constructor ngarovm.init;
+  begin
+    data.init( 32 );
+    addr.init( 32 );
+    ip := 0;
+  end;
+
+#+end_src
+
+** DEF loop : instruction pointer's main loop
+#+name: @vmcode
+#+begin_src delphi
+      
+  procedure ngarovm.loop( );
+  begin
+    repeat 
+      dump;
+      runop( ram[ ip ] );
+      inc( ip );
+    until ip >= length( ram );
+  end;
+  
+#+end_src
+
+** DEF runop : dispatch function
+#+name: @vmcode
+#+begin_src delphi
+  
+  procedure ngarovm.runop( op: int32 );
+    var t, n, a : int32;
+    <<runop-helper:jump>>
+    <<runop-helper:tn>>
+  begin
+    if op > oWAIT or op < oNOP then
+      <<user-ops>>
+    else
+      case op of
+        oNOP : { do nothing } ;
+        <<stack-ops>>
+        <<branch-ops>>
+        <<memory-ops>>
+        <<alu-ops>>
+        <<port-ops>>
+      else
+        // TODO: assert()
+        error(' this should not happen ');
+        readln
+      end
+  end;
+  
+#+end_src
+
+** DEF runio : hardware interrupt request, triggered by oWAIT
+#+name: @vmcode
+#+begin_src delphi
+  
+  { 
+  | Ngaro machines connect via ports.                         |
+  | A port is just a normal cell that's writable from both    |
+  | inside and outside the machine, much like a usb port.     |
+  | The protocol is: that you write a value to the port, then |
+  | call the WAIT instruction, which tells the vm that you're |
+  | ready for the port to read.                               |
+  |                                                           |
+  | This is the procedure that runs when the WAIT is sent,    |
+  | so we need to loop through the ports and see which ones   |
+  | have values in them.                                      |
+  }  
+  procedure ngarovm.runio;
+    var p: int32;
+  begin
+    for p in port do begin
+        if port[ p ] <> 0 then 
+          begin
+            port[ p ] := device[ p ].send( port[ p ]);
+          end;
+      end;
+  end;
+  
+#+end_src
+
+
+* SECTION opcode implementations
+** DEF runop/tn() : move ~data.tos~ and ~data.nos~ into ~t~ and ~n~
+#+name: runop-helper:tn
+#+begin_src delphi
+  procedure tn();
+  begin
+    t := data.pop;
+    n := data.pop;
+  end;
+#+end_src
+
+** stack ops
+#+name: stack-ops
+#+begin_src delphi
+  oDUP : data.dup;
+  oDROP: data.drop;
+  oSWAP: data.swap;
+  oPUSH: addr.push( data.pop );
+  oPOP : data.push( addr.pop );
+#+end_src
+
+** arithmetic ops
+#+name: alu-ops
+#+begin_src delphi
+  oADD : data.push( data.pop + data.pop );
+  oSUB : data.push( -data.pop + data.pop );
+  oMUL : data.push( -data.pop + data.pop );
+  oDIVM: begin
+           tn;
+           data.push( n div t ); 
+           data.push( n mod t ); 
+         end;
+  oINC : inc( data.cell[ data.sp ] );
+  oDEC : dec( data.cell[ data.sp ] );
+#+end_src
+
+** bitwise / logic ops
+#+name: alu-ops
+#+begin_src delphi
+  oAND : data.push( data.pop AND data.pop );
+  oOR  : data.push( data.pop OR data.pop );
+  oXOR : data.push( data.pop XOR data.pop );
+  oSHL : begin 
+           t := data.pop; 
+           data.push( data.pop shl t );
+         end;
+  oSHR : begin
+           t := data.pop; 
+           data.push( data.pop shr t );
+         end;
+#+end_src
+
+** branch ops
+*** DEF runop/jump() : shared for all the various jumps
+#+name: runop-helper:jump
+#+begin_src delphi
+  procedure jump();          
+  begin 
+    ip := ram[ ip + 1 ];
+    while ram[ ip ] = ord( op_NOP ) do inc( ip );
+    dec( ip ); { compensating for the post-op inc }
+  end;
+#+end_src
+
+*** jump and conditional jumps
+#+name: branch-ops
+#+begin_src delphi
+  oJMP : jump();
+  oJLT : begin tn(); if t <  n then jump else inc( ip ) end;
+  oJGT : begin tn(); if t >  n then jump else inc( ip ) end;
+  oJNE : begin tn(); if t <> n then jump else inc( ip ) end;
+  oJEQ : begin tn(); if t =  n then jump else inc( ip ) end;
+#+end_src
+
+*** return
+#+name: branch-ops
+#+begin_src delphi
+  oRET : ip := pop( addr );
+#+end_src
+
+*** loop
+#+name: branch-ops
+#+begin_src delphi
+  oLOOP: begin 
+           dec( data[ top ]);
+           tmp := code[ ip ];
+           if data[ top ] > 0 then 
+             ip := code[ ip + 1 ]
+           else
+             begin
+               inc( ip );
+               pop( data );
+             end
+         end;
+#+end_src
+
+*** zex : exit (return) if TOS = 0 ( sort of like ~assert~ )
+#+name: branch-ops
+#+begin_src delphi
+  oZEX : if data[ top ] = 0 then 
+           begin
+             { sort of an assert / guard }
+             pop( data ); 
+             ip := pop( addr );
+           end;
+#+end_src
+
+** memory ops
+#+name: memory-ops
+#+begin_src delphi
+  oLIT: begin
+          inc( ip );
+          data.push( ram[ ip ]);
+        end;
+  oLOD: begin { FETCH }
+          data.push( ram[ data.pop ]);
+        end;
+  oSTO: begin { STORE : (na-) - put nos into ram at tos }
+          tn;
+          ram[ t ] := ram[ n ];
+        end;
+#+end_src
+
+** port ops
+#+name: port-ops
+#+begin_src delphi
+  oIN  : begin { p-n }
+           t := data.pop;
+           data.push( port[ t ] );
+           port[ t ] := 0;
+         end;
+  oOUT : begin { np- }
+           port[ data.pop ] := data.pop;
+         end;
+  oWAIT: begin { - }
+           runio;
+         end;
+#+end_src
+
+
+* SECTION debugger (pascal-hosted)
+** opcode names
+#+name: @opcodes
+#+begin_src delphi
+  
+  const 
+    mnemonic : array[ 0 .. 30 ] of string[ 5 ]
+      = ( 'nop', 'lit', 'dup', 'drop',
+          'swap', 'push', 'pop', 'loop',
+          'jmp', 'ret', 'jlt', 'jgt',
+          'jne', 'jeq', 'lod', 'sto',
+          'add', 'sub', 'mul', 'divm',
+          'and', 'or', 'xor', 'shl',
+          'shr', 'zex', 'inc', 'dec',
+          'in', 'out', 'wait'
+        );
+  
+#+end_src
+
+** dump stack
+#+name: @stack
+#+begin_src delphi
+
+  procedure stack.dump;
+    var s: string;
+    var i: int32;
+  begin
+    if sp > 0 then
+      for i := 1 to sp  do
+        begin
+          str( cell[ i ], s );
+          write( s, ' ' );
+        end;
+    writeln;
+  end;
+
+#+end_src
+
+** dump vm state
+#+name: @vmcode
+#+begin_src delphi
+  
+  procedure ngarovm.dump;
+  var i: int32;
+    var s: string[ 4 ];
+  begin
+    crt.clrscr;
+    
+    write( 'data :' ); data.dump;
+    write( 'addr :' ); addr.dump;
+    write( 'port :' );
+    for i:= 0 to 15 do 
+      begin
+        str( port[ i ], s );
+        write( s, ' ');
+      end;
+    writeln;
+    
+    { mini-debugger }
+    i := 0;
+    repeat 
+      if i = ip 
+      then write( ' -> ' )
+      else write( '    ' );
+      write( mnemonic[ ram[ i ]] );
+      if ram[ i ] in [ oLIT, oLOOP, oJMP, oJGT, oJLT, oJNE, oJEQ ] then
+        begin
+          inc( i );
+          str( ram[ i ], s );
+          write(' ');
+          write( s );
+        end;
+      writeln;
+      inc( i );
+    until i = length( self.ram );
+    readln;
+  end;
+#+end_src
+
+
+* SECTION devices
+** TODO ITEM port 0 : i/o events
+** ITEM port 1 : keyboard
+** ITEM port 2 : simple text output
+** ITEM port 3 : video update
+** ITEM port 4 : file i/o
+** ITEM port 5 : querying the vm
+** ITEM port 6 : canvas
+** ITEM port 7 : mouse
+** ITEM port 8 : enhanced text output
+
+* SECTION assembler
+
+
+* SECTION mainloop
+#+BEGIN_SRC delphi
+
+
+#+END_SRC
+
