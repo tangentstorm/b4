@@ -1,0 +1,152 @@
+#+TITLE: ernie goldsmile in the forth dimension
+
+* OVERVIEW 'reverse perspective'
+
+This is a computer game in which you are the computer... Or at, your perspective is basically that of the instruction pointer in a stack machine.
+
+You play Ernie Goldsmile, a handsome young smiley face who finds himself mysteriously transported into the forth dimension, a vast chain of 256 rooms full of teleporters, monsters... And gold!
+
+To escape, you must learn the secrets of forth and locate the legendary *high bite*, the only object in all the world capable of teleporting past the final room.
+
+
+*warning: spoilers past this point*
+-----
+
+* APPENDIX forth terms
+
+- tos :: top of stack
+- nos :: next on stack
+
+* SECTION The Forth Dimension
+
+** address space : 00 .. ff
+
+The Forth Dimension consists of a tiny virtual machine with 256 rooms, each containing one byte of ram.
+
+However, the byte only occupies a tiny part of the room. The rest of the cell is is populated by various objects, entities, incantations, etc: the forth world.
+
+** topology
+
+Conceptually, the rooms are arranged in a long line, and basically act like the ribbon in a sort of turing machine.
+
+Thus, you can always move left or right between rooms.
+
+However, the citizens of forth world have also created a series of teleporters, allowing you to jump to remote parts of the dimension.
+
+Generally, these are arranged to allow movement in counts of 16, so that you can visualize the world as a 16x16 grid of rooms.
+
+The only way to escape the forth dimension is to jump past the final room, but none of the normal jumps will get you there, because they are all exactly 8 bits, so they cannot reach the address space.
+
+This sets us up for an obvious goal: to escape, you must scour the land for the legendary *high byte* : a mythical object capable of holding numbers greater than 0xff.
+
+** the turist
+
+The turist is basically the machine's instruction pointer. He simply moves from room to room, executing instructions.
+
+* SECTION gameplay
+
+** the stacks
+
+You have two stacks, just like in forth.
+
+The address stack goes left to right across the top.
+
+The data stack is your inventory, on the left.
+
+PUSH and POP are your universal actions.
+
+so you could always push whatever's in your inventory into the address stack
+
+stack cells are the things on the screen that look like [ ... ]
+
+you can only use one item at a time : whichever one is on top of the stack
+
+if you want to switch them... you have to find a SWAP command somewhere
+
+** jumps
+
+if you find a JUMP command, then you can teleport
+
+** forth commands
+
+ok.. so see how it says  <DUP> ?
+
+you can just go upt to it and execute it directly
+
+and either you can just pick it up and add it to your inventory
+
+it triggers the DUP command... so it duplicates the top item on your stack
+
+like.. if you have a coin in TOS and you touch it.. now you have two coins
+
+** quotation
+
+#+begin_quote tangentstorm
+maybe you have to get a special tool to pick (words) up? 
+you need the quote tool ... duh :)
+#+end_quote
+
+like a quotation in retroforth.. this would be a tool that allowed you to pick up actual commands and carry them wiht you (ex: the jump gates)
+
+** how to escape
+
+locate the high byte and jump.
+
+** jump
+
+[10:30] <tangentstorm> so the jump would work the same way
+either you pick it up and carry it around with you, or you touch it, and you jump to that room
+
+
+* level design
+
+** goal : a small number of hand-made rooms.
+
+we will craft a small number of levels by hand, rather than try to generate them.
+
+** the 256 instructions will be the actual code the turist is executing
+
+This is easy to implement, because the code for *it* is the exact same code we use for our own jump and stack operations.
+
+** most of the rooms will be empty except for the instruction
+
+possibly even walled off, because we don't have time to make the whole world.
+
+probably the forth people just think of it as a vast, dangerous desert.
+
+* end conditions
+
+** death by over/underflow
+[10:31] <tangentstorm> but forth has four built-in death conditions : overflow and underflow on the stacks
+
+** scoring
+
+and also what if we rank the player's play number of inventories collected ?
+[10:33] <salvager_> number of inventories or type of inventories 
+[10:35] <tangentstorm> salvager_ : we can do both of those :)
+
+
+
+* ideas we talked about but haven't decided on yet
+** timer
+#+begin_quote salvager_
+What do you think of setting up timer ?
+#+end_quote
+
+ - count down? ( die if time out )
+ - count up? ( lower = better score? )
+
+salvager's question is what inspired the turist, but we never actually decided on timer... i'm thinking no, except for "speed run".
+
+** scoring
+
+- the goal is really to escape
+- also scores for collecting coins / diamonds / etc
+- possibly time to complete?
+
+** random levels : probably not
+
+too hard to do this in time alloted, given our retroforth skills... 
+
+MAYBE okay for the "desert" rooms, if we just filled them with monsters or random useless garbage.
+
