@@ -147,7 +147,7 @@ Will proceed with pascal vm interpretation
 *** NOTE wound up tesing pretty thoroughly with ngaro.js
 *** SKIP +get the C one to compile on ubuntu+
 *** SKIP +name the file retroImage and make retro execute it+
-* [6/11] implement just enough vm to run this program                   :pas:
+* [6/11] virtual machine                                                :pas:
 ** TODO check that we do these the ngaro way
 *** TODO when does ngaro actually do on over/underflow checks?
 *** TODO would nos really trigger underflow?
@@ -190,19 +190,9 @@ Probably cleaner would just be to use a file. :)
   
 #+end_src
 
-** TODO implement opcodes
-*** TODO user_ops
-#+name: user-ops
-#+begin_src delphi
-
-{ ... }
-
-#+end_src
-
 ** TODO implement io devices
 ** TODO implement a pixel in sdl
 ** TODO halt the program
-
 * GOAL simple assembler in pascal
 ** TODO port pixel.hex to pixel.nga
 *** NOTE Just use the syntax retro gives when you type =see=
