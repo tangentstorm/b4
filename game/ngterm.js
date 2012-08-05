@@ -19,75 +19,60 @@
 //
 // ----------------------------------------------------------
 
-var BLACK   = 0,
-        RED     = 1,
-        GREEN   = 2,
-        YELLOW  = 3,
-        BLUE    = 4,
-        MAGENTA = 5,
-        CYAN    = 6,
-        WHITE   = 7,
+var term,
+    font, 
+    FONT_WIDTH  = 8,
+    FONT_HEIGHT = 16,
 
-        NONE      = 0x0,
-        BRIGHT    = 0x1,
-        UNDERLINE = 0x4,
-        BLINK     = 0x5,
-        REVERSE   = 0x7,
-        INVISIBLE = 0x9,
-
-        COLORS = [
-            [  0,   0,   0, 255],  // Black
-            [170,   0,   0, 255],  // Red
-            [  0, 170,   0, 255],  // Green
-            [170,  85,   0, 255],  // Yellow
-            [  0,   0, 170, 255],  // Blue
-            [170,   0, 170, 255],  // Magenta
-            [  0, 170, 170, 255],  // Cyan
-            [170, 170, 170, 255],  // White
-
-            // Bright:
-
-            [ 85,  85,  85, 255],
-            [255,  85,  85, 255],
-            [ 85, 255,  85, 255],
-            [255, 255,  85, 255],
-            [ 85,  85, 255, 255],
-            [255,  85, 255, 255],
-            [ 85, 255, 255, 255],
-            [255, 255, 255, 255]
-        ],
-
-        MAX_HEIGHT = 12000,  // Or 750 lines at 16 px/line
-        font;
+    BLACK   = 0,
+    RED     = 1,
+    GREEN   = 2,
+    YELLOW  = 3,
+    BLUE    = 4,
+    MAGENTA = 5,
+    CYAN    = 6,
+    WHITE   = 7,
+    COLORS = [
+       [  0,   0,   0, 255],  // Black
+       [170,   0,   0, 255],  // Red
+       [  0, 170,   0, 255],  // Green
+       [170,  85,   0, 255],  // Yellow (brown)
+       [  0,   0, 170, 255],  // Blue
+       [170,   0, 170, 255],  // Magenta
+       [  0, 170, 170, 255],  // Cyan
+       [170, 170, 170, 255],  // White
+       [ 85,  85,  85, 255],  // dark gray
+       [255,  85,  85, 255],  // bright red
+       [ 85, 255,  85, 255],  // bright green
+       [255, 255,  85, 255],  // bright yellow
+       [ 85,  85, 255, 255],  // bright blue
+       [255,  85, 255, 255],  // bright magenta
+       [ 85, 255, 255, 255],  // bright cyan
+       [255, 255, 255, 255]   // bright white
+    ];
 
 
     function Canvas( w, h ) {
+        // width and height in pixels
         var canvas = document.createElement('canvas');
-
         canvas.width  = w;
         canvas.height = h;
-
         canvas.toDownloadURL = function () {
             var url = canvas.toDataURL();
             return 'image/octet-stream' + url.substring(14);
         };
-
         canvas.toImageTag = function () {
             var img = document.createElement('img');
             img.src = this.toDataURL();
             return img;
         };
-
         return canvas;
     }
 
-    function Term(options) {
-        if (!(this instanceof Term)) {
-            return new Term();
-        }
+    function Term(canvas) {
 
         // Canvas
-        this.canvas  = new Canvas();
+        this.canvas  = canvas; 
         this.context = this.canvas.getContext('2d');
         this.image_data  = this.context.createImageData(8, 16);
 
@@ -101,26 +86,28 @@ var BLACK   = 0,
         this.foreground = WHITE;
         this.background = BLACK;
         this.flags      = 0x0;
-
         return this;
     }
 
     Term.prototype = {
 
-        clearCanvas: function () {
-            this.context.fillStyle = 'rgba(' + this.getColor(BLACK).toString() + ')';
+        cls: function () {
+            this.context.fillStyle = 
+              'rgba(' + this.getColor(BLACK).toString() + ')';
             this.context.fillRect(0, 0, 640, this.canvas.height);
             this.flags = NONE;
             this.resetColor();
         }, 
 
-        getColor: function (code, bright) {
-            return this.palette[bright ? code + 8 : code];
-        },
+        
+        renderChar: function (charcode) {
+           // this basically creates a sprite on the fly
+           // based on the current color settings
 
-        renderChar: function (charcode{){}
-        var data, bitmap, bits, row, col, offset, color, channel;
+           var data, bitmap, bits, row, col, offset, color, channel;
 
+            foreground = this.foreground;
+            background = this.background;
             data   = this.image_data.data;
             bitmap = font[charcode];
 
@@ -138,96 +125,38 @@ var BLACK   = 0,
             return this.image_data;
         },
 
+        // ansi thinks upper left is 1,1 but what does retroforth think?
+        // TODO : ask crc about ngaro screen coordinates
+        emit: function (charCode) {
+           image_data = this.renderChar(charcode);
+           this.context.putImageData(
+              image_data,
+              cursor.column * 8,
+              (cursor.row + cursor.scrollback) * 16
+           );
 
-            buffer = buffer.split(String.fromCharCode(0x1a), 1)[0];
-
-            do {
-                pos = re.lastIndex;
-                match = re.exec(buffer);
-                if (match !== null) {
-                    if (match.index > pos) {
-                        options.onLiteral.call(this, buffer.slice(pos, match.index));
-                    }
-                    opcode = match[2];
-                    args = parseIntArray(match[1].split(';'));
-                    options.onEscape.call(this, opcode, args);
-                }
-            } while (re.lastIndex !== 0);
-
-            if (pos < buffer.length) {
-                options.onLiteral.call(this, buffer.slice(pos));
-            }
-
-            this.trimCanvas();
-            options.onComplete.call(this.canvas, this);
-            return this;
-        },
-
-        write: function (text) {
-            var CR = 0x0d,
-                LF = 0x0a,
-                cursor = this,
-                image_data,
-                background,
-                foreground,
-                charcode,
-                x,
-                y,
-                i,
-                length;
-
-            foreground = this.getColor(this.foreground, this.flags & BRIGHT);
-            background = this.getColor(this.background);
-
-            for (i = 0, length = text.length; i < length; i++) {
-                charcode = text.charCodeAt(i) & 0xff;  // truncate to 8 bits
-                switch (charcode) {
-                case CR:
-                    cursor.column = 1;
-                    break;
-
-                case LF:
-                    cursor.row++;
-                    break;
-
-                default:
-                    x = (cursor.column - 1) * 8;
-                    y = (cursor.row + cursor.scrollback - 1) * 16;
-                    image_data = this.renderChar(charcode, foreground, background);
-                    this.context.putImageData(image_data, x, y);
-
-                    if (cursor.column === 80) {
-                        cursor.column = 1;
-                        cursor.row++;
-                    } else {
-                        cursor.column++;
-                    }
-                    break;
-                }
-
-// The value of 'row' represents current position relative to the top of the
-// screen and therefore cannot exceed 25. Vertical scroll past the 25th line
-// increments the scrollback buffer instead.
-
-                if (cursor.row === 26) {
-                    cursor.scrollback++;
-                    cursor.row--;
-                }
-            }
-        }
-
+           // As far as i can tell, retro has no concept
+           // of a line ending character, but it does wrap.
+           if (cursor.column === 80) {
+             cursor.column = 1;
+             cursor.row++;
+           } else {
+             cursor.column++;
+           }
+           break;
+       }
     };
 
 
-function alpha(option){
-    
-        if (options.transparent) {
-            cursor.palette[BLACK][3] = 0;
-        }
-        else {
-            cursor.palette[BLACK][3] = 0xff;
-        }
-    }
+function alpha(option)
+{
+  if (options.transparent)
+  {
+    cursor.palette[BLACK][3] = 0;
+  } else {
+    cursor.palette[BLACK][3] = 0xff;
+  }
+}
 
 
 // image_data VGA font. Each element in the array is a glyph in the ASCII character
@@ -495,3 +424,6 @@ function alpha(option){
     ];
 
 
+// and the setup:
+term = 
+   new Canvas( 80 * FONT_WIDTH, 30 * FONT_HEIGHT );
