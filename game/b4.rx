@@ -1,0 +1,37 @@
+( The b4 "standard library" )
+
+( -- low level io stuff -- )
+: io:yield ( - ) 0 0 out wait  ;
+: io:send ( n n - ) out io:yield ;
+
+( -- ports -- )
+: to:chgen ( x* - ) 2 io:send ;
+: to:xterm ( x* - ) 8 io:send ;
+
+( -- virtual terminal -- )
+: vt:emit ( n - ) 1 to:chgen ; ( draw char at cursor )
+: vt:cls ( - ) -1 emit ; ( clear screen )
+: vt:curs ( x:n y:n - )  3 to:xterm ; 
+: vt:fg ( n - ) 2 to:xterm ;
+: vt:bg ( n - ) 3 to:xterm ;
+
+( -- set fg color ... 8.15 are ansi bright -- )
+: |k 0 vt:fg ;  : |K 8 vt:fg ;  ( blacK / dark gray )
+: |r 1 vt:fg ;  : |R 9 vt:fg ;  ( red )
+: |g 2 vt:fg ;  : |G 10 vt:fg ; ( green )
+: |y 3 vt:fg ;  : |Y 11 vt:fg ; ( brown / yellow )
+: |b 4 vt:fg ;  : |B 12 vt:fg ; ( blue )
+: |m 5 vt:fg ;  : |M 13 vt:fg ; ( magenta )
+: |c 6 vt:fg ;  : |C 14 vt:fg ; ( cyan )
+: |w 7 vt:fg ;  : |W 15 vt:fg ; ( light gray / white )
+
+( -- tools to help inspect the dictionary -- )
+( @crc made these for us in #retro )
+needs dissect'
+variable needle
+: words !needle last 
+  [ d->name dup @needle ^strings'search [ puts space ] [ drop ] if ]
+  ^types'LIST each@ ;
+: decompile ( a-a ) [ ^dissect'decompile ] sip "%d %s\n" puts ;
+: see ' [ decompile dup 1- ^dissect'endOfWord? not ] while drop ;
+: showContentsOf ' .chain words "%%" find drop @d->xt do ;
