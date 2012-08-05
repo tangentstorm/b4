@@ -1,8 +1,25 @@
 #+TITLE: help wanted
 
-* #1 biggest need right now : volunteer coordinator! 
 
-For the game jam, I need to focus on code and technical decisions. Someone needs to manage this task list and help volunteers find work.
+This file is for ongoing work on the b4 system in general.
+
+For the game jam: please just go to the IRC channel at irc.freenode.net and join channel #b4 .
+
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+
+
 
 * NOTE about this file
 ** ~[#A]~ is easy, ~[#B]~ medium, ~[#C]~ advanced
