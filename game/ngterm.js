@@ -100,8 +100,8 @@ var term,
 
            var data, bitmap, bits, row, col,
                offset, color, channel,
-               foreground = this.foreground,
-               background = this.background;
+               foreground = this.palette[ this.foreground ],
+               background = this.palette[ this.background ];
 
             data   = this.image_data.data;
             bitmap = font[charcode];
@@ -124,19 +124,36 @@ var term,
         // TODO : ask crc about ngaro screen coordinates
         emit: function (charCode)
         {
-            this.context.putImageData(
-               this.renderChar(charCode),
-               this.column * 8,
-               (this.row + this.scrollback) * 16
-            );
 
-            // As far as i can tell, retro has no concept
-            // of a line ending character, but it does wrap.
-            if (this.column === 80) {
-               this.column = 1;
-               this.row++;
-            } else {
-               this.column++;
+            var CR = 0x0d, LF = 0x0a;
+
+            switch (charCode & 0xff) //  truncate to 8 bits
+            {
+                case CR:
+                    this.column = 0;
+                    break;
+
+                case LF:
+                    this.column = 1;
+                    this.row ++;
+                    break;
+
+                default:
+
+                    this.context.putImageData(
+                       this.renderChar(charCode),
+                       this.column * 8,
+                       (this.row + this.scrollback) * 16
+                    );
+
+                    // As far as i can tell, retro has no concept
+                    // of a line ending character, but it does wrap.
+                    if (this.column === 80) {
+                       this.column = 1;
+                       this.row++;
+                    } else {
+                       this.column++;
+                    }
             }
         },
 

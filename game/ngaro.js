@@ -252,6 +252,12 @@ function rxProcessInput()
  * Functions for loading a saved image, saving the image, and restoring
  * to a clean image are here.
  **********************************************************************/
+
+function rxClearCanvas()
+{
+    ngterm.cls();
+}
+
 function rxLoadImage()
 {
   rxClearCanvas();
@@ -346,7 +352,7 @@ portHandlers[5] = function()
     case -11 : ports[5] = TERM_WIDTH; break;
     case -12 : ports[5] = TERM_HEIGHT; break;
 
-    case -15 : ports[5] = 1; break;
+    //case -15 : ports[5] = 1; break;
   }
 }
 
@@ -645,11 +651,11 @@ function processOpcode()
 
   if (op <= vm.WAIT)
   {
-     if (op != vm.JUMP) 
-       console.log( "ip:" + ip + " op:" + op
-          + " ports[ 0 ]:" + ports[ 0 ] );  var p0 = ports[ 0 ];
+     if (op != vm.JUMP)
+     {
+         console.log( "ip:" + ip + " op:" + op + " ports[ 0 ]:" + ports[ 0 ] );
+     }
      instructions[op]();
-     if ( p0 !== ports[ 0 ] ) {  }
   }
   else
   {
@@ -833,7 +839,7 @@ ngterm = new Term(new Canvas( 80 * FONT_WIDTH, 30 * FONT_HEIGHT ));
 
 portHandlers[2] = function()
 {
-    ngterm.renderChar( data.pop() );
+    ngterm.emit( data.pop() );
     ports[ 2 ] = 0;
 }
 

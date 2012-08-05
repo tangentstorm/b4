@@ -5,6 +5,7 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
   <script type="text/javascript" src="ngterm.js"></script>
   <script type="text/javascript" src="ngaro.js"></script>
+  <script type="text/javascript" src="retroImage.js"></script>
   <style type="text/css">
     html
     {
@@ -102,7 +103,9 @@
       // DIV above. ( The one with the message. )
       $( "#ngterm" ).append( $( ngterm.canvas ));
 
-      ngterm.cls();
+      rxLoadCleanImage();
+      rxPrepareVM();
+      rxStartVM();
 
     });
   </script>
