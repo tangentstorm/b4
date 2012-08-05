@@ -315,11 +315,8 @@ function rxLoadCleanImage()
  * currently.
  **********************************************************************/
 
-portHandlers[2] = function()
-{
-  Term.renderChar( data.pop() );
-  ports[2] = 0;
-}
+// portHandler[ 2 ] is down by handler 8, since they're both part
+// of the enhanced text terminal
 
 portHandlers[4] = function()
 {
@@ -759,24 +756,6 @@ portHandlers[7] = function()
   }
 }
 
-
-// enhanced text device : ngterm.js
-
-portHandlers[2] = function()
-{
-  Term.renderChar( data.pop() );
-  ports[ 2 ] = 0;
-}
-
-portHandlers[ 8 ] = function( )
-{
-  switch ( ports[ 8 ])
-  {
-    case 
-  }
-}  
-
-
 portHandlers[6] = function()
 {
   switch (ports[6])
@@ -845,6 +824,31 @@ portHandlers[6] = function()
   }
   ports[6] = 0;
 }
+
+
+
+// enhanced text device : ngterm.js
+
+ngterm = new Term(new Canvas( 80 * FONT_WIDTH, 30 * FONT_HEIGHT ));
+
+portHandlers[2] = function()
+{
+    ngterm.renderChar( data.pop() );
+    ports[ 2 ] = 0;
+}
+
+portHandlers[ 8 ] = function( )
+{
+    switch ( ports[ 8 ])
+    {
+        case 1 : ngterm.cursto( data.pop(), data.pop() ); break;
+        case 2 : ngterm.fg( data.pop() ); break;
+        case 3 : ngterm.bg( data.pop() ); break;
+        default: // ignore
+    }
+    ports[ 8 ] = 0;
+}
+
 
 
 

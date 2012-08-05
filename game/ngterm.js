@@ -1,7 +1,7 @@
 // ----------------------------------------------------------
 // virtual color terminal device for ngarovm ( handles ports 2 and 8 )
 //
-// ricericericerice and i extracted this from escapes.js :
+// ricericericerice and I extracted this from escapes.js :
 // ----------------------------------------------------------
 //
 //                                                   _)
@@ -31,26 +31,7 @@ var term,
     BLUE    = 4,
     MAGENTA = 5,
     CYAN    = 6,
-    WHITE   = 7,
-    COLORS = [
-       [  0,   0,   0, 255],  // Black
-       [170,   0,   0, 255],  // Red
-       [  0, 170,   0, 255],  // Green
-       [170,  85,   0, 255],  // Yellow (brown)
-       [  0,   0, 170, 255],  // Blue
-       [170,   0, 170, 255],  // Magenta
-       [  0, 170, 170, 255],  // Cyan
-       [170, 170, 170, 255],  // White
-       [ 85,  85,  85, 255],  // dark gray
-       [255,  85,  85, 255],  // bright red
-       [ 85, 255,  85, 255],  // bright green
-       [255, 255,  85, 255],  // bright yellow
-       [ 85,  85, 255, 255],  // bright blue
-       [255,  85, 255, 255],  // bright magenta
-       [ 85, 255, 255, 255],  // bright cyan
-       [255, 255, 255, 255]   // bright white
-    ];
-
+    WHITE   = 7;
 
     function Canvas( w, h ) {
         // width and height in pixels
@@ -82,10 +63,26 @@ var term,
         this.scrollback = 0;
 
         // Graphic mode
-        this.palette = stupidCopy(COLORS);
         this.foreground = WHITE;
         this.background = BLACK;
-        this.flags      = 0x0;
+        this.palette = [
+            [  0,   0,   0, 255],  // Black
+            [170,   0,   0, 255],  // Red
+            [  0, 170,   0, 255],  // Green
+            [170,  85,   0, 255],  // Yellow (brown)
+            [  0,   0, 170, 255],  // Blue
+            [170,   0, 170, 255],  // Magenta
+            [  0, 170, 170, 255],  // Cyan
+            [170, 170, 170, 255],  // White
+            [ 85,  85,  85, 255],  // dark gray
+            [255,  85,  85, 255],  // bright red
+            [ 85, 255,  85, 255],  // bright green
+            [255, 255,  85, 255],  // bright yellow
+            [ 85,  85, 255, 255],  // bright blue
+            [255,  85, 255, 255],  // bright magenta
+            [ 85, 255, 255, 255],  // bright cyan
+            [255, 255, 255, 255]   // bright white
+        ];
         return this;
     }
 
@@ -93,21 +90,19 @@ var term,
 
         cls: function () {
             this.context.fillStyle = 
-              'rgba(' + this.getColor(BLACK).toString() + ')';
-            this.context.fillRect(0, 0, 640, this.canvas.height);
-            this.flags = NONE;
-            this.resetColor();
-        }, 
+              'rgba(' + this.palette[ BLACK ].join(',') + ')';
+            this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        },
 
-        
         renderChar: function (charcode) {
            // this basically creates a sprite on the fly
            // based on the current color settings
 
-           var data, bitmap, bits, row, col, offset, color, channel;
+           var data, bitmap, bits, row, col,
+               offset, color, channel,
+               foreground = this.foreground,
+               background = this.background;
 
-            foreground = this.foreground;
-            background = this.background;
             data   = this.image_data.data;
             bitmap = font[charcode];
 
@@ -115,7 +110,7 @@ var term,
                 bits = bitmap[row] || 0x00;
                 for (col = 7; col >= 0; col--) {
                     offset = (32 * row) + (4 * col);
-                    color = bits & 1 ? foreground : background;
+                    color = (bits & 1) ? foreground : background;
                     for (channel = 0; channel < 4; channel++) {
                         data[offset + channel] = color[channel];
                     }
@@ -127,36 +122,31 @@ var term,
 
         // ansi thinks upper left is 1,1 but what does retroforth think?
         // TODO : ask crc about ngaro screen coordinates
-        emit: function (charCode) {
-           image_data = this.renderChar(charcode);
-           this.context.putImageData(
-              image_data,
-              cursor.column * 8,
-              (cursor.row + cursor.scrollback) * 16
-           );
+        emit: function (charCode)
+        {
+            this.context.putImageData(
+               this.renderChar(charCode),
+               this.column * 8,
+               (this.row + this.scrollback) * 16
+            );
 
-           // As far as i can tell, retro has no concept
-           // of a line ending character, but it does wrap.
-           if (cursor.column === 80) {
-             cursor.column = 1;
-             cursor.row++;
-           } else {
-             cursor.column++;
-           }
-           break;
-       }
-    };
+            // As far as i can tell, retro has no concept
+            // of a line ending character, but it does wrap.
+            if (this.column === 80) {
+               this.column = 1;
+               this.row++;
+            } else {
+               this.column++;
+            }
+        },
 
+        transparent : function( yn )
+        {
+            this.palette[ BLACK ][ 3 ] = yn ? 0 : 0xff ;
+        }
 
-function alpha(option)
-{
-  if (options.transparent)
-  {
-    cursor.palette[BLACK][3] = 0;
-  } else {
-    cursor.palette[BLACK][3] = 0xff;
-  }
-}
+    }
+
 
 
 // image_data VGA font. Each element in the array is a glyph in the ASCII character
@@ -422,8 +412,3 @@ function alpha(option)
         [0x00, 0x00, 0x00, 0x00, 0x7e, 0x7e, 0x7e, 0x7e, 0x7e, 0x7e, 0x7e, 0x00, 0x00, 0x00, 0x00, 0x00],
         [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     ];
-
-
-// and the setup:
-term = 
-   new Canvas( 80 * FONT_WIDTH, 30 * FONT_HEIGHT );
