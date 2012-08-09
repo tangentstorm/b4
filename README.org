@@ -1,0 +1,26 @@
+#+TITLE: The b4 programming language.
+
+*b4* is a tiny concatenative programming language, a bit like forth, but with a strong bias toward stepwise refinement and interactive media (like games).
+
+ - [[https://github.com/sabren/b4][b4 github repo]]
+ - twitter: [[https://twitter.com/tangentstorm][@tangentstorm]] / [[https://twitter.com/#!/search/realtime/%23b4lang][#b4lang]]
+ - irc: [[irc://irc.freenode.org/b4][#b4 on freenode]]
+ - reddit: [[http://reddit.com/r/b4lang][/r/b4lang]]
+
+* Orientation
+
+B4 is a forth-like language. Quick *intros to forth* (free and online):
+
+ - [[http://www.colorforth.com/POL.htm][Programming a Problem-Oriented Language]]
+ - [[http://www.forth.com/starting-forth/][Starting Forth]]
+
+B4 runs on an implementation of the *ngaro virtual machine*, stolen from retroforth. We'll probably steal more from retro, but B4 isn't retroforth. It's something different.
+
+ - [[http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html][ngaro virtual machine reference]]
+ - [[http://retroforth.org/][retroforth]]
+
+Many versions of ngaro exist, and B4 should work with any. We're writing a new one from scratch, using the *object pascal* languange and the free pascal compiler.
+
+ - [[http://www.freepascal.org/][get free pascal]]
+ - [[http://www.freepascal.org/docs-html/][free pascal docs]]
+
