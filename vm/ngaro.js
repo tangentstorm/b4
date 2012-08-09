@@ -653,7 +653,7 @@ function processOpcode()
   {
      if (op != vm.JUMP)
      {
-         console.log( "ip:" + ip + " op:" + op + " ports[ 0 ]:" + ports[ 0 ] );
+         // console.log( "ip:" + ip + " op:" + op + " ports[ 0 ]:" + ports[ 0 ] );
      }
      instructions[op]();
   }
@@ -847,7 +847,7 @@ portHandlers[ 8 ] = function( )
 {
     switch ( ports[ 8 ])
     {
-        case 1 : ngterm.cursto( data.pop(), data.pop() ); break;
+        case 1 : ngterm.xy( data.pop(), data.pop() ); break;
         case 2 : ngterm.fg( data.pop() ); break;
         case 3 : ngterm.bg( data.pop() ); break;
         default: // ignore
