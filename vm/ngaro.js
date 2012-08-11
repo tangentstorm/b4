@@ -216,10 +216,8 @@ var tib = "";
 
 function rxReadKeyboard(e)
 {
-  var uni = e.keyCode ? e.keyCode : e.charCode;
-  lastKey = uni;
-  if (uni == 8)
-    return false;
+  lastKey = e.keyCode ? e.keyCode : e.charCode;
+  e.preventDefault(); // all keys go to the terminal
 }
 
 function rxToggleInputMethod()
@@ -231,7 +229,9 @@ function rxToggleInputMethod()
   }
   else
   {
-    document.onkeypress = rxReadKeyboard;
+    document.onkeypress = function(e) { e.preventDefault(); };
+    document.onkeyup = function(e) { e.preventDefault(); };
+    document.onkeydown = rxReadKeyboard;
     inputMethod = 0;
   }
 }
