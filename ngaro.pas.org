@@ -13,12 +13,15 @@
   <<@opcodes>>
   <<@stack>>
   <<@vmcode>>
+  <<@uicode>>
   <<@devices>>
-
+  
   var vm : ngarovm;
+  var ui : ngaroui;
   begin
-    vm.init();
-    vm.loop();
+    vm.init;
+    ui.init;
+    ui.loop;
   end.
   
 #+end_src
@@ -57,6 +60,7 @@
     data, addr : stack;
     <<machine-code>>
     constructor init;
+    procedure tick;
     procedure loop;
     procedure dump;
     procedure runop( op:int32 );
@@ -73,6 +77,11 @@
     function send( msg:int32 ):int32; virtual;
   end;
     
+#+end_src
+
+** TYPE ngaroui
+#+name: @interface
+#+begin_src delphi
 #+end_src
 
 ** LIST opcodes
@@ -238,11 +247,20 @@
       
   procedure ngarovm.loop( );
   begin
-    repeat 
-      dump;
-      runop( ram[ ip ] );
-      inc( ip );
-    until ip >= length( ram );
+    repeat tick until ip >= length( ram );
+  end;
+  
+#+end_src
+
+** DEF tick : single-tick version, for sdl
+#+name: @vmcode
+#+begin_src delphi
+  
+  procedure ngarovm.tick;
+  begin
+    dump;
+    runop( ram[ ip ] );
+    inc( ip );
   end;
   
 #+end_src
@@ -278,30 +296,44 @@
 ** DEF runio : hardware interrupt request, triggered by oWAIT
 #+name: @vmcode
 #+begin_src delphi
-  
-  { 
-  | Ngaro machines connect via ports.                         |
-  | A port is just a normal cell that's writable from both    |
-  | inside and outside the machine, much like a usb port.     |
-  | The protocol is: that you write a value to the port, then |
-  | call the WAIT instruction, which tells the vm that you're |
-  | ready for the port to read.                               |
-  |                                                           |
-  | This is the procedure that runs when the WAIT is sent,    |
-  | so we need to loop through the ports and see which ones   |
-  | have values in them.                                      |
-  }  
-  procedure ngarovm.runio;
-    var p: int32;
-  begin
-    for p in port do begin
-        if port[ p ] <> 0 then 
-          begin
-            port[ p ] := device[ p ].send( port[ p ]);
-          end;
-      end;
-  end;
-  
+    
+    { 
+    | Ngaro machines connect via ports.                      |
+    | A port is just a normal cell that's writable from both |
+    | inside and outside the machine, much like a usb port.  |
+    |                                                        |
+    | The protocol is:                                       |
+    |                                                        |
+    | - write whatever you want to the ports                 |
+    | - set port[ 0 ] to 0                                   |
+    | - invoke the 'wait' instruction                        |
+    |                                                        |
+    | - the vm pauses until a device sets port[ 0 ] to 1     |
+    |                                                        |
+    | Note: only one device will trigger on each WAIT, and   |
+    | (at least in this vm and the js one) they will always  |
+    | be executed in order of ascending port numbers.        |
+    |                                                        |
+    | A device will only be triggered when you write a       |
+    | non-zero values to its port.                           |
+    |                                                        |
+    }
+    procedure ngarovm.runio; { triggered by the oWAIT op }
+      var p: int32;
+    begin
+      if ports[ 0 ] = 0 then
+        begin
+          ports[ 0 ] = 1;
+          for p in port do 
+            begin
+              if port[ p ] <> 0 then 
+                begin
+                  port[ p ] := device[ p ].send( port[ p ]);
+                end;
+            end;
+        end;
+    end;
+    
 #+end_src
 
 
@@ -334,8 +366,8 @@
   oMUL : data.push( -data.pop + data.pop );
   oDIVM: begin
            tn;
+           data.push( n mod t ); { yep. mod comes first }
            data.push( n div t ); 
-           data.push( n mod t ); 
          end;
   oINC : inc( data.cell[ data.sp ] );
   oDEC : dec( data.cell[ data.sp ] );
@@ -522,26 +554,189 @@
     until i = length( self.ram );
     readln;
   end;
+
 #+end_src
 
 
 * SECTION devices
-** TODO ITEM port 0 : i/o events
-** ITEM port 1 : keyboard
-** ITEM port 2 : simple text output
-** ITEM port 3 : video update
-** ITEM port 4 : file i/o
-** ITEM port 5 : querying the vm
-** ITEM port 6 : canvas
-** ITEM port 7 : mouse
-** ITEM port 8 : enhanced text output
+# all of these were ported from ngaro.js, 
+# except file/io and enhanced text
+** ITEM port 0 : i/o events
+
+Port 0 isn't connected to a device. It's just used to signal that one side or the other has data to transfer.
+
+** TODO port 1 : keyboard
+*** keyboard events
+  TYPE KeyboardEvent = SDL.TSDL_KeyboardEvent;
+*** 
+  if (ports[1] == 1 && inputMethod == 0)
+  {
+    ports[1] = lastKey;
+    lastKey = 0;
+    return;
+  }
+  if (ports[1] == 1 && inputMethod == 1)
+  {
+    ports[1] = tib.charCodeAt(0);
+    tib = tib.substr(1, tib.length - 1);
+    lastKey = 0;
+    return;
+  }
+
+** TODO port 2 : simple text output
+
+portHandlers[2] = function()
+{
+  Term.renderChar( data.pop() );
+  ports[ 2 ] = 0;
+}
+
+** SKIP port 3 : video update
+
+This can probably be used for double-buffered graphics.
+
+** TODO port 4 : file i/o
+
+portHandlers[4] = function()
+{
+  ports[4] = 0;
+  saveImage();
+}
+
+** TODO port 5 : querying the vm
+
+portHandlers[5] = function()
+{
+  if (ports[5] == -1)
+    ports[5] = IMAGE_SIZE;
+  if (ports[5] == -2)
+    ports[5] = FB_EXISTS;
+  if (ports[5] == -3)
+    ports[5] = FB_WIDTH;
+  if (ports[5] == -4)
+    ports[5] = FB_HEIGHT;
+  if (ports[5] == -5)
+    ports[5] = data.depth();
+  if (ports[5] == -6)
+    ports[5] = address.depth();
+  if (ports[5] == -7)
+    ports[5] = -1;
+  if (ports[5] == -8)
+  {
+    var foo = new Date;
+    var unixtime_ms = foo.getTime();
+    var unixtime = parseInt(unixtime_ms / 1000);
+    ports[5] = unixtime;
+  }
+  if (ports[5] == -9)
+    ports[5] = 0;
+  if (ports[5] == -11)
+    ports[5] = TERM_WIDTH;
+  if (ports[5] == -12)
+    ports[5] = TERM_HEIGHT;
+}
+
+** SKIP port 6 : canvas
+
+portHandlers[6] = function()
+{
+  switch (ports[6])
+  {
+    case 1:
+      rxCanvasSetColor(data.pop());
+      break;
+    case 2:
+      var x, y;
+      y = data.pop();
+      x = data.pop();
+      fb.fillRect(x, y, 2, 2);
+      break;
+    case 3:
+      var x, y, h, w;
+      w = data.pop();
+      h = data.pop();
+      y = data.pop();
+      x = data.pop();
+      fb.strokeRect(x, y, w, h);
+      break;
+    case 4:
+      var x, y, h, w;
+      w = data.pop();
+      h = data.pop();
+      y = data.pop();
+      x = data.pop();
+      fb.fillRect(x, y, w, h);
+      break;
+    case 5:
+      var x, y, h;
+      h = data.pop();
+      y = data.pop();
+      x = data.pop();
+      fb.fillRect(x, y, 2, h);
+      break;
+    case 6:
+      var x, y, w;
+      w = data.pop();
+      y = data.pop();
+      x = data.pop();
+      fb.fillRect(x, y, w, 2);
+      break;
+    case 7:
+      var x, y, w;
+      w = data.pop();
+      y = data.pop();
+      x = data.pop();
+      fb.beginPath();
+      fb.arc(x, y, w, 0, Math.PI*2, true);
+      fb.closePath();
+      fb.stroke();
+      break;
+    case 8:
+      var x, y, w;
+      w = data.pop();
+      y = data.pop();
+      x = data.pop();
+      fb.beginPath();
+      fb.arc(x, y, w, 0, Math.PI*2, true);
+      fb.closePath();
+      fb.fill();
+      break;
+    default:
+      // do nothing
+  }
+  ports[6] = 0;
+}
+
+** SKIP port 7 : mouse
+
+portHandlers[7] = function()
+{
+  if (ports[7] == 1)
+  {
+    data.push(mx);
+    data.push(my);
+    ports[7] = 0;
+  }
+  if (ports[7] == 2)
+  {
+    data.push(mb);
+    ports[7] = 0;
+  }
+}
+
+** TODO port 8 : enhanced text output
+*** msg 1 : ( rc- ) row col
+*** msg 2 : ( n-  ) fg
+*** msg 3 : ( n-  ) bg
+
+
 
 * SECTION assembler
 
-
-* SECTION mainloop
+* SECTION ui loop
+#+name: @uicode
 #+BEGIN_SRC delphi
-
-
+procedure  
+  
 #+END_SRC
 
