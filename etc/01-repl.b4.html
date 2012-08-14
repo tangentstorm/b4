@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+<head>
+  <title>b4</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/3.5.1/build/cssreset/cssreset-min.css"/>
+  <link rel="stylesheet" href="b4.css"/>
+</head>
+<body class="b4">
+<section class="shadow">
+  <h1>01 repl</h1>
+  <dl>
+    <dt>
+      <txt>ref</txt>
+    </dt>
+    <dd>
+      <rem>rem</rem>
+      <txt>txt</txt>
+      <imp>imp</imp>
+      <br/>
+      <ref>ref</ref>
+      <def>def</def>
+      <run>run</run>
+      <asm>asm</asm>
+      <end>lbl</end>
+      <mac>mac</mac>
+		<br/>
+      <get>get</get>
+      <set>set</set>
+	  <rem>(vars)</rem>
+      <chr></chr>
+      <ldef></ldef><rem></rem>
+       <br/>
+       <typ>typ</typ>
+      <sig>sig</sig>
+      <str>
+        <num>lit</num>
+str</str>
+    </dd>
+  </dl>
+  <dl id="def">
+    <dt>
+      <typ>def</typ>
+    </dt>
+    <dd> A definition in the system-wide dictionary.<br>
+      <get>word</get>
+      <typ>char<sub>16 </sub></typ>
+      <get>itp</get>
+      <typ>^proc</typ>
+      <rem>(address of an interpreter)</rem>
+      <get>prev</get>
+      <typ>^def</typ>
+      <rem>(linked list)</rem>
+      <br>
+      <get>len</get>
+      <typ>int</typ>
+      <get>def</get>
+      <typ>data</typ>
+    </dd>
+  </dl>
+  <dl id="print">
+    <dt><def>print</def></dt>
+    <dd>
+      <get>obuf</get>
+      <run>echo</run>
+      <run>ui:draw-stack</run>
+      <br>
+      <mac></mac>
+      <get></get>
+      <mac>unless:</mac>
+      <get>err?</get>
+      <mac>do</mac>
+      <run>ack</run>
+      <run></run>
+      <mac>end</mac>
+      <run>vt:nl</run>
+    </dd>
+  </dl>
+  <dl id="eval">
+    <dt>
+      <def>eval</def>
+    </dt>
+    <dd>
+      <sig>cmd &rarr; io </sig>
+      Runs the command stored in %A by jumping directly to the interpreter.
+      <get>A</get>
+      <get>.itp</get>
+      <asm>jmp</asm>
+    </dd>
+  </dl>
+  <dl id="nak">
+    <dt>
+      <def>nak</def>
+    </dt>
+    <dd>
+      <sig>* &rarr; io </sig>
+      <imp> negative acknowledge.</imp>
+      This is the command that runs when the repl can't find the word you typed.<br>
+      <run>err+</run>
+      <run>fg:r[</run>
+      <get>ibuf</get>
+      <str>?</str>
+      <run>fg:]</run>
+      <run>join</run>
+      <set>obuf</set>
+    </dd>
+  </dl>
+  <dl id="read">
+    <dt>
+      <def>read</def>
+    </dt>
+    <dd>
+      <sig>str &rarr; cmd</sig>
+      <run>ibuf</run>
+      <run>lkp</run>
+      <set>A</set>
+    </dd>
+  </dl>
+  <dl id="mcp">
+    <dt>
+      <def>mcp</def>
+    </dt>
+    <dd>
+      <imp>Master control program.</imp>
+Like in <a href="http://en.wikipedia.org/wiki/Tron">TRON</a>. <br>
+<mac></mac>
+    <set>
+      <num>0</num>
+      <set></set>
+i</set>
+    <typ>int</typ>
+    instruction pointer<br>
+ <goto></goto>
+ <ldef></ldef>
+      <mac></mac>
+      <ref>mcp</ref>
+      <asm>jmp</asm>
+    </dd>
+  </dl>
+
+  <dl id="loop">
+    <dt><def>loop</def></dt>
+  </dl>
+
+  <dl id="repl">
+    <dt>
+      <def>repl</def>
+    </dt>
+    <dd>
+      <run>read</run>
+      <run>eval</run>
+      <run>print</run>
+      <mac>loop</mac>
+    </dd>
+  </dl>
+</section>
+</body>
+</html>

@@ -19,8 +19,7 @@
 //
 // ----------------------------------------------------------
 
-var term,
-    font, 
+var font,
     FONT_WIDTH  = 8,
     FONT_HEIGHT = 16,
 
@@ -50,17 +49,18 @@ var term,
         return canvas;
     }
 
-    function Term(canvas) {
+    function Term(canvas, onCurse) {
 
         // Canvas
-        this.canvas  = canvas; 
+        this.canvas  = canvas;
         this.context = this.canvas.getContext('2d');
         this.image_data  = this.context.createImageData(8, 16);
 
         // Position
-        this.column     = 1;
-        this.row        = 1;
+        this.x        = 0;
+        this.y        = 0;
         this.scrollback = 0;
+        this.onCurse = function (x, y) { };
 
         // Graphic mode
         this.foreground = WHITE;
@@ -94,12 +94,12 @@ var term,
           this.background = n;
         },
         xy: function( x, y ) {
-          this.column = x;
-          this.row = y;
+          this.x = x;
+          this.y = y;
         },
 
         cls: function () {
-            this.context.fillStyle = 
+            this.context.fillStyle =
               'rgba(' + this.palette[ BLACK ].join(',') + ')';
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
         },
@@ -140,31 +140,32 @@ var term,
             switch (charCode & 0xff) //  truncate to 8 bits
             {
                 case CR:
-                    this.column = 0;
+                    this.x = 0;
                     break;
 
                 case LF:
-                    this.column = 1;
-                    this.row ++;
+                    this.x = 0;
+                    this.y ++;
                     break;
 
                 default:
 
                     this.context.putImageData(
                        this.renderChar(charCode),
-                       this.column * 8,
-                       (this.row + this.scrollback) * 16
+                       this.x * 8,
+                       (this.y + this.scrollback) * 16
                     );
 
                     // As far as i can tell, retro has no concept
                     // of a line ending character, but it does wrap.
-                    if (this.column === 80) {
-                       this.column = 1;
-                       this.row++;
+                    if (this.x === 80) {
+                       this.x = 0;
+                       this.y++;
                     } else {
-                       this.column++;
+                       this.x++;
                     }
             }
+            this.onCurse( this.x, this.y );
         },
 
         transparent : function( yn )
@@ -172,14 +173,12 @@ var term,
             this.palette[ BLACK ][ 3 ] = yn ? 0 : 0xff ;
         }
 
-    }
+    };
 
-
-
-// image_data VGA font. Each element in the array is a glyph in the ASCII character
-// set, indexed by its character code. Each 8px x 16px character is represented
-// by a sixteen-element sub-array, with each element representing a row of
-// pixels.
+    // image_data VGA font. Each element in the array is a glyph in the ASCII character
+    // set, indexed by its character code. Each 8px x 16px character is represented
+    // by a sixteen-element sub-array, with each element representing a row of
+    // pixels.
 
     font = [
         [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
