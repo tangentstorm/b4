@@ -1,26 +1,5 @@
 #+TITLE: help wanted
 
-
-This file is for ongoing work on the b4 system in general.
-
-For the game jam: please just go to the IRC channel at irc.freenode.net and join channel #b4 .
-
-
-.
-
-.
-
-.
-
-.
-
-.
-
-.
-
-
-
-
 * NOTE about this file
 ** ~[#A]~ is easy, ~[#B]~ medium, ~[#C]~ advanced
 ** i'm working through file:b4.00.tasklist.org from top to bottom
@@ -29,39 +8,39 @@ For the game jam: please just go to the IRC channel at irc.freenode.net and join
 ** licensing issues
 - if you contribute / port something, make sure license is MIT/ [[http://en.wikipedia.org/wiki/ISC_license][ISC]] compatible ([[http://retroforth.org/license.html][retroforth license]] is ISC)
 - [[http://www.freepascal.org/faq.var#general-license][freepascal]] code has a tendency to use MPL/LGPL style. I'm okay with that, too.
-
+  
 * Things b4 will need soon
 
-** assembler in pascal
+** assembler
 *** probably similar to  [[https://github.com/oriontransfer/PL0-Language-Tools/blob/master/pl0_assemblera.py][pl/0 language tools assembler.py]]
-**** [#A] not clear what license is. author seems like nice guy. ask?
-**** [#B] port to pascal, or write our own. (should be small code)
+**** DONE not clear what license is. -> relicensed under MIT when I asked
+**** TODO compare bytecodes for pl/0 machine and ngaro. see what we need to adjust.
+
+Both are stack machines and the primitives look similar. 
+See also python -> ngaro translator below. 
+Combined with PL/0 tools, these would give us all the tools we need.
 
 ** need to be in ngaro assembly language
 *** database (b4 has tiny relational database)
 **** [#C] [[http://en.wikipedia.org/wiki/B-tree][b-tree]] or [[http://en.wikipedia.org/wiki/B%2B_tree][b+-tree]] implementation                           :nga:
 **** [#A] codd's 8 relational operators                              :nga:
 
-There is psuedocode for all 8 here.
+There is psuedocode for all 8 here:
 
 http://science.kennesaw.edu/~mguimara/3310/RA_SQL.htm
 
-*** [#A] recode the font from [[http://256.io/escapes.js/][escapes.js]] 
-
 *** [#B] repl - probably follow itsyforth model
-**** [#A] track down itsyforth license - ask john metcalf?
+**** [#A] track down itsyforth license - ask the author (john metcalf)
 ***** [[http://www.retroprogramming.com/2012/03/itsy-forth-1k-tiny-compiler.html][itsyforth interpreter]]
 
-
-** TODO port gamesketchlib to ngaro/retroforth/b4
+** GOAL port gamesketchlib to ngaro/retroforth/b4
 
 I made the java/processing game library at http://gamesketchlib.org/ and will try to follow the same design patterns as I work on this system.
-
 
 ** WANT python bytecode -> ngaro translator
 *** [#A] research step : match up the two sets of bytecode
 
-ngaro only has 30 instructions, i python has around the same. There is much overlap, and in forth-like languages, it's very easy to translate things like this.
+ngaro only has 30 instructions, python has around the same. There is much overlap, and in forth-like languages, it's very easy to translate things like this.
 
 So it's possible that at least some python code should be able to run here. 
 
@@ -76,7 +55,6 @@ probably the most dynamic aspects of python will not run well, but simpler pytho
 
 * forth-like code
 ** NOTE if you write the code in ANS forth we can (hopefully) translate directly
-** NOTE retro / joy / factor / ngaro
 
 
 * Things that would just be nice to have
