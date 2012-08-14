@@ -4,7 +4,7 @@
 ;;
 ;;  version: 0.01
 ;;   author: michal j wallace (using retro.vim as reference)
-;;  license: retro license
+;;  license: ISC (same as retro itself)
 ;;  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
