@@ -1,3 +1,20 @@
+#+TITLE: CRC's Retro Wisdom
+#+AUTHOR: Michal J Wallace
+#+DATE: 2012/08/14
+
+* OVERVIEW 
+
+CRC is Charles Childers, the principle maintainer of retro and ngaro.
+
+Almost everything here is taken from of questions I asked him on IRC in early August 2012, mostly about how to explore the retro image.
+
+* SECTION namespaces
+
+( how do you get at words that live inside a retro module? )
+
+[09:41] <crc> needs console'
+[09:42] <crc> with console'
+[09:42] <crc> and the functions should then be visible
 
 [15:07] <@crc> the documentation will show, since it's embedded in the source
 [15:07] <@crc> use either:  with console'
@@ -6,67 +23,93 @@
 [15:08] <@crc> if you enter console' directly, it'll replace the default dictionary
 [15:09] * @crc is going to move to a flat dictionary in retro12; the search order bits are becoming annoying to me
 
-------
 
-[15:11] <tangentstorm> i'm still just reading docs at the language level.. i haven't found this yet... i know "words" shows the global words... but how do i see the list of modules, and the list of words in the modules... and how do i see the definition of a word? :)
+* SECTION exploration words
+# crc's links to a pasteboard site called sprunge.us ... 
+# all the code he pasted is now in ../game/b4.rx 
+
+[15:11] <tangentstorm> i'm still just reading docs at the language level.. i haven't found this yet... i know "words" shows the global words... but how do i see 
+
+- the list of modules, 
+- the list of words in the modules... and 
+- the definition (source code) of a word?
+
 [15:11] <@crc> words ending in a ' are vocabularies
 [15:12] <@crc> add them to the search order, then do words to see what's in them
+
 [15:12] <tangentstorm> with "need" ?
 [15:12] <tangentstorm> hrm
+
 [15:12] <@crc> needs vocabulary'
 [15:12] <@crc> will load the vocabulary from the library
 [15:12] <@crc> with vocabulary'
 [15:12] <@crc> adds it to the search order
+
 [15:13] <tangentstorm> and without removes the last one?
+
 [15:13] <@crc> without removes the last one added from the search order
 [15:13] <@crc> yes
 [15:13] <@crc> and global returns to just the main dictionary
+
 [15:15] <tangentstorm> so... : showvoc ..... and i'm stuck. i can't define what i want to define without quoting the words "needs"
 [15:16] <tangentstorm> so now i want to go quote the word needs... and i have to find the word for quote... and showvoc is the tool i was hoping would help me with that :D
 [15:18] <tangentstorm> not trying to whine and complain... the answer is RTFM ... but I'm thinking there ought to be a word like "help" that gives this basic "how to explore" information up front
+
+
 [15:21] <@crc> : showContentsOf ' .chain words "%%" find drop @d->xt do ;
+
 [15:21] <tangentstorm> it's frustrating, because i can see the steps in my head to define showvoc... take a name, "need" it, "with" it, list the words that are new.. and pop it, unless it was already in the old list
 
 [15:21] <@crc> showContentsOf console'
 [15:21] <@crc> you'd still need to load the vocabulary with needs first though
+
 [15:22] <tangentstorm> yeah.. so to me it's "dup needs with ... output result ... without"
 [15:23] <tangentstorm> i don't care that the words are new.. that's part of the fun... it's that i don't know how to find them with out searching through the manual 
+
+
 [15:23] <@crc> there's not any method currently
+
 [15:24] <tangentstorm> yeah, but you're showing me how to make one right now :)
 [15:25] <tangentstorm> so.. okay... i see this code, and i probably should have known ' from ans forth... but then i see .chain and wonder what it means
 [15:25] <tangentstorm> closest i had was that see command that moved off into casket
 [15:26] <tangentstorm> is there another way to see the definition?
+
+
 [15:28] <@crc> the only decompilers are in examples/autopsy.rx; they use one of the libraries IIRC
 [15:29] <@crc> .chain is the class handler for vocabularies
 [15:35] <@crc> http://sprunge.us/CcNg
 [15:35] <@crc> that's a pretty minimal decompiler using the dissect' library
+
+
 [15:36] <tangentstorm> thanks
 [15:36] <@crc> no problem
 [15:36] <tangentstorm> my brain's just churning here trying to catch up with you :)
 [15:37] <tangentstorm> i see the debugger in autopsy.rx... very cool.. i added an external one to the pascal vm implementation too
 [15:38] <tangentstorm> ok ... one more question.. i type words and there are lots of words! :D
 [15:39] <tangentstorm> what's retro for: ls | grep "foo"
+
 [15:40] <@crc> no equivilent to ls; there's a crude grep for files in examples/util
 
 
 [15:41] <tangentstorm> sorry.. in python i can say dir() to list defined variables... and  [ word for word in dir() if word.startswith("x") ]
 [15:41] <tangentstorm> like.. just how do i filter the output of "words" so i can find the needle in the haystack?
-[15:42] <impomatic> $G 1% N: 2 F: ( N. F. \ 0 > ^ F. 1 + F: ) F. N. < [ F. ! "" #G, N. F. /;] @
-[15:42] <impomatic> Prime factors in Mouse!
+
 [15:43] <tangentstorm> @crc : like in the /demo/ page, if i type "words"... i don't see ANY words whose names end with "'"... because they scrolled off the screen
 [15:43] <tangentstorm> oh not true there's d' and ' :)
 [15:44] <tangentstorm> and --' ... it's like a word search :D
 [15:44] <tangentstorm> __' i guess
 [15:45] <@crc> hmm, this will involve some thinking
-[15:46] <impomatic> Wrong channel, sorry.  In case you're wondering Mouse is a 70's RPN stack based language http://en.wikipedia.org/wiki/Mouse_(programming_language)
+
 [15:46] <tangentstorm> ... the name of the word isn't in the record that contains its definition, is it?
-[15:47] <tangentstorm> impomatic : looked pretty forthy to me. i wouldn't have known. :)
+
 [15:47] <@crc> the name is in the dictionary, which has the pointers to the definitions
 [15:48] <@crc> a minimalistic words would be:  : words last [ d->name puts space ] ^types'LIST each@ ;
 [15:48] <@crc> (though that doesn't track search order, only the global dictionary)
+
 [15:48] <tangentstorm> the dictionary is like a python dictionary then? like a hash?
 [15:48] <tangentstorm> hashmap?
 [15:50] <tangentstorm> ok. now it makes sense why there's a disassembler but not a decompiler
+
 [15:51] <@crc> http://sprunge.us/SZNO
 [15:51] <@crc> "'" words
 
@@ -75,39 +118,48 @@
 [15:53] <@crc> there is a source decompiler in autopsy (the 'see' there has three viewing options, source is one of them)
 [15:53] <@crc> it's not flawless though
 [15:53] <@crc> dictionary is a linked list, not a hashmap
+
 [15:54] <tangentstorm> ...
+
 [15:54] <@crc> the structure is covered in the docs  (link to prior, link to class, link to definition, zero terminated name)
+
 [15:56] <tangentstorm> what's the advantage of linking to the definition rather than just putting it right there inline?
+
 [15:57] <@crc> this makes it possible to discard headers that don't need to be kept (e.g., for embedded targets like arduino with limited memory)
+
 [15:58] <tangentstorm> headers meaning...?
+
 [15:58] <@crc> the name, pointer fields, etc
+
 [15:59] <tangentstorm> so a record in the dictionary list
+
 [15:59] <@crc> yes
+
 [15:59] <tangentstorm> gotcha
 [16:05] <tangentstorm> I guess my conception of what a dictionary is looks something like this:  (link to prior, link to {class/defining-word/whatever}, size, fixed-length-zero-padded name, definition )
 [16:06] <tangentstorm> so if i know the definition, it's always a fixed offset jump to find the metadata
 [16:06] <tangentstorm> is that kind of what you meant by  flat list?
+
 [16:09] <@crc> the name is not fixed length
 [16:09] <@crc> but otherwise yes
+
 [16:17] <tangentstorm> because there's a forth instruction pointer separate from the vm's... forth IP jumps to the definition, not to the actual code... 
 [16:17] <tangentstorm> so you just need a cell saying how long the string is so you can jump, or just scan through it until you find the null.
 [16:18] <tangentstorm> wait
 [16:18] <tangentstorm> your forth pointer can't be working that way or your assembler wouldn't say to call numbers
 [16:18] <tangentstorm> disassembler
 [16:18] <tangentstorm> it would know the name
+
 [16:18] <@crc> the simple disassembler doesn't do name resolution
 [16:19] <@crc> the source decompiler in autopsy does
 [16:19] <@crc> but it's longer
+
 [16:23] <tangentstorm> okay. thanks for answering all my questions. I hope i'm not annoying you too much :)
+
 [16:24] <@crc> not at all :)
 
 
-
-
-
-=================
-retroforth code from crc for inspecting the image:
-
+* retroforth code from crc for inspecting the image:
 
 ==============
 needs dissect'
@@ -117,8 +169,7 @@ needs dissect'
 variable needle
 : words  !needle last [ d->name dup @needle ^strings'search [ puts space ] [ drop ] if ] ^types'LIST each@ ;
 
-
--------------
+* ngaro version comparison matrix
 
 [09:19] <crc> tangentstorm: off the top of my head, I think python, c#, c, and ruby implementations have port 8 for cursor positioning and color
 [09:19] <crc> and the api is in library/console.rx
@@ -126,18 +177,6 @@ variable needle
 [09:19] <crc> (which has a fallback to ANSI escape sequences if port 8 is not supported)
 [09:21] <crc> the only significant use of console' is in the hangman game
 
-
---------
-
 <crc> doc/Implementations.rst, http://rx-core.org/docs/Implementations.html
 [09:31] <crc> not 100% up to date, but covers everything through 11.3
-
-
-------------
-on ngaro.js:
-
-[09:41] <crc> needs console'
-[09:42] <crc> with console'
-[09:42] <crc> and the functions should then be visible
-[09:55] <crc> the bytecode dispatch is where most time was taken; it's now a lookup table, which is faster
 
