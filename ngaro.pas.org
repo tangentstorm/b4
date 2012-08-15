@@ -5,7 +5,7 @@
   {$mode objfpc}
     
   program ngaro;
-  uses sdl, crt, stacks;
+  uses sdl, crt;
   
   type int32 = longint;
   
@@ -13,15 +13,15 @@
   <<@opcodes>>
   <<@stack>>
   <<@vmcode>>
-  <<@uicode>>
+  <<@vtcode>>
   <<@devices>>
   
   var vm : ngarovm;
-  var ui : ngaroui;
+  var vt : ngarovt;
   begin
+    vt.init;
     vm.init;
-    ui.init;
-    ui.loop;
+    vm.loop;
   end.
   
 #+end_src
@@ -50,13 +50,26 @@
 
 #+end_src
 
+** TYPE hardware
+#+name: @interface
+#+begin_src delphi
+  
+  type hardware = object
+    constructor init; 
+    function send( msg:int32 ):int32; virtual;
+  end;
+    
+#+end_src
+
 ** TYPE ngarovm
 #+name: @interface
 #+begin_src delphi
   
   type ngarovm = object
-    ip    : integer;
-    port  : array [ 0 .. 16 ] of int32;
+    ip     : integer;
+    ram    : array [ 0 .. 31 ] of int32;
+    port   : array [ 0 .. 15 ] of int32;
+    device : array [ 0 .. 15 ] of hardware;
     data, addr : stack;
     <<machine-code>>
     constructor init;
@@ -69,19 +82,14 @@
     
 #+end_src
 
-** TYPE device
+** TYPE ngarovt
 #+name: @interface
 #+begin_src delphi
   
-  type device = object
-    function send( msg:int32 ):int32; virtual;
+  type ngarovt = object
+    constructor init;
   end;
-    
-#+end_src
-
-** TYPE ngaroui
-#+name: @interface
-#+begin_src delphi
+  
 #+end_src
 
 ** LIST opcodes
@@ -245,7 +253,7 @@
 #+name: @vmcode
 #+begin_src delphi
       
-  procedure ngarovm.loop( );
+  procedure ngarovm.loop;
   begin
     repeat tick until ip >= length( ram );
   end;
@@ -270,11 +278,11 @@
 #+begin_src delphi
   
   procedure ngarovm.runop( op: int32 );
-    var t, n, a : int32;
+    var t, n, tmp : int32;
     <<runop-helper:jump>>
     <<runop-helper:tn>>
   begin
-    if op > oWAIT or op < oNOP then
+    if ( op > oWAIT ) or ( op < oNOP ) then
       <<user-ops>>
     else
       case op of
@@ -286,7 +294,7 @@
         <<port-ops>>
       else
         // TODO: assert()
-        error(' this should not happen ');
+        writeln('error: this should not happen ');
         readln
       end
   end;
@@ -321,9 +329,9 @@
     procedure ngarovm.runio; { triggered by the oWAIT op }
       var p: int32;
     begin
-      if ports[ 0 ] = 0 then
+      if port[ 0 ] = 0 then
         begin
-          ports[ 0 ] = 1;
+          port[ 0 ] := 1;
           for p in port do 
             begin
               if port[ p ] <> 0 then 
@@ -351,17 +359,20 @@
 ** stack ops
 #+name: stack-ops
 #+begin_src delphi
+
   oDUP : data.dup;
   oDROP: data.drop;
   oSWAP: data.swap;
   oPUSH: addr.push( data.pop );
   oPOP : data.push( addr.pop );
+
 #+end_src
 
 ** arithmetic ops
 #+name: alu-ops
 #+begin_src delphi
-  oADD : data.push( data.pop + data.pop );
+
+  oADD : data.push(  data.pop + data.pop );
   oSUB : data.push( -data.pop + data.pop );
   oMUL : data.push( -data.pop + data.pop );
   oDIVM: begin
@@ -371,11 +382,13 @@
          end;
   oINC : inc( data.cell[ data.sp ] );
   oDEC : dec( data.cell[ data.sp ] );
+
 #+end_src
 
 ** bitwise / logic ops
 #+name: alu-ops
 #+begin_src delphi
+  
   oAND : data.push( data.pop AND data.pop );
   oOR  : data.push( data.pop OR data.pop );
   oXOR : data.push( data.pop XOR data.pop );
@@ -387,66 +400,78 @@
            t := data.pop; 
            data.push( data.pop shr t );
          end;
+  
 #+end_src
 
 ** branch ops
 *** DEF runop/jump() : shared for all the various jumps
 #+name: runop-helper:jump
 #+begin_src delphi
+
   procedure jump();          
   begin 
     ip := ram[ ip + 1 ];
-    while ram[ ip ] = ord( op_NOP ) do inc( ip );
+    while ram[ ip ] = ord( oNOP ) do inc( ip );
     dec( ip ); { compensating for the post-op inc }
   end;
+
 #+end_src
 
 *** jump and conditional jumps
 #+name: branch-ops
 #+begin_src delphi
+
   oJMP : jump();
   oJLT : begin tn(); if t <  n then jump else inc( ip ) end;
   oJGT : begin tn(); if t >  n then jump else inc( ip ) end;
   oJNE : begin tn(); if t <> n then jump else inc( ip ) end;
   oJEQ : begin tn(); if t =  n then jump else inc( ip ) end;
+
 #+end_src
 
 *** return
 #+name: branch-ops
 #+begin_src delphi
-  oRET : ip := pop( addr );
+
+  oRET : ip := addr.pop;
+
 #+end_src
 
 *** loop
 #+name: branch-ops
 #+begin_src delphi
+  
   oLOOP: begin 
-           dec( data[ top ]);
-           tmp := code[ ip ];
-           if data[ top ] > 0 then 
-             ip := code[ ip + 1 ]
+           dec( data.cell[ data.sp ] );
+           tmp := ram[ ip ];
+           if data.cell[ data.sp ] > 0 then 
+             ip := ram[ ip + 1 ]
            else
              begin
                inc( ip );
-               pop( data );
+               data.pop;
              end
          end;
+  
 #+end_src
 
 *** zex : exit (return) if TOS = 0 ( sort of like ~assert~ )
 #+name: branch-ops
 #+begin_src delphi
-  oZEX : if data[ top ] = 0 then 
+  
+  oZEX : if data.cell[ data.sp ] = 0 then 
            begin
              { sort of an assert / guard }
-             pop( data ); 
-             ip := pop( addr );
+             data.pop; 
+             ip := addr.pop;
            end;
+  
 #+end_src
 
 ** memory ops
 #+name: memory-ops
 #+begin_src delphi
+
   oLIT: begin
           inc( ip );
           data.push( ram[ ip ]);
@@ -458,11 +483,13 @@
           tn;
           ram[ t ] := ram[ n ];
         end;
+
 #+end_src
 
 ** port ops
 #+name: port-ops
 #+begin_src delphi
+
   oIN  : begin { p-n }
            t := data.pop;
            data.push( port[ t ] );
@@ -474,6 +501,7 @@
   oWAIT: begin { - }
            runio;
          end;
+
 #+end_src
 
 
@@ -559,16 +587,28 @@
 
 
 * SECTION devices
+** general hardware
+#+name: @devices
+#+begin_src delphi
+    
+  function hardware.send( msg: int32 ): int32;
+  begin
+    result := 0;
+  end;
+  
+#+end_src
+
+** 
 # all of these were ported from ngaro.js, 
 # except file/io and enhanced text
-** ITEM port 0 : i/o events
+*** ITEM port 0 : i/o events
 
 Port 0 isn't connected to a device. It's just used to signal that one side or the other has data to transfer.
 
-** TODO port 1 : keyboard
-*** keyboard events
+*** TODO port 1 : keyboard
+**** keyboard events
   TYPE KeyboardEvent = SDL.TSDL_KeyboardEvent;
-*** 
+**** 
   if (ports[1] == 1 && inputMethod == 0)
   {
     ports[1] = lastKey;
@@ -583,19 +623,19 @@ Port 0 isn't connected to a device. It's just used to signal that one side or th
     return;
   }
 
-** TODO port 2 : simple text output
+*** TODO port 2 : simple text output
 
 portHandlers[2] = function()
 {
-  Term.renderChar( data.pop() );
+  Term.renderChar( data.pop );
   ports[ 2 ] = 0;
 }
 
-** SKIP port 3 : video update
+*** SKIP port 3 : video update
 
 This can probably be used for double-buffered graphics.
 
-** TODO port 4 : file i/o
+*** TODO port 4 : file i/o
 
 portHandlers[4] = function()
 {
@@ -603,140 +643,149 @@ portHandlers[4] = function()
   saveImage();
 }
 
-** TODO port 5 : querying the vm
+*** TODO port 5 : querying the vm
+#+begin_src pascal
+  
+  case vm.port[ 5 ] of
+    -1  : res := IMAGE_SIZE;
+    -2  : res := FB_EXISTS;
+    -3  : res := FB_WIDTH;
+    -4  : res := FB_HEIGHT;
+    -5  : res := data.sp;
+    -6  : res := addr.sp;
+    -7  : res := -1;
+    -8  : begin
+      {
+         var foo = new Date;
+         var unixtime_ms = foo.getTime();
+         var unixtime = parseInt(unixtime_ms / 1000);
+         res : = unixtime;
+      }
+         end;
+    -9  : res := 0;
+    -11 : res := TERM_WIDTH;
+    -12 : res := TERM_HEIGHT;
+  end;  
+    
+#+end_src
 
-portHandlers[5] = function()
-{
-  if (ports[5] == -1)
-    ports[5] = IMAGE_SIZE;
-  if (ports[5] == -2)
-    ports[5] = FB_EXISTS;
-  if (ports[5] == -3)
-    ports[5] = FB_WIDTH;
-  if (ports[5] == -4)
-    ports[5] = FB_HEIGHT;
-  if (ports[5] == -5)
-    ports[5] = data.depth();
-  if (ports[5] == -6)
-    ports[5] = address.depth();
-  if (ports[5] == -7)
-    ports[5] = -1;
-  if (ports[5] == -8)
+*** SKIP port 6 : canvas
+
+#+begin_src delphi
+  portHandlers[6] = function()
   {
-    var foo = new Date;
-    var unixtime_ms = foo.getTime();
-    var unixtime = parseInt(unixtime_ms / 1000);
-    ports[5] = unixtime;
+    switch (ports[6])
+    {
+      case 1:
+        rxCanvasSetColor(data.pop);
+        break;
+      case 2:
+        var x, y;
+        y = data.pop;
+        x = data.pop;
+        fb.fillRect(x, y, 2, 2);
+        break;
+      case 3:
+        var x, y, h, w;
+        w = data.pop;
+        h = data.pop;
+        y = data.pop;
+        x = data.pop;
+        fb.strokeRect(x, y, w, h);
+        break;
+      case 4:
+        var x, y, h, w;
+        w = data.pop;
+        h = data.pop;
+        y = data.pop;
+        x = data.pop;
+        fb.fillRect(x, y, w, h);
+        break;
+      case 5:
+        var x, y, h;
+        h = data.pop;
+        y = data.pop;
+        x = data.pop;
+        fb.fillRect(x, y, 2, h);
+        break;
+      case 6:
+        var x, y, w;
+        w = data.pop;
+        y = data.pop;
+        x = data.pop;
+        fb.fillRect(x, y, w, 2);
+        break;
+      case 7:
+        var x, y, w;
+        w = data.pop;
+        y = data.pop;
+        x = data.pop;
+        fb.beginPath;
+        fb.arc(x, y, w, 0, Math.PI*2, true);
+        fb.closePath();
+        fb.stroke();
+        break;
+      case 8:
+        var x, y, w;
+        w = data.pop;
+        y = data.pop;
+        x = data.pop;
+        fb.beginPath;
+        fb.arc(x, y, w, 0, Math.PI*2, true);
+        fb.closePath;
+        fb.fill;
+        break;
+      default:
+        // do nothing
+    }
+    ports[6] = 0;
   }
-  if (ports[5] == -9)
-    ports[5] = 0;
-  if (ports[5] == -11)
-    ports[5] = TERM_WIDTH;
-  if (ports[5] == -12)
-    ports[5] = TERM_HEIGHT;
-}
+    
+#+end_src
 
-** SKIP port 6 : canvas
 
-portHandlers[6] = function()
-{
-  switch (ports[6])
+
+*** SKIP port 7 : mouse
+
+#+begin_src delphi
+  
+  portHandlers[7] = function()
   {
-    case 1:
-      rxCanvasSetColor(data.pop());
-      break;
-    case 2:
-      var x, y;
-      y = data.pop();
-      x = data.pop();
-      fb.fillRect(x, y, 2, 2);
-      break;
-    case 3:
-      var x, y, h, w;
-      w = data.pop();
-      h = data.pop();
-      y = data.pop();
-      x = data.pop();
-      fb.strokeRect(x, y, w, h);
-      break;
-    case 4:
-      var x, y, h, w;
-      w = data.pop();
-      h = data.pop();
-      y = data.pop();
-      x = data.pop();
-      fb.fillRect(x, y, w, h);
-      break;
-    case 5:
-      var x, y, h;
-      h = data.pop();
-      y = data.pop();
-      x = data.pop();
-      fb.fillRect(x, y, 2, h);
-      break;
-    case 6:
-      var x, y, w;
-      w = data.pop();
-      y = data.pop();
-      x = data.pop();
-      fb.fillRect(x, y, w, 2);
-      break;
-    case 7:
-      var x, y, w;
-      w = data.pop();
-      y = data.pop();
-      x = data.pop();
-      fb.beginPath();
-      fb.arc(x, y, w, 0, Math.PI*2, true);
-      fb.closePath();
-      fb.stroke();
-      break;
-    case 8:
-      var x, y, w;
-      w = data.pop();
-      y = data.pop();
-      x = data.pop();
-      fb.beginPath();
-      fb.arc(x, y, w, 0, Math.PI*2, true);
-      fb.closePath();
-      fb.fill();
-      break;
-    default:
-      // do nothing
+    if (ports[7] == 1)
+    {
+      data.push(mx);
+      data.push(my);
+      ports[7] = 0;
+    }
+    if (ports[7] == 2)
+    {
+      data.push(mb);
+      ports[7] = 0;
+    }
   }
-  ports[6] = 0;
-}
+  
+#+end_src
 
-** SKIP port 7 : mouse
 
-portHandlers[7] = function()
-{
-  if (ports[7] == 1)
-  {
-    data.push(mx);
-    data.push(my);
-    ports[7] = 0;
-  }
-  if (ports[7] == 2)
-  {
-    data.push(mb);
-    ports[7] = 0;
-  }
-}
-
-** TODO port 8 : enhanced text output
-*** msg 1 : ( rc- ) row col
-*** msg 2 : ( n-  ) fg
-*** msg 3 : ( n-  ) bg
-
+*** TODO port 8 : enhanced text output
+**** msg 1 : ( rc- ) row col
+**** msg 2 : ( n-  ) fg
+**** msg 3 : ( n-  ) bg
 
 
 * SECTION assembler
 
-* SECTION ui loop
-#+name: @uicode
+* SECTION virtual terminal
+#+name: @vtcode
 #+BEGIN_SRC delphi
-procedure  
+  
+  constructor ngarovt.init;
+  begin
+  end;
+
+  constructor hardware.init;
+  begin
+  end;
   
 #+END_SRC
 
