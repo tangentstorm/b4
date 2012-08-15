@@ -108,7 +108,6 @@
   
 #+END_SRC
 
-
 * SECTION stacks
 ** DEF init
 #+name: @stack
@@ -234,7 +233,6 @@
 
 #+end_src
 
-
 * SECTION processor
 ** DEF init
 #+name: @vmcode
@@ -343,7 +341,6 @@
     end;
     
 #+end_src
-
 
 * SECTION opcode implementations
 ** DEF runop/tn() : move ~data.tos~ and ~data.nos~ into ~t~ and ~n~
@@ -504,7 +501,6 @@
 
 #+end_src
 
-
 * SECTION debugger (pascal-hosted)
 ** opcode names
 #+name: @opcodes
@@ -584,7 +580,6 @@
   end;
 
 #+end_src
-
 
 * SECTION devices
 ** general hardware
@@ -670,7 +665,6 @@ portHandlers[4] = function()
 #+end_src
 
 *** SKIP port 6 : canvas
-
 #+begin_src delphi
   portHandlers[6] = function()
   {
@@ -743,10 +737,7 @@ portHandlers[4] = function()
     
 #+end_src
 
-
-
 *** SKIP port 7 : mouse
-
 #+begin_src delphi
   
   portHandlers[7] = function()
@@ -766,15 +757,12 @@ portHandlers[4] = function()
   
 #+end_src
 
-
 *** TODO port 8 : enhanced text output
 **** msg 1 : ( rc- ) row col
 **** msg 2 : ( n-  ) fg
 **** msg 3 : ( n-  ) bg
 
-
 * SECTION assembler
-
 * SECTION virtual terminal
 #+name: @vtcode
 #+BEGIN_SRC delphi
@@ -788,4 +776,5 @@ portHandlers[4] = function()
   end;
   
 #+END_SRC
+
 
