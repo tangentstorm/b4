@@ -1,5 +1,5 @@
-main: ok
-	./ok
-ok: ok.pas
-	gpc --automake ok.pas -o ok
+main: b4
+	./b4
+b4: b4.pas
+	gpc --automake b4.pas -o b4
 
