@@ -18,63 +18,64 @@ interface
 
 const
    
-   { opcodes }
+  { opcodes }
   
-   oNOP	= $0; oCMP = $1; oELS = $2; oJMP = $3;
-   oGET	= $4; oPUT = $5; oINC = $6; oDEC = $7;
-   oPSH	= $8; oPOP = $9; oSWP = $a; oDUP = $b;
-   oXOR	= $c; oAND = $d; oNOT = $e; oSHR = $f;
+  oNOP = $0; oCMP = $1; oELS = $2; oJMP = $3;
+  oGET = $4; oPUT = $5; oINC = $6; oDEC = $7;
+  oPSH = $8; oPOP = $9; oSWP = $a; oDUP = $b;
+  oXOR = $c; oAND = $d; oNOT = $e; oSHR = $f;
    
-   { registers }
+  { registers }
    
-   IP = $00;
-   P1 = $01; P2 = $02; P3 = $03; P4 = $04;
-   IO = $09;
-   A  = $0A; B = $0B; C = $0C; D = $0D; E = $0E; F = $0F;
-      
-   { offset of stacks and special memory locations }
+  IP = $00;
+  P1 = $01; P2 = $02; P3 = $03; P4 = $04;
+  IO = $09;
+  
+  A = $0A; B = $0B; C = $0C; D = $0D; E = $0E; F = $0F;
+  
+  { offset of stacks and special memory locations }
+  
+  ADDR = $10; R = $17;
+  DATA = $18; T = $18; N = $19;
    
-   ADDR = $10; R = $17;
-   DATA = $18; T = $18; N = $19;
+  IBUF = $20;
+  OBUF = $F0;
+  BUFSIZE = 16; { including a 1 byte count / status }
    
-   IBUF = $20;
-   OBUF = $F0;
-   BUFSIZE = 16; { including a 1 byte count / status }
-   
-   CODE = $30;
-   MISC = $80;
-   
+  CODE = $30;
+  MISC = $80;
+  
 type
    
-   memory = array [ 0 .. 255 ] of byte;
+  memory = array [ 0 .. 255 ] of byte;
        
-   { vm.core - as in "cpu core" } 
-   core = object
+  { vm.core - as in "cpu core" } 
+  core = object
      
-     ram : memory;
+    ram : memory;
            
-     constructor init;
+    constructor init;
      
-     { runtime interface for b4 mainloop }
-     procedure boot;
-     procedure tick;
-     procedure send ( x : byte );
-     
-     function active : boolean;
-     function ready  : boolean; { ready for input? }
-     
-     { serialization }
-     procedure load ( var state : memory );
-     procedure dump ( var state : memory );
-     
-     { right and left shift of blocks of ram for stacks, io }
-     function rshift ( off, num, amt : byte; wrap : boolean ) : byte;
-     function lshift ( off, num, amt : byte; wrap : boolean ) : byte;
-      
-   end;
-   
+    { runtime interface for b4 mainloop }
+    procedure boot;
+    procedure tick;
+    procedure send ( x : byte );
+    
+    function active : boolean;
+    function ready  : boolean; { ready for input? }
+    
+    { serialization }
+    procedure load ( var state : memory );
+    procedure dump ( var state : memory );
+    
+    { right and left shift of blocks of ram for stacks, io }
+    function rshift ( off, num, amt : byte; wrap : boolean ) : byte;
+    function lshift ( off, num, amt : byte; wrap : boolean ) : byte;
+    
+  end;
+  
 { ------------------------------------------------- }
-   
+  
 implementation
 
 constructor core.init;
