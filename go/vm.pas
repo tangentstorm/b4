@@ -46,37 +46,30 @@ const
    
 type
    
-   flag = ( idle, active, waiting, blocked, error );
-   flags = set of flag;
-   
    memory = array [ 0 .. 255 ] of byte;
        
    { vm.core - as in "cpu core" } 
    core = object
-      
-      constructor init;
-      
-      { runtime interface for b4 mainloop }
-      procedure boot;
-      procedure tick;
-      procedure send ( x : byte );
-      function active : boolean;
-      function ready  : boolean; { ready for input? }
-      
-      { serialization }
-      procedure load ( var state : memory );
-      procedure dump ( var state : memory );
-      
-      { information / support }
-      function flags  : flags;
-      
-   private
-      
-      ram : memory;
-      
-      { right and left shift of blocks of ram for stacks, io }
-      function rshift ( off, num, amt : byte; wrap : boolean ) : byte;
-      function lshift ( off, num, amt : byte; wrap : boolean ) : byte;
+     
+     ram : memory;
+           
+     constructor init;
+     
+     { runtime interface for b4 mainloop }
+     procedure boot;
+     procedure tick;
+     procedure send ( x : byte );
+     
+     function active : boolean;
+     function ready  : boolean; { ready for input? }
+     
+     { serialization }
+     procedure load ( var state : memory );
+     procedure dump ( var state : memory );
+     
+     { right and left shift of blocks of ram for stacks, io }
+     function rshift ( off, num, amt : byte; wrap : boolean ) : byte;
+     function lshift ( off, num, amt : byte; wrap : boolean ) : byte;
       
    end;
    
@@ -108,7 +101,7 @@ end;
 { -- queries -- }
 
 function core.active : boolean;
-{ To deactivate a core, simply set its IP to 0 }
+  { To deactivate a core, simply set its IP to 0 }
 begin   
   result := self.ram[ IP ] <> 0;
 end;
@@ -117,11 +110,6 @@ function core.ready : boolean;
   { Returns true unless the input buffer is full. }
 begin   
   result := self.ram[ IBUF ] <= BUFSIZE;
-end;
-
-function core.flags : flags;
-begin
-  result := [ ];
 end;
 
 { -- serialization -- }
@@ -142,7 +130,7 @@ begin
   copy_memory ( self.ram, state );
 end;
 
-{ -- private -- }
+{ -- semi-private -- }
 
 function core.rshift ( off, num, amt : byte; wrap : boolean ) : byte;
   var tmp : byte;
