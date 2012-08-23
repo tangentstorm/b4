@@ -1,3 +1,13 @@
+{
+| b4 mainloop :
+|
+|   creates 256 vm instances and runs continuously
+|   until they all shut down.
+|
+| -------------------------------------------------
+| copyright (c) 2012 michal j. wallace
+| see LICENSE.org for usage information
+}
 program b4;
 uses vm;
 
