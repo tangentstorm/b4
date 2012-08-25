@@ -1,5 +1,5 @@
 *~
 *.o
 *.gpi
-go/b4
-go/test_b4
+*.exe
+
