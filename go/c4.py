@@ -16,93 +16,90 @@ class PType(object):
     def __init__(self, *args):
         args = args
 
-Str = str
 class IO( PType ): "IO monad from haskell"
 class Maybe( PType ): "maybe monad from haskell"
 class Def( PType ): "a type marker for definitions"
+class Seq( PType ): "a type marker for sequences (list / array)"
+Str = str
 Int = int
 Tok = int # a word id..  token as in "token-threaded code"
 Nil = type( None )
-Kind= str
+Sig = Seq( str )
 
 ## global variables ############################################
 
-g_data = []
-g_addr = []
-g_dict = {}
-g_defs = []
-g_keyw = []
-g_this = None # the current definition
-
+g_defs = [] # the list of definitions
+g_dict = {} # index of g_dict for speedy lookups
+g_data = [] # runtime data stack
+g_addr = [] # runtime address / return stack
 
 ## the compiler ################################################
 
-def new_word( word:Str, kind:Maybe( Kind ), data:[ Tok ] ) -> IO( Def ):
+def new_word( word:Str, sig:Maybe( Sig ), data:[ Tok ] ) -> IO( Def ):
     """
     returns a new definition object, saving it to the dictionary as a side effect
     """
     assert type( data ) 
-    data = { 'id': len( g_defs ), 'word': word, 'kind': kind, 'data': data }
+    data = { 'id': len( g_defs ), 'word': word, 'sig': sig, 'data': data }
     g_defs.append( data )
     g_dict[ word ] = data
     return data
 
-def set_kind( word:Str, kind:Maybe( Kind )) -> IO( Nil ):
+def set_sig( word:Str, sig:Maybe( Sig )) -> IO( Def ):
     if not word in g_dict:
-        g_dict[ word ] = new_word( word, kind, [] )
+        g_dict[ word ] = new_word( word, sig, [] )
     else:
         data = g_dict[ word ]
-        if data[ 'kind' ] is not None:
-            assert kind == data['kind'], "kind of %s is %s but comment said %s" \
-                % ( word, g_dict['kind'], kind )
+        if data[ 'sig' ] is not None:
+            assert sig == data['sig'], "sig of %s is %s but comment said %s" \
+                % ( word, g_dict[ 'sig' ], sig )
+    return g_dict[ word ]
 
-def execute( word:Str ) -> IO( Nil ):
+def execute( word:Str, word_gen ) -> IO( Nil ):
     logging.error( 'cannot execute unknown word: %s' % word )
-
-def compile( word:Str ) -> IO( Nil ):
-    wid = get_id( word )
-    g_this[ 'data' ].append( wid )
 
 def get_id( word ) -> IO( Tok ):
     if not word in g_dict:
         g_dict[ word ] = new_word( word, None, [] )
     return g_dict[ word ][ 'id' ]
 
-def run( line_gen ) -> IO( Nil ):
-    global g_this
+def tokenize( line_gen ) -> IO( Nil ):
     for line in line_gen:
-        words = shlex.split( line, comments=True )
-        if not words: continue
-        j = 0 ; prev = None
-        while j < len( words ):
-            word = words[ j ]
-            logging.debug( 'found word: %s' % word  );
-            if word == '!def':
-                j += 1
-                g_this = new_word( words[ j ], None, [] )
-                continue
-            elif word == '::':
-                assert prev is not None, ':: must follow a word'
-                set_kind( prev, words[ j : ] )
-                prev = None
-                break
-            elif word[ 0 ].isdigit( ):
-                literal( word )
-            elif word[ 0 ] == '"':
-                string( word )
-            elif g_this is None or word[0] in [ '!', ':', ';' ]:
-                execute( word )
-            else:
-                compile( word )
-            prev = word
-            j += 1
+        for word in shlex.split( line, comments=True ):
+            yield word
 
-def main() -> IO( Nil ):
-    if len( sys.argv ) == 1:
-        run( sys.stdin )
-    else:
-       for filename in sys.argv[ 1 : ]:
-           run( open( filename ))
+def read_sig( prev, word_gen ) -> IO( ):
+    assert prev is not None, ':: must follow a word'
+    sig = []
+    for word in word_gen:
+        if word == ';:' :
+            set_sig( prev, sig )
+            break
+        else: sig.append( word )
+        
+def read_def( word_gen ) -> IO( ):
+    iden = next( word_gen )
+    this = new_word( iden, None, [] )
+    prev = iden
+    for word in word_gen:
+        # compile
+        if word == '::': read_sig( prev, word_gen )
+        elif word[ 0 ] in [ ':', ';' ]: execute( word, word_gen )
+        else: this[ 'data' ].append( get_id( word ))
+        prev = word # so we can create signatures inline for unknown words
 
+def eval_loop( word_gen ) -> IO( ):
+    for word in word_gen:
+        logging.debug( 'found word: %s' % word  );
+        if   word == ':def' : read_def( word_gen )
+        elif word[ 0 ].isdigit( ) : literal( word )
+        elif word[ 0 ] == '"' : string( word )
+        else : execute( word )
+
+def main( ) -> IO( Nil ):
+    if len( sys.argv ) == 1: source = sys.stdin
+    else: source = ( open( sys.argv[ 1 ]))
+    eval_loop( tokenize( source ))
+    
 if __name__ == '__main__':
-    main()
+    main( )
