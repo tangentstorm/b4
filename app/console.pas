@@ -1,14 +1,22 @@
-unit Console; 
+unit Console;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs; 
+  Classes, SysUtils, sqlite3conn, FileUtil, Forms, Controls, Graphics, Dialogs,
+  StdCtrls, Menus;
 
 type
-  TForm1 = class(TForm)
+
+  { TConsoleForm }
+
+  TConsoleForm = class(TForm)
+    dbc: TSQLite3Connection;
+    Chars: TMemo;
+    procedure FormCreate(Sender: TObject);
+    procedure FormResize(Sender: TObject);
   private
     { private declarations }
   public
@@ -16,11 +24,24 @@ type
   end; 
 
 var
-  Form1: TForm1; 
+  ConsoleForm: TConsoleForm;
 
 implementation
 
 {$R *.lfm}
+
+{ TConsoleForm }
+
+procedure TConsoleForm.FormCreate(Sender: TObject);
+begin
+
+end;
+
+procedure TConsoleForm.FormResize(Sender: TObject);
+begin
+  self.Chars.Width := self.Width;
+  self.Chars.Height := self.Height;
+end;
 
 end.
 

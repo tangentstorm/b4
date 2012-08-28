@@ -29,10 +29,14 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="1">
+    <RequiredPackages Count="2">
       <Item1>
-        <PackageName Value="LCL"/>
+        <PackageName Value="SQLDBLaz"/>
+        <MinVersion Major="1" Release="1" Valid="True"/>
       </Item1>
+      <Item2>
+        <PackageName Value="LCL"/>
+      </Item2>
     </RequiredPackages>
     <Units Count="2">
       <Unit0>
@@ -44,20 +48,37 @@
       <Unit1>
         <Filename Value="console.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="Form1"/>
+        <ComponentName Value="ConsoleForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Console"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
+        <TopLine Value="8"/>
+        <CursorPos X="44" Y="23"/>
         <UsageCount Value="20"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
     </Units>
-    <JumpHistory Count="0" HistoryIndex="-1"/>
+    <JumpHistory Count="4" HistoryIndex="3">
+      <Position1>
+        <Filename Value="console.pas"/>
+        <Caret Line="1" Column="7" TopLine="1"/>
+      </Position1>
+      <Position2>
+        <Filename Value="console.pas"/>
+        <Caret Line="45" Column="35" TopLine="9"/>
+      </Position2>
+      <Position3>
+        <Filename Value="console.pas"/>
+        <Caret Line="44" Column="35" TopLine="9"/>
+      </Position3>
+      <Position4>
+        <Filename Value="console.pas"/>
+        <Caret Line="43" Column="35" TopLine="8"/>
+      </Position4>
+    </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="9"/>
