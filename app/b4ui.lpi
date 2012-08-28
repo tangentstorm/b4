@@ -53,19 +53,20 @@
         <Filename Value="console.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="ConsoleForm"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Console"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="18"/>
-        <CursorPos X="3" Y="62"/>
+        <TopLine Value="1"/>
+        <CursorPos X="18" Y="4"/>
         <UsageCount Value="22"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
     </Units>
-    <JumpHistory Count="24" HistoryIndex="23">
+    <JumpHistory Count="25" HistoryIndex="24">
       <Position1>
         <Filename Value="console.pas"/>
         <Caret Line="1" Column="7" TopLine="1"/>
@@ -162,10 +163,14 @@
         <Filename Value="console.pas"/>
         <Caret Line="53" Column="32" TopLine="17"/>
       </Position24>
+      <Position25>
+        <Filename Value="console.pas"/>
+        <Caret Line="62" Column="3" TopLine="18"/>
+      </Position25>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
-    <Version Value="9"/>
+    <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
       <Filename Value="b4ui"/>

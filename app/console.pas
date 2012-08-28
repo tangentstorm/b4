@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, sqlite3conn, FileUtil, Forms, Controls, Graphics, Dialogs,
-  StdCtrls, Menus, SynMemo, SynEdit;
+  StdCtrls, Menus, SynEdit;
 
 type
 
