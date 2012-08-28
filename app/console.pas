@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, sqlite3conn, FileUtil, Forms, Controls, Graphics, Dialogs,
-  StdCtrls, Menus;
+  StdCtrls, Menus, SynMemo, SynEdit;
 
 type
 
@@ -14,9 +14,12 @@ type
 
   TConsoleForm = class(TForm)
     dbc: TSQLite3Connection;
-    Chars: TMemo;
+    term: TSynEdit;
+    procedure CharsChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure termChange(Sender: TObject);
+    procedure rhsChange(Sender: TObject);
   private
     { private declarations }
   public
@@ -37,10 +40,26 @@ begin
 
 end;
 
+procedure TConsoleForm.CharsChange(Sender: TObject);
+begin
+
+end;
+
 procedure TConsoleForm.FormResize(Sender: TObject);
 begin
-  self.Chars.Width := self.Width;
-  self.Chars.Height := self.Height;
+  self.term.Width := self.Width;
+  self.term.Height := self.Height;
+  self.term.ScrollBars:= ssNone;
+end;
+
+procedure TConsoleForm.termChange(Sender: TObject);
+begin
+
+end;
+
+procedure TConsoleForm.rhsChange(Sender: TObject);
+begin
+
 end;
 
 end.
