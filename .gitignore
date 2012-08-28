@@ -3,4 +3,5 @@
 *.gpi
 *.exe
 app/backup
+app/lib
 
