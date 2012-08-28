@@ -1,6 +1,6 @@
 #+TITLE: b4.00 : tasklist
 
-* DONE [4/4] get a single pixel to display on pascal/sdl vm
+* DONE [4/4] get a single pixel to display over ngaro.js
 ** DONE pixel.rx : draw a red pixel on the screen                       :rx:
 
 We'll do this in retro first, so we know our vm works.
@@ -222,7 +222,7 @@ ok
 ** TODO click  : click screen to change color                          :nga:
 ** TODO keys   : press any key to change color                         :nga:
 ** TODO hello  : show the word hello                                   :nga:
-** TODO caps   : letters on screen (lowercase)                         :nga:
+** TODO caps   : letters on screen (uppercase)                         :nga:
 ** TODO shift  : captital letters / shift key                          :nga:
 ** TODO color  : colored text input                                    :nga:
 ** TODO read   : read a file from disk                                 :nga:
