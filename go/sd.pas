@@ -59,7 +59,7 @@ procedure tDrive.load ( i : integer; var b : tBlock );
 begin
   log.debug( 'load' );
   reset( mFile );
-  seek( mFile, self.block_count );
+  seek( mFile, i );
   read( mFile, b );
   close( mFile );
 end;
@@ -76,14 +76,14 @@ end;
 
 function tDrive.block_count ( ) : cardinal;
 begin
+  append( mFile );
   block_count := filesize( mFile );
+  close( mFile );
 end;
 
 function tDrive.byte_count ( ) : cardinal;
 begin
-  reset( mFile );
-  byte_count := filesize( mFile ) * sizeof( empty_block );
-  close( mFile );
+  byte_count := self.block_count * sizeof( empty_block );
 end;
 
 destructor tDrive.done ( );
