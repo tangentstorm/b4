@@ -10,19 +10,14 @@ unit sd;
 interface
 
 type
-  tLine = string[ 64 ];
-  tBlock = record
-    head : tLine;
-    body : array [ 0..16 ] of tLine;
-  end;
-  
+  tBlock = array [ 0..1023 ] of byte;
   tDrive = object
     constructor init ( path : string );
-    procedure   load ( n : integer; var b : tBlock );
-    procedure   save ( n : integer; var b : tBlock );
-    procedure   grow ( var b : tBlock );
-    function  size ( ) : cardinal;
-    destructor  done ( );
+    procedure grow ( n : byte );
+    procedure load ( i : integer; var b : tBlock );
+    procedure save ( i : integer; var b : tBlock );
+    function size ( ) : cardinal;
+    destructor done ( );
   private
     mPath : string[ 96 ];
     mFile : file of tBlock;
@@ -33,6 +28,8 @@ var main : tDrive;
 implementation
 
 const disk = 'tBlocks.b4sd';
+const kBlockSize = 1024;
+var empty_block : tblock;
 
 constructor tDrive.init( path : string );
 begin
@@ -40,22 +37,26 @@ begin
   assign( mFile, path );
   rewrite( mFile );
 end;
-  
-procedure tDrive.load ( n : integer; var b : tBlock );
+
+procedure tDrive.grow ( n : byte );
+var i : cardinal;
+begin
+  seek( mFile, self.size );
+  for i := 1 to n do write( mFile, empty_block );
+  flush( mFile );
+end;
+
+procedure tDrive.load ( i : integer; var b : tBlock );
 begin
 end;
 
-procedure tDrive.save ( n : integer; var b : tBlock );
-begin
-end;
-
-procedure tDrive.grow ( var b : tBlock );
+procedure tDrive.save ( i : integer; var b : tBlock );
 begin
 end;
 
 function tDrive.size ( ) : cardinal;
 begin
-  size := filesize( mFile );
+  size := filesize( mFile ) * sizeof( empty_block );
 end;
 
 destructor tDrive.done ( );
@@ -63,5 +64,8 @@ begin
   close( mFile );
 end;
 
+var i : integer;
 begin
+  for i := 0 to kBlockSize - 1 do
+    empty_block[ i ] := 0;
 end.

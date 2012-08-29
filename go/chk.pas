@@ -24,20 +24,29 @@ begin
   halt;
 end;
 
+function peek( pred : boolean ) : boolean;
+begin
+  inc( count );
+  peek := pred;
+end;
+
 procedure test( pred : boolean; const msg : str );
 begin
-  if pred then pass else fail( msg );
-  inc( count );
+  if peek( pred ) then pass else fail( msg );
 end;
 
 procedure equal(a, b : int; const msg : str );
 begin
-  test( a = b, msg );
+  if not peek( a = b ) then
+    begin
+      writeln;
+      write( a, '<>', b );
+      fail( msg );
+    end;
 end;
 
 procedure report;
 begin
-  writeln;
   writeln;
   write( count );
   writeln( ' tests passed.' );
