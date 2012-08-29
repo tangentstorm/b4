@@ -27,12 +27,13 @@ end;
 function peek( pred : boolean ) : boolean;
 begin
   inc( count );
+  if pred then pass;
   peek := pred;
 end;
 
 procedure test( pred : boolean; const msg : str );
 begin
-  if peek( pred ) then pass else fail( msg );
+  if not peek( pred ) then fail( msg );
 end;
 
 procedure equal(a, b : int; const msg : str );

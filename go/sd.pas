@@ -13,59 +13,85 @@ type
   tBlock = array [ 0..1023 ] of byte;
   tDrive = object
     constructor init ( path : string );
+    procedure wipe;
     procedure grow ( n : byte );
     procedure load ( i : integer; var b : tBlock );
     procedure save ( i : integer; var b : tBlock );
-    function size ( ) : cardinal;
+    function block_count : cardinal;
+    function byte_count : cardinal;
     destructor done ( );
   private
-    mPath : string[ 96 ];
     mFile : file of tBlock;
   end;
   
 var main : tDrive;
 
 implementation
+uses log;
 
 const disk = 'tBlocks.b4sd';
-const kBlockSize = 1024;
 var empty_block : tblock;
 
 constructor tDrive.init( path : string );
 begin
-  mPath := path;
+  log.debug( 'init' );
   assign( mFile, path );
-  rewrite( mFile );
 end;
+
+procedure tDrive.wipe;
+begin
+  log.debug( 'wipe' );
+  rewrite( mFile ); // truncates to 0 
+  close( mFile );
+end;
+
 
 procedure tDrive.grow ( n : byte );
 var i : cardinal;
 begin
-  seek( mFile, self.size );
+  log.debug( 'grow' );
+  append( mFile );
   for i := 1 to n do write( mFile, empty_block );
-  flush( mFile );
+  close( mFile );
 end;
 
 procedure tDrive.load ( i : integer; var b : tBlock );
 begin
+  log.debug( 'load' );
+  reset( mFile );
+  seek( mFile, self.block_count );
+  read( mFile, b );
+  close( mFile );
 end;
 
 procedure tDrive.save ( i : integer; var b : tBlock );
 begin
+  log.debug( 'save' );
+  rewrite( mFile );
+  reset( mFile );
+  seek( mFile, i );
+  write( mFile, b );
+  close( mFile );
 end;
 
-function tDrive.size ( ) : cardinal;
+function tDrive.block_count ( ) : cardinal;
 begin
-  size := filesize( mFile ) * sizeof( empty_block );
+  block_count := filesize( mFile );
+end;
+
+function tDrive.byte_count ( ) : cardinal;
+begin
+  reset( mFile );
+  byte_count := filesize( mFile ) * sizeof( empty_block );
+  close( mFile );
 end;
 
 destructor tDrive.done ( );
 begin
-  close( mFile );
 end;
 
 var i : integer;
 begin
-  for i := 0 to kBlockSize - 1 do
+  for i := 0 to sizeof( empty_block ) - 1 do
     empty_block[ i ] := 0;
 end.

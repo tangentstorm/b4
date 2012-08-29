@@ -8,14 +8,16 @@ begin
 
   { constructor } 
   drive.init( 'test_sd.b4sd' );
-  chk.equal( drive.size, 0,
+  drive.wipe;
+  chk.equal( drive.byte_count, 0,
 	    'drive should be empty' );
 
   { load }
   drive.grow( 1 );
-  chk.equal( drive.size, 1024,
+  chk.equal( drive.byte_count, 1024,
 	    'file should be 1K after grow' );
 
+  drive.done;
   report;
 
 end.
