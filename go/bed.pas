@@ -8,17 +8,18 @@
 | see LICENSE.org for usage information
 }
 program bed;
-uses crt, gpcutil;
+uses crt, gpcutil, sd, log;
 
 const
   kw = 64;
-  kh = 32;
+  kh = 16;
   ks = kw * kh;
 
 var
-  gbuf  : array [ 0 .. ks ] of char;
+  gDrive : sd.tDrive;
+  gBuf : sd.tBlock;
   gx, gy : byte;
-  gdone : boolean;
+  gDone	 : boolean;
 
 procedure handle_key;
 var
@@ -70,9 +71,11 @@ begin
                    dec( gx );
                    crt.gotoxy( gx, gy );
                    crt.writechar( ' ' );
+                   gBuf[ (( gy - 1 ) * 64 ) + ( gx - 1 ) ] := 32; 
                  end;
   else
     begin
+      gBuf[ (( gy - 1 ) * 64 ) + ( gx - 1 ) ] := ord( key ); 
       crt.writechar( key );
       inc( gx );
     end;
@@ -88,47 +91,65 @@ begin
   gy := min( kh, max( gy, 1 )); { 2 because of title bar }
 end;
 
-procedure load( buf : array of char );
-var x, y : byte;
+
+procedure write_line( lineno : integer; txtcolor, symcolor : byte );
+var i, b : byte;
 begin
+  for i := 0 to kw-1 do
+  begin
+    b := gBuf[ ( lineno * kw ) + i ];
+    if b < 32 then begin
+      crt.textattr := symcolor;
+      write( ' ' );
+    end
+    else begin
+      crt.textattr := txtcolor;
+      write( chr( b ) );
+    end;
+  end;
 end;
 
-procedure init;
+
+procedure load_data;
+begin
+  log.level := log.lvl_debug;
+  gDrive.init( 'blocks.sd' );
+  if gDrive.block_count = 0 then gDrive.grow( 1 );
+  gDrive.load( 0, gBuf );
+end;
+
+procedure save_data;
+begin
+  gDrive.save( 0, gBuf );
+end;
+
+procedure init_view;
 var y : byte;
 begin
+
   crt.textattr := $17;
   crt.clrscr;
   
-  { title bar }
-  crt.gotoxy( 1, 1 );
-  crt.textattr := $70;
-  write( 'bed : << filename should go here >>' );
-  crt.clreol;
-
-  for y := 1 to kh do
+  for y := 0 to 15 do
     begin
-      
-      if y <> 1 then
-        begin
-          crt.textattr := $07;
-          crt.gotoxy( 1, y);
-          crt.clreol;
-        end;
-      crt.gotoxy( 65, y);
+      crt.gotoxy( 1, y+1 );
+      if y = 0 then write_line( y, $70, $60 )
+      else write_line( y, $07, $40 );
       crt.textattr := $13;
       write( '|' );
       crt.clreol;
     end;
   crt.textattr := $07;
+  gx := 1; gy := 2;
 end;
 
 
 begin
-  init;
-  load( gbuf );
-  gx := 1; gy := 2;
+  load_data;
+  init_view;
   repeat
      crt.gotoxy( gx, gy );
      if crt.keypressed then handle_key;
-   until gdone;
+  until gdone;
+  save_data;
 end.
