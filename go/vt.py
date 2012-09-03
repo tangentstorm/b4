@@ -12,13 +12,17 @@ pg.init()
 
 scr = pg.display.set_mode(( vw, vh ), pg.SWSURFACE | pg.FULLSCREEN )
 pal = [ pg.Color( hex( v )) for v in xc.pal ]
-
+cwk = dict( zip ( 'krgybmcwKRGYBMCW', range( 16 ))) # codes for cwrite routine
 font = dosfont.data
 chbuf = pg.Surface(( fw , fh ))
-fg = 7
-bg = 0
-cx = 0
-cy = 0
+
+class g:
+    # module namespace
+    fg = 7
+    bg = 0
+    cx = 0
+    cy = 0
+    xy_stack = []
 
 def draw_char( ch, fg, bg ):
     rows = font[ ord( ch ) % 255  ]
@@ -27,57 +31,96 @@ def draw_char( ch, fg, bg ):
             if row & (1 << x): px = fg
             else: px = bg
             chbuf.set_at(( 7-x, y ), px )
-    scr.blit( chbuf, pg.Rect( cx * fw, cy * fh, 8, 16 ))
+    scr.blit( chbuf, pg.Rect( g.cx * fw, g.cy * fh, 8, 16 ))
 
-def cx_inc( ):
-    global cx, cy
-    cx += 1
-    if cx > tw : cx, cy = 0, cy + 1
-    if cy > th : pass # TODO scroll window up
+def inc_cx( ):
+    g.cx += 1
+    if g.cx > tw : g.cx, g.cy = 0, g.cy + 1
+    if g.cy > th : pass # TODO scroll window up
 
 def write( s ):
     for ch in s:
-        draw_char( ch, xc.pal[ fg ], xc.pal[ bg ])
-        cx_inc()
+        draw_char( ch, xc.pal[ g.fg ], xc.pal[ g.bg ])
+        inc_cx()
+
+def fg( c ):
+    g.fg = c
 
 def xyc_write( x, y, c, s ):
-    global cx; cx = x
-    global cy; cy = y
-    global fg; fg = c
+    g.cx = x
+    g.cy = y
+    g.fg = c
     write( s )
 
+def push_xy( ):
+    g.xy_stack.append(( g.cx, g.cy ))
+
+def pop_xy( ):
+    ( g.cx, g.cy ) = g.xy_stack.pop( )
+
+
+###############
+
 def color_test( ):
-    global cx, cy, bg, fg
 
     write( "cwrite() color codes: " )
-    fg = 0
     for ch in 'krgybmcwKRGYBMCW':
+        fg( cwk[ ch ])
         write( ch )
-        fg = fg + 1
+        g.fg = g.fg + 1
 
-    cx, cy = 64, 0
-    bg =   8; xyc_write( 64, 0, 0, "black on 0x08" )
-    bg =   7; xyc_write( 64, 1, 0, "black on 0x07" )
-    bg = 255; xyc_write( 64, 2, 0, "black on 0xff" )
-    bg =  15; xyc_write( 64, 3, 0, "black on 0x0f" )
-    bg = 0
+    g.cx, g.cy = 64, 0
+    g.bg =   8; xyc_write( 64, 0, 0, "black on 0x08" )
+    g.bg =   7; xyc_write( 64, 1, 0, "black on 0x07" )
+    g.bg = 255; xyc_write( 64, 2, 0, "black on 0xff" )
+    g.bg =  15; xyc_write( 64, 3, 0, "black on 0x0f" )
+    g.bg = 0
 
     for x in range( 16 ):
         for y in range( 16 ):
-            cx = 10 + x * 3
-            cy = 10 + y
-            fg = y * 16 + x
-            write( "%02X" % fg )
+            g.cx = 10 + x * 3
+            g.cy = 10 + y
+            g.fg = y * 16 + x
+            write( "%02X" % g.fg )
 
-def main( ):            
+
+kbstate = [
+    ( pg.KMOD_SHIFT  , 'shf' , 'SHF' ),
+    ( pg.KMOD_CTRL   , 'ctl' , 'CTL' ),
+    ( pg.KMOD_ALT    , 'alt' , 'ALT' ),
+    ( pg.KMOD_META   , 'mta' , 'MTA' ),
+    ] 
+
+def test( ):
+    color_test()
     done = False
     while not done :
+        mods = pg.key.get_mods()
         for e in pg.event.get( ) :
             if e.type == pg.QUIT : done = True
-            if e.type == pg.KEYDOWN : done = True
+            if e.type == pg.KEYDOWN :
+                if e.key == pg.K_ESCAPE: done = True
+                elif e.key == pg.K_c and mods & pg.KMOD_CTRL: done = True
+                else:
+                    xyc_write( 0, 4, cwk[ 'K' ], 'last keypress: ' )
+                    push_xy( )
+                    fg( cwk[ 'w' ])
+                    write( ' ' * 16 )
+                    pop_xy( )
+                    write( pg.key.name( e.key ))
+
+        xyc_write( 0, 5, cwk[ 'K' ], 'keyboard state: ' )
+
+        for k in kbstate:
+            fg( cwk['w'])
+            if mods & k[ 0 ] :
+                fg( cwk['G'])
+                write( k[ 2 ])
+            else: write( k[ 1 ])
+            write( ' ' )
+        
         pg.display.flip( )
     pg.quit()
 
 if __name__=="__main__":
-    color_test()
-    main()
+    test()
