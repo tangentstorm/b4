@@ -101,18 +101,19 @@
     (apply 'nconc (mapcar (lambda (alist) (apply facewords alist))
                           faceword-alist))))
 
-(assert (equal 
-         '(("\\<\\+\\>" . 'f0)
-           ("\\<b\\>" . 'f0)
-           ("\\<c\\>" . 'f0) 
-           ("\\<x\\>" . 'f1)
-           ("\\<y\\>" . 'f1)
-           ("\\<z\\>" . 'f1))
-          (make-facewords 
-           '(('f0 (+ b c))
-             ('f1 ("x" "y" "z"))))))
-(assert (equal '(("\\<[a-z]+:\\>" quote f0))
-               (make-facewords '(('f0 ("[a-z]+:" ))))))
+(when (boundp 'assert)
+  (assert (equal 
+	   '(("\\<\\+\\>" . 'f0)
+	     ("\\<b\\>" . 'f0)
+	     ("\\<c\\>" . 'f0) 
+	     ("\\<x\\>" . 'f1)
+	     ("\\<y\\>" . 'f1)
+	     ("\\<z\\>" . 'f1))
+	   (make-facewords 
+	    '(('f0 (+ b c))
+	      ('f1 ("x" "y" "z"))))))
+  (assert (equal '(("\\<[a-z]+:\\>" quote f0))
+		 (make-facewords '(('f0 ("[a-z]+:" )))))))
 
 
 ;----------------------------------------------------------
