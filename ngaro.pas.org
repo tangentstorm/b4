@@ -1,67 +1,9 @@
 #+TITLE: ngaro implementation in free pascal
 
-* PROGRAM ~ngaro.pas~
-#+begin_src pascal :tangle "gen/ngaro.pas" :noweb tangle
-  {$ifdef FPC}{$mode objfpc}{$endif}
-
-  program ngaro;
-  uses crt;
-
-  type int32 = longint;
-
-  <<@vtcode>>
-  <<@devices>>
-
-  var vm : ng.ngarovm;
-  var vt : ngarovt;
-  begin
-    vt.init;
-    vm.init;
-    vm.loop;
-  end.
-#+end_src
-
-* MODULE ng : ngaro virtual machine
-#+begin_src pascal :tangle "gen/ng.pas" :noweb tangle
-unit ng;
-
-interface
-
-  <<@interface>>
-
-implementation
-  <<@opcodes>>
-  <<@stack>>
-  <<@vmcode>>
-end.
-#+end_src
-
-* MODULE ~st~ : stack machine
-#+begin_src pascal :tangle "gen/stacks.pas" :noweb tangle
-{ simple stack object }
-unit stacks;
-
-interface
-
-  <<stack:inface>>
-
-implementation
-
-  <<stack:impl>>
-
-begin
-end.
-#+end_src
-
-* MODULE ~vt~
-#+begin_src pascal :tangle "gen/vt.pas" :noweb tangle
-#+end_src
-
 * OVERVIEW :
 ** TYPE stack
 #+name: stack:interface
 #+begin_src pascal
-
   type stack = object
     sp   : integer;          // stack pointer
     cell: array of int32;    // a standard forth term
@@ -82,18 +24,15 @@ end.
 ** TYPE hardware
 #+name: @interface
 #+begin_src pascal
-
   type hardware = object
     constructor init;
     function send( msg : int32 ) : int32; virtual;
   end;
-
 #+end_src
 
 ** TYPE ngarovm
 #+name: @interface
 #+begin_src pascal
-
   type ngarovm = object
     ip     : integer;
     ram    : array [ 0 .. 31 ] of int32;
@@ -113,17 +52,14 @@ end.
 ** TYPE ngarovt
 #+name: @interface
 #+begin_src pascal
-
   type ngarovt = object
     constructor init;
   end;
-
 #+end_src
 
 ** LIST opcodes
 #+name: @opcodes
 #+begin_src pascal
-
   const
     oNOP  = 00;  oLIT  = 01;  oDUP = 02;   oDROP = 03;
     oSWAP = 04;  oPUSH = 05;  oPOP = 06;   oLOOP = 07;
@@ -133,96 +69,80 @@ end.
     oAND  = 20;  oOR   = 21;  oXOR = 22;   oSHL = 23;
     oSHR  = 24;  oZEX  = 25;  oINC = 26;   oDEC = 27;
     oIN   = 28;  oOUT  = 29;  oWAIT = 30;
-
-#+END_SRC
+#+end_src
 
 * SECTION stacks
 ** DEF init
 #+name: @stack
 #+begin_src pascal
-
   constructor stack.init( len: word );
   begin
     sp := 0;
     setlength( cell, len );
   end;
-
 #+end_src
 
 ** DEF tos : top of stack
 #+name: @stack
 #+begin_src pascal
-
   function stack.tos : int32;
   begin
     result := cell[ sp ];
   end;
-
 #+end_src
 
 ** DEF nos : next on stack
 #+name: @stack
 #+begin_src pascal
-
   function stack.nos : int32;
   begin
     result := cell[ sp - 1 ];
   end;
-
 #+end_src
 
 ** DEF dup : duplicate
 #+name: @stack
 #+begin_src pascal
-
   procedure stack.dup;
   begin
     push( tos );
   end;
-
 #+end_src
 
 ** DEF push
 #+name: @stack
 #+begin_src pascal
-
   procedure stack.push( v : int32 );
   begin
     inc( sp );
     if sp >= length( cell ) then overflow
     else cell[ sp ] := v;
   end;
-
 #+end_src
 
 ** DEF pop
 #+name: @stack
 #+begin_src pascal
-
   function stack.pop : int32;
   begin
     result := tos;
     drop;
   end;
-
 #+end_src
 
 ** DEF drop
 #+name: @stack
 #+begin_src pascal
-
   procedure stack.drop;
   begin
     dec( sp );
     if sp < 0 then underflow;
   end;
-
 #+end_src
 
 ** DEF swap
 #+name: @stack
 #+begin_src pascal
-
   procedure stack.swap;
     var t : int32;
   begin
@@ -234,76 +154,63 @@ end.
       end
     else underflow;
   end;
-
 #+end_src
 
 ** DEF overflow
 #+name: @stack
 #+begin_src pascal
-
   procedure stack.overflow;
   begin
     writeln( 'warning: stack overflow' );
     sp := length( cell ) - 1;
   end;
-
 #+end_src
 
 ** DEF underflow
 #+name: @stack
 #+begin_src pascal
-
   procedure stack.underflow;
   begin
     writeln( 'warning: stack underflow' );
     sp := 0;
   end;
-
 #+end_src
-
 
 * SECTION processor
 ** DEF init
 #+name: @vmcode
 #+begin_src pascal
-
   constructor ngarovm.init;
   begin
     data.init( 32 );
     addr.init( 32 );
     ip := 0;
   end;
-
 #+end_src
 
 ** DEF loop : instruction pointer's main loop
 #+name: @vmcode
 #+begin_src pascal
-
   procedure ngarovm.loop;
   begin
     repeat tick until ip >= length( ram );
   end;
-
 #+end_src
 
 ** DEF tick : single-tick version, for sdl
 #+name: @vmcode
 #+begin_src pascal
-
   procedure ngarovm.tick;
   begin
     dump;
     runop( ram[ ip ] );
     inc( ip );
   end;
-
 #+end_src
 
 ** DEF runop : dispatch function
 #+name: @vmcode
 #+begin_src pascal
-
   procedure ngarovm.runop( op: int32 );
     var t, n, tmp : int32;
     <<runop-helper:jump>>
@@ -325,50 +232,47 @@ end.
         readln
       end
   end;
-
 #+end_src
 
 ** DEF runio : hardware interrupt request, triggered by oWAIT
 #+name: @vmcode
 #+begin_src pascal
-
-    {
-    | Ngaro machines connect via ports.                      |
-    | A port is just a normal cell that's writable from both |
-    | inside and outside the machine, much like a usb port.  |
-    |                                                        |
-    | The protocol is:                                       |
-    |                                                        |
-    | - write whatever you want to the ports                 |
-    | - set port[ 0 ] to 0                                   |
-    | - invoke the 'wait' instruction                        |
-    |                                                        |
-    | - the vm pauses until a device sets port[ 0 ] to 1     |
-    |                                                        |
-    | Note: only one device will trigger on each WAIT, and   |
-    | (at least in this vm and the js one) they will always  |
-    | be executed in order of ascending port numbers.        |
-    |                                                        |
-    | A device will only be triggered when you write a       |
-    | non-zero values to its port.                           |
-    |                                                        |
-    }
-    procedure ngarovm.runio; { triggered by the oWAIT op }
-      var p: int32;
-    begin
-      if port[ 0 ] = 0 then
-        begin
-          port[ 0 ] := 1;
-          for p in port do
-            begin
-              if port[ p ] <> 0 then
-                begin
-                  port[ p ] := device[ p ].send( port[ p ]);
-                end;
-            end;
-        end;
-    end;
-
+  {
+  | Ngaro machines connect via ports.                      |
+  | A port is just a normal cell that's writable from both |
+  | inside and outside the machine, much like a usb port.  |
+  |                                                        |
+  | The protocol is:                                       |
+  |                                                        |
+  | - write whatever you want to the ports                 |
+  | - set port[ 0 ] to 0                                   |
+  | - invoke the 'wait' instruction                        |
+  |                                                        |
+  | - the vm pauses until a device sets port[ 0 ] to 1     |
+  |                                                        |
+  | Note: only one device will trigger on each WAIT, and   |
+  | (at least in this vm and the js one) they will always  |
+  | be executed in order of ascending port numbers.        |
+  |                                                        |
+  | A device will only be triggered when you write a       |
+  | non-zero values to its port.                           |
+  |                                                        |
+  }
+  procedure ngarovm.runio; { triggered by the oWAIT op }
+    var p: int32;
+  begin
+    if port[ 0 ] = 0 then
+      begin
+        port[ 0 ] := 1;
+        for p in port do
+          begin
+            if port[ p ] <> 0 then
+              begin
+                port[ p ] := device[ p ].send( port[ p ]);
+              end;
+          end;
+      end;
+  end;
 #+end_src
 
 * SECTION opcode implementations
@@ -385,19 +289,16 @@ end.
 ** stack ops
 #+name: stack-ops
 #+begin_src pascal
-
   oDUP : data.dup;
   oDROP: data.drop;
   oSWAP: data.swap;
   oPUSH: addr.push( data.pop );
   oPOP : data.push( addr.pop );
-
 #+end_src
 
 ** arithmetic ops
 #+name: alu-ops
 #+begin_src pascal
-
   oADD : data.push(  data.pop + data.pop );
   oSUB : data.push( -data.pop + data.pop );
   oMUL : data.push( -data.pop + data.pop );
@@ -408,13 +309,11 @@ end.
          end;
   oINC : inc( data.cell[ data.sp ] );
   oDEC : dec( data.cell[ data.sp ] );
-
 #+end_src
 
 ** bitwise / logic ops
 #+name: alu-ops
 #+begin_src pascal
-
   oAND : data.push( data.pop AND data.pop );
   oOR  : data.push( data.pop OR data.pop );
   oXOR : data.push( data.pop XOR data.pop );
@@ -426,47 +325,39 @@ end.
            t := data.pop;
            data.push( data.pop shr t );
          end;
-
 #+end_src
 
 ** branch ops
 *** DEF runop/jump() : shared for all the various jumps
 #+name: runop-helper:jump
 #+begin_src pascal
-
   procedure jump();
   begin
     ip := ram[ ip + 1 ];
     while ram[ ip ] = ord( oNOP ) do inc( ip );
     dec( ip ); { compensating for the post-op inc }
   end;
-
 #+end_src
 
 *** jump and conditional jumps
 #+name: branch-ops
 #+begin_src pascal
-
   oJMP : jump();
   oJLT : begin tn(); if t <  n then jump else inc( ip ) end;
   oJGT : begin tn(); if t >  n then jump else inc( ip ) end;
   oJNE : begin tn(); if t <> n then jump else inc( ip ) end;
   oJEQ : begin tn(); if t =  n then jump else inc( ip ) end;
-
 #+end_src
 
 *** return
 #+name: branch-ops
 #+begin_src pascal
-
   oRET : ip := addr.pop;
-
 #+end_src
 
 *** loop
 #+name: branch-ops
 #+begin_src pascal
-
   oLOOP: begin
            dec( data.cell[ data.sp ] );
            tmp := ram[ ip ];
@@ -478,20 +369,17 @@ end.
                data.pop;
              end
          end;
-
 #+end_src
 
 *** zex : exit (return) if TOS = 0 ( sort of like ~assert~ )
 #+name: branch-ops
 #+begin_src pascal
-
   oZEX : if data.cell[ data.sp ] = 0 then
            begin
              { sort of an assert / guard }
              data.pop;
              ip := addr.pop;
            end;
-
 #+end_src
 
 ** memory ops
@@ -605,12 +493,10 @@ end.
 ** general hardware
 #+name: @devices
 #+begin_src pascal
-
   function hardware.send( msg: int32 ): int32;
   begin
     result := 0;
   end;
-
 #+end_src
 
 ** port handlers
@@ -764,12 +650,10 @@ This can probably be used for double-buffered graphics.
 **** msg 1 : ( rc- ) row col
 **** msg 2 : ( n-  ) fg
 **** msg 3 : ( n-  ) bg
-
 * SECTION assembler
 * SECTION virtual terminal
 #+name: @vtcode
 #+begin_src pascal
-
   constructor ngarovt.init;
   begin
   end;
@@ -778,3 +662,63 @@ This can probably be used for double-buffered graphics.
   begin
   end;
 #+end_src
+
+* APPENDIX generated files
+** PROGRAM ~ngaro.pas~
+#+begin_src pascal :tangle "gen/ngaro.pas" :noweb tangle
+  {$ifdef FPC}{$mode objfpc}{$endif}
+
+  program ngaro;
+  uses crt;
+
+  type int32 = longint;
+
+  <<@vtcode>>
+  <<@devices>>
+
+  var vm : ng.ngarovm;
+  var vt : ngarovt;
+  begin
+    vt.init;
+    vm.init;
+    vm.loop;
+  end.
+#+end_src
+
+** MODULE ng : ngaro virtual machine
+#+begin_src pascal :tangle "gen/ng.pas" :noweb tangle
+unit ng;
+
+interface
+
+  <<@interface>>
+
+implementation
+  <<@opcodes>>
+  <<@stack>>
+  <<@vmcode>>
+end.
+#+end_src
+
+** MODULE ~st~ : stack machine
+#+begin_src pascal :tangle "gen/stacks.pas" :noweb tangle
+{ simple stack object }
+unit stacks;
+
+interface
+
+  <<stack:inface>>
+
+implementation
+
+  <<stack:impl>>
+
+begin
+end.
+#+end_src
+
+** MODULE ~vt~ : virtual terminal
+#+begin_src pascal :tangle "gen/vt.pas" :noweb tangle
+#+end_src
+
+* END
