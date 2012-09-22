@@ -77,7 +77,6 @@ end.
     function nos: int32;
     function pop: int32;
   end;
-
 #+end_src
 
 ** TYPE hardware
@@ -86,7 +85,7 @@ end.
 
   type hardware = object
     constructor init;
-    function send( msg:int32 ):int32; virtual;
+    function send( msg : int32 ) : int32; virtual;
   end;
 
 #+end_src
@@ -109,7 +108,6 @@ end.
     procedure runop( op:int32 );
     procedure runio;
   end;
-
 #+end_src
 
 ** TYPE ngarovt
@@ -499,7 +497,6 @@ end.
 ** memory ops
 #+name: memory-ops
 #+begin_src pascal
-
   oLIT: begin
           inc( ip );
           data.push( ram[ ip ]);
@@ -511,13 +508,11 @@ end.
           tn;
           ram[ t ] := ram[ n ];
         end;
-
 #+end_src
 
 ** port ops
 #+name: port-ops
 #+begin_src pascal
-
   oIN  : begin { p-n }
            t := data.pop;
            data.push( port[ t ] );
@@ -529,14 +524,12 @@ end.
   oWAIT: begin { - }
            runio;
          end;
-
 #+end_src
 
 * SECTION debugger (pascal-hosted)
 ** opcode names
 #+name: @opcodes
 #+begin_src pascal
-
   const
     mnemonic : array[ 0 .. 30 ] of string[ 5 ]
       = ( 'nop', 'lit', 'dup', 'drop',
@@ -548,13 +541,11 @@ end.
           'shr', 'zex', 'inc', 'dec',
           'in', 'out', 'wait'
         );
-
 #+end_src
 
 ** dump stack
 #+name: @stack
 #+begin_src pascal
-
   procedure stack.dump;
     var s: string;
     var i: int32;
@@ -567,16 +558,15 @@ end.
         end;
     writeln;
   end;
-
 #+end_src
 
 ** dump vm state
 #+name: @vmcode
 #+begin_src pascal
-
   procedure ngarovm.dump;
-  var i: int32;
-    var s: string[ 4 ];
+    var
+      i : int32;
+      s : string[ 4 ];
   begin
     crt.clrscr;
 
@@ -609,7 +599,6 @@ end.
     until i = length( self.ram );
     readln;
   end;
-
 #+end_src
 
 * SECTION devices
@@ -624,9 +613,19 @@ end.
 
 #+end_src
 
-** --
-# all of these were ported from ngaro.js,
-# except file/io and enhanced text
+** port handlers
+# all of these were ported from ngaro.js, except file/io and enhanced text
+*** portmap
+#+begin_src pascal
+  portHandlers[1] = handle_keyboard;
+  portHandlers[2] = handle_write;
+  portHandlers[3] = handle_refresh;
+  portHandlers[4] = handle_fileio;
+  portHandlers[5] = handle_vmquery;
+  portHandlers[6] = handle_canvas;
+  portHandlers[7] = handle_mouse;
+  portHandlers[8] = handle_term;
+#+end_src
 *** ITEM port 0 : i/o events
 
 Port 0 isn't connected to a device. It's just used to signal that one side or the other has data to transfer.
@@ -657,135 +656,108 @@ portHandlers[2] = function()
   ports[ 2 ] = 0;
 }
 
-*** SKIP port 3 : video update
+*** TODO port 3 : video update
 
 This can probably be used for double-buffered graphics.
 
 *** TODO port 4 : file i/o
-
-portHandlers[4] = function()
-{
-  ports[4] = 0;
-  saveImage();
-}
-
-*** TODO port 5 : querying the vm
 #+begin_src pascal
-
-  case vm.port[ 5 ] of
-    -1  : res := IMAGE_SIZE;
-    -2  : res := FB_EXISTS;
-    -3  : res := FB_WIDTH;
-    -4  : res := FB_HEIGHT;
-    -5  : res := data.sp;
-    -6  : res := addr.sp;
-    -7  : res := -1;
-    -8  : begin
-      {
-         var foo = new Date;
-         var unixtime_ms = foo.getTime();
-         var unixtime = parseInt(unixtime_ms / 1000);
-         res : = unixtime;
-      }
-         end;
-    -9  : res := 0;
-    -11 : res := TERM_WIDTH;
-    -12 : res := TERM_HEIGHT;
+  function handle_file_io( msg : integer ) : integer;
+  begin
+    saveimage;
+    result := 0;
   end;
-
 #+end_src
 
-*** SKIP port 6 : canvas
+*** TODO port 5 : querying the vm { need date/time }
 #+begin_src pascal
-  portHandlers[6] = function()
-  {
-    switch (ports[6])
-    {
-      case 1:
-        rxCanvasSetColor(data.pop);
-        break;
-      case 2:
-        var x, y;
-        y = data.pop;
-        x = data.pop;
-        fb.fillRect(x, y, 2, 2);
-        break;
-      case 3:
-        var x, y, h, w;
-        w = data.pop;
-        h = data.pop;
-        y = data.pop;
-        x = data.pop;
-        fb.strokeRect(x, y, w, h);
-        break;
-      case 4:
-        var x, y, h, w;
-        w = data.pop;
-        h = data.pop;
-        y = data.pop;
-        x = data.pop;
-        fb.fillRect(x, y, w, h);
-        break;
-      case 5:
-        var x, y, h;
-        h = data.pop;
-        y = data.pop;
-        x = data.pop;
-        fb.fillRect(x, y, 2, h);
-        break;
-      case 6:
-        var x, y, w;
-        w = data.pop;
-        y = data.pop;
-        x = data.pop;
-        fb.fillRect(x, y, w, 2);
-        break;
-      case 7:
-        var x, y, w;
-        w = data.pop;
-        y = data.pop;
-        x = data.pop;
-        fb.beginPath;
-        fb.arc(x, y, w, 0, Math.PI*2, true);
-        fb.closePath();
-        fb.stroke();
-        break;
-      case 8:
-        var x, y, w;
-        w = data.pop;
-        y = data.pop;
-        x = data.pop;
-        fb.beginPath;
-        fb.arc(x, y, w, 0, Math.PI*2, true);
-        fb.closePath;
-        fb.fill;
-        break;
-      default:
-        // do nothing
-    }
-    ports[6] = 0;
-  }
-
+  function handle_vmquery( msg: integer ) : integer;
+  begin
+    case msg of
+      -1  : result := IMAGE_SIZE;
+      -2  : result := FB_EXISTS;
+      -3  : result := FB_WIDTH;
+      -4  : result := FB_HEIGHT;
+      -5  : result := data.sp;
+      -6  : result := addr.sp;
+      -7  : result := -1;
+      -8  : begin
+              {
+                var foo = new Date;
+                var unixtime_ms = foo.getTime();
+                var unixtime = parseInt(unixtime_ms / 1000);
+                result : = unixtime;
+                }
+            end;
+      -9  : result := 0;
+      -11 : result := TERM_WIDTH;
+      -12 : result := TERM_HEIGHT;
+      else
+        result := -1
+    end
+  end;
 #+end_src
 
-*** SKIP port 7 : mouse
+*** TODO port 6 : canvas
 #+begin_src pascal
+  function handle_canvas( msg: integer ) : integer;
+    var x, y, h, w : integer;
+  begin
+    result := 0;
+    case msg of
+      1 : rxCanvasSetColor(data.pop);
+      2 : begin
+            data.pop2( y, x );
+            fb.fillRect(x, y, 2, 2);
+          end;
+      3 : begin
+            data.pop4( w, h, y, x );
+            fb.strokeRect(x, y, w, h);
+          end;
+      4 : begin
+            data.pop4( w, h, y, x );
+            fb.fillRect(x, y, w, h);
+          end;
+      5 : begin
+            data.pop3( h, y, x );
+            fb.fillRect(x, y, 2, h);
+          end;
+      6 : begin
+            data.pop3( w, y, x );
+            fb.fillRect(x, y, w, 2);
+          end;
+      7 : begin
+            data.pop3( w, y, x );
+            fb.beginPath;
+            fb.arc(x, y, w, 0, Math.PI*2, true);
+            fb.closePath();
+            fb.stroke();
+          end;
+      8 : begin
+            data.pop3( w, y, x );
+            fb.beginPath;
+            fb.arc(x, y, w, 0, Math.PI*2, true);
+            fb.closePath;
+            fb.fill;
+          end
+      else
+        result := -1;
+    end
+  end;
+#+end_src
 
-  portHandlers[7] = function()
-  {
-    if (ports[7] == 1)
-    {
-      data.push(mx);
-      data.push(my);
-      ports[7] = 0;
-    }
-    if (ports[7] == 2)
-    {
-      data.push(mb);
-      ports[7] = 0;
-    }
-  }
-
+*** TODO port 7 : mouse ( fill in mx, my )
+#+begin_src pascal
+  function handle_mouse( msg : integer ) : integer;
+  begin
+    result := 0;
+    case msg of
+      1 : data.push2( mx, my );
+      2 : data.push( mb );
+      else
+        result := -1;
+    end;
+  end;
 #+end_src
 
 *** TODO port 8 : enhanced text output
@@ -796,7 +768,7 @@ portHandlers[4] = function()
 * SECTION assembler
 * SECTION virtual terminal
 #+name: @vtcode
-#+BEGIN_src pascal
+#+begin_src pascal
 
   constructor ngarovt.init;
   begin
@@ -805,5 +777,4 @@ portHandlers[4] = function()
   constructor hardware.init;
   begin
   end;
-
-#+END_SRC
+#+end_src
