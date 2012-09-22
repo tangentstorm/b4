@@ -1,44 +1,44 @@
-#+TITLE: help wanted
+#+TITLE: b4.01 : wishlist
 
-* NOTE about this file
+* NOTE on contributing to this project
+** these are things that are off the critical path (for now)
 ** ~[#A]~ is easy, ~[#B]~ medium, ~[#C]~ advanced
-** i'm working through file:b4.00.tasklist.org from top to bottom
-*** usually discover i need something out of order though
-*** probably best to chat on freenode/#b4 if you want to work on main tasklist
+** i could use help with the [[file:b4.00.tasklist.org][main tasklist]], too, but:
+**** usually discover i need something out of order
+**** probably best to chat on freenode/#b4 if you want to work on main tasklist
 ** licensing issues
 - if you contribute / port something, make sure license is MIT/ [[http://en.wikipedia.org/wiki/ISC_license][ISC]] compatible ([[http://retroforth.org/license.html][retroforth license]] is ISC)
 - [[http://www.freepascal.org/faq.var#general-license][freepascal]] code has a tendency to use MPL/LGPL style. I'm okay with that, too.
-  
-* Things b4 will need soon
 
-** assembler
-*** probably similar to  [[https://github.com/oriontransfer/PL0-Language-Tools/blob/master/pl0_assemblera.py][pl/0 language tools assembler.py]]
-**** DONE not clear what license is. -> relicensed under MIT when I asked
-**** TODO compare bytecodes for pl/0 machine and ngaro. see what we need to adjust.
-
-Both are stack machines and the primitives look similar. 
-See also python -> ngaro translator below. 
+* WANT assembler
+** TODO make something similar to  [[https://github.com/oriontransfer/PL0-Language-Tools/blob/master/pl0_assemblera.py][pl/0 language tools assembler.py]]
+** DONE what is license on pl0 tools? -> relicensed under MIT when I asked
+** TODO compare bytecodes for pl/0 machine and ngaro. see what we need to adjust.
+Both are stack machines and the primitives look similar.
+See also python -> ngaro translator below.
 Combined with PL/0 tools, these would give us all the tools we need.
+** NOTE I made a start on a completely different assembler in go/c4.py
+** NOTE pretty sure retroforth has an assembler - see file:ref/crc-retro-wisdom.org
 
-** need to be in ngaro assembly language
-*** database (b4 has tiny relational database)
-**** [#C] [[http://en.wikipedia.org/wiki/B-tree][b-tree]] or [[http://en.wikipedia.org/wiki/B%2B_tree][b+-tree]] implementation                           :nga:
-**** [#A] codd's 8 relational operators                              :nga:
+* WANT relational database (b4 has tiny relational database)
+** [#C] [[http://en.wikipedia.org/wiki/B-tree][b-tree]] or [[http://en.wikipedia.org/wiki/B%2B_tree][b+-tree]] implementation                               :nga:
+** [#A] codd's 8 relational operators                                  :nga:
 
 There is psuedocode for all 8 here:
 
 http://science.kennesaw.edu/~mguimara/3310/RA_SQL.htm
 
-*** [#B] repl - probably follow itsyforth model
-**** [#A] track down itsyforth license - ask the author (john metcalf)
-***** [[http://www.retroprogramming.com/2012/03/itsy-forth-1k-tiny-compiler.html][itsyforth interpreter]]
+* WANT [#B] repl - probably follow itsyforth model
+** DONE track down itsyforth license  ( it's MIT-style )
+*** ask the author (john metcalf)
+*** [[http://www.retroprogramming.com/2012/03/itsy-forth-1k-tiny-compiler.html][itsyforth interpreter]]
 
-** GOAL port gamesketchlib to ngaro/retroforth/b4
+* WANT port of gamesketchlib to ngaro/retroforth/b4
 
 I made the java/processing game library at http://gamesketchlib.org/ and will try to follow the same design patterns as I work on this system.
 
-** WANT python bytecode -> ngaro translator
-*** [#A] research step : match up the two sets of bytecode
+* WANT python bytecode -> ngaro translator
+** [#A] research step : match up the two sets of bytecode
 
 ngaro only has 30 instructions, python has around the same. There is much overlap, and in forth-like languages, it's very easy to translate things like this.
 
@@ -48,18 +48,11 @@ The first step would be to compile a table that compares and contrasts the two s
 
 [[http://docs.python.org/library/dis.html][python dis module]] and the opcode section in [[http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html][ngaro-vm reference]]
 
-*** ?? pending above step, add new primitives to let us run python
+** ?? pending above step, add new primitives to let us run python
 
 probably the most dynamic aspects of python will not run well, but simpler python code probably can. 
 
-
-* forth-like code
-** NOTE if you write the code in ANS forth we can (hopefully) translate directly
-
-
-* Things that would just be nice to have
-
-** WANT modfile player.
+* WANT modfile player.
 
 I would really really like a modfile player for retro sounds and music. (don't know what modfiles are? see http://modarchive.org/ )
 
@@ -73,8 +66,7 @@ I would really really like a modfile player for retro sounds and music. (don't k
 
 #+end_quote
 
-
-** emacs mode for colorforth-like languages
+* WANT emacs mode for colorforth-like languages
 
 B4 is a a colorized language: you syntax-highlight it yourself, to simplify the parser, and words change meaning (verb tense) based on color.
 
@@ -84,10 +76,9 @@ http://www.strangegizmo.com/forth/ColorForth/msg00263.html
 
 I have already written a partial retroforth mode in file://etc/retro-mode.el
 
-
-** render org-files to something more readable.                      :elisp:
-*** github makes org-code ugly
-*** [#A] org itself does better job... make me a macro?
-**** http://orgmode.org/
-**** http://orgmode.org/worg/org-contrib/babel/ 
-
+* WANT render org-files to something more readable.                   :elisp:
+** github makes org-code ugly
+** [#A] org itself does better job... make me a macro?
+*** http://orgmode.org/
+*** http://orgmode.org/worg/org-contrib/babel/ 
+* WANT standalone org-babel-tangle (preferably in pascal)
