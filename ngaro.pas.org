@@ -1,26 +1,6 @@
 #+TITLE: ngaro implementation in free pascal
 
 * OVERVIEW :
-** TYPE stack
-#+name: stack:interface
-#+begin_src pascal
-  type stack = object
-    sp   : integer;          // stack pointer
-    cell: array of int32;    // a standard forth term
-    constructor init( len:word );
-    procedure dup;
-    procedure swap;
-    procedure drop;
-    procedure overflow;
-    procedure underflow;
-    procedure dump;
-    procedure push( v: int32 );
-    function tos: int32;
-    function nos: int32;
-    function pop: int32;
-  end;
-#+end_src
-
 ** TYPE hardware
 #+name: @interface
 #+begin_src pascal
@@ -69,111 +49,6 @@
     oAND  = 20;  oOR   = 21;  oXOR = 22;   oSHL = 23;
     oSHR  = 24;  oZEX  = 25;  oINC = 26;   oDEC = 27;
     oIN   = 28;  oOUT  = 29;  oWAIT = 30;
-#+end_src
-
-* SECTION stacks
-** DEF init
-#+name: @stack
-#+begin_src pascal
-  constructor stack.init( len: word );
-  begin
-    sp := 0;
-    setlength( cell, len );
-  end;
-#+end_src
-
-** DEF tos : top of stack
-#+name: @stack
-#+begin_src pascal
-  function stack.tos : int32;
-  begin
-    result := cell[ sp ];
-  end;
-#+end_src
-
-** DEF nos : next on stack
-#+name: @stack
-#+begin_src pascal
-  function stack.nos : int32;
-  begin
-    result := cell[ sp - 1 ];
-  end;
-#+end_src
-
-** DEF dup : duplicate
-#+name: @stack
-#+begin_src pascal
-  procedure stack.dup;
-  begin
-    push( tos );
-  end;
-#+end_src
-
-** DEF push
-#+name: @stack
-#+begin_src pascal
-  procedure stack.push( v : int32 );
-  begin
-    inc( sp );
-    if sp >= length( cell ) then overflow
-    else cell[ sp ] := v;
-  end;
-#+end_src
-
-** DEF pop
-#+name: @stack
-#+begin_src pascal
-  function stack.pop : int32;
-  begin
-    result := tos;
-    drop;
-  end;
-#+end_src
-
-** DEF drop
-#+name: @stack
-#+begin_src pascal
-  procedure stack.drop;
-  begin
-    dec( sp );
-    if sp < 0 then underflow;
-  end;
-#+end_src
-
-** DEF swap
-#+name: @stack
-#+begin_src pascal
-  procedure stack.swap;
-    var t : int32;
-  begin
-    if sp >= 2 then
-      begin
-        t := tos;
-        cell[ sp ] := nos;
-        cell[ sp - 1 ] := t;
-      end
-    else underflow;
-  end;
-#+end_src
-
-** DEF overflow
-#+name: @stack
-#+begin_src pascal
-  procedure stack.overflow;
-  begin
-    writeln( 'warning: stack overflow' );
-    sp := length( cell ) - 1;
-  end;
-#+end_src
-
-** DEF underflow
-#+name: @stack
-#+begin_src pascal
-  procedure stack.underflow;
-  begin
-    writeln( 'warning: stack underflow' );
-    sp := 0;
-  end;
 #+end_src
 
 * SECTION processor
@@ -431,23 +306,6 @@
         );
 #+end_src
 
-** dump stack
-#+name: @stack
-#+begin_src pascal
-  procedure stack.dump;
-    var s: string;
-    var i: int32;
-  begin
-    if sp > 0 then
-      for i := 1 to sp  do
-        begin
-          str( cell[ i ], s );
-          write( s, ' ' );
-        end;
-    writeln;
-  end;
-#+end_src
-
 ** dump vm state
 #+name: @vmcode
 #+begin_src pascal
@@ -457,7 +315,7 @@
       s : string[ 4 ];
   begin
     crt.clrscr;
-
+  
     write( 'data :' ); data.dump;
     write( 'addr :' ); addr.dump;
     write( 'port :' );
@@ -467,7 +325,7 @@
         write( s, ' ');
       end;
     writeln;
-
+  
     { mini-debugger }
     i := 0;
     repeat
@@ -669,9 +527,7 @@ This can probably be used for double-buffered graphics.
   {$ifdef FPC}{$mode objfpc}{$endif}
 
   program ngaro;
-  uses crt;
-
-  type int32 = longint;
+  uses xpc, crt;
 
   <<@vtcode>>
   <<@devices>>
@@ -700,25 +556,5 @@ implementation
 end.
 #+end_src
 
-** MODULE ~st~ : stack machine
-#+begin_src pascal :tangle "gen/stacks.pas" :noweb tangle
-{ simple stack object }
-unit stacks;
-
-interface
-
-  <<stack:inface>>
-
-implementation
-
-  <<stack:impl>>
-
-begin
-end.
-#+end_src
-
-** MODULE ~vt~ : virtual terminal
-#+begin_src pascal :tangle "gen/vt.pas" :noweb tangle
-#+end_src
 
 * END
