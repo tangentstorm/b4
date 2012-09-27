@@ -6,4 +6,5 @@
 *.pyc
 app/backup
 app/lib
+.idea
 
