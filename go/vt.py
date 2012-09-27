@@ -10,8 +10,8 @@ vw, vh = ( 1024, 768 ) # video width, height
 
 pg.init()
 
-scr = pg.display.set_mode(( vw, vh ), pg.SWSURFACE | pg.FULLSCREEN )
-pal = [ pg.Color( hex( v )) for v in xc.pal ]
+scr = pg.display.set_mode(( vw, vh ), pg.SWSURFACE )# | pg.FULLSCREEN )
+pal = [ pg.Color( v ) for v in xc.pal ]
 cwk = dict( zip ( 'krgybmcwKRGYBMCW', range( 16 ))) # codes for cwrite routine
 font = dosfont.data
 chbuf = pg.Surface(( fw , fh ))
