@@ -1,10 +1,6 @@
 #+TITLE: b4.00 : tasklist
 
-* [6/11] implement the virtual machine                                  :pas:
-** TODO check that we do these the ngaro way
-*** TODO when does ngaro actually do on over/underflow checks?
-*** TODO would nos really trigger underflow?
-** TODO make stack sizes configurable
+* [1/11] implement the virtual machine                                  :pas:
 ** DONE load the image (machine code) into an array
 
 Will just do this by hand for now, like I did with javascript, and worry about files when I build the assembler.
@@ -42,11 +38,26 @@ Probably cleaner would just be to use a file. :)
   );
   
 #+end_src
-
+** TODO check that we do these the ngaro way
+*** TODO when does ngaro actually do on over/underflow checks?
+*** TODO would nos really trigger underflow?
+** TODO make stack sizes configurable
 ** TODO implement io devices
 ** TODO implement a pixel in sdl
 ** TODO halt the program
-* GOAL implement a simple assembler in pascal
+** TODO port 2 : sending negative value should clear the screen, but doesn't, in js version
+portHandlers[2] = function()
+{
+  Term.renderChar( data.pop );
+  ports[ 2 ] = 0;
+}
+** TODO port 4 : file i/o
+*** TODO check c version about port 4 : file i / o -- really a byte at a time?
+  http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html
+** TODO port 5 : querying the vm { need date/time }
+** TODO port 7 : mouse ( fill in mx, my )
+** TODO port 8 : enhanced text output
+* [0/1] implement a simple assembler in pascal
 ** TODO port pixel.hex to pixel.nga
 *** NOTE Just use the syntax retro gives when you type =see=
 #+begin_example
@@ -69,7 +80,7 @@ ok
 
 #+end_example
 
-* GOAL flesh out vm with more ngaro assembly programs
+* [0/11] flesh out vm with more ngaro assembly programs
 ** TODO square : draw a square                                         :nga:
 ** TODO color  : draw the palette                                      :nga:
 ** TODO click  : click screen to change color                          :nga:

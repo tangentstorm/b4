@@ -39,9 +39,9 @@ interface uses xpc, stacks, sim;
   end;
 
 implementation
- 
 
   {$i ng.ops.inc }
+  {$i ng.ports.inc }
 
   constructor vm.init;
     procedure addop(	 
