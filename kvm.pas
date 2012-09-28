@@ -104,7 +104,7 @@ implementation
 
   function readkey : int32;
   begin
-    result := 0;
+    result := ord( crt.readkey );
   end; { readkey }
 
   function kbstate : tKeyState;
@@ -122,7 +122,7 @@ implementation
 
   procedure gotoxy( x, y : integer );
   begin
-    crt.gotoxy( x, y );
+    crt.gotoxy( x + 1, y + 1 );
   end; { gotoxy }
 
   procedure write( args : array of const );
