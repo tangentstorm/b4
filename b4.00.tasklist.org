@@ -1,6 +1,6 @@
 #+TITLE: b4.00 : tasklist
 
-* [1/11] implement the virtual machine                                  :pas:
+* [2/6] implement the virtual machine                                   :pas:
 ** DONE load the image (machine code) into an array
 
 Will just do this by hand for now, like I did with javascript, and worry about files when I build the assembler.
@@ -38,13 +38,16 @@ Probably cleaner would just be to use a file. :)
   );
   
 #+end_src
+** DONE load the image from disk
 ** TODO check that we do these the ngaro way
 *** TODO when does ngaro actually do on over/underflow checks?
 *** TODO would nos really trigger underflow?
 ** TODO make stack sizes configurable
-** TODO implement io devices
 ** TODO implement a pixel in sdl
-** TODO halt the program
+** TODO add ability to halt the program
+* [0/6] implement io devices
+** TODO port 1 : keyboard
+*** TODO : should it wait for a key, like readkey? ( right now it's returning -1 )
 ** TODO port 2 : sending negative value should clear the screen, but doesn't, in js version
 portHandlers[2] = function()
 {

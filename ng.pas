@@ -1,110 +1,115 @@
 {$i xpc.inc }
 unit ng;
-interface uses xpc, stacks, sim;
+interface uses xpc, stacks, sim, kvm;
 
   type
-    token = string[ 6 ];
-    thunk = procedure of object;
-    oprec = record
-	      go       : thunk;
-	      tok, sig : token;
-	      hasarg   : boolean;
-	    end;
-
-  type vm = object
-    data, addr : stack;
-    ip     : integer;
-    ram    : array [ 0 .. 31 ] of int32;
-    port   : array [ 0 .. 15 ] of int32;
-    device : array [ 0 .. 15 ] of sim.hardware;
-    optbl : array of oprec;
-    constructor init;
-    procedure tick;
-    procedure loop;
-    procedure dump;
-    procedure runop( op:int32 );
-    procedure runio;  
-
-    { these are the opcodes. bleh. this is one part of pascal that
-      makes me want to use oberon instead. }
-    procedure oNOP;  procedure oLIT;  procedure oDUP; procedure oDROP;
-    procedure oSWAP; procedure OPUSH; procedure oPOP; procedure oLOOP;
-    procedure oJMP;  procedure oRET;  procedure oJLT; procedure oJGT;
-    procedure oJNE;  procedure oJEQ;  procedure oLOD; procedure oSTO;
-    procedure oADD;  procedure oSUB;  procedure oMUL; procedure oDIVM;
-    procedure oAND;  procedure oOR;   procedure oXOR; procedure oSHL;
-    procedure oSHR;  procedure oZEX;  procedure oINC; procedure oDEC;
-    procedure oIN;   procedure oOUT; procedure oWAIT;
-    
-  end;
+    pvm	   = ^vm;
+    token  = string[ 6 ];
+    thunk  = procedure of object;
+    device = function( msg : int32 ) : int32 of object;
+    oprec  = record
+	       go	: thunk;
+	       tok, sig	: token;
+	       hasarg	: boolean;
+	     end;	
+    image  = file of int32;
+    vm	   = object
+      data, addr : stack;
+      ip	 : integer;
+      ram	 : array of int32;
+      port	 : array [ 0 .. 15 ] of int32;
+      device	 : array [ 0 .. 15 ] of device;
+      optbl	 : array of oprec;
+      imgfile	 : image;
+      imgpath    : string;
+		 
+      constructor init( imagepath : string );
+      procedure tick;
+      procedure loop;
+      procedure dump;
+      procedure runop( op:int32 );
+      procedure runio;
+      procedure load;
+      procedure save;
+		 
+      { these are the opcodes. bleh. this is one part of pascal that
+	makes me want to use oberon instead. }
+      procedure oNOP;  procedure oLIT;  procedure oDUP; procedure oDROP;
+      procedure oSWAP; procedure OPUSH; procedure oPOP; procedure oLOOP;
+      procedure oJMP;  procedure oRET;  procedure oJLT; procedure oJGT;
+      procedure oJNE;  procedure oJEQ;  procedure oLOD; procedure oSTO;
+      procedure oADD;  procedure oSUB;  procedure oMUL; procedure oDIVM;
+      procedure oAND;  procedure oOR;   procedure oXOR; procedure oSHL;
+      procedure oSHR;  procedure oZEX;  procedure oINC; procedure oDEC;
+      procedure oIN;   procedure oOUT; procedure oWAIT;
+      procedure init_optable;
+      
+      { and the port handlers }
+      function handle_keyboard( msg : int32 ) : int32;
+      function handle_write( msg : int32 ) : int32;
+      function handle_refresh( msg : int32 ) : int32;
+      function handle_files( msg : int32 ) : int32;
+      function handle_vmquery( msg : int32 ) : int32;
+      function handle_canvas( msg : int32 ) : int32;
+      function handle_mouse( msg : int32 ) : int32;
+      function handle_eterm( msg : int32 ) : int32;
+      procedure init_porthandlers;
+    end;
 
 implementation
 
   {$i ng.ops.inc }
   {$i ng.ports.inc }
 
-  constructor vm.init;
-    procedure addop(	 
-		id	 : int32;
-		go	 : thunk;
-		tok, sig : token;
-		hasarg	 : boolean );
-      var rec : oprec;
-    begin
-      rec.go  := go;
-      rec.tok := tok;
-      rec.sig := sig;
-      rec.hasarg := hasarg;
-      optbl[ id ] := rec;
-    end; { addop }
-    const _ = false; X = true;
+  constructor vm.init( imagepath : string );
   begin
-    data.init( 32 );
-    addr.init( 32 );
-    ip := 0;
-    setlength( optbl, 31 );
-    addop( 00, @oNOP , 'nop' , '  -  ', _ );
-    addop( 01, @oLIT , 'lit' , '  -  ', X );
-    addop( 02, @oDUP , 'dup' , ' n-nn', _ );
-    addop( 03, @oDROP, 'drop', ' n-  ', _ );
-    addop( 04, @oSWAP, 'swap', 'xy-yx', _ );
-    addop( 05, @oPUSH, 'push', ' n-^ ', _ );
-    addop( 06, @oPOP , 'pop' , ' ^-n ', _ );
-    addop( 07, @oLOOP, 'loop', '  -  ', _ );
-    addop( 08, @oJMP , 'jmp' , '  -  ', X );
-    addop( 09, @oRET , 'ret' , '  -  ', _ );
-    addop( 10, @oJLT , 'jlt' , '  -  ', X );
-    addop( 11, @oJGT , 'jgt' , '  -  ', X );
-    addop( 12, @oJNE , 'jne' , '  -  ', X );
-    addop( 13, @oJEQ , 'jeq' , '  -  ', X );
-    addop( 14, @oLOD , '@'   , ' a-n ', _ );
-    addop( 15, @oSTO , '!'   , 'na-  ', _ );
-    addop( 16, @oADD , '+'   , ' y-n ', _ );
-    addop( 17, @oSUB , '-'   , 'xy-n ', _ );
-    addop( 18, @oMUL , '*'   , 'xy-n ', _ );
-    addop( 19, @oDIVM, '/mod', 'xy-rq', _ );
-    addop( 20, @oAND , 'and' , 'xy-n ', _ );
-    addop( 21, @oOR  , 'or'  , 'xy-n ', _ );
-    addop( 22, @oXOR , 'xor' , 'xy-n ', _ );
-    addop( 23, @oSHL , '<<'  , 'xy-n ', _ );
-    addop( 24, @oSHR , '>>'  , 'xy-n ', _ );
-    addop( 25, @oZEX , 'zex' , '  -  ', _ );
-    addop( 26, @oINC , '1+'  , ' n-n ', _ );
-    addop( 27, @oDEC , '1-'  , ' n-n ', _ );
-    addop( 28, @oIN  , 'in'  , ' p-n ', _ );
-    addop( 29, @oOUT , 'out' , 'np-  ', _ );
-    addop( 30, @oWAIT, 'wait', '  -  ', _ );
-  end;
-  
+    self.init_optable;
+    assert( length( self.optbl ) >= 31 );
+    self.data.init( 32 );
+    self.addr.init( 32 );
+    self.ip := 0;
+    self.imgpath := imagepath;
+    assign( self.imgfile, imagepath );
+    self.load;
+  end; { vm.init }
+
+
+  procedure vm.load;
+    var size, i : int32;
+  begin
+    {$i-}
+    reset( self.imgfile );
+    {$i+}
+    if ioresult = 0 then begin
+      size := filesize( self.imgfile );
+      setlength( self.ram, size );
+      for i := 0 to size - 1 do begin
+	read( self.imgfile, self.ram[ i ])
+      end;
+      close( self.imgfile );
+    end else begin
+      writeln( 'error: unable to open ', self.imgpath );
+    end
+  end; { vm.load }
+
+  procedure vm.save;
+    var size, i : int32;
+  begin
+    size := length( self.ram );
+    rewrite( self.imgfile, 1 );
+    for i := 0 to size - 1 do begin
+      write( self.imgfile, self.ram[ i ])
+    end;
+    close( self.imgfile );
+  end; { vm.save }
+	      
+	      
   procedure vm.tick;
   begin
     dump;
     runop( ram[ ip ] );
     inc( ip );
   end;
-
-
-
   
   procedure vm.dump;
     var
@@ -190,7 +195,7 @@ implementation
           begin
             if port[ p ] <> 0 then
               begin
-                port[ p ] := device[ p ].send( port[ p ]);
+                port[ p ] := device[ p ]( port[ p ]);
               end;
           end;
       end;
