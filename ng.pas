@@ -11,7 +11,7 @@ interface uses xpc, stacks, sim, kvm;
 	       go	: thunk;
 	       tok, sig	: token;
 	       hasarg	: boolean;
-	     end;	
+	     end;
     image  = file of int32;
     vm	   = object
       data, addr : stack;
@@ -22,7 +22,7 @@ interface uses xpc, stacks, sim, kvm;
       optbl	 : array of oprec;
       imgfile	 : image;
       imgpath    : string;
-		 
+
       constructor init( imagepath : string );
       procedure tick;
       procedure loop;
@@ -31,7 +31,7 @@ interface uses xpc, stacks, sim, kvm;
       procedure runio;
       procedure load;
       procedure save;
-		 
+
       { these are the opcodes. bleh. this is one part of pascal that
 	makes me want to use oberon instead. }
       procedure oNOP;  procedure oLIT;  procedure oDUP; procedure oDROP;
@@ -43,7 +43,7 @@ interface uses xpc, stacks, sim, kvm;
       procedure oSHR;  procedure oZEX;  procedure oINC; procedure oDEC;
       procedure oIN;   procedure oOUT; procedure oWAIT;
       procedure init_optable;
-      
+
       { and the port handlers }
       function handle_keyboard( msg : int32 ) : int32;
       function handle_write( msg : int32 ) : int32;
@@ -82,9 +82,11 @@ implementation
     {$i+}
     if ioresult = 0 then begin
       size := filesize( self.imgfile );
+      log.debug([ 'image size = ', size, ' cells' ]);
       setlength( self.ram, size );
+      log.debug([ 'ram = array [', low( self.ram ), '..', high( self.ram ), ']' ]);
       for i := 0 to size - 1 do begin
-	read( self.imgfile, self.ram[ i ])
+	read( self.imgfile, self.ram[ i ]);
       end;
       close( self.imgfile );
     end else begin
@@ -102,22 +104,27 @@ implementation
     end;
     close( self.imgfile );
   end; { vm.save }
-	      
-	      
+
+
   procedure vm.tick;
   begin
     dump;
-    runop( ram[ ip ] );
+    if ( ip >= low( ram )) and ( ip <= high( ram )) then
+      runop( ram[ ip ] );
     inc( ip );
   end;
-  
+
   procedure vm.dump;
     var
-      i	: int32;
-      s	: string[ 4 ];
-      r	: oprec;
+      s	      : string[ 4 ];
+      r	      : oprec;
+      b, e, i : int32;  { begin, end, index }
   begin
 
+    kvm.clrscr;
+    kvm.gotoxy( 0, 0 );
+
+    { mini-debugger }
     write( 'data :' ); data.dump;
     write( 'addr :' ); addr.dump;
     write( 'port :' );
@@ -128,26 +135,36 @@ implementation
       end;
     writeln;
 
+    { let's try and keep the pointer somewhere around middle of the 15-line screen }
+    b := max( 0, ip - 7 );
+    e := min( b + 15, high( self.ram ));
+
     { mini-debugger }
-    i := 0;
+    i := b;
     repeat
       if i = ip
       then write( ' -> ' )
       else write( '    ' );
-
-      r := optbl[ ram[ i ]];  { TODO: handle > 31 }
-      write( r.tok );
-      if r.hasarg then
-        begin
+      write( i:4, ' ' );
+      if ( i >= low( ram )) and ( i >= high( ram ))
+	and ( ram[i] >= low( optbl )) and ( ram[i] <= high( optbl )) then
+      begin
+	r := optbl[ ram[ i ]];
+	write( r.tok );
+	if r.hasarg then
+	begin
           inc( i );
           str( ram[ i ], s );
-          write(' ');
-          write( s );
-        end;
-      writeln;
+	  write( ' ', s );
+	end;
+	writeln;
+      end else begin
+	writeln( '<', hex( ram[ i ]), '>' );
+      end;
       inc( i );
-    until i = length( self.ram );
-    readln;
+    until i = e;
+
+    if kvm.readkey <> 13 then ip := high( ram ) + 1;  { halt machine. todo : call it ascii.esc }
   end;
 
   procedure vm.loop;
@@ -155,7 +172,7 @@ implementation
     repeat tick until ip >= length( ram );
   end; { vm.loop }
 
-  
+
   procedure vm.runop( op: int32 );
   begin
     if op >= length( optbl ) then
