@@ -28,7 +28,10 @@ interface
 
     { buttons : for mouse / gamepad }
     vect2    = record
-		 x, y : int32;
+		 case kind : ( asize, apoint, avect2 ) of
+		   asize  : ( w, h : int32 );
+		   apoint : ( x, y : int32 );
+		   avect2 : ( v : array[ 0 .. 1 ] of int32 );
 	       end;   
 
     color    = record
@@ -39,16 +42,21 @@ interface
 
     glyph    = record
 		 codepoint : int32;
-		 w, h	   : byte;
+		 w, h : int32;
 	       end;	   
 
     bmpfont  = record
 		 size	: vect2;
 		 glyphs	: array of glyph;
-	       end;	
+	       end;
+    
+    surface = record
+		w, h : int32;
+		data : array of int32;
+	      end;
 
   { mouse stuff }
-  function havemouse : boolean;
+  function hasmouse : boolean;
   function mx : int32;
   function my : int32;
   function mb : set32;
@@ -61,18 +69,20 @@ interface
   procedure clrscr;
   procedure gotoxy( x, y : int32 );
   procedure setfont( font :  bmpfont );
-
+  var term : surface;
+ 
   { graphics stuff }
-  function havegraphics : boolean;
+  function hascanvas : boolean;
+  var canvas : surface;
 
 implementation
 
   { -- mouse stuff ------------------------------------------ }
 
-  function havemouse : boolean;
+  function hasmouse : boolean;
   begin
     result := false;
-  end; { havemouse }
+  end; { hasmouse }
 
   function mx : int32;
   begin
@@ -126,9 +136,9 @@ implementation
 
   { -- graphics stuff --------------------------------------- }
 
-  function havegraphics : boolean;
+  function hascanvas : boolean;
   begin
     result := false;
-  end; { havegraphics }
+  end; { hascanvas }
 
 end.
