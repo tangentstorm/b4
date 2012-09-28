@@ -15,6 +15,10 @@ interface uses xpc;
     constructor init( len:word );
     procedure push( v: int32 );
     function pop: int32;
+    procedure push2( a, b : int32 );
+    procedure pop2( var a, b :  int32 );
+    procedure push3( a, b, c : int32 );
+    procedure pop3( var a, b, c : int32 );
     function tos: int32;
     function nos: int32;
     procedure dup;
@@ -31,35 +35,61 @@ implementation
   begin
     sp := 0;
     setlength( cell, len );
-  end;
+  end; { stack.init }
 
   procedure stack.push( v : int32 );
   begin
     inc( sp );
     if sp >= length( cell ) then overflow
     else cell[ sp ] := v;
-  end;
+  end; { stack.push }
 
   function stack.pop : int32;
   begin
     result := tos;
     drop;
-  end;
+  end; { stack.pop }
 
+  procedure stack.push2( a, b :  int32 );
+  begin
+    self.push( a );
+    self.push( b );
+  end; { stack.push2 }
+  
+  procedure stack.pop2( var a, b :  int32 );
+  begin
+    a := self.pop;
+    b := self.pop;
+  end; { stack.pop2 }
+
+  procedure stack.push3( a, b, c :  int32 );
+  begin
+    self.push( a );
+    self.push( b );
+    self.push( c );
+  end; { stack.push3 }
+  
+  procedure stack.pop3( var a, b, c :  int32 );
+  begin
+    a := self.pop;
+    b := self.pop;
+    c := self.pop
+  end; { stack.pop3 }
+  
   function stack.tos : int32;
   begin
     result := cell[ sp ];
-  end;
+  end; { stack.tos }
 
   function stack.nos : int32;
   begin
     result := cell[ sp - 1 ];
-  end;
+  end; { stack.nos }
 
   procedure stack.dup;
   begin
     push( tos );
-  end;
+  end; { stack.dup }
 
   procedure stack.swap;
     var t : int32;
@@ -71,19 +101,19 @@ implementation
         cell[ sp - 1 ] := t;
       end
     else underflow;
-  end;
+  end; { stack.swap }
 
   procedure stack.drop;
   begin
     dec( sp );
     if sp < 0 then underflow;
-  end;
+  end; { stack.drop }
 
   procedure stack.overflow;
   begin
     writeln( 'warning: stack overflow' );
     sp := length( cell ) - 1;
-  end;  
+  end; { stack.overflow }
 
   procedure stack.underflow;
   begin
