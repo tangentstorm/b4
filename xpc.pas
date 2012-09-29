@@ -8,13 +8,32 @@ interface
   function hex( x :  int32 ) : string;
   function min( a, b : int32 ): int32;
   function max( a, b : int32 ): int32;
-		     
+
+ function cLength( s : string ) : byte;                { length - color codes }
+ function cstrip( s : string ) : string;
+ function normaltext( s : string ) : string;
+ function strtrunc( s : string; len : byte ) : string;
+ function UpStr( s : string ) : String;
+ function DnCase( ch : char ) : Char;
+ function DnStr( s : string ) : String;
+ function chntimes( c : char; n : byte ) : string;
+ function flushrt( s : string; n : byte; ch : char ) : string;
+  function padstr( s : string; len : byte; ch : char ) : string;
+  function unpadstr( s : string; ch : char ) : string;
+  function cpadstr( s : string; len : byte; ch : char ) : string;
+
+  { i don't think the str is necessary }
+  function pad( s : string; len : byte; ch : char ) : string;
+
+  
   type logger = object
     procedure debug( args : array of const );
   end;
   var log : logger;
 
 implementation
+
+  {$i xpc.strings.pas }
 
   function toint( s : set32 ) : int32;
     var i, p : byte;
@@ -49,15 +68,18 @@ implementation
   function hex( x : int32 ) : string;
     const digits = '0123456789ABCDEF';
       len	=  length( digits );
-    var i : int32;
+    var i, d : int32; begun :  boolean;
   begin
-    result := '0x00000000';
-    for i := 0 to 8 do
-    begin
-      result[ 11 - i ] := digits[ (( x shr i ) mod 16 ) + 1 ];
+    result := '';
+    begun := false;
+    for i := 7 downto 0 do begin
+      d := (( x shr ( i * 4 ))  mod 16 );
+      if begun or ( d > 0 ) then begin
+	result += digits[ d + 1 ];
+	begun := true;
+      end;
     end;
   end;
-
 
   function min( a, b :  int32 ) : int32;
   begin
