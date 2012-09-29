@@ -34,14 +34,14 @@ interface uses xpc, stacks, sim, kvm;
 
       { these are the opcodes. bleh. this is one part of pascal that
 	makes me want to use oberon instead. }
-      procedure oNOP;  procedure oLIT;  procedure oDUP; procedure oDROP;
-      procedure oSWAP; procedure OPUSH; procedure oPOP; procedure oLOOP;
-      procedure oJMP;  procedure oRET;  procedure oJLT; procedure oJGT;
-      procedure oJNE;  procedure oJEQ;  procedure oLOD; procedure oSTO;
-      procedure oADD;  procedure oSUB;  procedure oMUL; procedure oDIVM;
-      procedure oAND;  procedure oOR;   procedure oXOR; procedure oSHL;
-      procedure oSHR;  procedure oZEX;  procedure oINC; procedure oDEC;
-      procedure oIN;   procedure oOUT; procedure oWAIT;
+      procedure oNOP;  procedure oLIT;  procedure oDUP;  procedure oDROP;
+      procedure oSWAP; procedure OPUSH; procedure oPOP;  procedure oLOOP;
+      procedure oJMP;  procedure oRET;  procedure oJLT;  procedure oJGT;
+      procedure oJNE;  procedure oJEQ;  procedure oLOD;  procedure oSTO;
+      procedure oADD;  procedure oSUB;  procedure oMUL;  procedure oDIVM;
+      procedure oAND;  procedure oOR;   procedure oXOR;  procedure oSHL;
+      procedure oSHR;  procedure oZEX;  procedure oINC;  procedure oDEC;
+      procedure oIN;   procedure oOUT;  procedure oWAIT; procedure oIVK;
       procedure init_optable;
 
       { and the port handlers }
@@ -60,6 +60,7 @@ implementation
 
   {$i ng.ops.inc }
   {$i ng.ports.inc }
+  {$i ng.debug.inc }
 
   constructor vm.init( imagepath : string );
   begin
@@ -114,58 +115,6 @@ implementation
     inc( ip );
   end;
 
-  procedure vm.dump;
-    var
-      s	      : string[ 4 ];
-      r	      : oprec;
-      b, e, i : int32;  { begin, end, index }
-  begin
-
-    kvm.clrscr;
-    kvm.gotoxy( 0, 0 );
-
-    { mini-debugger }
-    write( 'data :' ); data.dump;
-    write( 'addr :' ); addr.dump;
-    write( 'port :' );
-    for i:= 0 to 15 do
-      begin
-        str( port[ i ], s );
-        write( s, ' ');
-      end;
-    writeln;
-
-    { let's try and keep the pointer somewhere around middle of the 15-line screen }
-    b := max( 0, ip - 7 );
-    e := min( b + 15, high( self.ram ));
-
-    { mini-debugger }
-    i := b;
-    repeat
-      if i = ip
-      then write( ' -> ' )
-      else write( '    ' );
-      write( i:4, ' ' );
-      if ( i >= low( ram )) and ( i >= high( ram ))
-	and ( ram[i] >= low( optbl )) and ( ram[i] <= high( optbl )) then
-      begin
-	r := optbl[ ram[ i ]];
-	write( r.tok );
-	if r.hasarg then
-	begin
-          inc( i );
-          str( ram[ i ], s );
-	  write( ' ', s );
-	end;
-	writeln;
-      end else begin
-	writeln( '<', hex( ram[ i ]), '>' );
-      end;
-      inc( i );
-    until i = e;
-
-    if kvm.readkey <> 13 then ip := high( ram ) + 1;  { halt machine. todo : call it ascii.esc }
-  end;
 
   procedure vm.loop;
   begin
@@ -175,10 +124,8 @@ implementation
 
   procedure vm.runop( op: int32 );
   begin
-    if op >= length( optbl ) then
-      { TODO : CALL USER OP }
-    else
-      optbl[ op ].go;
+    if op >= length( optbl ) then oIVK { invoke a procedure }
+    else optbl[ op ].go;
   end;
 
   {

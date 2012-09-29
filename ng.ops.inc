@@ -66,7 +66,8 @@ unit ng.ops; implementation
   procedure vm.oJNE; begin TN if t <> n then oJMP else inc( ip ) end;
   procedure vm.oJEQ; begin TN if t =  n then oJMP else inc( ip ) end;
 
-  { gosub / return }
+  { invoke / return }
+  procedure vm.oIVK; begin addr.push( ip ); ip := ram[ ip ] - 1 end;
   procedure vm.oRET; begin ip := addr.pop end;
 
   procedure vm.oLOOP;
