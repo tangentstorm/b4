@@ -9,7 +9,7 @@
 {$i xpc.inc }
 unit kvm;
 interface
-  uses xpc, keyboard, video, mouse, crt;
+  uses xpc, keyboard, video, mouse;
 
 
   type
@@ -32,24 +32,24 @@ interface
 		   asize  : ( w, h : int32 );
 		   apoint : ( x, y : int32 );
 		   avect2 : ( v : array[ 0 .. 1 ] of int32 );
-	       end;   
+	       end;
 
     color    = record
 		 case separate : boolean of
 		 true	       : ( r, g, b, a : byte );
 		 false	       : ( c : int32 );
-	       end;	       
+	       end;
 
     glyph    = record
 		 codepoint : int32;
 		 w, h : int32;
-	       end;	   
+	       end;
 
     bmpfont  = record
 		 size	: vect2;
 		 glyphs	: array of glyph;
 	       end;
-    
+
     surface = record
 		w, h : int32;
 		data : array of int32;
@@ -62,15 +62,17 @@ interface
   function mb : set32;
 
   { keyboard stuff }
-  function readkey : int32;
+  function readkey : char;
   function kbstate : tKeyState;
 
   { text stuff }
   procedure clrscr;
   procedure gotoxy( x, y : int32 );
+  procedure fg( c : char );  procedure fg( b : byte );
+  procedure bg( c : char );  procedure bg( b : byte );
   procedure setfont( font :  bmpfont );
   var term : surface;
- 
+
   { graphics stuff }
   function hascanvas : boolean;
   var canvas : surface;
@@ -102,9 +104,29 @@ implementation
 
   { -- keyboard stuff --------------------------------------- }
 
-  function readkey : int32;
+  var
+    have_cached	: boolean;
+    cached_key	: char;
+
+  function readkey : char;
+    var Key: keyboard.TKeyEvent;
   begin
-    result := ord( crt.readkey );
+    if have_cached then begin
+      have_cached := false;
+      result := cached_key;
+    end else begin
+      key := TranslateKeyEvent(GetKeyEvent);
+      case GetKeyEventFlags(Key) of
+	kbASCII	: result := GetKeyEventChar(Key);
+	else
+	begin
+	  cached_key := chr( GetKeyEventCode(Key));
+	  have_cached := true;
+	  result := #0;
+	end
+      end
+    end;
+    // writeln('[',result,'=#', ord(result), ']');
   end; { readkey }
 
   function kbstate : tKeyState;
@@ -117,17 +139,59 @@ implementation
 
   procedure clrscr;
   begin
-    crt.clrscr;
+    write( #27, '[2J' );
+    { crt.clrscr; }
   end; { clrscr }
+
+  procedure ansi_reset( i :  byte );
+  begin
+    write( #27, '[0m' );
+  end; { ansi_reset }
+
+  procedure ansi_fg( i : byte );
+  begin
+    if i < 8 then write( #27, '[0;3', i , 'm' ) // ansi dim
+    else if i < 17 then write( #27, '[01;3', i-8 , 'm' ); // ansi bold
+    // else do nothing
+  end; { ansi_fg }
+
+  { xterm 256-color extensions }
+  procedure xterm_fg( i	:  byte ); begin write( #27, '[38;5;', i , 'm' ); end;
+  procedure xterm_bg( i	:  byte ); begin write( #27, '[48;5;', i , 'm' ); end;
 
   procedure gotoxy( x, y : integer );
   begin
-    crt.gotoxy( x + 1, y + 1 );
+    write( #27, '[', y + 1, ';', x + 1, 'H' );
+{    crt.gotoxy( x + 1, y + 1 ); }
   end; { gotoxy }
 
-  procedure write( args : array of const );
+  procedure fg( c :  char );
+    var i : byte;
   begin
-  end; { write }
+    {  crt.textcolor( i - 1 ); }
+    i := pos( c, 'krgybmcwKRGYBMCW' );
+    if i > 0 then ansi_fg( i - 1 ) ;
+  end; { fg }
+
+
+  procedure fg( b : byte );
+  begin
+    xterm_fg( b );
+  end; { fg }
+
+  procedure bg( c :  char );
+    var i : byte;
+  begin
+    {  crt.textbackground( i - 1 ); }
+    i := pos( 'krgybmcwKRGYBMCW', c );
+    if i > 7 then xterm_bg( i - 1  ) else xterm_bg( 7 );
+  end;
+
+  procedure bg( b : byte );
+  begin
+    xterm_bg( b );
+  end; { fg }
+
 
   procedure setfont( font : bmpfont );
   begin
@@ -141,4 +205,9 @@ implementation
     result := false;
   end; { hascanvas }
 
+
+initialization
+  keyboard.initkeyboard;
+finalization
+  keyboard.donekeyboard;
 end.
