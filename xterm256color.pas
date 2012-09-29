@@ -4,27 +4,32 @@
 
 {$i xpc.inc }
 program xterm256color;
-  uses xpc;
-
-  procedure showcolor( color :  byte );
-  begin
-    write( #27, '[48;5;', color, 'm', '  ' );
-  end;
+  uses xpc, kvm;
 
   procedure resetcolor;
   begin
-    write( #27, '[0m' );
-  end; { resetcolor }
+    write( #27, '[0m' )
+  end;
 
-  function hexbyte( b :  byte ) : string;
+  function hexbyte( b : byte ) : string;
   begin
-    result := pad( hex( b ), 2, '0' );
+    result := pad( hex( b ), 2, '0' )
+  end;
+
+  { the original looked a lot nicer because it used two spaces of background
+    and thus showed solid blocks... but: i was testing both foreground and   
+    background, and the brackets still kind of look cool. :) }
+  procedure showcolor( color :  byte );
+  begin
+    resetcolor;
+    kvm.fg( color );
+    write('[');
+    kvm.bg( color );
+    kvm.fg( 0 );
+    write(']');
   end;
   
   var red, green, blue, gray, color, level : byte;
-
-
-
 
 begin
   
