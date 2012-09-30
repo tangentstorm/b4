@@ -1,5 +1,11 @@
 #+TITLE: b4.00 : tasklist
 
+* [1/2] get the retro mainloop to run right in the debugger
+** TODO show user-defined words in the debugger
+Requires knowing which cells contain code, and which contain data.
+** TODO parse the entire dictionary up front
+This lets us use retro as an interpreter anyway.
+* TODO set up fpcunit so i have a real test suite
 * [2/6] implement the virtual machine                                   :pas:
 ** DONE load the image (machine code) into an array
 
