@@ -2,9 +2,20 @@
 
 * [1/2] get the retro mainloop to run right in the debugger
 ** TODO show user-defined words in the debugger
-Requires knowing which cells contain code, and which contain data.
-** TODO parse the entire dictionary up front
-This lets us use retro as an interpreter anyway.
+*** TODO procedure to walk the dictionary and extract details
+**** COMMENT Crc said that positon 2 in the image is the pointer to "last" 
+(the address of the last defined word, from which you can follow the links back to get the others.)
+
+See file:~/vrx/doc/Commentary.txt 
+and file:~/vrx/examples/autopsy.rx
+# ( ~/vrx is just my retroforth working copy )
+
+**** TODO define a record structure to hold the word
+**** TODO populate the fields
+*** TODO
+This would let us decouple retro-the-language from ngaro.
+This gives us the option of caching.
+
 * TODO set up fpcunit so i have a real test suite
 * [2/6] implement the virtual machine                                   :pas:
 ** DONE load the image (machine code) into an array
