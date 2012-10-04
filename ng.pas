@@ -17,14 +17,15 @@ interface uses xpc, stacks, sim, kvm;
       data, addr : stack;
       ip	 : integer;
       ram	 : array of int32;
-      port	 : array [ 0 .. 15 ] of int32;
-      device	 : array [ 0 .. 15 ] of device;
+      ports	 : array of int32;
+      devices	 : array of device;
       optbl	 : array of oprec;
       imgfile	 : image;
       imgpath    : string;
+      debugmode  : boolean;
 
-      constructor init( imagepath : string );
-      procedure tick;
+      constructor init( imagepath : string; debug : boolean );
+      procedure tick; 
       procedure loop;
       procedure dump;
       procedure runop( op:int32 );
@@ -32,8 +33,8 @@ interface uses xpc, stacks, sim, kvm;
       procedure load;
       procedure save;
 
-      { these are the opcodes. bleh. this is one part of pascal that
-	makes me want to use oberon instead. }
+      { these are the opcodes.. agin. having to type out the interface
+	in pascal really makes me want to use oberon instead. }
       procedure oNOP;  procedure oLIT;  procedure oDUP;  procedure oDROP;
       procedure oSWAP; procedure OPUSH; procedure oPOP;  procedure oLOOP;
       procedure oJMP;  procedure oRET;  procedure oJLT;  procedure oJGT;
@@ -45,6 +46,7 @@ interface uses xpc, stacks, sim, kvm;
       procedure init_optable;
 
       { and the port handlers }
+      function handle_syncport( msg : int32 ) : int32;
       function handle_keyboard( msg : int32 ) : int32;
       function handle_write( msg : int32 ) : int32;
       function handle_refresh( msg : int32 ) : int32;
@@ -62,16 +64,18 @@ implementation
   {$i ng.ports.inc }
   {$i ng.debug.inc }
 
-  constructor vm.init( imagepath : string );
+  constructor vm.init( imagepath : string; debug : boolean );
   begin
     self.init_optable;
     assert( length( self.optbl ) >= 31 );
+    self.init_porthandlers;
     self.data.init( 32 );
     self.addr.init( 32 );
     self.ip := 0;
     self.imgpath := imagepath;
     assign( self.imgfile, imagepath );
     self.load;
+    self.debugmode := debug;
   end; { vm.init }
 
 
@@ -92,6 +96,7 @@ implementation
       close( self.imgfile );
     end else begin
       writeln( 'error: unable to open ', self.imgpath );
+      halt;
     end
   end; { vm.load }
 
@@ -109,7 +114,7 @@ implementation
 
   procedure vm.tick;
   begin
-    dump;
+    if self.debugmode then dump;
     if ( ip >= low( ram )) and ( ip <= high( ram )) then
       runop( ram[ ip ] );
     inc( ip );
@@ -124,7 +129,14 @@ implementation
 
   procedure vm.runop( op: int32 );
   begin
+    { TODO : real breakpoints }
+    if false { or ( op = 129 ) } and not debugmode then begin
+      debugmode := true; dump;
+    end;
     if op >= length( optbl ) then oIVK { invoke a procedure }
+    else if op < 0 then begin
+      writeln( 'bad opcode: ', op ); readln; dump; debugmode := true;
+    end
     else optbl[ op ].go;
   end;
 
@@ -136,7 +148,7 @@ implementation
   | The protocol is:                                       |
   |                                                        |
   | - write whatever you want to the ports                 |
-  | - set port[ 0 ] to 0                                   |
+  | - set ports[ 0 ] to 0                                  |
   | - invoke the 'wait' instruction                        |
   |                                                        |
   | - the vm pauses until a device sets port[ 0 ] to 1     |
@@ -152,19 +164,17 @@ implementation
   procedure vm.runio; { triggered by the oWAIT op }
     var p: int32;
   begin
-    if port[ 0 ] = 0 then
-      begin
-        port[ 0 ] := 1;
-        for p in port do
-          begin
-            if port[ p ] <> 0 then
-              begin
-                port[ p ] := device[ p ]( port[ p ]);
-              end;
-          end;
+    kvm.clrscr;
+    if ports[ 0 ] = 0 then begin
+      ports[ 0 ] := 1;
+      for p := 0 to length( ports )-1 do begin
+	if ports[ p ] <> 0 then begin
+	  ports[ p ] := devices[ p ]( ports[ p ]);
+	end;
       end;
-  end;
-
+    end;
+  end; { vm.runio }
+  
 begin
 
 end.

@@ -44,11 +44,12 @@ unit ng.debug; implementation
     write( 'data :' ); data.dump;
     write( 'addr :' ); addr.dump;
     write( 'port :' );
-    for i:= 0 to 15 do
-      begin
-        str( port[ i ], s );
-        write( s, ' ');
-      end;
+    for i:= 0 to length( ports ) - 1 do
+    begin
+      write( i , ':' );
+      str( ports[ i ], s );
+      write( s, ' ');
+    end;
     writeln;
 
     { let's try and keep the pointer somewhere around middle of the 15-line screen }
@@ -59,14 +60,15 @@ unit ng.debug; implementation
     i := b;
     repeat
       show_addr;
-      if ( i >= low( ram )) and ( i <= high( ram ))
-	and ( ram[i] >= low( optbl )) and ( ram[i] <= high( optbl )) then
-	show_opcode
-      else begin
-	write( ram[ i ] );
-	write( reverse_lookup( ram[ i ]));
-	writeln;
-      end;
+      if ( i >= low( ram )) and ( i <= high( ram )) then
+        if( ram[i] >= low( optbl )) and ( ram[i] <= high( optbl ))
+        then show_opcode
+        else begin
+            write( ram[ i ] );
+            write( reverse_lookup( ram[ i ]));
+            writeln;
+          end
+        else writeln( '???' );
       inc( i );
     until i >= e; { can be greater if we read an argument in last cell }
     

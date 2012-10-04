@@ -15,7 +15,10 @@ unit ng.ops; implementation
   procedure vm.oLIT; begin inc( ip ); data.push( ram[ ip ]) end;
   procedure vm.oLOD; begin data.push( ram[ data.pop ]) end;
   { STORE : (na-) - put nos into ram at tos }
-  procedure vm.oSTO; begin TN ram[ t ] := ram[ n ]; end;
+  procedure vm.oSTO;
+  begin TN;
+    if ( t >= 0 ) and ( t < length( ram )) then ram[ t ] := n;
+  end;
 
   { -- stack ops ---------------------------------------------- }
   procedure vm.oDUP ; begin data.dup end;
@@ -27,10 +30,10 @@ unit ng.ops; implementation
   { -- port ops ----------------------------------------------- }
   procedure vm.oIN; { p-n }
   begin t := data.pop;
-    data.push( port[ t ] );
-    port[ t ] := 0;
+    data.push( ports[ t ] );
+    ports[ t ] := 0;
   end; 
-  procedure vm.oOUT ; { np- } begin port[ data.pop ] := data.pop; end;
+  procedure vm.oOUT ; { np- } begin TN; ports[ t ] := n; end;
   procedure vm.oWAIT; { - } begin runio; end;
 
   { -- arithmetic --------------------------------------------- }

@@ -6,16 +6,20 @@ unit ng.ports; implementation
 
   { -- port 0 ------------------------------------------------- }
 
-  { Nothing to do: port 0 isn't connected to a device.
-    It's just used to signal that one side or the other
-    has data to transfer. }
+  function vm.handle_syncport( msg :  int32 ): int32;
+  begin
+    { Nothing to do: port 0 isn't connected to a device.
+      It's just used to signal that one side or the other
+      has data to transfer. }
+    result := 0;
+  end;
 
   { -- port 1 ------------------------------------------------- }
   var
     direct_input : boolean = false;
     lastKey      : int32 = -1; { TODO : ascii.syn, maybe? }
-    tib	       : string  = '';
-  
+    tib		 : string  = '';
+
   function vm.handle_keyboard( msg : int32 ) : int32;
   begin
     { direct input }
@@ -61,7 +65,7 @@ unit ng.ports; implementation
 	     end;
   var
     files   : array of ngfile;
-  
+
   function vm.handle_files( msg : int32 ) : int32;
     const r = 0; w = 1; a = 2; m = 3;
     procedure nexthandle;
@@ -96,12 +100,13 @@ unit ng.ports; implementation
       else
     end; { case }
   end; { handle_files }
-  
+
 
   { -- port 5 : vm query -------------------------------------- }
 
   function vm.handle_vmquery( msg: int32 ) : int32;
   begin
+    writeln( 'handle_vmquery' );
     case msg of
       -1	: result := length( self.ram );
       -2	: if kvm.hascanvas then result := 1 else result := 0;
@@ -210,17 +215,25 @@ unit ng.ports; implementation
   { -- the port map ------------------------------------------- }
 
   procedure vm.init_porthandlers;
+    var i : integer;
+    const portcount = 9;
   begin
-    self.device[1] := @self.handle_keyboard;
-    self.device[2] := @self.handle_write;
-    self.device[3] := @self.handle_refresh;
-    self.device[4] := @self.handle_files;
-    self.device[5] := @self.handle_vmquery;
-    self.device[6] := @self.handle_canvas;
-    self.device[7] := @self.handle_mouse; 
-    self.device[8] := @self.handle_eterm;
+    setlength( self.devices, portcount );
+    setlength( self.ports, portcount );
+    for i := 0 to portcount - 1 do begin
+      ports[ i ] := 0;
+    end;
+    self.devices[0] := @self.handle_syncport;
+    self.devices[1] := @self.handle_keyboard;
+    self.devices[2] := @self.handle_write;
+    self.devices[3] := @self.handle_refresh;
+    self.devices[4] := @self.handle_files;
+    self.devices[5] := @self.handle_vmquery;
+    self.devices[6] := @self.handle_canvas;
+    self.devices[7] := @self.handle_mouse;
+    self.devices[8] := @self.handle_eterm;
   end; { init_porthandlers }
-  
+
 {$IFDEF NESTUNITS}
-end.				   
+end.
 {$ENDIF}
