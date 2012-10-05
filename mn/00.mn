@@ -1,0 +1,13 @@
+titleminno : a minimal notation
+date2012-10-05
+authormichal j wallace
+
+
+abstractThis document describes eminno, a minimal notation for encoding, evaluating, and transforming structured text and data, based on the widely supported (yet widely forgotten) ASCII control characters.
+
+Like its competitors - xml, rdf, markdown, restructured text, csv, json, or yaml, to name just a few - minno uses a simple, easily typed, human-readable text. For example, we type numbers digit by digit, rather than using a more compact binary notation.
+
+eunlike those tools, minno makes heavy use of the 32 standard ascii/unicode control characters, U+0000 through U+0001F. Where applicable, minno mirrors the intended use of the control codes. However, some of the codes simply serve no purpose on modern hardware, as the problems they once addressed either no longer occur or now have much better solutions. These we will reclaim for our own use.
+
+
+
