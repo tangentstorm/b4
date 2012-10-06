@@ -4,7 +4,8 @@
 #+author: charles childers, luke parrish, marc simpson, jay skeer ( code )
 #+author: charles childers (??) ( bottom-up commentary )
 
-* overview
+* part 1 : overview
+** quick intro to retro
 
 Retro is a concatenative programming language, related to forth, factor, and joy. Retro runs on a portable virtual machine called ngaro, and is self hosting, meaning it is written in itself.
 
@@ -20,8 +21,8 @@ This is a top-down view of the bootstrap process, which means that the code will
 
 We will start at the "top" of the retro user interface, with the listener (the "ok" prompt), briefly discuss each word we encounter, then perform a recursive descent into /its/ definition. The words will be introduced in breadth first order, but the definitions will be presented depth-first, so that we are implementing each word "just in time" for execution in the level above.
 
-* the listener
-** =listen= the word that does what you ask it to
+** the listener
+*** =listen= the word that does what you ask it to
 #+begin_src retro
 t: listen  (   - ) repeat ok 32 # accept tib find process again ;
 #+end_src
@@ -30,7 +31,7 @@ This is the main loop of the retro interpreter, taken from line 246 of ~kernel.r
 
 Once we understand how the listener works, we can simply follow the ~Commentary.txt~ file from the heading "Stage 3: Extend the Language" on line 1000. Therefore, we will only concern ourselves here with this the first two phases.
 
-** What do all those words mean?
+*** What do all those words mean?
 
 First, note that word =t:= is simply the standard word =:= ("colon"), which begins a definition, except that the definition gets stored in the target image. Since =t:= is the first word of a definition, it should be the first sub-node that we visit, but we will treat it as =:= and visit that instead.
 
@@ -43,7 +44,7 @@ So. What do the other words mean? The following definitions are taken from ~doc/
 | repeat  | -    | Start an unconditional loop                                                       |
 | ok      | -    | Displays the "ok" prompt                                                          |
 | 32      | -n   | /not found, so parsed as integer and pushed to data stack/                          |
-| /#/       | #-   | /meta.rx: compile a literal (unnecssary after stage 3)/                             |
+| /#/       | n-   | /meta.rx: compile a literal (unnecssary after stage 3)/                             |
 | accept  | c-   | Read a string, ending with the specified character. The string is returned in =tib= |
 | tib     | -a   | Returns address of text input buffer                                              |
 | find    | $-af | Search for a name in the dictionary. Returns a dictionary header and a flag       |
@@ -54,7 +55,7 @@ So. What do the other words mean? The following definitions are taken from ~doc/
 
 We will not show the lines for =:=, =;=, or =(...)= in other definitions, but will repeat the internal definitions.
 
-** Understanding the stack comment.
+*** Understanding the stack comment.
 
 The second column shows the /stack comment/ for each word. The following symbols are used:
 
@@ -72,8 +73,8 @@ The second column shows the /stack comment/ for each word. The following symbols
 The topmost item is always on the right, so for example =( ca-nf )= means "take an address, then a character off the stack, give back a number and then a flag". (Flags are almost always returned on top, so they can be easily tested with =if= .)
 
 
-*** TODO what does # mean ? ( number? counted string? )
-** Summary of =listen= 
+**** TODO what does # mean ? ( number? counted string? )
+*** Summary of =listen= 
 
 Let's take another look at =listen= then, and put it in our own words:
 
@@ -85,40 +86,84 @@ The listener is an *infinite loop* ( =repeat= .. =again= ) that shows a prompt (
 
 We will now explore each of these words in detail.
 
-* TODO =: ("colon")= the word that makes new words
+** stepwise refinement and recursive descent
+Having investigated the word =listen= and briefly described its component words, we are now going to give each of those words the same treatment in turn.
+
+We will proceed depth first and left to right. Note that it's possible that a word is used in multiple places, and we may therefore need to define it earlier than the order in which we expected.
+
+* part 2 : recursive descent
+** TODO =listen= > =: ("colon")= the word that makes new words
+*** def
+~kernel.rx~
+#+begin_src retro
+t: :        ( "-  )  create ' .word # last # @, d->class !, ]] vector? ;
+#+end_src
+*** words
+| :        | "-  | Calls =create=, changes class to =.word=, and turns =compiler= on                                         |
+|----------+-----+-----------------------------------------------------------------------------------------------------|
+| t:       | "-  | /meta.rx: compile to target image ( bootstrap version of/ =:= /)/                                         |
+| create   | "-  | Parse for a name and call =header=                                                                    |
+| '        | n-  | Place TOS =here= and increment =heap= by 1                                                              |
+| .word    | a-  | Class for normal functions                                                                          |
+| /#/        |     |                                                                                                     |
+| last     | -a  | Variable; pointer to most recent dictionary header                                                  |
+| @,     | -   | /meta.rx: assembler for @ (which fetches a value from the address at TOS)/                            |
+| d->class | a-a | Given a dictionary header, return the address of the class handler. Use =@= to get the class handler. |
+| !,       | -   | /meta.rx: assembler for ! (which stores a value to the address at TOS)/                               |
+| ]]       | -   | Turn compiler on                                                                                    |
+| /vector?/  | -   | /kernel.rx: either revectors the word immediately or writes two NOPs for revectoring later/           |
+
+** TODO =:= > =t:= the compiler's compiler
+~meta.rx~
+#+begin_src retro
+: t: ( "- ) label: nop, nop, &m, reclass ;
+#+end_src
+
+** TODO =t:= > =label:= 
+** TODO =t:= > =&m,= 
+** TODO =t:= > =reclass=
+** TODO =listen= > =( ("paren")= the word that doesn't care what you say
+** TODO =listen= > =create= 
+** TODO =listen= > =' the quote
+** TODO =listen= > =.word= 
+** TODO =listen= > =#= proto literals
+** TODO =listen= > =last= at =last=, you find the words
+** TODO =listen= > =@,== assemble and follow me
+** TODO =listen= > =d->class= pointer arithmetic
+** TODO =listen= > =!, take that, NOS!
+** TODO =listen= > =]]= 
+** TODO =listen= > =vector?=  =vector?= I hardly know her.
+** TODO =listen= > =;= STOP THE PRESS!
+
+** =listen= > ( paren ) # should have been done by this point
+** TODO =listen= > =repeat= the word that's just getting started
 #
 
-* TODO =( ("paren")= the word that doesn't care what you say
-#
-
-* TODO =repeat= the word that's just getting started
-#
-
-* TODO =ok= the word that lets you know everything is ok
+** TODO =listen= > =ok= the word that lets you know everything is ok
 #+begin_src retro
 t: ok      (   - ) compiler # @, not 0; drop, cr okmsg # puts ;
 #+end_src
 
-* TODO =32= and =#= the words that just weren't there
+** TODO =listen= > =32= the word that wasn't here
 #
 
-* TODO =accept= the word that wants you to show some character
+** TODO =listen= > =accept= the word that wants you to show some character
+** TODO =listen= > =tib= the word that holds what =listen= heard
 #
 
-* TODO =tib= the word that holds what =listen= heard
+** TODO =listen= > =find= the word that reads the dictionary
 #
-
-* TODO =find= the word that reads the dictionary
-#
-* TODO =process= the hidden word that makes the whole thing work
+** TODO =listen= > =process= the hidden word that makes the whole thing work
 #+begin_src retro
 i: process ( af- ) 0 # !if xt:class jump: withClass then drop jump: number
 #+end_src
 
-* TODO =again= the word that picks up after =repeat=
+** TODO =listen= > =again= the word that picks up after =repeat=
+
 
 * TODO scraps (put these in the right place as we go along)
 #+begin_src retro
 i: number  (   - ) tib isNumber? 0 # !if jump: build# then jump: notFound
 i: build#  (   - ) tib toNumber ' .data # jump: withClass
 #+end_src
+
