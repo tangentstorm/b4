@@ -1,0 +1,152 @@
+( b4 assembly code to make a tiny image for the ngaro vm )
+( ------------------------------------------------------ )
+( copright 2012 michal j wallace. all rights reserved.   )
+( available to the public under the isc or x11 license.  )
+( ------------------------------------------------------ )
+
+( this section fills the first 32 cells. cell #0 is an implicit call to )
+( position 288 [ 0x0120 ], where we will hopefully remember to put the  )
+( code for booting the system. the rest are set to zero.                )
+(                                                                       )
+( since we're here, we might as well set up some assembler macros for   )
+( decimal numbers and the ngaro opcodes. the : character simply causes  )
+( b4a to associate the rest of the token with the current value of the  )
+( write pointer [called $here in the b4a source].                       )
+
+:0 ( this just makes a "0" macro for "0". literals have to have an even )
+   ( number of digits. that was probably a dumb idea, but for now...    )
+
+:#0  :nop    0120  :#1  :lit    0     :#2  :dup    0     :#3  :drop   0
+:#4  :swap   0     :#5  :push   0     :#6  :pop    0     :#7  :loop   0
+:#8  :jump   0     :#9  :;      0     :#10 :<jump  0     :#11 :>jump  0
+:#12 :!jump  0     :#13 :=jump  0     :#14 :@      0     :#15 :!      0
+:#16 :+      0     :#17 :-      0     :#18 :*      0     :#19 :/mod   0
+:#20 :and    0     :#21 :or     0     :#22 :xor    0     :#23 :<<     0
+:#24 :>>     0     :#25 :0;     0     :#26 :1+     0     :#27 :1-     0
+:#28 :in     0     :#29 :out    0     :#30 :wait   0     :#31         0
+
+( ngaro only has 30 opcodes, but i want to reserve 256 cells to create  )
+( a sort of programmable bytecode. this also lets us define some macros )
+( for the printable part of the ascii character set                     )
+
+:#32 :\_ (space) 0
+
+( swap the braces for parens and you can generate the rest with python: )
+( print ' '.join {":'%s :#%i 0" % { chr{i}, i} for i in range{33,127} } )
+( i just added the linebreaks manually in emacs.                        )
+
+:'! :#33 0 :'" :#34 0 :':# :#35 0 :'$ :#36 0 :'% :#37 0 :'& :#38 0 :'' :#39 0
+
+( gotta watch out for these two. this kind of thing is why i started    )
+( thinking about using the lower 32 as the markup language. i decided   )
+( not to force minno on users who only want b4a or ngaro, though, at    )
+( least until i know how people respond to minno. <g>                   )
+
+:OPAREN :#40 0 :CPAREN :#41 0
+
+( the rest are easy, up until delete )
+
+:'* :#42 0 :'+ :#43 0 :', :#44 0 :'- :#45 0 :'. :#46 0 :'/ :#47 0 :'0 :#48 0
+:'1 :#49 0 :'2 :#50 0 :'3 :#51 0 :'4 :#52 0 :'5 :#53 0 :'6 :#54 0 :'7 :#55 0
+:'8 :#56 0 :'9 :#57 0 :': :#58 0 :'; :#59 0 :'< :#60 0 :'= :#61 0 :'> :#62 0
+:'? :#63 0 :'@ :#60 0 :'A :#65 0 :'B :#66 0 :'C :#67 0 :'D :#68 0 :'E :#69 0
+:'F :#70 0 :'G :#71 0 :'H :#72 0 :'I :#73 0 :'J :#74 0 :'K :#75 0 :'L :#76 0
+:'M :#77 0 :'N :#78 0 :'O :#79 0 :'P :#80 0 :'Q :#81 0 :'R :#82 0 :'S :#83 0
+:'T :#84 0 :'U :#85 0 :'V :#86 0 :'W :#87 0 :'X :#88 0 :'Y :#89 0 :'Z :#90 0
+:'[ :#91 0 :'\ :#92 0 :'] :#93 0 :'^ :#94 0 :'_ :#95 0 :'` :#96 0 :'a :#97 0
+:'b :#98 0 :'c :#99 0 :'d :#100 0 :'e :#101 0 :'f :#102 0 :'g :#103 0
+:'h :#104 0 :'i :#105 0 :'j :#106 0 :'k :#107 0 :'l :#108 0 :'m :#109 0
+:'n :#110 0 :'o :#111 0 :'p :#112 0 :'q :#113 0 :'r :#114 0 :'s :#115 0
+:'t :#116 0 :'u :#117 0 :v :#118 0 :'w :#119 0 :'x :#120 0 :'y :#121 0
+:'z :#122 0 :'{ :#123 0 :'| :#124 0 :'} :#125 0 :'~ :#126 0
+
+( i don't see that we need a "delete" mnemonic other than #127, though )
+:#127 0
+
+( nor do i see a need for bigger decimal macros. my main interest in this )
+( set of numbers early on is the utf-8 encoding format, and it makes more )
+( sense to use hex for that. so here's a block of 128 zeros, again with   )
+( a little help from python. )
+
+( >>> ' '.join{ '00' for x in range{ 16 }} )
+( then pasted eight times to get 128 cells )
+
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+
+( that should be 256 words total now, filling out our virtual bytecode. )
+( but... since we might want to emulate a machine other that ngaro, we  )
+( should add another 32 cells - then to get opcode 0, we'd just add 32  )
+
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+
+( this caps off the bytecode, even though they're all blank. we can fill )
+( these in at any time by use of the instruction "!", with the code byte )
+( and the address of the actual function on the data stack. )
+
+( we are now at position #288, which is where we sent ngaro's instruction )
+( pointer way back in the first instruction. )
+
+( our protocol is now ridiculously simple: we will sit here and read the  )
+( standard input device <ngaro assumes it's a "keyboard"> and process one )
+( value at a time. )
+
+( but we need a simple instruction to allow forward jumps before we can )
+( continue. the assembler can't do that for us, so we have to define it )
+( ourselves. ifel works like a simple two argument jump )
+:ifel
+:end
+
+
+
+:runvm ( - ) 00 00  ( leave the standard revectoring hooks )
+  ( var op = 0  - our virtual opcode, which we are setting to 0 )
+  ( REPEAT )
+
+     :op 00  ( here's where it's actually stored )
+
+     :getc
+     ( this was taken directly from the ngaro docs for port 1 )
+     ( i just reformatted it using the b4a syntax             )
+     lit #1 lit #1 out        ( request a keyboard event.     )
+     lit #0 lit #0 out wait   ( wait for the key to show up.  )
+     lit #1 in                ( move the code to TOS          )
+
+     ( if the instruction is jump or lit, then we need to read )
+     ( one more byte 
+     ( if op <> 'lit' and tos = 1 then begin op = 0 ; getc end )
+     dup lit #1 ( 
+
+     dup op ! ( copy it to that memory location )
+     @
+    jump runvm
+( UNTIL op = ; )
+
+( then we can invoke an operation it with a dynamically computed goto: )
+:runop ( n- ) @ push 
+
+(=runop) 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
