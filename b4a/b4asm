@@ -1,0 +1,78 @@
+#!/usr/bin/perl
+#-------------------------------------------------------------
+# b4asm : the b4 assembler for 32-bit binary data
+# copyright (c) 2012 michal j wallace. all rights reserved.
+# licensed to the public under the ISC or X11 license.
+#-------------------------------------------------------------
+# usage: b4a < code.b4a > binary.dat
+#-------------------------------------------------------------
+# comments  : anything between parens
+#   - may not be nested
+#   - do not require spaces
+#   - may not span lines
+#   ex: (comment) ( so is this )
+#
+# whitespace is ignored, except to serve as
+# as a separator
+#
+# numeric literals : hexidecimal only
+#   - unprefixed sequence of hex digits
+#   - length must be 2,4,6,or 8 digits
+#   - result is always padded to 32 bits
+#   ex: 01 abcd => 00 00 00 01 00 00 ab cd
+#
+# definitions :
+#   given "xyz" is some sequence of non-whitespace chars,
+#   - :xyz saves the position, writing nothing
+#   - xyz expands to a hex string before hex parsing
+#
+#   ex: :^ 00 :a 01 a ^ => 00 01 00000001 00000000
+#
+#   note: this means you can redefine numbers.
+#   it's probably not a great idea though.
+#
+#   redefining labels is perfectly valid syntax.
+#
+# any other input is an error.
+#-----------------------------------------------------------
+%defs = {};
+$here = 0;
+
+# loop through each line of input
+while (<>) {
+
+    $line++;
+
+    # make everything lowercase
+    lc;
+
+    # strip ( comments ) note: cannot span lines
+    s/\(.*?\)//g;
+
+    # loop through all whitespace-delimited tokens
+    foreach (split) {
+
+	# intercept label definitions
+	if ( m/^:(.*)$/ ) { $defs[$1] = $here }
+	else
+	{
+	    # replace known items with hex literals
+	    if ($defs[$_]) { $_ = sprintf "%08x", $defs[$_] }
+
+	    # compile hex literals to 32-bit numbers
+	    $bytes = 0; $value = '';
+	    while ( $octet = s/^[0-9a-f]{2}// ) {
+		$bytes++; $value .= chr hex $octet;
+	    }
+
+	    # output the 32 bit binary value
+	    if ( $bytes ) {
+		while ( $bytes < 4 ) { $bytes++; print "\x00"; }
+		die "value $_ too large on line $line" unless $bytes == 4;
+	    }
+	    else { die "invalid token '$_' on line $line" }
+
+	    $here++;
+	}
+    }
+}
