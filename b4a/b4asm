@@ -59,16 +59,19 @@ while (<>) {
 	    # replace known items with hex literals
 	    if ($defs[$_]) { $_ = sprintf "%08x", $defs[$_] }
 
-	    # compile hex literals to 32-bit numbers
+	    # compile hex literals to unsigned int value
 	    $bytes = 0; $value = '';
-	    while ( $octet = s/^[0-9a-f]{2}// ) {
-		$bytes++; $value .= chr hex $octet;
+	    while ( $octet = s/^([0-9a-f]{2})// ) {
+		$bytes++; $value .= chr hex $1;
 	    }
 
-	    # output the 32 bit binary value
+	    # output the value, padded to 32 bits
+	    $pads = 0;
 	    if ( $bytes ) {
-		while ( $bytes < 4 ) { $bytes++; print "\x00"; }
-		die "value $_ too large on line $line" unless $bytes == 4;
+		while ( $bytes + $pads < 4 ) { $pads++; print "\x00"; }
+		die "value $_ too large on line $line"
+		    unless $bytes + $pads == 4;
+		print $value;
 	    }
 	    else { die "invalid token '$_' on line $line" }
 
