@@ -53,8 +53,8 @@ unit ng.ops; implementation
   procedure vm.oAND ; begin data.push( data.pop AND data.pop ) end;
   procedure vm.oOR  ; begin data.push( data.pop OR data.pop ) end;
   procedure vm.oXOR ; begin data.push( data.pop XOR data.pop ) end;
-  procedure vm.oSHL ; begin t := data.pop; data.push( data.pop shl t ); end;
-  procedure vm.oSHR ; begin t := data.pop; data.push( data.pop shr t ); end;
+  procedure vm.oSHL ; begin TN; data.push( n shl t ); end;
+  procedure vm.oSHR ; begin TN; data.push( n shr t ); end;
 
 
   { -- jump and conditional jumps ----------------------------- }
@@ -77,9 +77,8 @@ unit ng.ops; implementation
   begin
     dec( data.cell[ data.sp ] );
     if data.cell[ data.sp ] > 0 then
-      ip := ram[ ip + 1 ]
-    else
-    begin
+      ip := ram[ ip + 1 ] - 1 { jump, so compensate for the ip++ }
+    else begin
       inc( ip );
       data.pop;
     end
