@@ -12,8 +12,7 @@
 #   - may not span lines
 #   ex: (comment) ( so is this )
 #
-# whitespace is ignored, except to serve as
-# as a separator
+# whitespace is ignored, except to serve as a separator
 #
 # numeric literals : hexidecimal only
 #   - unprefixed sequence of hex digits
@@ -35,47 +34,73 @@
 #
 # any other input is an error.
 #-----------------------------------------------------------
-%defs = {};
-$here = 0;
+
+%defs = ();    # the dictionary that holds macros
+$here = 0;     # a counter for the write head
 
-# loop through each line of input
-while (<>) {
+# note: the trace information is marked up with minno
+sub trace {
+    print "$_[0]";
+}
+
+sub define {
+    my ( $k, $v ) = @_;
+    trace "def $k = $v";
+    $defs{ $k } = $v;
+}
 
-    $line++;
-
-    # make everything lowercase
-    lc;
-
-    # strip ( comments ) note: cannot span lines
-    s/\(.*?\)//g;
-
-    # loop through all whitespace-delimited tokens
-    foreach (split) {
-
-	# intercept label definitions
-	if ( m/^:(.*)$/ ) { $defs[$1] = $here }
-	else
-	{
-	    # replace known items with hex literals
-	    if ($defs[$_]) { $_ = sprintf "%08x", $defs[$_] }
-
-	    # compile hex literals to unsigned int value
-	    $bytes = 0; $value = '';
-	    while ( $octet = s/^([0-9a-f]{2})// ) {
-		$bytes++; $value .= chr hex $1;
+sub handle_macros {
+    foreach (@tokens = split) {
+	# define new macros with ":"
+        if ( s/^:(.+)$// ) { define( $1, $here ) }
+	else {
+	    # invoke macros just by mentioning them
+	    if ( exists( $defs{ $_ } )) {
+		$_ = sprintf( "%08x", $defs{ $_ });
 	    }
-
-	    # output the value, padded to 32 bits
-	    $pads = 0;
-	    if ( $bytes ) {
-		while ( $bytes + $pads < 4 ) { $pads++; print "\x00"; }
-		die "value $_ too large on line $line"
-		    unless $bytes + $pads == 4;
-		print $value;
-	    }
-	    else { die "invalid token '$_' on line $line" }
-
 	    $here++;
 	}
     }
+    $_ = join ' ', @tokens;
+}
+
+
+sub output_raw
+{
+    foreach (split)
+    {
+	# compile hex literals to unsigned int value
+	$bytes = 0; $value = '';
+	while ( s/^([0-9a-f]{2})// ) {
+	    $bytes++;
+	    $value .= chr hex $1;
+	}
+	
+	# output the value, padded to 32 bits
+	$pad = 0;
+	if ( $bytes ) {
+	    while ( $bytes + $pad < 4 ) { $pad++; print chr 0; }
+	    die "value $_ too large on line $line"
+		unless $bytes + $pad == 4;
+	    print $value;
+	}
+	else { print "!invalid token '$_' on line $line." }
+    }
+}
+
+
+
+# main loop
+$line = 0;
+while (<>) {
+
+    chomp;                     trace "incoming line #$line :[$_]";
+    $line++;
+    uc;
+    s/\(.*?\)//g;
+    strip;
+    next unless length;
+
+    handle_macros;             trace "after macros";
+    output_raw;
 }
