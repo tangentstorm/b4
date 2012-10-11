@@ -35,8 +35,8 @@ type
 
   tKeyState = set of keycode;
 
-  function readkey : char;
-  function kbstate : tKeyState;
+function readkey : char;
+function kbstate : tKeyState;
 
 
 {-- interface > video > graphics --}
@@ -52,8 +52,8 @@ type
 	      data : array of int32;
 	    end;
 
-  function hascanvas : boolean;
-  var canvas : surface;
+function hascanvas : boolean;
+var canvas : surface;
 
 {-- interface > video > terminal --}
 type
@@ -67,12 +67,12 @@ type
 	      glyphs : array of glyph;
 	    end;
 
-  procedure clrscr;
-  procedure gotoxy( x, y : int32 );
-  procedure fg( c : char );  procedure fg( b : byte );
-  procedure bg( c : char );  procedure bg( b : byte );
-  procedure setfont( font :  bmpfont );
-  var term : surface;
+procedure clrscr;
+procedure gotoxy( x, y : int32 );
+procedure fg( c : char );  procedure fg( b : byte );
+procedure bg( c : char );  procedure bg( b : byte );
+procedure setfont( font :  bmpfont );
+var term : surface;
 
 {-- interface > mouse --}
 
