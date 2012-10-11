@@ -57,7 +57,7 @@
 :'b :#98 0 :'c :#99 0 :'d :#100 0 :'e :#101 0 :'f :#102 0 :'g :#103 0
 :'h :#104 0 :'i :#105 0 :'j :#106 0 :'k :#107 0 :'l :#108 0 :'m :#109 0
 :'n :#110 0 :'o :#111 0 :'p :#112 0 :'q :#113 0 :'r :#114 0 :'s :#115 0
-:'t :#116 0 :'u :#117 0 :v :#118 0 :'w :#119 0 :'x :#120 0 :'y :#121 0
+:'t :#116 0 :'u :#117 0 :'v :#118 0 :'w :#119 0 :'x :#120 0 :'y :#121 0
 :'z :#122 0 :'{ :#123 0 :'| :#124 0 :'} :#125 0 :'~ :#126 0
 
 ( i don't see that we need a "delete" mnemonic other than #127, though )
@@ -71,22 +71,22 @@
 ( >>> ' '.join{ '00' for x in range{ 16 }} )
 ( then pasted eight times to get 128 cells )
 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
 ( that should be 256 words total now, filling out our virtual bytecode. )
 ( but... since we might want to emulate a machine other that ngaro, we  )
 ( should add another 32 cells - then to get opcode 0, we'd just add 32  )
 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
 ( this caps off the bytecode, even though they're all blank. we can fill )
 ( these in at any time by use of the instruction "!", with the code byte )
@@ -95,23 +95,20 @@
 ( we are now at position #288, which is where we sent ngaro's instruction )
 ( pointer way back in the first instruction. )
 
+
+
 ( our protocol is now ridiculously simple: we will sit here and read the  )
 ( standard input device <ngaro assumes it's a "keyboard"> and process one )
-( value at a time. )
+( byte at a time. )
 
-( but we need a simple instruction to allow forward jumps before we can )
-( continue. the assembler can't do that for us, so we have to define it )
-( ourselves. ifel works like a simple two argument jump )
-:ifel
-:end
+( to do that that, we will simply write the opcode to memory inside the loop )
+( so that ngaro executes it next time the loop happens.  )
 
-
-
-:runvm ( - ) 00 00  ( leave the standard revectoring hooks )
-  ( var op = 0  - our virtual opcode, which we are setting to 0 )
-  ( REPEAT )
-
-     :op 00  ( here's where it's actually stored )
+:runvm ( - )
+  :op 00 ( var op = 0  - our virtual opcode, default = 0 = nop )
+(BEGIN)
+  (REPEAT)
+     :eval 0 0 ( keep two slots so we can do 'jump xxx' )
 
      :getc
      ( this was taken directly from the ngaro docs for port 1 )
@@ -121,32 +118,39 @@
      lit #1 in                ( move the code to TOS          )
 
      ( if the instruction is jump or lit, then we need to read )
-     ( one more byte 
      ( if op <> 'lit' and tos = 1 then begin op = 0 ; getc end )
-     dup lit #1 ( 
-
+     dup lit #1
      dup op ! ( copy it to that memory location )
      @
+     :eval 00 00
+
     jump runvm
-( UNTIL op = ; )
+  (UNTIL op = jump and lit = 0 )
+(END)
+
+( but we need a simple instruction to allow forward jumps before we can )
+( continue. the assembler can't do that for us, so we have to define it )
+( ourselves. ifel works like a simple two argument jump )
+:ifel
+:end
 
 ( then we can invoke an operation it with a dynamically computed goto: )
-:runop ( n- ) @ push 
+:runop ( n- ) @ push
 
 (=runop) 00 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
