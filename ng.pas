@@ -62,9 +62,9 @@ interface uses xpc, stacks, sim, kvm, posix;
 
 implementation
 
-  {$i ng.ops.inc }
-  {$i ng.ports.inc }
-  {$i ng.debug.inc }
+  {$i ng.ops.pas }
+  {$i ng.ports.pas }
+  {$i ng.debug.pas }
 
   constructor vm.init( imagepath : string; debug : boolean );
   begin
