@@ -91,28 +91,29 @@ unit ng.ports; implementation
 
   function vm.handle_vmquery( msg: int32 ) : int32;
   begin
+    result := 0;
     case msg of
-      -1	: result := length( self.ram );
-      -2	: if kvm.hascanvas then result := 1 else result := 0;
-      -3	: result := kvm.canvas.w;
-      -4	: result := kvm.canvas.h;
-      -5	: result := self.data.sp;
-      -6	: result := self.addr.sp;
-      -7	: result := -1;
-      -8	: begin
-		    {
-		      var foo = new Date;
-		      var unixtime_ms = foo.getTime();
-		      var unixtime = parseInt(unixtime_ms / 1000);
-		      result : = unixtime;
-		      }
-		  end;
-      -9	: begin
-		    self.ip := length( self.ram ) + 1;
-		    result := 0;
-		  end;
-      -11	: result := kvm.term.w;
-      -12	: result := kvm.term.h;
+
+      -1  : { memory size } result := length( self.ram );
+      -2  : { canvas exists? } if kvm.hascanvas then result := 1;
+      -3  : { canvas width } result := kvm.canvas.w;
+      -4  : { canvas height } result := kvm.canvas.h;
+      -5  : { data stack depth } result := self.data.sp;
+      -6  : { address stack depth } result := self.addr.sp;
+      -7  : {  TODO: mouse exists? } result := 0;
+      -8  : { current time } result := posix.time;
+      -9  : { exit the vm } self.ip := length( self.ram ) + 1;
+      -11 : { console width } result := kvm.term.w;
+      -12 : { console height } result := kvm.term.h;
+      -13 : { num bits/cell } result := 32;
+      -14 : {$IFDEF ENDIAN_BIG} result := 1; {$ELSE} result := 0; {$ENDIF}
+      -15 : { extended console? } result := -1;
+      -16 : { max depth of data stack } result := self.data.limit;
+      -17 : { max depth of address stack } result := self.addr.limit;
+
+      { non-standard extensions }
+      64  : self.debugmode := true;
+
       else
 	result := -1
     end

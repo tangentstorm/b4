@@ -1,6 +1,6 @@
 {$i xpc.inc }
 unit ng;
-interface uses xpc, stacks, sim, kvm;
+interface uses xpc, stacks, sim, kvm, posix;
 
   type
     pvm	   = ^vm;
