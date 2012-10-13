@@ -60,9 +60,8 @@ unit ng.ops; implementation
   { -- jump and conditional jumps ----------------------------- }
   procedure vm.oJMP();
   begin
-    ip := ram[ ip + 1 ];
-    while ram[ ip ] = 0 do inc( ip ); { skip over no-ops }
-    dec( ip ); { compensating for the post-op inc }
+    ip := ram[ ip + 1 ] - 1; { compensating for the post-op inc }
+    while ram[ ip + 1 ] = 0 do inc( ip ); { skip over no-ops }
   end;
   procedure vm.oJLT; begin TN if t <  n then oJMP else inc( ip ) end;
   procedure vm.oJGT; begin TN if t >  n then oJMP else inc( ip ) end;
@@ -70,7 +69,11 @@ unit ng.ops; implementation
   procedure vm.oJEQ; begin TN if t =  n then oJMP else inc( ip ) end;
 
   { invoke / return }
-  procedure vm.oIVK; begin addr.push( ip ); ip := ram[ ip ] - 1 end;
+  procedure vm.oIVK;
+  begin
+    addr.push( ip ); ip := ram[ ip ] - 1;
+    while ram[ ip + 1 ] = 0 do inc( ip );
+  end;
   procedure vm.oRET; begin ip := addr.pop end;
 
   procedure vm.oLOOP;
