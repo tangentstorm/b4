@@ -175,7 +175,6 @@ implementation
   procedure vm.runio; { triggered by the oWAIT op }
     var p: int32;
   begin
-    kvm.clrscr;
     if ports[ 0 ] = 0 then begin
       ports[ 0 ] := 1;
       for p := 0 to length( ports )-1 do begin
