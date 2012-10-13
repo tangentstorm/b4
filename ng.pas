@@ -89,9 +89,9 @@ implementation
     {$i+}
     if ioresult = 0 then begin
       size := filesize( self.imgfile );
-      log.debug([ 'image size = ', size, ' cells' ]);
+      // log.debug([ 'image size = ', size, ' cells' ]);
       setlength( self.ram, size );
-      log.debug([ 'ram = array [', low( self.ram ), '..', high( self.ram ), ']' ]);
+      // log.debug([ 'ram = array [', low( self.ram ), '..', high( self.ram ), ']' ]);
       for i := 0 to size - 1 do begin
 	read( self.imgfile, self.ram[ i ]);
       end;
