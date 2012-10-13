@@ -1,40 +1,16 @@
 #+TITLE: b4.00 : tasklist
 
-* TODO [1/2] get the retro mainloop to run correctly
+* DONE [2/2] get the basic retro listener to run correctly
 ** DONE [4/4] trace retro.py at each step and bring pascal in line
 *** DONE retro.py : allow running step by step
 *** DONE run the python and pascal vm's side by side
 *** DONE ng.pas : trace to logfile with same format
 *** DONE fix the discrepancies
-** TODO [3/4] fix the cursor and color handling for extended console
+** DONE [4/4] fix the cursor and color handling for extended console
 *** DONE position cursor on clrscr
 *** DONE position cursor on newline
-*** DONE implement proper wrapping / scrolling behavior
-I /think/ this is done. It should be handled natively by writeln + the terminal.
-*** TODO implement colors
-
-* ---
-
-* TODO [2/5] implement an assembler
-** DONE export binary numbers padded to proper size
-** DONE implement enough of minno to allow in-band debug signals
-** TODO only show debug messages when given a flag
-** TODO escape the control codes in the output in debug mode
-** TODO allow defining aliases up front in a table
-* TODO [0/1] show user-defined words in the debugger
-** TODO procedure to walk the dictionary and extract details
-*** COMMENT Crc said that positon 2 in the image is the pointer to "last" 
-(the address of the last defined word, from which you can follow the links back to get the others.)
-
-See file:~/vrx/doc/Commentary.txt 
-and file:~/vrx/examples/autopsy.rx
-# ( ~/vrx is just my retroforth working copy )
-
-*** TODO define a record structure to hold the word
-*** TODO populate the fields
-
-* TODO set up fpcunit so i have a real test suite
-* TODO [2/6] implement the virtual machine                              :pas:
+*** DONE implement colors
+* TODO [3/4] fill in the retro vm details                               :pas:
 ** DONE load the image (machine code) into an array
 
 Will just do this by hand for now, like I did with javascript, and worry about files when I build the assembler.
@@ -45,15 +21,15 @@ Probably cleaner would just be to use a file. :)
 
 #+name: machine-code
 #+begin_src delphi
-  
+
   const ram : array [ 0 .. 25 ] of int32 = (
-  
-      // set color to red : 4 1 6 out wait ; 
+
+      // set color to red : 4 1 6 out wait ;
       oLIT, 4,                    //  0  1
       oLIT, 1,                    //  2  3
       oLIT, 6,                    //  4  5
       oOUT, oWAIT,                //  6  7
-            
+
       // draw a pixel
       // : 320 200 2 6 out wait ;
       oLIT, 320,                  //  8  9
@@ -61,35 +37,77 @@ Probably cleaner would just be to use a file. :)
       oLIT, 2,                    // 12 13
       oLIT, 6,                    // 14 15
       oOUT, oWAIT,                // 16 17
-  
-      // write 0 to port 3 to force video update. 
+
+      // write 0 to port 3 to force video update.
       oLIT, 0,                    // 18 19
       oLIT, 3,                    // 20 21
       oOUT, oNOP,                 // 22 23
-  
+
       oNOP, oNOP                  // 24 25
-  
+
   );
-  
+
 #+end_src
 ** DONE load the image from disk
 ** DONE add ability to halt the program
 ** TODO [0/2] check that we do these the ngaro way
 *** TODO when does ngaro actually do on over/underflow checks?
 *** TODO would nos really trigger underflow?
-** TODO make stack sizes configurable
-* TODO [1/6] implement io devices
+* TODO [1/6] implement io devices                                      :easy:
 ** DONE port 1 : keyboard
-** TODO port 4 : file i/o
-*** TODO check c version about port 4 : file i / o -- really a byte at a time?
-** TODO [0/1] port 5 : querying the vm
-*** TODO implement environment variables
-** TODO port 6 : canvas
-SDL? AggPas?
-** TODO port 7 : mouse ( fill in mx, my )
-** TODO port 8 : enhanced text output
+** DONE port 2 : character generator
+** TODO extend character generator with ability to change bitmap font
+** DONE port 3 : force video update ( optional and not needed here )
+** TODO [0/8] port 4 : file i/o
+*** TODO io op -1 | filename, mode    -> handle | Open a file
+*** TODO io op -2 | handle            -> flag   | Read a byte from a file
+*** TODO io op -3 | character, handle -> flag   | Write a byte to a file
+*** TODO io op -4 | handle            -> flag   | Close a file
+*** TODO io op -5 | handle            -> offset | Return current location in file
+*** TODO io op -6 | offset, handle    -> flag   | Seek a new location in file
+*** TODO io op -7 | handle            -> size   | Return the size of a file
+*** TODO io op -8 | filename          -> flag   | Delete a file.
+** TODO [0/1] port 5
+*** TODO query op 10 | implement environment variables
+http://www.freepascal.org/docs-html/rtl/sysutils/getenvironmentvariable.html
+** TODO [0/8] port 6 : canvas
+*** TODO [#A] figure out the basic sdl / aggpas / ptckvm pipeline.
+- https://github.com/badsector/ptckvm
+- http://www.freepascal-meets-sdl.net/
 
-* TODO [0/12] flesh out vm with more ngaro assembly programs
+*** TODO canvas op  1 | n-    | set color for drawing operations
+*** TODO canvas op  2 | xy-   | draw a pixel at coordinates x, y
+*** TODO canvas op  3 | xyhw- | rectangle
+*** TODO canvas op  4 | xyhw- | filled rect
+*** TODO canvas op  5 | xyh-  | draw a vertical line of height (h) starting at x, y
+*** TODO canvas op  6 | xyw-  | draw a horizontal line of width (w) starting at x, y
+*** TODO canvas op  7 | xyw-  | draw a circle of width (w) starting at x, y
+*** TODO canvas op  8 | xyw-  | draw a filled circle of width (w) starting at x, y
+** TODO [0/2] port 7 : mouse
+*** TODO mouse op 1 | push mx, push my
+*** TODO mouse op 2 | push mb ( button state : 1 bit per button )
+** DONE port 8 : enhanced text output
+
+* --- testing ---
+* TODO [2/5] implement an assembler
+** DONE export binary numbers padded to proper size
+** DONE implement enough of minno to allow in-band debug signals
+** TODO only show debug messages when given a flag
+** TODO escape the control codes in the output in debug mode
+** TODO allow defining aliases up front in a table
+* TODO [0/1] show user-defined words in the debugger
+** TODO procedure to walk the dictionary and extract details
+*** COMMENT Crc said that positon 2 in the image is the pointer to "last"
+(the address of the last defined word, from which you can follow the links back to get the others.)
+
+See file:~/vrx/doc/Commentary.txt
+and file:~/vrx/examples/autopsy.rx
+# ( ~/vrx is just my retroforth working copy )
+
+*** TODO define a record structure to hold the word
+*** TODO populate the fields
+* TODO set up fpcunit so i have a real test suite
+* TODO [0/12] exercise vm with more ngaro assembly programs
 ** TODO square : draw a square                                          :nga:
 ** TODO color  : draw the palette                                      :nga:
 ** TODO click  : click screen to change color                          :nga:
@@ -105,25 +123,24 @@ SDL? AggPas?
 #+begin_example
 Retro 11.0 (1309798464)
 
-ok  see ok 
-1423 nop   
-1424 nop   
+ok  see ok
+1423 nop
+1424 nop
 1425 lit   4
-1427 @     
+1427 @
 1428 call  167
-1429 0;    
-1430 drop  
+1429 0;
+1430 drop
 1431 call  421
 1432 lit   54
 1434 call  443
-1435 ;     
+1435 ;
 
-ok  
+ok
 
 #+end_example
 
-
-* ---
+* --- cross-platform ---
 * TODO [0/3] bugs in other ngaro vms
 ** TODO py : crashes on "help" - why?
 ** TODO js : direct input for the terminal
@@ -136,5 +153,7 @@ portHandlers[2] = function()
 }
 #+end_src
 
+* TODO discrepencies
+port 5, -16 ( extended console? ) uses -1 to mean true... whereas elsewhere, it's just 1
 
 * end
