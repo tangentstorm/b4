@@ -1,23 +1,35 @@
 #+TITLE: b4.00 : tasklist
 
-* [1/2] get the retro mainloop to run right in the debugger
-** TODO show user-defined words in the debugger
-*** TODO procedure to walk the dictionary and extract details
-**** COMMENT Crc said that positon 2 in the image is the pointer to "last" 
+* TODO [1/2] get the retro mainloop to run correctly
+** DONE [4/4] trace retro.py at each step and bring pascal in line
+*** DONE retro.py : allow running step by step
+*** DONE run the python and pascal vm's side by side
+*** DONE ng.pas : trace to logfile with same format
+*** DONE fix the discrepancies
+** TODO [0/3] fix the cursor and color handling for extended console
+*** TODO position cursor on clrscr
+*** TODO position cursor on newline
+*** TODO implement proper wrapping behavior
+* TODO [2/5] implement an assembler
+** DONE export binary numbers padded to proper size
+** DONE implement enough of minno to allow in-band debug signals
+** TODO only show debug messages when given a flag
+** TODO escape the control codes in the output in debug mode
+** TODO allow defining aliases up front in a table
+* TODO show user-defined words in the debugger
+** TODO procedure to walk the dictionary and extract details
+*** COMMENT Crc said that positon 2 in the image is the pointer to "last" 
 (the address of the last defined word, from which you can follow the links back to get the others.)
 
 See file:~/vrx/doc/Commentary.txt 
 and file:~/vrx/examples/autopsy.rx
 # ( ~/vrx is just my retroforth working copy )
 
-**** TODO define a record structure to hold the word
-**** TODO populate the fields
-*** TODO
-This would let us decouple retro-the-language from ngaro.
-This gives us the option of caching.
+*** TODO define a record structure to hold the word
+*** TODO populate the fields
 
 * TODO set up fpcunit so i have a real test suite
-* [2/6] implement the virtual machine                                   :pas:
+* TODO [2/6] implement the virtual machine                              :pas:
 ** DONE load the image (machine code) into an array
 
 Will just do this by hand for now, like I did with javascript, and worry about files when I build the assembler.
@@ -62,7 +74,7 @@ Probably cleaner would just be to use a file. :)
 ** TODO make stack sizes configurable
 ** TODO implement a pixel in sdl
 ** TODO add ability to halt the program
-* [0/6] implement io devices
+* TODO [0/6] implement io devices
 ** TODO port 1 : keyboard
 *** TODO : should it wait for a key, like readkey? ( right now it's returning -1 )
 ** TODO port 2 : sending negative value should clear the screen, but doesn't, in js version
@@ -77,7 +89,18 @@ portHandlers[2] = function()
 ** TODO port 5 : querying the vm { need date/time }
 ** TODO port 7 : mouse ( fill in mx, my )
 ** TODO port 8 : enhanced text output
-* [0/1] implement a simple assembler in pascal
+* TODO [0/12] flesh out vm with more ngaro assembly programs
+** TODO square : draw a square                                         :nga:
+** TODO color  : draw the palette                                      :nga:
+** TODO click  : click screen to change color                          :nga:
+** TODO keys   : press any key to change color                         :nga:
+** TODO hello  : show the word hello                                   :nga:
+** TODO caps   : letters on screen (uppercase)                         :nga:
+** TODO shift  : captital letters / shift key                          :nga:
+** TODO color  : colored text input                                    :nga:
+** TODO read   : read a file from disk                                 :nga:
+** TODO write  : write a file to disk                                  :nga:
+** TODO ngasm  : assembler for ngaro                                   :nga:
 ** TODO port pixel.hex to pixel.nga
 *** NOTE Just use the syntax retro gives when you type =see=
 #+begin_example
@@ -99,17 +122,4 @@ ok  see ok
 ok  
 
 #+end_example
-
-* [0/11] flesh out vm with more ngaro assembly programs
-** TODO square : draw a square                                         :nga:
-** TODO color  : draw the palette                                      :nga:
-** TODO click  : click screen to change color                          :nga:
-** TODO keys   : press any key to change color                         :nga:
-** TODO hello  : show the word hello                                   :nga:
-** TODO caps   : letters on screen (uppercase)                         :nga:
-** TODO shift  : captital letters / shift key                          :nga:
-** TODO color  : colored text input                                    :nga:
-** TODO read   : read a file from disk                                 :nga:
-** TODO write  : write a file to disk                                  :nga:
-** TODO ngasm  : assembler for ngaro                                   :nga:
 
