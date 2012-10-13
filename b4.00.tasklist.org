@@ -6,10 +6,11 @@
 *** DONE run the python and pascal vm's side by side
 *** DONE ng.pas : trace to logfile with same format
 *** DONE fix the discrepancies
-** TODO [1/4] fix the cursor and color handling for extended console
+** TODO [3/4] fix the cursor and color handling for extended console
 *** DONE position cursor on clrscr
-*** TODO position cursor on newline
-*** TODO implement proper wrapping behavior
+*** DONE position cursor on newline
+*** DONE implement proper wrapping / scrolling behavior
+I /think/ this is done. It should be handled natively by writeln + the terminal.
 *** TODO implement colors
 
 * ---

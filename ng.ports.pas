@@ -34,7 +34,15 @@ unit ng.ports; implementation
   begin
     if msg = 1 then begin
       x := self.data.pop;
-      if x < 0 then clear else write( chr( x ));
+      if x < 0 then clear
+      else if x < 32 then
+	case chr( x ) of
+	  ^H : write( ^H, ' ', ^H );
+	  ^J : writeln;
+	  ^M : ;
+	  else write( chr( x ))
+	end
+      else write( chr( x ))
     end;
     result := 0;
   end;
