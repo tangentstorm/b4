@@ -10,13 +10,14 @@
 *** TODO position cursor on clrscr
 *** TODO position cursor on newline
 *** TODO implement proper wrapping behavior
+*** TODO implement colors
 * TODO [2/5] implement an assembler
 ** DONE export binary numbers padded to proper size
 ** DONE implement enough of minno to allow in-band debug signals
 ** TODO only show debug messages when given a flag
 ** TODO escape the control codes in the output in debug mode
 ** TODO allow defining aliases up front in a table
-* TODO show user-defined words in the debugger
+* TODO [0/1] show user-defined words in the debugger
 ** TODO procedure to walk the dictionary and extract details
 *** COMMENT Crc said that positon 2 in the image is the pointer to "last" 
 (the address of the last defined word, from which you can follow the links back to get the others.)
@@ -68,29 +69,24 @@ Probably cleaner would just be to use a file. :)
   
 #+end_src
 ** DONE load the image from disk
-** TODO check that we do these the ngaro way
+** DONE add ability to halt the program
+** TODO [0/2] check that we do these the ngaro way
 *** TODO when does ngaro actually do on over/underflow checks?
 *** TODO would nos really trigger underflow?
 ** TODO make stack sizes configurable
-** TODO implement a pixel in sdl
-** TODO add ability to halt the program
-* TODO [0/6] implement io devices
-** TODO port 1 : keyboard
-*** TODO : should it wait for a key, like readkey? ( right now it's returning -1 )
-** TODO port 2 : sending negative value should clear the screen, but doesn't, in js version
-portHandlers[2] = function()
-{
-  Term.renderChar( data.pop );
-  ports[ 2 ] = 0;
-}
+* TODO [1/6] implement io devices
+** DONE port 1 : keyboard
 ** TODO port 4 : file i/o
 *** TODO check c version about port 4 : file i / o -- really a byte at a time?
-  http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html
-** TODO port 5 : querying the vm { need date/time }
+** TODO [0/1] port 5 : querying the vm
+*** TODO implement environment variables
+** TODO port 6 : canvas
+SDL? AggPas?
 ** TODO port 7 : mouse ( fill in mx, my )
 ** TODO port 8 : enhanced text output
+
 * TODO [0/12] flesh out vm with more ngaro assembly programs
-** TODO square : draw a square                                         :nga:
+** TODO square : draw a square                                          :nga:
 ** TODO color  : draw the palette                                      :nga:
 ** TODO click  : click screen to change color                          :nga:
 ** TODO keys   : press any key to change color                         :nga:
@@ -100,7 +96,6 @@ portHandlers[2] = function()
 ** TODO color  : colored text input                                    :nga:
 ** TODO read   : read a file from disk                                 :nga:
 ** TODO write  : write a file to disk                                  :nga:
-** TODO ngasm  : assembler for ngaro                                   :nga:
 ** TODO port pixel.hex to pixel.nga
 *** NOTE Just use the syntax retro gives when you type =see=
 #+begin_example
@@ -123,3 +118,19 @@ ok
 
 #+end_example
 
+
+* ---
+* TODO [0/3] bugs in other ngaro vms
+** TODO py : crashes on "help" - why?
+** TODO js : direct input for the terminal
+** TODO js : port 2 : sending negative value should clear the screen, but doesn't, in js version
+#+begin_src javascript
+portHandlers[2] = function()
+{
+  Term.renderChar( data.pop );
+  ports[ 2 ] = 0;
+}
+#+end_src
+
+
+* end
