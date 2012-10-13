@@ -28,6 +28,7 @@ interface uses xpc;
     procedure underflow;
     function dumps:string;
     procedure dump;
+    function limit : int32;
   end;
 
 implementation
@@ -143,5 +144,10 @@ implementation
   begin
     writeln( dumps );
   end; { stack.dump }
+
+  function stack.limit : int32;
+  begin
+    result := length( cell );
+  end;
 
 end.
