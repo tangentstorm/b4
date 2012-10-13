@@ -39,11 +39,9 @@ unit ng.ports; implementation
   function vm.handle_write( msg : int32 ) : int32;
     var x : int32;
   begin
-    if msg = 1 then
-      kvm.clrscr
-    else begin
+    if msg = 1 then begin
       x := self.data.pop;
-      if x < 0 then clrscr else write( chr( x ));
+      if x < 0 then kvm.clrscr else write( chr( x ));
     end;
     result := 0;
   end;
