@@ -26,6 +26,7 @@ interface uses xpc;
     procedure drop;
     procedure overflow;
     procedure underflow;
+    function dumps:string;
     procedure dump;
   end;
 
@@ -122,18 +123,25 @@ implementation
   end; { stack.underflow }
 
 
-  { ! This might be better off in a debug.pas ? }
-  procedure stack.dump;
+  function stack.dumps : string;
     var s: string;
     var i: int32;
   begin
-    if sp > 0 then
-      for i := 1 to sp  do
+    result := '';
+    if sp > 0 then begin
+      for i := 1 to sp - 1 do
         begin
           str( cell[ i ], s );
-          write( s, ' ' );
-        end;
-    writeln;
+	  result += s + ' ';
+	end;
+      str( cell[ sp ], s );
+      result += s
+    end
+  end; { stack.dumps }
+  
+  procedure stack.dump;
+  begin
+    writeln( dumps );
   end; { stack.dump }
 
 end.
