@@ -4,7 +4,7 @@
 }
 {$i xpc.inc }
 unit kvm;
-interface uses xpc, keyboard, video, mouse;
+interface uses xpc, keyboard;
 
 {  this should probably get moved into its own class? }
 type
@@ -154,15 +154,12 @@ end; { hascanvas }
 procedure clrscr;
 begin
   write( #27, '[2J' );
-  { crt.clrscr; }
 end; { clrscr }
 
-
-procedure ansi_reset( i :  byte );
+procedure ansi_reset;
 begin
   write( #27, '[0m' );
 end; { ansi_reset }
-
 
 procedure gotoxy( x, y : integer );
 begin
