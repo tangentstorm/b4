@@ -2,8 +2,8 @@
 unit ng.ports; implementation
 {$ENDIF}
 
-  { these were ported from ngaro.js, except file/io and enhanced text }
-
+  { these were mostly ported from ngaro.js, then refactored into routines }
+
   { -- port 0 ------------------------------------------------- }
 
   function vm.handle_syncport( msg :  int32 ): int32;
@@ -13,27 +13,14 @@ unit ng.ports; implementation
       has data to transfer. }
     result := 0;
   end;
-
+
   { -- port 1 ------------------------------------------------- }
-  var
-    direct_input : boolean = false;
-    lastKey      : int32 = -1; { TODO : ascii.syn, maybe? }
-    tib		 : string  = '';
 
   function vm.handle_keyboard( msg : int32 ) : int32;
   begin
-    { direct input }
-    if direct_input then begin
-      result := lastKey;
-      lastKey := 0;
-    end else if length( tib ) > 0 then begin
-      result := ord( tib[ 1 ]);
-      delete( tib, 1, 1 );
-    end else begin
-      result := -1; { TODO: or should it wait for a key? }
-    end;
+    result := ord( kvm.ReadKey );
   end;
-
+
   { -- port 2 : simple text output ---------------------------- }
 
   function vm.handle_write( msg : int32 ) : int32;
@@ -45,7 +32,7 @@ unit ng.ports; implementation
     end;
     result := 0;
   end;
-
+
   { -- port 3 : video refresh --------------------------------- }
 
   function vm.handle_refresh( msg : int32 ) : int32;
@@ -53,7 +40,7 @@ unit ng.ports; implementation
     { Whether I need to do anything here depends on how I implement KVM stuff }
     result := 0;
   end;
-
+
   { -- port 4 : file i/o -------------------------------------- }
 
   type
@@ -99,12 +86,11 @@ unit ng.ports; implementation
     end; { case }
   end; { handle_files }
 
-
+
   { -- port 5 : vm query -------------------------------------- }
 
   function vm.handle_vmquery( msg: int32 ) : int32;
   begin
-    writeln( 'handle_vmquery' );
     case msg of
       -1	: result := length( self.ram );
       -2	: if kvm.hascanvas then result := 1 else result := 0;
@@ -121,7 +107,10 @@ unit ng.ports; implementation
 		      result : = unixtime;
 		      }
 		  end;
-      -9	: result := 0;
+      -9	: begin
+		    self.ip := length( self.ram ) + 1;
+		    result := 0;
+		  end;
       -11	: result := kvm.term.w;
       -12	: result := kvm.term.h;
       else
@@ -129,7 +118,7 @@ unit ng.ports; implementation
     end
   end;
 
-
+
   { -- port 6 : graphic canvas -------------------------------- }
 
   function vm.handle_canvas( msg: int32 ) : int32;
@@ -180,6 +169,7 @@ unit ng.ports; implementation
     end
   end;
 
+
   { -- port 7 : mouse ----------------------------------------- }
 
   function vm.handle_mouse( msg : int32 ) : int32;
@@ -193,6 +183,7 @@ unit ng.ports; implementation
     end;
   end;
 
+
   { -- port 8 : enhanced terminal ----------------------------- }
 
   function vm.handle_eterm( msg : int32 ) : int32;
@@ -210,6 +201,7 @@ unit ng.ports; implementation
     end;
   end;
 
+
   { -- the port map ------------------------------------------- }
 
   procedure vm.init_porthandlers;
@@ -232,6 +224,7 @@ unit ng.ports; implementation
     self.devices[8] := @self.handle_eterm;
   end; { init_porthandlers }
 
+
 {$IFDEF NESTUNITS}
 end.
 {$ENDIF}
