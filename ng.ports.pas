@@ -205,12 +205,9 @@ unit ng.ports; implementation
   begin
     result := 0;
     case msg of
-      1 : begin { * msg 1 : ( rc- ) row col }
-	  end;
-      2 : begin { * msg 2 : ( n-  ) fg      }
-	  end;
-      3 : begin { * msg 3 : ( n-  ) bg      }
-	  end;
+      1 : { rc- } kvm.gotoxy( data.pop, data.pop );
+      2 : { n- } kvm.fg( data.pop );
+      3 : { n- } kvm.bg( data.pop );
       else
 	result := -1;
     end;
