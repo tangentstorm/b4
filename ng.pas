@@ -71,8 +71,8 @@ implementation
     self.init_optable;
     assert( length( self.optbl ) >= 31 );
     self.init_porthandlers;
-    self.data.init( 32 );
-    self.addr.init( 32 );
+    self.data.init( 128 );
+    self.addr.init( 128 );
     self.ip := 0;
     self.imgpath := imagepath;
     assign( self.imgfile, imagepath );
