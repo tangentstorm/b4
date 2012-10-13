@@ -13,6 +13,7 @@ interface uses xpc, stacks, sim, kvm;
 	       hasarg	: boolean;
 	     end;
     image  = file of int32;
+
     vm	   = object
       data, addr : stack;
       ip	 : integer;
@@ -25,8 +26,9 @@ interface uses xpc, stacks, sim, kvm;
       debugmode  : boolean;
 
       constructor init( imagepath : string; debug : boolean );
-      procedure tick; 
+      procedure tick;
       procedure loop;
+      procedure trace;
       procedure dump;
       procedure runop( op:int32 );
       procedure runio;
@@ -57,7 +59,7 @@ interface uses xpc, stacks, sim, kvm;
       function handle_eterm( msg : int32 ) : int32;
       procedure init_porthandlers;
     end;
-
+
 implementation
 
   {$i ng.ops.inc }
@@ -78,7 +80,7 @@ implementation
     self.debugmode := debug;
   end; { vm.init }
 
-
+
   procedure vm.load;
     var size, i : int32;
   begin
@@ -111,7 +113,7 @@ implementation
     close( self.imgfile );
   end; { vm.save }
 
-
+
   procedure vm.tick;
   begin
     if self.debugmode then dump;
@@ -120,12 +122,21 @@ implementation
     inc( ip );
   end;
 
+  procedure vm.trace;
+    var log : text;
+  begin
+    assign( log, 'pascal.log' );
+    rewrite( log );
+    repeat
+      writeln( log, ip, ^_, ram[ ip ], ^_, data.dumps, ^_, addr.dumps );
+      tick
+    until ip >= length( ram );
+  end; { vm.trace }
 
   procedure vm.loop;
   begin
     repeat tick until ip >= length( ram );
   end; { vm.loop }
-
 
   procedure vm.runop( op: int32 );
   begin
@@ -139,7 +150,7 @@ implementation
     end
     else optbl[ op ].go;
   end;
-
+
   {
   | Ngaro machines connect via ports.                      |
   | A port is just a normal cell that's writable from both |
@@ -174,7 +185,7 @@ implementation
       end;
     end;
   end; { vm.runio }
-  
+
 begin
 
 end.
