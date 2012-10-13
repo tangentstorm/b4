@@ -23,12 +23,18 @@ unit ng.ports; implementation
 
   { -- port 2 : simple text output ---------------------------- }
 
+  procedure clear;
+  begin
+    kvm.clrscr;
+    kvm.gotoxy( 0, 0 );
+  end;
+
   function vm.handle_write( msg : int32 ) : int32;
     var x : int32;
   begin
     if msg = 1 then begin
       x := self.data.pop;
-      if x < 0 then kvm.clrscr else write( chr( x ));
+      if x < 0 then clear else write( chr( x ));
     end;
     result := 0;
   end;
