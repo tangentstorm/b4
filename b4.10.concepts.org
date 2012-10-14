@@ -1,0 +1,18 @@
+#+title: concepts in b4
+
+* byte :: an indivisible collection of 8 bits
+* atom :: an indivisible collection of /n/ bits
+The number /n/ generally corresponds to the word size of the underlying machine (generally 32 or 64 bits).
+* format :: describes the layout of an array or struct
+* record :: a collection of /n/ values of fixed but mutable type
+* vector :: a collection of /n/ values of the same type
+* type ::
+integer, ordinal, color
+* pointer :: a type, followed by an address
+* list :: a pointer, paired with a value
+* chain :: a doubly linked list of arrays
+* block :: fixed size block on disk, indexed by number
+* index :: fast lookup system based on b-trees
+* reference :: an indirect pointer, allowing data to be moved around
+* stack :: a standard last-in first out data structure
+
