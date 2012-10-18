@@ -14,9 +14,17 @@ interface uses xpc, stacks, sim, kvm, posix;
 	     end;
     image  = file of int32;
 
+{ interface > types }
+
     vm	   = object
       data, addr : stack;
-      ip	 : integer;
+      ip	 : integer;              { instruction pointer }
+      done       : boolean;
+      
+      inputs     : array of string;      { input filenames }
+      inptr      : shortint;             { current input filename index }
+      input      : text;                 { current input file }
+      
       ram	 : array of int32;
       ports	 : array of int32;
       devices	 : array of device;
@@ -26,17 +34,29 @@ interface uses xpc, stacks, sim, kvm, posix;
       debugmode  : boolean;
 
       constructor init( imagepath : string; debug : boolean );
+
+      { single-step instructions }
       procedure tick;
-      procedure loop;
-      procedure trace;
-      procedure dump;
       procedure runop( op:int32 );
       procedure runio;
+
+      { main loop(s) }
+      procedure loop;
+
+      { input file loader }
+      procedure enqueue( path : string );
+
+      { image routines }
       procedure load;
       procedure save;
 
-      { these are the opcodes.. agin. having to type out the interface
-	in pascal really makes me want to use oberon instead. }
+      { debug routines }
+      procedure trace;
+      procedure dump;
+
+{ interface > type vm = object ... }
+
+  { opcodes, defined in ng.ops.pas }
       procedure oNOP;  procedure oLIT;  procedure oDUP;  procedure oDROP;
       procedure oSWAP; procedure OPUSH; procedure oPOP;  procedure oLOOP;
       procedure oJMP;  procedure oRET;  procedure oJLT;  procedure oJGT;
@@ -47,9 +67,11 @@ interface uses xpc, stacks, sim, kvm, posix;
       procedure oIN;   procedure oOUT;  procedure oWAIT; procedure oIVK;
       procedure init_optable;
 
-      { and the port handlers }
+  { port handlers, defined in ng.ports.pas }
       function handle_syncport( msg : int32 ) : int32;
       function handle_keyboard( msg : int32 ) : int32;
+      function handle_input( msg : int32 ) : int32;
+      procedure next_input;
       function handle_write( msg : int32 ) : int32;
       function handle_refresh( msg : int32 ) : int32;
       function handle_files( msg : int32 ) : int32;
@@ -78,9 +100,12 @@ implementation
     assign( self.imgfile, imagepath );
     self.load;
     self.debugmode := debug;
+    self.inptr := -1;
   end; { vm.init }
 
 
+{ load and save the vm }
+
   procedure vm.load;
     var size, i : int32;
   begin
@@ -91,7 +116,8 @@ implementation
       size := filesize( self.imgfile );
       // log.debug([ 'image size = ', size, ' cells' ]);
       setlength( self.ram, size );
-      // log.debug([ 'ram = array [', low( self.ram ), '..', high( self.ram ), ']' ]);
+      // log.debug([ 'ram = array [', low( self.ram ),
+      //             '..', high( self.ram ), ']' ]);
       for i := 0 to size - 1 do begin
 	read( self.imgfile, self.ram[ i ]);
       end;
@@ -114,12 +140,16 @@ implementation
   end; { vm.save }
 
 
+{ step by step run of the vm }
+
   procedure vm.tick;
   begin
     if self.debugmode then dump;
     if ( ip >= low( ram )) and ( ip <= high( ram )) then
+    begin
       runop( ram[ ip ] );
-    inc( ip );
+      inc( ip );
+    end else done := true
   end;
 
   procedure vm.trace;
@@ -132,11 +162,6 @@ implementation
       tick
     until ip >= length( ram );
   end; { vm.trace }
-
-  procedure vm.loop;
-  begin
-    repeat tick until ip >= length( ram );
-  end; { vm.loop }
 
   procedure vm.runop( op: int32 );
   begin
@@ -151,6 +176,7 @@ implementation
     else optbl[ op ].go;
   end;
 
+{ run io }
   {
   | Ngaro machines connect via ports.                      |
   | A port is just a normal cell that's writable from both |
@@ -185,6 +211,26 @@ implementation
     end;
   end; { vm.runio }
 
-begin
+
+{ the top level routine }
 
-end.
+procedure vm.loop;
+begin
+  if length( self.inputs ) > 0 then
+    self.next_input;
+  repeat tick until done;
+end; { vm.loop }
+
+{ run a file }
+
+  procedure vm.enqueue( path : string );
+  begin
+    setlength( self.inputs, length( self.inputs ) + 1);
+    self.inputs[ length( self.inputs ) - 1 ] := path;
+    self.devices[ 1 ] := @self.handle_input;
+  end;
+			 
+			 
+initialization		 
+  { nothing to initialize. }
+end.			 

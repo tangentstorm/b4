@@ -16,11 +16,44 @@ unit ng.ports; implementation
 
   { -- port 1 ------------------------------------------------- }
 
+  { normally, port 1 reads the keyboard }
   function vm.handle_keyboard( msg : int32 ) : int32;
   begin
-    result := ord( kvm.ReadKey );
+    result := ord( kvm.readkey );
   end;
+
+
+  { but we can also fake keyboard input from a file }
+  function vm.handle_input( msg	: int32 ) : int32;
+    var ch : char;
+  begin
+    if eof( self.input ) then begin
+      self.next_input;
+      result := self.devices[ 1 ]( msg )
+    end else begin
+      read( self.input, ch );
+      result := ord( ch );
+    end
+  end;
+
+  { next_input either switches to the next file or to the keyboard }
+  procedure vm.next_input;
+  begin
+    if self.inptr >= 0 then close( self.input );
+    inc( self.inptr );
+    if self.inptr >= length( self.inputs ) then
+    begin
+      self.devices[ 1 ] := @self.handle_keyboard;
+    end
+    else
+    begin
+      assign( self.input, self.inputs[ self.inptr ]);
+      reset( self.input );
+    end
+  end;
+
 
+
   { -- port 2 : simple text output ---------------------------- }
 
   procedure clear;
