@@ -3,6 +3,19 @@ unit ng.debug; implementation
 {$ENDIF}
 
   procedure vm.dump;
+    var i : integer;
+  begin
+    write( ^A, 'dump', ^B );
+    write( self.data.dumps, ^_ );
+    write( self.addr.dumps, ^_ );
+    for i := length( self.ram ) downto 1 do begin
+      write( self.ram[ i - 1 ], ' ' )
+    end;
+    write( self.ram[ 0 ], ^C );
+  end;
+
+
+  procedure vm.show_debugger;
     var
       s	      : string[ 4 ];
       r	      : oprec;
@@ -41,9 +54,11 @@ unit ng.debug; implementation
     kvm.gotoxy( 0, 0 );
 
     { mini-debugger }
-    write( 'data :' ); data.dump;
-    write( 'addr :' ); addr.dump;
-    write( 'port :' );
+    write( 'ip   : ', ip, ' / ', length( ram ) - 1 );
+    writeln;
+    write( 'data : ' ); data.dump;
+    write( 'addr : ' ); addr.dump;
+    write( 'port : ' );
     for i:= 0 to length( ports ) - 1 do
     begin
       write( i , ':' );
@@ -72,9 +87,9 @@ unit ng.debug; implementation
       inc( i );
     until i >= e; { can be greater if we read an argument in last cell }
     
-    if kvm.readkey <> #13 then ip := high( ram ) + 1;  { halt machine. todo : call it ascii.esc }
+    if kvm.readkey <> #13 then ip := high( ram ) + 1;  { halt machine. todo: call it ascii.esc }
   end;
 
 {$IFDEF NESTUNITS}
-end.				   
+end.
 {$ENDIF}

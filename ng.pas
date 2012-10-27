@@ -53,6 +53,7 @@ interface uses xpc, stacks, sim, kvm, posix;
       { debug routines }
       procedure trace;
       procedure dump;
+      procedure show_debugger;
 
 { interface > type vm = object ... }
 
@@ -144,7 +145,7 @@ implementation
 
   procedure vm.tick;
   begin
-    if self.debugmode then dump;
+    if self.debugmode then show_debugger;
     if ( ip >= low( ram )) and ( ip <= high( ram )) then
     begin
       runop( ram[ ip ] );
@@ -167,11 +168,11 @@ implementation
   begin
     { TODO : real breakpoints }
     if false { or ( op = 129 ) } and not debugmode then begin
-      debugmode := true; dump;
+      debugmode := true; show_debugger;
     end;
     if op >= length( optbl ) then oIVK { invoke a procedure }
     else if op < 0 then begin
-      writeln( 'bad opcode: ', op ); readln; dump; debugmode := true;
+      writeln( 'bad opcode: ', op ); readln; show_debugger; debugmode := true;
     end
     else optbl[ op ].go;
   end;
