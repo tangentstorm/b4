@@ -9,9 +9,9 @@ unit ng.debug; implementation
     write( self.data.dumps, ^_ );
     write( self.addr.dumps, ^_ );
     if length( self.ram ) > 1 then
-      for i := length( self.ram ) downto 2 do
-	write( self.ram[ i - 1 ], ' ' );
-    write( self.ram[ 0 ], ^C );
+      for i := 0 to length( ram ) - 2 do
+	write( ram[ i ], ' ' );
+    write( ram[ length( ram ) - 1 ], ^C );
   end;
 
 
