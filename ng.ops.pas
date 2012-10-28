@@ -10,8 +10,9 @@ unit ng.ops; implementation
   {$DEFINE TN := t :=data.pop; n:=data.pop; }
 
   procedure vm.oNOP; begin end;
-
+
   { -- memory ops --------------------------------------------- }
+
   procedure vm.oLIT; begin inc( ip ); data.push( ram[ ip ]) end;
   procedure vm.oLOD; begin data.push( ram[ data.pop ]) end;
   { STORE : (na-) - put nos into ram at tos }
@@ -19,15 +20,17 @@ unit ng.ops; implementation
   begin TN;
     if ( t >= 0 ) and ( t < length( ram )) then ram[ t ] := n;
   end;
-
+
   { -- stack ops ---------------------------------------------- }
+
   procedure vm.oDUP ; begin data.dup end;
   procedure vm.oDROP; begin data.drop end;
   procedure vm.oSWAP; begin data.swap end;
   procedure vm.oPUSH; begin addr.push( data.pop ) end;
   procedure vm.oPOP ; begin data.push( addr.pop ) end;
-
+
   { -- port ops ----------------------------------------------- }
+
   procedure vm.oIN; { p-n }
   begin t := data.pop;
     data.push( ports[ t ] );
@@ -35,8 +38,9 @@ unit ng.ops; implementation
   end; 
   procedure vm.oOUT ; { np- } begin TN; ports[ t ] := n; end;
   procedure vm.oWAIT; { - } begin runio; end;
-
+
   { -- arithmetic --------------------------------------------- }
+
   procedure vm.oADD ; begin data.push(  data.pop + data.pop ) end;
   procedure vm.oSUB ; begin data.push( -data.pop + data.pop ) end;
   procedure vm.oMUL ; begin data.push( -data.pop + data.pop ) end;
@@ -48,42 +52,39 @@ unit ng.ops; implementation
   end;
   procedure vm.oINC ; begin inc( data.cell[ data.sp ] ) end;
   procedure vm.oDEC ; begin dec( data.cell[ data.sp ] ) end;
-
+
   { -- logic -------------------------------------------------- }
+
   procedure vm.oAND ; begin data.push( data.pop AND data.pop ) end;
   procedure vm.oOR  ; begin data.push( data.pop OR data.pop ) end;
   procedure vm.oXOR ; begin data.push( data.pop XOR data.pop ) end;
   procedure vm.oSHL ; begin TN; data.push( n shl t ); end;
   procedure vm.oSHR ; begin TN; data.push( n shr t ); end;
 
-
+
   { -- jump and conditional jumps ----------------------------- }
-  procedure vm.oJMP();
+
+  procedure jump_and_roll( var v : vm; dest : int32 );
   begin
-    ip := ram[ ip + 1 ] - 1; { compensating for the post-op inc }
-    while ram[ ip + 1 ] = 0 do inc( ip ); { skip over no-ops }
+    v.ip := dest - 1; { compensate for ip++ }
+    while ( v.ip < length( v.ram ) - 1 )
+      and ( v.ram[ v.ip + 1 ] = 0 ) do inc( v.ip ); { skip over no-ops }
   end;
+  
+  procedure vm.oJMP; begin jump_and_roll( self, ram[ ip + 1 ])  end;
   procedure vm.oJLT; begin TN if t <  n then oJMP else inc( ip ) end;
   procedure vm.oJGT; begin TN if t >  n then oJMP else inc( ip ) end;
   procedure vm.oJNE; begin TN if t <> n then oJMP else inc( ip ) end;
   procedure vm.oJEQ; begin TN if t =  n then oJMP else inc( ip ) end;
-
+  
   { invoke / return }
-  procedure vm.oIVK;
-  begin
-    addr.push( ip );
-    if ram[ ip ] < length( ram ) then ip := ram[ ip ] - 1
-    else ip := length( ram );
-    while ( ip < length( ram ))
-      and ( ram[ ip + 1 ] = 0 ) do inc( ip );
-  end;
+  procedure vm.oIVK; begin addr.push( ip ); jump_and_roll( self, ram[ ip ]); end;
   procedure vm.oRET; begin ip := addr.pop end;
-
   procedure vm.oLOOP;
   begin
     dec( data.cell[ data.sp ] );
     if data.cell[ data.sp ] > 0 then
-      ip := ram[ ip + 1 ] - 1 { jump, so compensate for the ip++ }
+      jump_and_roll( self, ram[ ip + 1 ])
     else begin
       inc( ip );
       data.pop;
@@ -93,14 +94,12 @@ unit ng.ops; implementation
   { zex : exit (return) if TOS = 0 ( sort of like ~assert~ ) }
   procedure vm.oZEX;
   begin
-    if data.cell[ data.sp ] = 0 then
-    begin
-      { sort of an assert / guard }
+    if data.cell[ data.sp ] = 0 then begin
       data.pop;
       ip := addr.pop;
     end
   end;
-
+
 
   procedure vm.init_optable;
     
@@ -117,8 +116,8 @@ unit ng.ops; implementation
       rec.hasarg := hasarg;
       self.optbl[ id ] := rec;
     end; { addop }
-    
-    
+
+    
     const _ = false; X = true;
   begin
     setlength( self.optbl, 31 );
@@ -154,7 +153,7 @@ unit ng.ops; implementation
     addop( 29, @oOUT , 'out' , 'np-  ', _ );
     addop( 30, @oWAIT, 'wait', '  -  ', _ );
   end; { init_optable }
-
+
 {$IFDEF NESTUNITS}
 end.				   
 {$ENDIF}
