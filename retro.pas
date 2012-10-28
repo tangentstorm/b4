@@ -56,6 +56,7 @@ begin
 	inc( i );
 	with_file( paramstr( i ))
       end else die( 'no filename given for --with' )
+    else if p = '--image' then begin { do nothing. this is for ngarotest } end
     else begin { no prefix, so expect image name }
       if imgpath = '' then imgpath := paramstr( i )
       else die( 'error: more than one image path given.' )

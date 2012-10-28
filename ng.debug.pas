@@ -5,13 +5,13 @@ unit ng.debug; implementation
   procedure vm.dump;
     var i : integer;
   begin
-    write( ^A, 'dump', ^B );
-    write( self.data.dumps, ^_ );
-    write( self.addr.dumps, ^_ );
+    write( ^\ );
+    write( self.data.dumps, ^] );
+    write( self.addr.dumps, ^] );
     if length( self.ram ) > 1 then
       for i := 0 to length( ram ) - 2 do
 	write( ram[ i ], ' ' );
-    write( ram[ length( ram ) - 1 ], ^C );
+    write( ram[ length( ram ) - 1 ] );
   end;
 
 
