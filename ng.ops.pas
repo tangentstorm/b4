@@ -71,8 +71,11 @@ unit ng.ops; implementation
   { invoke / return }
   procedure vm.oIVK;
   begin
-    addr.push( ip ); ip := ram[ ip ] - 1;
-    while ram[ ip + 1 ] = 0 do inc( ip );
+    addr.push( ip );
+    if ram[ ip ] < length( ram ) then ip := ram[ ip ] - 1
+    else ip := length( ram );
+    while ( ip < length( ram ))
+      and ( ram[ ip + 1 ] = 0 ) do inc( ip );
   end;
   procedure vm.oRET; begin ip := addr.pop end;
 
