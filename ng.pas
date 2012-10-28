@@ -217,20 +217,19 @@ implementation
 
 procedure vm.loop;
 begin
-  if length( self.inputs ) > 0 then
-    self.next_input;
+  if length( self.inputs ) > 0 then self.next_input;
   repeat tick until done;
 end; { vm.loop }
 
 { run a file }
 
-  procedure vm.enqueue( path : string );
-  begin
-    setlength( self.inputs, length( self.inputs ) + 1);
-    self.inputs[ length( self.inputs ) - 1 ] := path;
-    self.devices[ 1 ] := @self.handle_input;
-  end;
-			 
+procedure vm.enqueue( path : string );
+begin
+  setlength( self.inputs, length( self.inputs ) + 1);
+  self.inputs[ length( self.inputs ) - 1 ] := path;
+  self.devices[ 1 ] := @self.handle_input;
+end;
+
 			 
 initialization		 
   { nothing to initialize. }
