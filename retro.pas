@@ -44,6 +44,7 @@ var
   debug	     : boolean;
   p	     : string;
   dump_after : boolean = false;
+  padsize    : int32   = -1;
 
 begin
   i := 1;
@@ -56,6 +57,11 @@ begin
 	inc( i );
 	with_file( paramstr( i ))
       end else die( 'no filename given for --with' )
+    else if p = '--pad' then
+      if i + 1 <= paramcount then begin
+	inc( i );
+	padsize := strtoint( paramstr( i ))
+      end else die( 'expected a number after --pad' )
     else if p = '--image' then begin { do nothing. this is for ngarotest } end
     else begin { no prefix, so expect image name }
       if imgpath = '' then imgpath := paramstr( i )
@@ -65,9 +71,11 @@ begin
   end;
 
   if imgpath = '' then imgpath := fallback;
+  if ( imgpath = fallback ) and ( padsize = -1 ) then padsize := 100000;
+{ main code , continued }
 
   if not init_failed then begin
-    {$i-} vm.init( imgpath, debug ); {$i+}
+    {$i-} vm.init( imgpath, debug, padsize ); {$i+}
     if ioresult <> 0 then die( 'couldn''t open image file: ' + imgpath )
     else begin
       main;

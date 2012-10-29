@@ -13,12 +13,24 @@ unit ng.ops; implementation
 
   { -- memory ops --------------------------------------------- }
 
-  procedure vm.oLIT; begin inc( ip ); data.push( ram[ ip ]) end;
-  procedure vm.oLOD; begin data.push( ram[ data.pop ]) end;
+  procedure vm.oLIT;
+  begin
+    inc( ip );
+    data.push( ram[ ip ])
+  end;
+
+  procedure vm.oLOD;
+  begin
+    t := data.pop;
+    if ( t < length( ram )) then data.push( ram[ t ])
+    else show_debugger
+  end;
+  
   { STORE : (na-) - put nos into ram at tos }
   procedure vm.oSTO;
   begin TN;
-    if ( t >= 0 ) and ( t < length( ram )) then ram[ t ] := n;
+    if ( t >= 0 ) and ( t < length( ram )) then ram[ t ] := n
+    else show_debugger
   end;
 
   { -- stack ops ---------------------------------------------- }

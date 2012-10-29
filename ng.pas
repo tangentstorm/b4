@@ -32,8 +32,9 @@ interface uses xpc, stacks, sim, kvm, posix;
       imgfile	 : image;
       imgpath    : string;
       debugmode  : boolean;
+      padsize    : int32;
 
-      constructor init( imagepath : string; debug : boolean );
+      constructor init( imagepath : string; debug : boolean; pad: int32 );
 
       { single-step instructions }
       procedure tick;
@@ -89,8 +90,9 @@ implementation
   {$i ng.ports.pas }
   {$i ng.debug.pas }
 
-  constructor vm.init( imagepath : string; debug : boolean );
+  constructor vm.init( imagepath : string; debug : boolean; pad : int32 );
   begin
+    self.padsize := pad;
     self.init_optable;
     assert( length( self.optbl ) >= 31 );
     self.init_porthandlers;
@@ -126,7 +128,8 @@ implementation
     end else begin
       writeln( 'error: unable to open ', self.imgpath );
       halt;
-    end
+    end;
+    if self.padsize > size then setlength( self.ram, self.padsize )
   end; { vm.load }
 
   procedure vm.save;
