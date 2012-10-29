@@ -59,7 +59,8 @@ unit ng.ops; implementation
   procedure vm.oOR  ; begin data.push( data.pop OR data.pop ) end;
   procedure vm.oXOR ; begin data.push( data.pop XOR data.pop ) end;
   procedure vm.oSHL ; begin TN; data.push( n shl t ); end;
-  procedure vm.oSHR ; begin TN; data.push( n shr t ); end;
+  { shr in retro preserves the sign }
+  procedure vm.oSHR ; begin TN; data.push( sarlongint( n, t )); end;
 
 
   { -- jump and conditional jumps ----------------------------- }
