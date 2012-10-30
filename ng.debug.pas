@@ -31,8 +31,8 @@ unit ng.debug; implementation
 	found := ram[ last + xtofs ] = xt;
       until found or ( last = 0 ) or ( last > length( ram )) or ( jumps > 1000 );
       if found then
-	result := ' ( ' + getstring( last + tokenofs ) +
-		  ' : ' + getstring( last + helpofs ) + ' ) '
+	result := ' ( ' + rx_getstring( last + tokenofs ) +
+		  ' : ' + rx_getstring( last + helpofs ) + ' ) '
       else result := '( ??? )'
     end;
     

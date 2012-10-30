@@ -4,10 +4,7 @@ unit ng.ports; implementation
 
   { the handlers in this file were mostly ported from ngaro.js, then broken into routines }
 
-  
-  
-
-  
+
   { -- port 0 ------------------------------------------------- }
 
   function vm.handle_syncport( msg :  int32 ): int32;
@@ -16,20 +13,6 @@ unit ng.ports; implementation
       It's just used to signal that one side or the other
       has data to transfer. }
     result := 0;
-  end;
-
-  { -- support routines --------------------------------------- }
-
-  function vm.getstring( at : int32 ) : string;
-    var cp : int32; { char pointer }
-  begin
-    cp  := at;
-    result := '';
-    {  Do i really need/want to trim at 255? Maybe use AnsiSrings? }
-    while ( ram[ cp ] <> 0 ) and ( length( result ) < 255 ) do begin
-      result += chr( ram[ cp ] );
-      inc( cp );
-    end;
   end;
 
   { -- port 1 ------------------------------------------------- }
@@ -108,46 +91,25 @@ unit ng.ports; implementation
 
   { -- port 4 : file i/o -------------------------------------- }
 
-  type ngfile = record
-		  handle : file of byte;
-		  assigned, opened, closed : boolean;
-		end;
-  var files : array of ngfile;
+  { see also ng.files.pas }
 
   function vm.handle_files( msg : int32 ) : int32;
-    const r = 0; w = 1; a = 2; m = 3;
+    var t, n : int32;
   begin
     result := 0;
+    if msg = -3 then pause( 'handle_files( ' + inttostr( msg ) + ' )');
     case msg of
       +1 : self.save;
-      +2 : self.include( getstring( data.pop ));
-      -1 : begin {  open :: filename -> mode -> handle }
-	     show_debugger;
-	   end;
-      -2 : begin {  read :: handle -> flag }
-	     show_debugger;
-	   end;
-      -3 : begin {  write :: char -> handle -> flag }
-	     show_debugger;
-	   end;
-      -4 : begin {  close :: handle -> flag }
-	     show_debugger;
-	     { 0 on successful close }
-	   end;
-      -5 : begin {  fpos :: handle -> offset }
-	     show_debugger;
-	   end;
-      -6 : begin {  seek :: offset -> handle -> flag }
-	     show_debugger;
-	   end;
-      -7 : begin {  size :: handle -> size }
-	     show_debugger;
-	   end;
-      -8 : begin {  delete :: filename -> flag }
-	     show_debugger;
-	     { -1 if deleted, else 0 }
-	   end
-      else
+      +2 : self.include( rx_getstring( data.pop ));
+      { -- }
+      -1 : begin data.pop2( t, n );   ng.file_open( t, rx_getstring( n ), result )   end;
+      -2 : begin data.pop1( t );      ng.file_read( t, result )                      end;
+      -3 : begin data.pop2( t, n );   ng.file_write( t, chr( n ), result )           end;
+      -4 : begin data.pop1( t );      ng.file_close( t )                             end;
+      -5 : begin data.pop1( t );      ng.file_getpos( t, result )                    end;
+      -6 : begin data.pop2( t, n );   ng.file_setpos( t, n, result )                 end;
+      -7 : begin data.pop1( t );      ng.file_size( t, result )                      end;
+      -8 : begin data.pop1( t );      ng.file_delete( rx_getstring( t ), result )    end;
     end; { case }
   end; { handle_files }
 

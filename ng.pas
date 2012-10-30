@@ -53,7 +53,8 @@ interface uses xpc, stacks, sim, kvm, posix, sysutils;
       procedure trace;
       procedure dump;
       procedure show_debugger( msg : string );
-      function getstring( at :  int32 ) : string;
+
+{ continued... }
 
 { interface > type vm = object ... }
 
@@ -83,12 +84,17 @@ interface uses xpc, stacks, sim, kvm, posix, sysutils;
       function handle_eterm( msg : int32 ) : int32;
       procedure init_porthandlers;
 
+  { retro image layout conventions }
+      function rx_getstring( start : int32 ) : string;
+
     end;
 
 implementation
 
   {$i ng.ops.pas }
+  {$i ng.retro.pas }
   {$i ng.input.pas }
+  {$i ng.files.pas }
   {$i ng.ports.pas }
   {$i ng.debug.pas }
 
