@@ -52,7 +52,7 @@ interface uses xpc, stacks, sim, kvm, posix, sysutils;
       { debug / inspect routines }
       procedure trace;
       procedure dump;
-      procedure show_debugger;
+      procedure show_debugger( msg : string );
       function getstring( at :  int32 ) : string;
 
 { interface > type vm = object ... }
@@ -66,6 +66,7 @@ interface uses xpc, stacks, sim, kvm, posix, sysutils;
       procedure oAND;  procedure oOR;   procedure oXOR;  procedure oSHL;
       procedure oSHR;  procedure oZEX;  procedure oINC;  procedure oDEC;
       procedure oIN;   procedure oOUT;  procedure oWAIT; procedure oIVK;
+      procedure oDEBUG; { custom opcode }
       procedure init_optable;
 
   { port handlers, defined in ng.ports.pas }
@@ -148,7 +149,7 @@ implementation
 
   procedure vm.tick;
   begin
-    if self.debugmode then show_debugger;
+    if self.debugmode then show_debugger( '' );
     if ( ip >= low( ram )) and ( ip <= high( ram )) then
     begin
       runop( ram[ ip ] );
@@ -171,11 +172,11 @@ implementation
   begin
     { TODO : real breakpoints }
     if false { or ( op = 129 ) } and not debugmode then begin
-      debugmode := true; show_debugger;
+      debugmode := true; show_debugger( ' break ' );
     end;
     if op >= length( optbl ) then oIVK { invoke a procedure }
     else if op < 0 then begin
-      writeln( 'bad opcode: ', op ); readln; show_debugger; debugmode := true;
+       show_debugger( 'bad opcode: ' + inttostr( op )); readln; debugmode := true;
     end
     else optbl[ op ].go;
   end;

@@ -23,14 +23,14 @@ unit ng.ops; implementation
   begin
     t := data.pop;
     if ( t < length( ram )) then data.push( ram[ t ])
-    else show_debugger
+    else show_debugger( 'failed on [ ' + inttostr( t ) + ' @ ]: address out of bounds.' )
   end;
   
   { STORE : (na-) - put nos into ram at tos }
   procedure vm.oSTO;
   begin TN;
     if ( t >= 0 ) and ( t < length( ram )) then ram[ t ] := n
-    else show_debugger
+    else show_debugger( 'failed on [ ' + inttostr( t ) + ' ! ]: address out of bounds.' )
   end;
 
   { -- stack ops ---------------------------------------------- }
@@ -113,6 +113,13 @@ unit ng.ops; implementation
     end
   end;
 
+  { -- jump and conditional jumps ----------------------------- }
+
+  procedure vm.oDEBUG;
+  begin
+    writeln( '<< press enter >>' );
+    readln;
+  end;
 
   procedure vm.init_optable;
     
@@ -165,6 +172,8 @@ unit ng.ops; implementation
     addop( 28, @oIN  , 'in'  , ' p-n ', _ );
     addop( 29, @oOUT , 'out' , 'np-  ', _ );
     addop( 30, @oWAIT, 'wait', '  -  ', _ );
+    setlength( self.optbl, 32 );
+    addop( 31, @oDEBUG, '~?~', '  -  ', _ );
   end; { init_optable }
 
 {$IFDEF NESTUNITS}

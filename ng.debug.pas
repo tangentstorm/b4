@@ -13,18 +13,27 @@ unit ng.debug; implementation
 	write( ram[ i ], ' ' );
     write( ram[ length( ram ) - 1 ] );
   end;
-
 
-  procedure vm.show_debugger;
-    var
-      s	      : string[ 4 ];
-      r	      : oprec;
-      b, e, i : int32;  { begin, end, index }
-
-
-    function reverse_lookup( addr : int32 ) : string;
+  procedure vm.show_debugger( msg : string );
+    var				  
+      s         : string[ 4 ];
+      r	        : oprec;
+      b, e, i   : int32;  { begin, end, index }
+ 
+    function reverse_lookup( xt : int32 ) : string;
+      var last : int32 = 2; jumps : int32 = 0; found : boolean = false;
+      const xtofs = 2; helpofs = 3; tokenofs = 4;
     begin
-      result := '(invoke)';
+      // : skim ( a-a ) ( from kernel.rx )
+      // last repeat @ over over d->xt @ == [ nip 0 ] ifTrue 0; again ;
+      repeat
+	last := ram[ last ]; inc( jumps );
+	found := ram[ last + xtofs ] = xt;
+      until found or ( last = 0 ) or ( last > length( ram )) or ( jumps > 1000 );
+      if found then
+	result := ' ( ' + getstring( last + tokenofs ) +
+		  ' : ' + getstring( last + helpofs ) + ' ) '
+      else result := '( ??? )'
     end;
     
     procedure show_addr;
@@ -47,11 +56,18 @@ unit ng.debug; implementation
       end;
       writeln;
     end; { show_opcode }
-    
-  begin
+
+  begin  {  show_debugger }
 
+    if msg <> '' then begin
+      writeln( msg );
+      writeln( 'press enter to debug' );
+      readln;
+    end;
+    
     kvm.clrscr;
     kvm.gotoxy( 0, 0 );
+    writeln( msg );
 
     { mini-debugger }
     write( 'ip   : ', ip, ' / ', length( ram ) - 1 );
@@ -88,8 +104,8 @@ unit ng.debug; implementation
     until i >= e; { can be greater if we read an argument in last cell }
     
     if kvm.readkey <> #13 then ip := high( ram ) + 1;  { halt machine. todo: call it ascii.esc }
-  end;
-
+  end; { show_debugger }
+
 {$IFDEF NESTUNITS}
 end.
 {$ENDIF}
