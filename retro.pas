@@ -5,14 +5,6 @@ uses xpc, ng, sysutils;
     inputs : array of string;
     vm	   : ng.vm;
 
-  { the main logic }
-  procedure main;
-    var path : string;
-  begin
-    for path in inputs do vm.enqueue( path );
-    vm.loop;
-  end;
-
 { helper routines for main loop }
 
   var init_failed : boolean = false;
@@ -25,13 +17,16 @@ uses xpc, ng, sysutils;
     init_failed := true;
   end; { die }
 
-  { if file exists, add to inputs array }
+  { if file exists, add to array of inputs to include }
   procedure with_file( const path : string );
   begin
-    setlength( inputs, length( inputs ) + 1 );
-    if sysutils.fileexists( path ) then
-      inputs[ length( inputs ) - 1 ] := path
-    else die( '"' + path + '" not found' );
+    if sysutils.fileexists( path ) then begin
+      { we can't just call include until we initialize the vm, and
+	we can'd do that until we're done with args, so we use the
+	inputs array as a buffer. }
+      setlength( inputs, length( inputs ) + 1 );
+      inputs[ length( inputs ) - 1 ] := path;
+    end else die( '"' + path + '" not found' );
   end; { with_file }
 
 
@@ -71,14 +66,17 @@ begin
   end;
 
   if imgpath = '' then imgpath := fallback;
-  if ( imgpath = fallback ) and ( padsize = -1 ) then padsize := 100000;
+  if ( imgpath = fallback ) and ( padsize = -1 ) then padsize := 100000;
+
+
 { main code , continued }
 
   if not init_failed then begin
     {$i-} vm.init( imgpath, debug, padsize ); {$i+}
     if ioresult <> 0 then die( 'couldn''t open image file: ' + imgpath )
     else begin
-      main;
+      for p in inputs do vm.include( p );
+      vm.loop;
       if dump_after then vm.dump
     end
   end

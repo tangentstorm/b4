@@ -1,6 +1,6 @@
 {$i xpc.inc }
 unit ng;
-interface uses xpc, stacks, sim, kvm, posix;
+interface uses xpc, stacks, sim, kvm, posix, sysutils;
 
   type
     pvm	   = ^vm;
@@ -18,16 +18,14 @@ interface uses xpc, stacks, sim, kvm, posix;
 
     vm	   = object
       data, addr : stack;
+      ram, ports : array of int32;
+      devices	 : array of device;
       ip	 : integer;              { instruction pointer }
       done       : boolean;
-      
-      inputs     : array of string;      { input filenames }
-      inptr      : shortint;             { current input filename index }
-      input      : text;                 { current input file }
-      
-      ram	 : array of int32;
-      ports	 : array of int32;
-      devices	 : array of device;
+
+      inputs     : array of textfile;    { input files - see ng.input.pas }
+      input      : ^textfile;
+
       optbl	 : array of oprec;
       imgfile	 : image;
       imgpath    : string;
@@ -45,16 +43,17 @@ interface uses xpc, stacks, sim, kvm, posix;
       procedure loop;
 
       { input file loader }
-      procedure enqueue( path : string );
+      procedure include( path : string );
 
       { image routines }
       procedure load;
       procedure save;
 
-      { debug routines }
+      { debug / inspect routines }
       procedure trace;
       procedure dump;
       procedure show_debugger;
+      function getstring( at :  int32 ) : string;
 
 { interface > type vm = object ... }
 
@@ -82,11 +81,13 @@ interface uses xpc, stacks, sim, kvm, posix;
       function handle_mouse( msg : int32 ) : int32;
       function handle_eterm( msg : int32 ) : int32;
       procedure init_porthandlers;
+
     end;
 
 implementation
 
   {$i ng.ops.pas }
+  {$i ng.input.pas }
   {$i ng.ports.pas }
   {$i ng.debug.pas }
 
@@ -103,7 +104,6 @@ implementation
     assign( self.imgfile, imagepath );
     self.load;
     self.debugmode := debug;
-    self.inptr := -1;
   end; { vm.init }
 
 
@@ -220,20 +220,10 @@ implementation
 
 procedure vm.loop;
 begin
-  if length( self.inputs ) > 0 then self.next_input;
   repeat tick until done;
 end; { vm.loop }
+
 
-{ run a file }
-
-procedure vm.enqueue( path : string );
-begin
-  setlength( self.inputs, length( self.inputs ) + 1);
-  self.inputs[ length( self.inputs ) - 1 ] := path;
-  self.devices[ 1 ] := @self.handle_input;
-end;
-
-			 
-initialization		 
+initialization
   { nothing to initialize. }
-end.			 
+end.

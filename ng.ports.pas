@@ -2,8 +2,12 @@
 unit ng.ports; implementation
 {$ENDIF}
 
-  { these were mostly ported from ngaro.js, then refactored into routines }
-
+  { the handlers in this file were mostly ported from ngaro.js, then broken into routines }
+
+  
+  
+
+  
   { -- port 0 ------------------------------------------------- }
 
   function vm.handle_syncport( msg :  int32 ): int32;
@@ -14,46 +18,60 @@ unit ng.ports; implementation
     result := 0;
   end;
 
-  { -- port 1 ------------------------------------------------- }
+  { -- support routines --------------------------------------- }
 
-  { normally, port 1 reads the keyboard }
+  function vm.getstring( at : int32 ) : string;
+    var cp : int32; { char pointer }
+  begin
+    cp  := at;
+    result := '';
+    {  Do i really need/want to trim at 255? Maybe use AnsiSrings? }
+    while ( ram[ cp ] <> 0 ) and ( length( result ) < 255 ) do begin
+      result += chr( ram[ cp ] );
+      inc( cp );
+    end;
+  end;
+
+  { -- port 1 ------------------------------------------------- }
+  {
+
+    We implement two separate handlers for port 1.
+
+    The default handler, handle_keyboard reads input from the keyboard.
+
+    handle_input reads input from a text file in the input queue.
+
+    These are toggled dynamically by updating the pointer in the
+    vm.devices array.
+
+    The switch happens whenever a file is pushed onto the input
+    the stack ( either via --with on the command line or by sending
+    msg 2 to port 4 ), and the switch back happens on EOF for the
+    last input file on the stack.
+
+    see also : ng.input.pas for managing the input stack
+
+  }
+
+  { keyboard handler }
   function vm.handle_keyboard( msg : int32 ) : int32;
   begin
     result := ord( kvm.readkey );
   end;
 
-
-  { but we can also fake keyboard input from a file }
+  { input file handler }
   function vm.handle_input( msg	: int32 ) : int32;
     var ch : char;
   begin
-    if eof( self.input ) then begin
+    if eof( self.input^ ) then begin
       self.next_input;
       result := self.devices[ 1 ]( msg )
     end else begin
-      read( self.input, ch );
+      read( self.input^, ch );
       result := ord( ch );
     end
   end;
-
-  { next_input either switches to the next file or to the keyboard }
-  procedure vm.next_input;
-  begin
-    if self.inptr >= 0 then close( self.input );
-    inc( self.inptr );
-    if self.inptr >= length( self.inputs ) then
-    begin
-      self.devices[ 1 ] := @self.handle_keyboard;
-    end
-    else
-    begin
-      assign( self.input, self.inputs[ self.inptr ]);
-      reset( self.input );
-    end
-  end;
-
 
-
   { -- port 2 : simple text output ---------------------------- }
 
   procedure clear;
@@ -90,49 +108,48 @@ unit ng.ports; implementation
 
   { -- port 4 : file i/o -------------------------------------- }
 
-  type
-    ngfile = record
-	       handle : file of byte;
-	       assigned, opened, closed	: boolean;
-	     end;
-  var
-    files   : array of ngfile;
+  type ngfile = record
+		  handle : file of byte;
+		  assigned, opened, closed : boolean;
+		end;
+  var files : array of ngfile;
 
   function vm.handle_files( msg : int32 ) : int32;
     const r = 0; w = 1; a = 2; m = 3;
-    procedure nexthandle;
-    begin
-    end;
   begin
     result := 0;
     case msg of
       +1 : self.save;
-      -1 : begin { open :: name -> mode -> handle }
-	     { }
+      +2 : self.include( getstring( data.pop ));
+      -1 : begin {  open :: filename -> mode -> handle }
+	     show_debugger;
 	   end;
-      -2 : begin { read :: handle -> flag }
-
+      -2 : begin {  read :: handle -> flag }
+	     show_debugger;
 	   end;
-      -3 : begin { write :: char -> handle -> flag }
-
+      -3 : begin {  write :: char -> handle -> flag }
+	     show_debugger;
 	   end;
-      -4 : begin { close :: handle -> flag }
+      -4 : begin {  close :: handle -> flag }
+	     show_debugger;
 	     { 0 on successful close }
 	   end;
-      -5 : begin { fpos :: handle -> offset }
+      -5 : begin {  fpos :: handle -> offset }
+	     show_debugger;
 	   end;
-      -6 : begin { seek :: offset -> handle -> flag }
+      -6 : begin {  seek :: offset -> handle -> flag }
+	     show_debugger;
 	   end;
-      -7 : begin { size :: handle -> size }
-
+      -7 : begin {  size :: handle -> size }
+	     show_debugger;
 	   end;
-      -8 : begin { delete :: filename -> flag }
+      -8 : begin {  delete :: filename -> flag }
+	     show_debugger;
 	     { -1 if deleted, else 0 }
 	   end
       else
     end; { case }
   end; { handle_files }
-
 
   { -- port 5 : vm query -------------------------------------- }
 
@@ -226,11 +243,9 @@ unit ng.ports; implementation
     case msg of
       1 : self.data.push2( kvm.mx, kvm.my );
       2 : self.data.push( toint( kvm.mb ));
-      else
-	result := -1;
+      else result := -1;
     end;
   end;
-
 
   { -- port 8 : enhanced terminal ----------------------------- }
 
