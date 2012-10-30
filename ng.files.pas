@@ -9,9 +9,10 @@ unit ng.files; implementation  { file i/o }
     error : integer;
 
   { explicit range check }
-  function valid_handle( handle :  int32 ): boolean;
+  function valid_handle( var handle :  int32 ): boolean;
   begin
-    result := ( handle > 0 ) and ( handle < length( flags ))
+    result := ( handle > 0 ) and ( handle <= length( flags ));
+    dec( handle ); { we use base 0 but ngaro uses base 1 }
   end; { valid_handle }
 
 procedure file_open( const mode : int32; const path : string; var handle : int32 );
@@ -46,11 +47,13 @@ begin {$I-}
 	if fileexists( path ) then rewrite( files[ handle ])
 	else error := -1;
   end;
-  if error <> 0 then error := ioresult;
+  if error = 0 then error := ioresult;
   flags[ handle ] := error = 0;
+  if error <> 0 then handle := 0 else inc( handle ); { ngaro is base 1 }
+  // pause( 'path: ' + path + ' -> ' + inttostr( handle ));
 end; {$I+}
 
-procedure file_close( const handle : int32 );
+procedure file_close( handle : int32 );
 begin
   if valid_handle( handle ) and flags[ handle ] then begin
     close( files[ handle ]);
@@ -58,7 +61,7 @@ begin
   end
 end;
 
-procedure file_read( const handle : int32; var result : int32 );
+procedure file_read( handle : int32; var result : int32 );
   var b : byte;
 begin
   result := 0;
@@ -68,11 +71,12 @@ begin
     else begin
       read( files[ handle ], b );
       result := b;
+      writeln( 'read value: ', b );
     end
-  end
+  end else pause( 'invalid file handle: #' + inttostr( handle ) + '.' );
 end;
 
-procedure file_write(const handle : int32; const ch : char; var error : int32 );
+procedure file_write( handle : int32; const ch : char; var error : int32 );
 begin
   if not valid_handle( handle ) then error := -1
   else if not flags[ handle ] then error := -2
@@ -82,14 +86,14 @@ begin
   end;
 end;
 
-procedure file_getpos( const handle : int32; var result : int32 );
+procedure file_getpos( handle : int32; var result : int32 );
 begin
   if valid_handle( handle ) then 
     result := filepos( files[ handle ])
   else result := -1;
 end;
 
-procedure file_setpos( const handle, pos : int32; var result : int32 );
+procedure file_setpos( handle, pos : int32; var result : int32 );
 begin
   result := 0;
   if valid_handle( handle ) then begin
@@ -98,14 +102,14 @@ begin
   end
 end;
 
-procedure file_size( const handle : int32; var result : int32 );
+procedure file_size( handle : int32; var result : int32 );
 begin
   if valid_handle( handle ) then 
     result := filesize( files[ handle ])
   else result := -1;
 end;
 
-procedure file_delete( const path : string; var result : int32 );
+procedure file_delete( path : string; var result : int32 );
 begin
   result := 0; // failure in retro
   if sysutils.deletefile( path ) then result := -1; // success
