@@ -116,11 +116,19 @@ unit ng.ops; implementation
   { -- jump and conditional jumps ----------------------------- }
 
   procedure vm.oDEBUG;
+    var ok : boolean = false;
   begin
-    writeln( '<< press enter >>' );
-    readln;
+    writeln;
+    writeln( '<< press enter to continue, or type "q" to quit >>' );
+    repeat
+      case kvm.readkey of
+	'q' : halt;
+	#13 : ok := true;
+      end;
+    until ok;
   end;
 
+
   procedure vm.init_optable;
     
     procedure addop(	 
