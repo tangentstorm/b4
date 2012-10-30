@@ -97,7 +97,6 @@ unit ng.ports; implementation
     var t, n : int32;
   begin
     result := 0;
-    if msg = -3 then pause( 'handle_files( ' + inttostr( msg ) + ' )');
     case msg of
       +1 : self.save;
       +2 : self.include( rx_getstring( data.pop ));
