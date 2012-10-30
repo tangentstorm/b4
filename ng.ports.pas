@@ -126,7 +126,7 @@ unit ng.ports; implementation
       -5  : { data stack depth } result := self.data.sp;
       -6  : { address stack depth } result := self.addr.sp;
       -7  : {  TODO: mouse exists? } result := 0;
-      -8  : { current time } result := posix.time;
+      -8  : { current time } result := lo( posix.time );
       -9  : { exit the vm } self.ip := length( self.ram ) + 1;
       -11 : { console width } result := kvm.term.w;
       -12 : { console height } result := kvm.term.h;
