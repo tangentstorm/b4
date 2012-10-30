@@ -53,21 +53,23 @@ Probably cleaner would just be to use a file. :)
 ** TODO [0/2] check that we do these the ngaro way
 *** TODO when does ngaro actually do on over/underflow checks?
 *** TODO would nos really trigger underflow?
-* TODO [1/6] implement io devices                                      :easy:
+* TODO [4/9] implement io devices                                      :easy:
 ** DONE port 1 : keyboard
 ** DONE port 2 : character generator
 ** TODO extend character generator with ability to change bitmap font
 ** DONE port 3 : force video update ( optional and not needed here )
-** TODO [0/8] port 4 : file i/o
-*** TODO io op -1 | filename, mode    -> handle | Open a file
-*** TODO io op -2 | handle            -> flag   | Read a byte from a file
-*** TODO io op -3 | character, handle -> flag   | Write a byte to a file
-*** TODO io op -4 | handle            -> flag   | Close a file
-*** TODO io op -5 | handle            -> offset | Return current location in file
-*** TODO io op -6 | offset, handle    -> flag   | Seek a new location in file
-*** TODO io op -7 | handle            -> size   | Return the size of a file
-*** TODO io op -8 | filename          -> flag   | Delete a file.
-** TODO [0/1] port 5
+** TODO [10/10] port 4 : file i/o
+*** DONE io op  1 | ...               -> 0      | save image
+*** DONE io op  2 | filename          -> 0      | include a file
+*** DONE io op -1 | filename, mode    -> handle | Open a file
+*** DONE io op -2 | handle            -> flag   | Read a byte from a file
+*** DONE io op -3 | character, handle -> flag   | Write a byte to a file
+*** DONE io op -4 | handle            -> flag   | Close a file
+*** DONE io op -5 | handle            -> offset | Return current location in file
+*** DONE io op -6 | offset, handle    -> flag   | Seek a new location in file
+*** DONE io op -7 | handle            -> size   | Return the size of a file
+*** DONE io op -8 | filename          -> flag   | Delete a file.
+** TODO [0/1] port 5 : vm query
 *** TODO query op 10 | implement environment variables
 http://www.freepascal.org/docs-html/rtl/sysutils/getenvironmentvariable.html
 ** TODO [0/8] port 6 : canvas
