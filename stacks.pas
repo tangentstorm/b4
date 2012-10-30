@@ -16,7 +16,7 @@ interface uses xpc;
     constructor init( len:word );
     procedure push( t : int32 );
     function pop: int32;
-    procedure pop1( t : int32 );
+    procedure pop1( var t : int32 );
     procedure push2( n, t : int32 );
     procedure pop2( var t, n :  int32 );
     procedure push3( x, n, t : int32 );
@@ -56,7 +56,7 @@ implementation
     drop;
   end; { stack.pop }
   
-  procedure stack.pop1( t : int32 );
+  procedure stack.pop1( var t : int32 );
   begin
     t := pop
   end; { stack.pop1 }
