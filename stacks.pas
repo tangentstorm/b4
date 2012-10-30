@@ -14,12 +14,13 @@ interface uses xpc;
     cell : array of int32;    // a standard forth term
     overflow, underflow : thunk;
     constructor init( len:word );
-    procedure push( v: int32 );
+    procedure push( t : int32 );
     function pop: int32;
-    procedure push2( a, b : int32 );
-    procedure pop2( var a, b :  int32 );
-    procedure push3( a, b, c : int32 );
-    procedure pop3( var a, b, c : int32 );
+    procedure pop1( t : int32 );
+    procedure push2( n, t : int32 );
+    procedure pop2( var t, n :  int32 );
+    procedure push3( x, n, t : int32 );
+    procedure pop3( var t, n, x : int32 );
     function tos: int32;
     function nos: int32;
     procedure dup;
@@ -31,7 +32,7 @@ interface uses xpc;
     procedure dump;
     function limit : int32;
   end;
-
+
 implementation
 
   constructor stack.init( len: word );
@@ -41,46 +42,51 @@ implementation
     overflow := @default_overflow;
     underflow := @default_underflow;
   end; { stack.init }
-
-  procedure stack.push( v : int32 );
+
+  procedure stack.push( t : int32 );
   begin
     inc( sp );
     if sp >= length( cell ) then overflow
-    else cell[ sp ] := v;
+    else cell[ sp ] := t;
   end; { stack.push }
-
+  
   function stack.pop : int32;
   begin
     result := tos;
     drop;
   end; { stack.pop }
-
-  procedure stack.push2( a, b :  int32 );
+  
+  procedure stack.pop1( t : int32 );
   begin
-    self.push( a );
-    self.push( b );
+    t := pop
+  end; { stack.pop1 }
+
+  procedure stack.push2( n, t :  int32 );
+  begin
+    self.push( n );
+    self.push( t );
   end; { stack.push2 }
   
-  procedure stack.pop2( var a, b :  int32 );
+  procedure stack.pop2( var t, n :  int32 );
   begin
-    a := self.pop;
-    b := self.pop;
+    t := self.pop;
+    n := self.pop;
   end; { stack.pop2 }
-
-  procedure stack.push3( a, b, c :  int32 );
+
+  procedure stack.push3( x, n, t :  int32 );
   begin
-    self.push( a );
-    self.push( b );
-    self.push( c );
+    self.push( x );
+    self.push( n );
+    self.push( t );
   end; { stack.push3 }
   
-  procedure stack.pop3( var a, b, c :  int32 );
+  procedure stack.pop3( var t, n, x :  int32 );
   begin
-    a := self.pop;
-    b := self.pop;
-    c := self.pop
+    t := self.pop;
+    n := self.pop;
+    x := self.pop
   end; { stack.pop3 }
-  
+  
   function stack.tos : int32;
   begin
     result := cell[ sp ];
@@ -90,7 +96,7 @@ implementation
   begin
     result := cell[ sp - 1 ];
   end; { stack.nos }
-
+
   procedure stack.dup;
   begin
     push( tos );
@@ -113,7 +119,7 @@ implementation
     dec( sp );
     if sp < 0 then underflow;
   end; { stack.drop }
-
+
   procedure stack.default_overflow;
   begin
     writeln( 'error: stack overflow' );
@@ -125,7 +131,7 @@ implementation
     writeln( 'error: stack underflow' );
     halt
   end;
-
+
   function stack.dumps : string;
     var s: string;
     var i: int32;
@@ -146,10 +152,10 @@ implementation
   begin
     writeln( dumps );
   end; { stack.dump }
-
+
   function stack.limit : int32;
   begin
     result := length( cell );
   end;
-
+
 end.
