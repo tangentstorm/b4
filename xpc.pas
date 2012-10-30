@@ -2,6 +2,10 @@
 unit xpc; { cross-platform compilation help }
 interface
 
+  { some handy debug routines }
+  procedure pause( msg : string );
+  procedure hexdump( data : string );
+
   type set32 = set of 0 .. 31;
   type int32 = longint;
   function toint( s : set32 ) : int32;
@@ -35,6 +39,29 @@ implementation
 
   {$i xpc.strings.pas }
 
+  procedure pause( msg : string );
+  begin
+    writeln;
+    write( '---| ', msg, ' |---' );
+    writeln;
+    readln;
+  end; { pause }
+
+
+  procedure hexdump( data :  string );
+    var ch : char; hexstr, ascstr : string; i : integer;
+  begin
+    i := 0;
+    hexstr := ''; ascstr := '';
+    for ch in data do begin
+      hexstr += hex( ord( ch ));
+      if ord( ch ) in [ 0 .. 32, 128 .. 255] then ascstr += '.' else ascstr += ch;
+      if i mod 4 = 0 then hexstr += ' ';
+    end;
+    writeln( '-- hexdump --' );
+    writeln( '[', hexstr, ' ', ascstr, ']' );
+  end;
+  
   function toint( s : set32 ) : int32;
     var i, p : byte;
   begin
