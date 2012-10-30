@@ -92,13 +92,13 @@ Having investigated the word =listen= and briefly described its component words,
 We will proceed depth first and left to right. Note that it's possible that a word is used in multiple places, and we may therefore need to define it earlier than the order in which we expected.
 
 * part 2 : recursive descent
-** TODO =listen= > =: ("colon")= the word that makes new words
-*** def
-~kernel.rx~
+** =listen= > =: ("colon")= the word that makes new words
 #+begin_src retro
 t: :        ( "-  )  create ' .word # last # @, d->class !, ]] vector? ;
 #+end_src
-*** words
+*** TODO summary
+*** breakdown
+#+tblname: listener
 | :        | "-  | Calls =create=, changes class to =.word=, and turns =compiler= on                                         |
 |----------+-----+-----------------------------------------------------------------------------------------------------|
 | t:       | "-  | /meta.rx: compile to target image ( bootstrap version of/ =:= /)/                                         |
@@ -114,7 +114,6 @@ t: :        ( "-  )  create ' .word # last # @, d->class !, ]] vector? ;
 | /vector?/  | -   | /kernel.rx: either revectors the word immediately or writes two NOPs for revectoring later/           |
 
 ** TODO =:= > =t:= the compiler's compiler
-~meta.rx~
 #+begin_src retro
 : t: ( "- ) label: nop, nop, &m, reclass ;
 #+end_src
@@ -123,8 +122,8 @@ t: :        ( "-  )  create ' .word # last # @, d->class !, ]] vector? ;
 ** TODO =t:= > =&m,= 
 ** TODO =t:= > =reclass=
 ** TODO =listen= > =( ("paren")= the word that doesn't care what you say
-** TODO =listen= > =create= 
-** TODO =listen= > =' the quote
+** TODO =:= > =create= 
+** TODO =:= > =' the quote
 ** TODO =listen= > =.word= 
 ** TODO =listen= > =#= proto literals
 ** TODO =listen= > =last= at =last=, you find the words
@@ -132,7 +131,7 @@ t: :        ( "-  )  create ' .word # last # @, d->class !, ]] vector? ;
 ** TODO =listen= > =d->class= pointer arithmetic
 ** TODO =listen= > =!, take that, NOS!
 ** TODO =listen= > =]]= 
-** TODO =listen= > =vector?=  =vector?= I hardly know her.
+** TODO =listen= > =vector?=  =vector?= +I hardly know her.+
 ** TODO =listen= > =;= STOP THE PRESS!
 
 ** =listen= > ( paren ) # should have been done by this point
