@@ -12,6 +12,7 @@ interface uses xpc;
   type stack = object
     sp   : integer;           // stack pointer
     cell : array of int32;    // a standard forth term
+    overflow, underflow : thunk;
     constructor init( len:word );
     procedure push( v: int32 );
     function pop: int32;
@@ -24,8 +25,8 @@ interface uses xpc;
     procedure dup;
     procedure swap;
     procedure drop;
-    procedure overflow;
-    procedure underflow;
+    procedure default_overflow;
+    procedure default_underflow;
     function dumps:string;
     procedure dump;
     function limit : int32;
@@ -37,6 +38,8 @@ implementation
   begin
     sp := 0;
     setlength( cell, len );
+    overflow := @default_overflow;
+    underflow := @default_underflow;
   end; { stack.init }
 
   procedure stack.push( v : int32 );
@@ -111,18 +114,17 @@ implementation
     if sp < 0 then underflow;
   end; { stack.drop }
 
-  procedure stack.overflow;
+  procedure stack.default_overflow;
   begin
-    writeln( 'warning: stack overflow' );
-    sp := length( cell ) - 1;
-  end; { stack.overflow }
+    writeln( 'error: stack overflow' );
+    halt
+  end;
 
-  procedure stack.underflow;
+  procedure stack.default_underflow;
   begin
-    writeln( 'warning: stack underflow' );
-    sp := 0;
-  end; { stack.underflow }
-
+    writeln( 'error: stack underflow' );
+    halt
+  end;
 
   function stack.dumps : string;
     var s: string;
