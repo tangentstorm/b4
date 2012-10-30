@@ -7,6 +7,9 @@ retro : *.pas
 test : retro
 	$(NGAROTEST) -n ./retro
 
+test.files : retro
+	./retro --with $(RETROPATH)/test/files.rx
+
 clean :
 	rm -f *.img
 
