@@ -91,12 +91,12 @@ interface uses xpc, stacks, sim, kvm, posix, sysutils;
 
 implementation
 
-  {$i ng.ops.pas }
-  {$i ng.retro.pas }
-  {$i ng.input.pas }
-  {$i ng.files.pas }
-  {$i ng.ports.pas }
-  {$i ng.debug.pas }
+  {$i ng_ops.pas }
+  {$i ng_retro.pas }
+  {$i ng_input.pas }
+  {$i ng_files.pas }
+  {$i ng_ports.pas }
+  {$i ng_debug.pas }
 
   constructor vm.init( imagepath : string; debug : boolean; pad : int32 );
   begin
