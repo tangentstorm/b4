@@ -128,6 +128,7 @@ unit ng.ports; implementation
       -7  : {  TODO: mouse exists? } result := 0;
       -8  : { current time } result := lo( posix.time );
       -9  : { exit the vm } self.ip := length( self.ram ) + 1;
+      -10 : {  TODO: environ } result := 0;
       -11 : { console width } result := kvm.term.w;
       -12 : { console height } result := kvm.term.h;
       -13 : { num bits/cell } result := 32;
