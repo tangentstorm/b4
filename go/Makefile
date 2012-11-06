@@ -6,6 +6,9 @@ main: b4
 b4: b4.pas vm.pas
 	$(FPC) b4.pas
 
+hx: hx.pas
+	$(FPC) hx.pas
+
 clean:
 	rm *~ *.gpi *.o
 
