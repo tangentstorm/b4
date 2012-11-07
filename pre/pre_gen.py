@@ -73,11 +73,33 @@ def extract_sig( line ):
 
     return tuple( res )
 
+
+def trim(s):
+    """
+    strips leading indentation from a multi-line string.
+    for saving bandwith while making code look nice
+    """
+    lines = string.split(s, "\n")
+
+    # strip leading blank line
+    if lines[0] == "":
+        lines = lines[1:]
+
+    # strip indentation
+    indent = len(lines[0]) - len(string.lstrip(lines[0]))
+    for i in range(len(lines)):
+        lines[i] = lines[i][indent:]
+
+    return string.join(lines, "\n")
+
+
 def gen_code_for( line ):
     print line
     print extract_sig( line )
     #  TODO : actually generate the code ;)
     name, type, args = extract_sig( line )
+
+
 
 if __name__=="__main__":
     if "--test" in sys.argv: doctest.testmod()
