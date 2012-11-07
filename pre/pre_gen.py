@@ -126,21 +126,27 @@ def gen_code_for( line ):
     ctr_args = ";".join( show_group( group, '_in' ) for group in args )
     fun_args = ";".join( show_group( group, '') for group in args )
 
-    # this is the flat list of names
-    arg_names = map( str, itertools.chain(
-            *( names for ( kw, names, types ) in args )))
+    arg_names = [] # flat list of all names
+    arg_types = {} # name -> type mapping
+    for ( kw, names, gtype ) in args:
+        for arg in names:
+            arg_types[ arg ] = gtype
+            arg_names.append( arg )
 
     call = ", ".join( arg_names )
     if arg_names:
         assigns = '\n  ' + ';\n  '.join(
             "self.{0} := {0}_in".format( a ) for a in arg_names )
-    else: assigns = ''
+        decls = '\n  ' + ';\n  '.join(
+            "{0} : {1}".format( a, t ) for a, t in arg_types.items( ))
+    else: assigns = decls = ''
 
     klass = "%sPattern" % name.title( )
     print( trim(
         """
-        type {klass} = class
+        type {klass} = class ( pattern )
           constructor create( {ctr_args} );
+        private{decls}
         end;
         constructor {klass}.create( {ctr_args} );
         begin{assigns}
