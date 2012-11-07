@@ -1,12 +1,15 @@
-// pre - pattern recognition engine
+// pre : pattern recognition engine
 {$i xpc.inc }
 unit pre;
 interface uses xpc;
+
 
-  type charset = set of Char;
-  type pattern = class
-    procedure match( var s : string );
-  end;
+  type
+    charset = set of Char;
+    pattern = class
+      procedure match( var s : string ); virtual; abstract;
+    end;
+    patlist = array of pattern;
 
   { primitives }
   function nul : pattern;
@@ -19,21 +22,22 @@ interface uses xpc;
   function def( const iden : string; p : pattern ) : pattern;
   function sub( const iden : string ) : pattern;
 
-  { multiple grammars }
-  procedure new( const iden : string );
-  procedure use( const iden : string );
-
   { combinators }
-  function alt( const pats : array of pattern ) : pattern;
-  function seq( const pats : array of pattern ) : pattern;
+  function alt( const pats : patlist ) : pattern;
+  function seq( const pats : patlist ) : pattern;
   function rep( const pat : pattern ) : pattern; // kleene +
   function opt( const pat : pattern ) : pattern; // kleene ?
   function orp( const pat : pattern ) : pattern; // kleene *
 
+  { support for multiple grammars }
+  //  todo : procedure new( const iden : string );
+  //  todo : procedure use( const iden : string );
+
 
 implementation
 
-  {  TODO : $i pre_gen.pas }
+  {$i pre_gen.pas}
+  {$i pre_match.pas}
 
 begin
 end.
