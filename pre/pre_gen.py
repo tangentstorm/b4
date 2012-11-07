@@ -1,7 +1,24 @@
-import sys, doctest
+"""
+generate boilerplate code for pre.pas, to make using the
+haskell-style algebraic data types more convenient in pascal.
 
-# generate boilerplate code for pre.pas
+Also contains a cute little parser for pascal function definitions.
+"""
+import sys, doctest, string, itertools
+
+# a little stack / dequeue machine to help with parsing:
+class the :      # just an arbitrary namespace
+    result = [ ] # top level result. set once per call
+    focus = [ ]  # set this to the list to build ( can change for nesting )
+    input = None # set this to the input list ( tokens, below )
+def keep( v ): the.focus.append( v )
+def next( index = 0 ):
+    the.token = the.input.pop( index )
+    return the.token
+def last( ): return next( -1 ) # <- dequeue :)
+def drop( v ): pass
 
+
 def extract_sig( line ):
     """
     :: pascal function declaration
@@ -12,23 +29,14 @@ def extract_sig( line ):
     >>> extract_sig("function abc( a, b : int; var c : array of str ) : obj;")
     ('abc', 'obj', [('', ['a', 'b'], 'int'), ('var', ['c'], 'array of str')])
     """
-    res = [ ]
-    tokens = [ tok.strip( ) for tok in line.lower( )
-              .replace( ';', ' ' )
-              .replace( '(', ' ' )
-              .replace( ',', ' ' )
-              .replace( ')', ' ' )
-              .strip( )
-              .split( )]
-
-    # little stack machine to help with parsing:
-    class the : list = res # just an arbitrary namespace
-    def keep( v ): the.list.append( v )
-    def next( index = 0 ):
-        the.token = tokens.pop( index )
-        return the.token
-    def last( ): return next( -1 )
-    def drop( v ): pass
+    the.focus = the.result = [ ]
+    the.input = [ tok.strip( ) for tok in
+                  line.lower( )
+                  .replace( ';', ' ' )
+                  .replace( '(', ' ' )
+                  .replace( ',', ' ' )
+                  .replace( ')', ' ' )
+                  .strip( ).split( )]
 
     # extract the name and return type, leaving just the args:
     if next( ) == 'function':
@@ -41,17 +49,26 @@ def extract_sig( line ):
 
     # at this point, tokens is either empty,
     # or it contains the argument list
+    _extract_arglist( )
+    return tuple( the.result )
+
+
+def _extract_arglist( ):
+    """
+    This is just the second part of extract_sig, that parses
+    the argument list inside the parentheses.
+    """
     args = [ ]
     keep( args )
-    while tokens:
+    while the.input : # i.e., while not empty
 
-        the.list = arg_group = [ ] # start a new list for keep( )
+        the.focus = arg_group = [ ] # start a new list for keep( )
         if next( ) in ( 'var', 'const' ):
             keep( the.token )
             next( )
         else: keep( '' )  # no var/const keyword
 
-        the.list = names = [ ]
+        the.focus = names = [ ]
         keep( the.token ) # just keep the name
 
         while next( ) != ':' :
@@ -59,22 +76,20 @@ def extract_sig( line ):
 
         # now the.token == : , next up is the type for the group
         drop( the.token ) # drop the ":"
-        the.list = arg_group
+        the.focus = arg_group
         keep( names ) # leave it as a list just to alternate the brackets
 
         keep( next( )) # type name
         if ( the.token ) in ( 'array', 'set' ):
             container = the.token
             drop( next( ) ) # "of"
-            the.list[ -1 ] = "%s of %s" % ( container, next( ))
+            the.focus[ -1 ] = "%s of %s" % ( container, next( ))
 
-        the.list = args
+        the.focus = args
         keep( tuple( arg_group ))
 
-    return tuple( res )
-
-
-def trim(s):
+
+def trim(s): # from my handy.py library
     """
     strips leading indentation from a multi-line string.
     for saving bandwith while making code look nice
@@ -92,22 +107,63 @@ def trim(s):
 
     return string.join(lines, "\n")
 
-
+
 def gen_code_for( line ):
-    print line
-    print extract_sig( line )
-    #  TODO : actually generate the code ;)
+    """
+    This generates the actual code.
+    """
+    # print extract_sig( line )
     name, type, args = extract_sig( line )
 
+    def show_group( group, suffix ):
+        """generate code for one group of arg defs"""
+        kw, name_list, type = group
+        names = ", ".join( n+suffix for n in name_list )
+        return '{kw} {names} : {type}'.format( **locals( ))
 
+    # now for the list of arg groups. since pascal doesn't allow duplicate
+    # identifiers, we'll add an "_in" suffix in the constructor
+    ctr_args = ";".join( show_group( group, '_in' ) for group in args )
+    fun_args = ";".join( show_group( group, '') for group in args )
 
+    # this is the flat list of names
+    arg_names = map( str, itertools.chain(
+            *( names for ( kw, names, types ) in args )))
+
+    call = ", ".join( arg_names )
+    if arg_names:
+        assigns = '\n  ' + ';\n  '.join(
+            "self.{0} := {0}_in".format( a ) for a in arg_names )
+    else: assigns = ''
+
+    klass = "%sPattern" % name.title( )
+    print( trim(
+        """
+        type {klass} = class
+          constructor create( {ctr_args} );
+        end;
+        constructor {klass}.create( {ctr_args} );
+        begin{assigns}
+        end;
+        {line}
+        begin
+          result := {klass}.create( {call} )
+        end;
+        """).format( **locals( )))
+
 if __name__=="__main__":
     if "--test" in sys.argv: doctest.testmod()
     else:
+        print "// ---- generated file! do not edit! ----"
+        print "// this file was generated by {0}".format( __file__ )
+        print "// --------------------------------------"
         lines = open( "pre.pas" )
         line  = ""
         while not line.startswith( "implementation" ):
             line = lines.next( ).strip( )
+            if line.count( '//' ):
+                line, _ = line.split( '//', 1 )
+                line = line.strip( )
             if ( line.startswith( "function" )
                  and line.endswith( "pattern;" )):
                 gen_code_for( line )
