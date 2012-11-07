@@ -7,7 +7,7 @@ main: pre
 pre: pre.pas pre_match.pas pre_gen.pas
 	$(FPC) pre.pas
 
-pre_gen.pas :
+pre_gen.pas : pre.pas pre_gen.py
 	$(PYTHON) pre_gen.py > pre_gen.pas
 
 clean:
