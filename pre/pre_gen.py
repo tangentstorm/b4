@@ -7,10 +7,10 @@ def extract_sig( line ):
     :: pascal function declaration
     -> ( name:str, type:str, args:[( kwd:str, [ name:str ], type:str )])
 
-    Limited to simple types and doesn't support default values yet.
+    Doesn't support default values yet.
 
-    >>> extract_sig( "function abc( a, b : int; var c : str ) : obj;" )
-    ('abc', 'obj', [('', ['a', 'b'], 'int'), ('var', ['c'], 'str')])
+    >>> extract_sig("function abc( a, b : int; var c : array of str ) : obj;")
+    ('abc', 'obj', [('', ['a', 'b'], 'int'), ('var', ['c'], 'array of str')])
     """
     res = [ ]
     tokens = [ tok.strip( ) for tok in line.lower( )
@@ -58,10 +58,15 @@ def extract_sig( line ):
             keep( the.token ) # names in the list
 
         # now the.token == : , next up is the type for the group
-        drop( the.token )
+        drop( the.token ) # drop the ":"
         the.list = arg_group
         keep( names ) # leave it as a list just to alternate the brackets
-        keep( next( ))
+
+        keep( next( )) # type name
+        if ( the.token ) in ( 'array', 'set' ):
+            container = the.token
+            drop( next( ) ) # "of"
+            the.list[ -1 ] = "%s of %s" % ( container, next( ))
 
         the.list = args
         keep( tuple( arg_group ))
@@ -69,8 +74,10 @@ def extract_sig( line ):
     return tuple( res )
 
 def gen_code_for( line ):
-    name, type, args = extract_sig( line )
+    print line
+    print extract_sig( line )
     #  TODO : actually generate the code ;)
+    name, type, args = extract_sig( line )
 
 if __name__=="__main__":
     if "--test" in sys.argv: doctest.testmod()
