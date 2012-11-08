@@ -142,6 +142,29 @@ ok
 
 #+end_example
 
+* TODO memory manager to allow sharing pascal and retro data
+:PROPERTIES:
+:TS:       <2012-10-30 04:04AM>
+:ID:       mky1x9405xf0
+:END:
+#+begin_src pascal
+{  todo : custom memmory manager
+  http://www.freepascal.org/docs-html/prog/progsu160.html#x205-2180008.4.4
+}
+
+{ retro's file format conventions ( see image/kernel.rx in retro source ) }
+  type rx_header = class
+		     prev, wordclass : int32;
+		     docptr : ^ansistring;
+		     xt     : ^ansistring; { h.xt = @h.code }
+		     token  : ansistring;
+		     code   : ansistring;
+		   end;
+  const
+    rx_last  = 2;
+    rx_xtofs = ;
+
+#+end_src
 * --- cross-platform ---
 * TODO [0/3] bugs in other ngaro vms
 ** TODO py : crashes on "help" - why?

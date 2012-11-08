@@ -10,6 +10,9 @@ test : retro
 test.files : retro
 	./retro --with $(RETROPATH)/test/files.rx
 
+test.core : retro
+	./retro --with $(RETROPATH)/test/core.rx
+
 clean :
 	rm -f *.img
 

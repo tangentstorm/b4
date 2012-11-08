@@ -13,20 +13,33 @@
 | copyright (c) 2012 michal j. wallace
 | see LICENSE.org for usage information
 }
+{$i xpc.inc }
 unit vm;
-interface
-
+interface uses xpc;
+
 const
-   
-  { opcodes }
+  { opcodes  | syntax   | purpose              }
+
+  oSYS = $0; { sys code | access bios / ports  }
+  oCMP = $1; { cmp pred | compare stack items  }
+  oELS = $2; { els addr | conditional jump     }
+  oJMP = $3; { jmp addr | absolute jump        }
+  oGET = $4; { get addr | ram to stack         }
+  oPUT = $5; { put addr | stack to ram         }
+  oINC = $6; { inc x    | increment            }
+  oDEC = $7; { dec x    | decrement            }
   
-  oNOP = $0; oCMP = $1; oELS = $2; oJMP = $3;
-  oGET = $4; oPUT = $5; oINC = $6; oDEC = $7;
-  oPSH = $8; oPOP = $9; oSWP = $a; oDUP = $b;
-  oXOR = $c; oAND = $d; oNOT = $e; oSHR = $f;
-   
+  oPSH = $8; { push     | data -> addr         }
+  oPOP = $9; { pop      | addr -> data         }
+  oSWP = $a; { swap     | ( xy - yx )          }
+  oDUP = $b; { dup      | ( x - xx )           }
+  oXOR = $c; { xor      | bitwise xor          } 
+  oAND = $d; { and      | bitwise and          }
+  oNOT = $e; { not      | bitwise not          }
+  oSHR = $f; { shr      | bit shift right      }
+
+
   { registers }
-   
   IP = $00;
   P1 = $01; P2 = $02; P3 = $03; P4 = $04;
   IO = $09;
@@ -34,7 +47,6 @@ const
   A = $0A; B = $0B; C = $0C; D = $0D; E = $0E; F = $0F;
   
   { offset of stacks and special memory locations }
-  
   ADDR = $10; R = $17;
   DATA = $18; T = $18; N = $19;
    
@@ -44,7 +56,8 @@ const
    
   CODE = $30;
   MISC = $80;
-  
+
+
 type
    
   memory = array [ 0 .. 255 ] of byte;
@@ -77,13 +90,13 @@ type
 { ------------------------------------------------- }
   
 implementation
-
+
 constructor core.init;
   var i : byte;
 begin
   for i := 0 to 255 do self.ram [ i ] := 0;
 end;
-
+
 { -- runtime interface for b4 mainloop -- }
 
 procedure core.boot;
@@ -98,7 +111,7 @@ end;
 procedure core.send ( x : byte );
 begin
 end;
-
+
 { -- queries -- }
 
 function core.active : boolean;
@@ -113,6 +126,7 @@ begin
   result := self.ram[ IBUF ] <= BUFSIZE;
 end;
 
+
 { -- serialization -- }
 
 procedure copy_memory ( var src, dst : memory );
@@ -131,6 +145,7 @@ begin
   copy_memory ( self.ram, state );
 end;
 
+
 { -- semi-private -- }
 
 function core.rshift ( off, num, amt : byte; wrap : boolean ) : byte;
@@ -145,6 +160,7 @@ begin
   result := tmp;
 end;
 
+
 { ------------------------------------------------- }
 
 begin
