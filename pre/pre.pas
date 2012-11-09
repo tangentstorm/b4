@@ -31,8 +31,9 @@ interface uses xpc;
   function orp( const pat : pattern ) : pattern; // kleene *
 
   { support for multiple grammars }
-  //  todo : procedure new( const iden : string );
-  //  todo : procedure use( const iden : string );
+  procedure new_grammar( const iden : string );
+  procedure end_grammar;
+  procedure use_grammar( const iden : string );
 
 
 implementation
@@ -41,6 +42,7 @@ implementation
 
   procedure new_grammar( const name : string ); begin end;
   procedure end_grammar; begin end;
+  procedure use_grammar( const name : string ); begin end;
 
 begin
 
