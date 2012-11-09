@@ -2,9 +2,8 @@ FPC = fpc -Fu.. -Fi.. -Mobjfpc
 PYTHON = python
 
 main: pre
-	./pre
 
-pre: pre.pas pre_match.pas pre_gen.pas
+pre: pre.pas pre_gen.pas
 	$(FPC) pre.pas
 
 pre_gen.pas : pre.pas pre_gen.py
