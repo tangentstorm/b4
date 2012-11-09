@@ -57,7 +57,7 @@ begin
 		       sub( 'bracks' ),
 		       sub( 'parens' ))));
   def( 'iden',   seq( sub( 'alpha' )));
-  def( 'strn',     seq( lit( '"' ), orp( wld ), lit( '"' ));
+  def( 'strn',   seq( lit( '"' ), orp( wld ), lit( '"' ));
   def( 'alph',   any([ 'a'..'z', 'A'..'Z' ]);
   def( 'numb',   any([ '0'..'9' ]);
   end_grammar;
