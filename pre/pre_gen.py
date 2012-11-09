@@ -146,10 +146,15 @@ def gen_code_for( line ):
         """
         type {klass} = class ( pattern )
           constructor create( {ctr_args} );
+          function match( var s : string ) : boolean; override;
         private{decls}
         end;
         constructor {klass}.create( {ctr_args} );
         begin{assigns}
+        end;
+        function {klass}.match( var s : string ) : boolean;
+        begin
+          result := match_{name}( {call} );
         end;
         {line}
         begin
