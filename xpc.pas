@@ -37,7 +37,7 @@ interface
 
 implementation
 
-  {$i xpc.strings.pas }
+  {$i xpc_str.pas }
 
   procedure pause( msg : string );
   begin
