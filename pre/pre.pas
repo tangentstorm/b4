@@ -13,13 +13,14 @@ interface uses xpc;
 
   { primitives }
   function nul : pattern;
+  function wld : pattern;
   function err( msg : string ): pattern;
-  function chr( const c  : char ) : pattern;
+  function lit( const c  : char ) : pattern;
   function str( const s  : string ) : pattern;
   function any( const cs : charset ) : pattern;
 
   { recursion support }
-  function def( const iden : string; p : pattern ) : pattern;
+  function def( const iden : string ; p : pattern ) : pattern;
   function sub( const iden : string ) : pattern;
 
   { combinators }
@@ -38,5 +39,25 @@ implementation
 
   {$i pre_gen.pas}
 
+  procedure new_grammar( const name : string ); begin end;
+  procedure end_grammar; begin end;
+
 begin
+
+  new_grammar( 'ebnf' );
+  def( 'syntax',  orp( sub( 'rule' )));
+  def( 'rule',    seq((sub( 'iden' ), lit( '=' ), sub( 'expr' ), lit( '.' ))));
+  def( 'expr',    seq((sub( 'term' ), orp((lit( '|' ), sub( 'term' ))))));
+  def( 'term',    rep( 'factor'));
+  def( 'factor',  alt((sub( 'ident' ),
+		       sub( 'string' ),
+		       sub( 'braces' ),
+		       sub( 'bracks' ),
+		       sub( 'parens' ))));
+  def( 'iden',   seq( sub( 'alpha' )));
+  def( 'strn',     seq( lit( '"' ), orp( wld ), lit( '"' ));
+  def( 'alph',   any([ 'a'..'z', 'A'..'Z' ]);
+  def( 'numb',   any([ '0'..'9' ]);
+  end_grammar;
+
 end.
