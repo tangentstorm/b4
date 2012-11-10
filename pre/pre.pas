@@ -8,7 +8,7 @@
 ---------------------------------------------------------------- }
 {$i xpc.inc }
 unit pre;
-interface uses xpc, classes;
+interface uses xpc;
 
   type
     Source = interface
@@ -220,7 +220,7 @@ implementation
   procedure p( pat : pattern ); { appends to the last array }
   begin
     inc( n ); setlength( pats^, n ); pats^[ n ] := pat;
-  end; { p }
+  end;
 
 
 begin { hand-built bootstrap parser for ebnf grammars }
