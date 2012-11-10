@@ -30,8 +30,9 @@ interface uses xpc;
     { matcher contains the hand-written methods that
       actually carry out the work of matching things.
 
-      this object definition also serves as the input
-      to pre_gen.py, which generates a bunch of classes }
+      this class definition also serves as the input
+      to pre_gen.py, which generates a bunch of helper
+      classes and functions }
 
     matcher = class
       src  : Source;
@@ -223,7 +224,10 @@ implementation
   end;
 
 
-begin { hand-built bootstrap parser for ebnf grammars }
+initialization
+  { hand-built bootstrap parser for ebnf grammars
+    This uses the simplified pattern constructors
+    from the generated include file. }
 
   new_grammar( 'ebnf' );
 
@@ -303,7 +307,7 @@ begin { hand-built bootstrap parser for ebnf grammars }
   // Note : I use the ascii escape character as an escape character.
   // That is its purpose. :)
   //
-  // If you can't see it, in the line above, please consider filing
+  // If you can't see it in the line above, please consider filing
   // a bug report with whoever makes the tool you're using.
   def( 'str-esc', alt( ps ));
     p( sub( 'escaped' ));
