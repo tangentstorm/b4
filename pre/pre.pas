@@ -15,23 +15,25 @@ interface uses xpc, classes;
       function  ch : Char;
       procedure next;
       procedure mark; // push cursor position to stack
-      procedure back; // pop cursor position
+      procedure back; // pop cursor position and return
+      procedure free; // pop cursor position but do not return
+      procedure keep; // drop, but also generate a token
     end;
     CharSet = set of Char;
-    pmatcher = ^Matcher;
+    pMatcher = ^Matcher;
     Pattern = class
       function match( pm : pMatcher ) : boolean; virtual; abstract;
     end;
     patterns = array of pattern;
 
+
     { matcher contains the hand-written methods that
       actually carry out the work of matching things.
 
       this object definition also serves as the input
-      to pre_gen.py, which generates a bunch of classes
-    }
-    matcher = class
+      to pre_gen.py, which generates a bunch of classes }
 
+    matcher = class
       src  : Source;
       constructor create( var src_in : Source );
 
@@ -108,30 +110,54 @@ implementation
     while not found and ( i < high( ps )) do begin
       found := ps[ i ].match( @self );
       if not found then src.back;
+      inc( i )
     end;
     result := found;
   end;
 
-  { opt can match any number of patterns }
+
+  { opt ( optional ) tries to match a pattern,
+    but if the pattern doesn't match, it backtracks
+    and returns true anyway.
+    algebraically, opt p = alt ( p , nul ) }
   function matcher.opt( const p : pattern ) : boolean;
   begin
-    result := false;
+    src.mark;
+    if p.match( @self ) then src.keep else src.back;
+    result := true;
   end;
 
+  { rep ( repeating ) is like opt, but it will keep consuming
+    input until the underlying pattern fails. since matching 0
+    copies is still a match, rep always succeeds }
   function matcher.rep( const p : pattern ) : boolean;
   begin
-    result := false;
+    repeat
+      src.mark;
+      result := p.match( @self );
+      if result then src.keep else src.back;
+    until not result;
+    result := true;
   end;
 
-
+  { seq ( sequence ) simply matches each pattern from left to right.
+    it succeeds if and only if each pattern in the sequence succeeds. }
   function matcher.seq( const ps : patterns ) : boolean;
+    var i : integer = 0;
   begin
-    result := false;
+    result := true;
+    while result and ( i < length( ps )) do
+    begin
+      result := result and ps[ i ].match( @self );
+      inc( i )
+    end
   end;
-
-
+
   { dictionary routines }
-  { this is only a function to avoid special cases in the code generator }
+
+  { def assigns a name to the specified pattern.
+    the only reason this is a function rather than a procedure is to
+    avoid special cases in the code generator }
   function matcher.def( const iden : string ; const p : pattern ) : boolean;
     var len : integer;
   begin
@@ -142,9 +168,26 @@ implementation
     result := true;
   end;
 
-  function matcher.sub( const iden : string ) : boolean;
+  { lookup searches through the dictionary backward, so that the last
+    entry added is the one returned }
+  function lookup( const iden : string; var p : pattern ) : boolean;
+    var i : integer; found : boolean = false;
   begin
-    result := false;
+    i := length( defs ) - 1;
+    while ( i > -1 ) and not found do begin
+      found := defs[ i ].iden = iden;
+      if found then p := defs[ i ];
+      dec( i )
+    end;
+    result := found;
+  end;
+
+  { sub invokes a rule ( provided it's found in the dictionary ) }
+  function matcher.sub( const iden : string ) : boolean;
+    var p : pattern;
+  begin
+    if lookup( iden, p ) then result := p.match( @self )
+    else begin writeln( 'couldn''t find sub: ', iden ); halt end
   end;
 
 
@@ -181,6 +224,7 @@ implementation
 
 
 begin { hand-built bootstrap parser for ebnf grammars }
+
   new_grammar( 'ebnf' );
 
   // syntax = { rule } .
@@ -207,6 +251,7 @@ begin { hand-built bootstrap parser for ebnf grammars }
   // digit = '0' | ... | '9'
   def( 'digit',   any([ '0'..'9' ]));
 
+
   // expr = term  { "|" term } .
   // !! this one has a rep inside a seq. i broke it into two parts
   //    rather than complicate the builder framework further
@@ -238,6 +283,7 @@ begin { hand-built bootstrap parser for ebnf grammars }
     p( sub( 'expr' ));
     p( lit( ')' ));
 
+
   // factor = iden | string | rep | opt | grp .
   def( 'factor', alt( ps ));
     p( sub( 'iden' ));
