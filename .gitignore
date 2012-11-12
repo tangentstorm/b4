@@ -7,4 +7,8 @@
 app/backup
 app/lib
 .idea
+library
+retro
+vrx
+pre/pre_gen.pas
 
