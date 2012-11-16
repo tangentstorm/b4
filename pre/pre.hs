@@ -43,7 +43,7 @@ data Gram a
      -- because I find its syntax easier to understand, and
      -- more in line with common regexp syntax.
      = Rec_ (Rec a)
-     | Star (Gram a) -- antlr: g* after klenee star. ebnf: { a }
+     | Star (Gram a) -- antlr: g* after kleene star. ebnf: { a }
      | Plus (Gram a) -- antlr: g+ after kleene plus. ebnf: a { a }
      | Grup (Gram a) -- antlr: ( g ) like everywhere else.
      | Ques (Gram a) -- antlr: g? 0..1 like perl. ebnf: [ a ] bnf: a | nul

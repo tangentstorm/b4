@@ -16,8 +16,7 @@ interface uses xpc;
       procedure next;
       procedure mark; // push cursor position to stack
       procedure back; // pop cursor position and return
-      procedure free; // pop cursor position but do not return
-      procedure keep; // drop, but also generate a token
+      procedure keep; // drop topmost marker and generate a token
     end;
     CharSet = set of Char;
     pMatcher = ^Matcher;
@@ -208,8 +207,8 @@ implementation
   // literal dynamic array like this. ( if there is, i'd love to hear
   // hear about it )
   //
-  // in the meantime, i made this little stack machine instead.
-  // it's only purpose is to make the ebnf grammar below easier to read.
+  // in the meantime, i made these little builder functions. their
+  // only purpose is to make the ebnf grammar below easier to read.
 
   var pats : ^patterns; n : integer;
 
