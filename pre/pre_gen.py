@@ -148,7 +148,7 @@ def gen_code_for( line ):
 
         type {klass} = class ( pattern )
           constructor create( {ctr_args} );
-          function match( pm : pmatcher ) : boolean; override;
+          function match( m : matcher ) : boolean; override;
         private{decls}
         end;
 
@@ -156,9 +156,9 @@ def gen_code_for( line ):
         begin{assigns}
         end;
 
-        function {klass}.match( pm : pmatcher ) : boolean;
+        function {klass}.match( m : matcher ) : boolean;
         begin
-           result := pm^.{name}( {call} )
+           result := m.{name}( {call} )
         end;
 
         function {name}( {fun_args} ) : pattern;
@@ -177,8 +177,16 @@ if __name__=="__main__":
         print
         lines = open( "pre.pas" )
         line  = ""
-        while not line.replace( ' ', '' ).count( 'matcher=class' ):
+
+        # fast forward to the good stuff.
+        # matcher requires a forward reference, so we want to start after
+        # the second line that says matcher = class
+        for skip in range( 2 ):
+            while not line.replace( ' ', '' ).count( 'matcher=class' ):
+                line = lines.next( )
             line = lines.next( )
+
+        # now loop through the methods on "matcher"
         while not line.startswith( "end" ):
             line = lines.next( ).strip( )
             if line.count( '//' ):

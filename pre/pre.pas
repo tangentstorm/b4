@@ -21,12 +21,12 @@ interface uses xpc, stacks;
       sym, pos, len : integer;
     end;
     CharSet = set of Char;
-    pMatcher = ^Matcher;
+
+    matcher = class; // forward reference
     Pattern = class
-      function match( pm : pMatcher ) : boolean; virtual; abstract;
+      function match( m : matcher ) : boolean; virtual; abstract;
     end;
     patterns = array of pattern;
-
 
     { matcher contains the hand-written methods that
       actually carry out the work of matching things.
@@ -43,7 +43,8 @@ interface uses xpc, stacks;
 
       constructor create;
       procedure match( s : isource; rule: string );
-
+
+    { matcher class internals }
     protected
 
       { primitive : character classes }
@@ -130,7 +131,7 @@ implementation
   begin
     mark;
     while not found and ( i < high( ps )) do begin
-      found := ps[ i ].match( @self );
+      found := ps[ i ].match( self );
       if not found then back;
       inc( i )
     end;
@@ -145,7 +146,7 @@ implementation
   function matcher.opt( const p : pattern ) : boolean;
   begin
     mark;
-    if p.match( @self ) then keep else back;
+    if p.match( self ) then keep else back;
     result := true;
   end;
 
@@ -156,7 +157,7 @@ implementation
   begin
     repeat
       mark;
-      result := p.match( @self );
+      result := p.match( self );
       if result then keep else back;
     until not result;
     result := true;
@@ -170,7 +171,7 @@ implementation
     result := true;
     while result and ( i < length( ps )) do
     begin
-      result := result and ps[ i ].match( @self );
+      result := result and ps[ i ].match( self );
       inc( i )
     end
   end;
@@ -208,7 +209,7 @@ implementation
   function matcher.sub( const iden : string ) : boolean;
     var p : pattern;
   begin
-    if lookup( iden, p ) then result := p.match( @self )
+    if lookup( iden, p ) then result := p.match( self )
     else begin writeln( 'couldn''t find sub: ', iden ); halt end
   end;
 
