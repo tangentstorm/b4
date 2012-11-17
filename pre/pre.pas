@@ -8,15 +8,14 @@
 ---------------------------------------------------------------- }
 {$i xpc.inc }
 unit pre;
-interface uses xpc;
+interface uses xpc, stacks;
 
   type
-    Source = interface
-      function  ch : Char;
-      procedure next;
-      procedure mark; // push cursor position to stack
-      procedure back; // pop cursor position and return
-      procedure keep; // drop topmost marker and generate a token
+    Marker  = object end;
+    ISource = interface
+      procedure next( ch : char );
+      procedure mark( var mk : Marker );
+      procedure back( var mk : Marker );
     end;
     CharSet = set of Char;
     pMatcher = ^Matcher;
@@ -34,8 +33,15 @@ interface uses xpc;
       classes and functions }
 
     matcher = class
-      src  : Source;
-      constructor create( var src_in : Source );
+      src   : ISource;
+      ch    : Char;
+      marks : stack;
+      point : int32;
+
+      constructor create;
+      procedure match( s : isource; rule: string );
+
+    protected
 
       { primitive : character classes }
       function nul : boolean;
@@ -51,12 +57,21 @@ interface uses xpc;
       { recursion support }
       function def( const iden : string; const p : pattern ) : boolean;
       function sub( const iden : string ) : boolean;
+
+      { stack management }
+      procedure mark;
+      procedure back;
+      procedure keep;
+
     end;
+
 
   { support for multiple grammars }
   procedure new_grammar( const iden : string );
   procedure end_grammar;
   procedure use_grammar( const iden : string );
+
+
 
 
 implementation
@@ -71,11 +86,15 @@ implementation
   procedure end_grammar; begin end;
   procedure use_grammar( const iden : string ); begin end;
 
-  constructor matcher.create( var src_in : Source );
+  constructor matcher.create;
   begin
-    self.src := src;
   end;
 
+  procedure matcher.match( s : isource; rule : string );
+  begin
+    self.src := s;
+    self.sub( rule )
+  end;
 
   { these hand-written routines are used by the objects
     generated in pre_gen.pas }
@@ -89,13 +108,13 @@ implementation
   { lit tests equality with a specific character }
   function matcher.lit( const c : char ) : boolean;
   begin
-    result := src.ch = c ;
+    result := self.ch = c ;
   end;
 
   { any tests membership in a set of characters }
   function matcher.any( const cs : charset ) : boolean;
   begin
-    result := src.ch in cs;
+    result := self.ch in cs;
   end;
 
   { alt can match any one of the given patterns }
@@ -106,10 +125,10 @@ implementation
   function matcher.alt( const ps : patterns ) : boolean;
     var i : integer = 0 ; found : boolean = false;
   begin
-    src.mark;
+    mark;
     while not found and ( i < high( ps )) do begin
       found := ps[ i ].match( @self );
-      if not found then src.back;
+      if not found then back;
       inc( i )
     end;
     result := found;
@@ -122,8 +141,8 @@ implementation
     algebraically, opt p = alt ( p , nul ) }
   function matcher.opt( const p : pattern ) : boolean;
   begin
-    src.mark;
-    if p.match( @self ) then src.keep else src.back;
+    mark;
+    if p.match( @self ) then keep else back;
     result := true;
   end;
 
@@ -133,9 +152,9 @@ implementation
   function matcher.rep( const p : pattern ) : boolean;
   begin
     repeat
-      src.mark;
+      mark;
       result := p.match( @self );
-      if result then src.keep else src.back;
+      if result then keep else back;
     until not result;
     result := true;
   end;
@@ -191,7 +210,25 @@ implementation
   end;
 
 
-  { initialization : seed the engine with a simple ebnf parser }
+
+    procedure matcher.mark;
+    begin
+    end;
+
+    procedure matcher.keep;
+    begin
+    end;
+
+    procedure matcher.back;
+    begin
+    end;
+
+
+
+
+
+
+{ initialization : seed the engine with a simple ebnf parser }
 
   // this is sort of a workaround for the objfpc syntax
   //
