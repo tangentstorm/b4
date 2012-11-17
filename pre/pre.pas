@@ -11,11 +11,14 @@ unit pre;
 interface uses xpc, stacks;
 
   type
-    Marker  = object end;
+    Marker  = class end;
     ISource = interface
       procedure next( ch : char );
       procedure mark( var mk : Marker );
       procedure back( var mk : Marker );
+    end;
+    Token = class
+      sym, pos, len : integer;
     end;
     CharSet = set of Char;
     pMatcher = ^Matcher;
@@ -211,23 +214,23 @@ implementation
 
 
 
-    procedure matcher.mark;
-    begin
-    end;
+  procedure matcher.mark;
+  begin
+  end;
 
-    procedure matcher.keep;
-    begin
-    end;
+  procedure matcher.keep;
+  begin
+  end;
 
-    procedure matcher.back;
-    begin
-    end;
-
-
+  procedure matcher.back;
+  begin
+  end;
 
 
 
 
+
+
 { initialization : seed the engine with a simple ebnf parser }
 
   // this is sort of a workaround for the objfpc syntax
@@ -251,12 +254,16 @@ implementation
 
   function  ps : patterns; { creates a new patterns array }
   begin
-    n := 0; new( pats ); result := pats^
+    n := 0;
+    new( pats );
+    result := pats^
   end;
 
   procedure p( pat : pattern ); { appends to the last array }
   begin
-    inc( n ); setlength( pats^, n ); pats^[ n ] := pat;
+    setlength( pats^, n + 1 );
+    pats^[ n ] := pat;
+    inc( n );
   end;
 
 
