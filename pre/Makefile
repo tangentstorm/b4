@@ -1,5 +1,5 @@
 XPL = ~/x/code
-FPC = fpc -Fu$(XPL) -Fi$(XPL) -Mobjfpc
+FPC = fpc -Fu$(XPL) -Fi$(XPL) -Mobjfpc -gl
 PYTHON = python
 
 main: grin
@@ -19,6 +19,7 @@ clean:
 
 run-tests.pas:
 	ln -s $(XPL)/../test/run-tests.pas
-test: run-tests.pas
+test: run-tests.pas grin
 	python $(XPL)/../test/gen-tests.py
 	@$(FPC) run-tests.pas
+	./run-tests
