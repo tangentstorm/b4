@@ -1,0 +1,606 @@
+#+TITLE: pascal in forth ( excerpts from )
+#+AUTHOR: Allan Winfield
+#+DATE: 1983
+
+* example code to sort an array of numbers
+
+#+begin_example forth
+( Create a 100 element array 'list' )
+CREATE list 200 ALLOT
+
+( create some working variables ... )
+VARIABLE i VARIABLE j VARIABLE k
+VARIABLE noswops
+
+( and constants ... )
+1 CONSTANT true 0 CONSTANT false
+
+
+( Sort 'list' into ascending numerical order )
+: sortlist {pascal
+  repeat noswops := true ;
+    for i := 1 to 99 do
+    begin
+      j := list [ i ] ;
+      k := list [ i + 1 ] ;
+      if j > k then
+      begin
+        noswops := false ;
+        list [ i ] := k ;
+        list [ i + 1 ] := j
+      end
+    end
+  until noswops
+} ;
+#+end_example
+
+* example forth to call the pascal function
+#+begin_example forth
+( sort any 100 element list into ascending order )
+: sort                   ( addr -> )
+    DUP list 100 MOVE    ( Copy anylist into list )
+    sortlist             ( sort it )
+    list SWAP 100 MOVE   ( Copy it back into anylist ) ;
+
+( Generate two lists and sort them ... )
+CREATE list1 200 ALLOT list1 sort
+CREATE list2 200 ALLOT list2 sort
+#+end_example
+
+
+
+* PART 1 : lexer and expression evaluator
+** the "begin" statement ( example outline only )
+#+begin_example forth
+( begin-statement compiler )
+: begin
+    statement  ( must be at least one statement )
+    BEGIN
+      ...      ( test here for a semi-colon )
+    WHILE
+      statement
+    REPEAT
+    ...        ( test here for end )
+    NOT IF syntaxerror THEN ;
+#+end_example
+
+** block 2000 - pascal extensions to forth
+#+begin_src forth
+( Pascal extensions to FORTH
+  ---------------------------------------------------
+  The following blocks define two new compiling words, '{' and
+  '{pascal'. '{' allows infix expressions to be incorporated
+  into FORTH by writing '{ infix expression }' and '{pascal' 
+  allows Pascal statements to be included in a FORTH colon
+  definition, '{pascal ...Pascal statements... }'.
+
+  The FORTH conforms to the FORTH-79 standard with the common
+  extensions of a CASE structure, and MYSELF to allow a recursive
+  colon definition. Also <= >= <> and 2+.
+
+  Developed on sForth.   A.F.T. Winfield 1983 )
+
+FORTH DEFINITIONS DECIMAL -->
+#+end_src
+** block 2001 - reseverd words
+#+begin_src forth
+( Define all Pascal reserved words. Keep these in a separate )
+  vocabulary to avoid conflict with similar FORTH words. )
+VOCABULARY pascal-words IMMEDIATE pascal-words DEFINITIONS
+
+:C CREATE ; : F FIND ;             ( abbreviations to save )
+: | , ;     : ---> [COMPILE] --> ;  ( typing and conflicts )
+
+( Define as empty definitions so that FIND will work. )
+( NOTE: do not insert any comment until after next FORTH. )
+
+C +     C -     C *       C /       C mod     C and
+C or    C xor   C <       C >       C <=      C >=
+C <>    C =     C (       C )       C {       C }
+C ;     C begin C end     C if      C then    C else
+C while C do    C repeat  C until   C write   C writeln
+C "     C for   C to      C by      C [       C ]
+C .     C not   C :=      C -->
+
+--->
+#+end_src
+
+** block 2002 - cfa table ( "code field address ")
+#+begin_src forth
+C cfa-table
+F +     | F -     | F *      | F /      | F mod    | F and     |
+F or    | F xor   | F <      | F >      | F <=     | F >=      |
+F <>    | F =     | F (      | F )      | F {      | F }       |
+F ;     | F begin | F end    | F if     | F then   | F else    |
+F while | F do    | F repeat | F until  | F write  | F writeln |
+F "     | F for   | F to     | F by     | F [      | F ]       |
+F .     | F not   | F :=     | F -->    | --->
+
+FORTH DEFINITIONS ( Go back into forth )
+
+( 'cfa-table' is a table of the Code Field Addresses of the 
+  reserved word definitions in the previous block. Note that ','
+  is redefined as '|' to allow definition of the pascal ',' )
+
+-->
+#+end_src
+
+Why repeat the list?
+
+In the first section, he's creating a bunch of empty definitions in the forth dictionary.
+
+Here, he redefined "|" to mean "," -- which means write to memory. So he's essentially creating an array of pointers to the empty dictionary entries.
+
+
+** block 2003
+#+begin_src forth
+40 CONSTANT words ( total number of reserved words above )
+
+( Search the pascal CFA table for a match with the CFA on top  )
+( of the stack, return a value 1..words if found, or leave the )
+( input CFA on TOS if not )
+
+: match-cfas
+    words 0 do                     ( step through cfa-table )
+      DUP
+      I 2*                                 ( fetch I'th cfa )
+      pascal-words cfa-table FORTH + @
+      = IF                                 ( if match found )
+          DROP I 1+ LEAVE        ( exit, leaving I+1 on TOS )
+        THEN
+      LOOP ;                            ( else try next cfa )
+
+-->
+#+end_src
+
+** block 2004 variables for the parser
+#+begin_src forth
+( parsing variables .. )
+VARIABLE >in    ( temporary storage of >IN value )
+VARIABLE find   ( result of FIND on next input word )
+VARIABLE type   ( index of token as position in pascal cfa table )
+                ( '+' = 1, '-' = 2, etc )
+
+( identify the value of the code pointers for variable / create )
+( and constant, so that 'next' will be able to differentiate )
+
+FIND type  @ CONSTANT vcode   ( code pointer for variable )
+FIND words @ CONSTANT ccode   ( code pointer for constant )
+-->
+#+end_src
+
+** block 2005 - next ( parses for tokens )
+# the author said this was the hardest one to come up with
+
+#+begin_src forth
+( 'next' assigns a 'type' to the next word in the input stream )
+(  type = 1..words : pascal reserved word     )
+(         -1       : a variable               )
+(         -2       : a constant               )
+(  any other value is an existing forth word. )
+: next-2 >IN @ >in ! ( save >IN in case we need to backtrack )
+    ( try to find next word in pascal words at compile time )
+    [COMPILE] pascal-words FIND [COMPILE] FORTH
+    DUP find !    ( save result of FIND in find )
+    match-cfas    ( and search the cfa table for match )
+    DUP type !    ( place the result in type )
+    DUP words SWAP U< IF   ( if no match was found ... )
+       @ DUP vcode = IF -1 type ! THEN  ( test for var )
+             ccode = IF -2 type ! THEN  ( test for const )
+    ELSE DROP THEN ; -->  ( leave stack empty )
+#+end_src
+
+** block 2006 forth parser tweaks
+#+begin_src forth
+( redefine 'next' to allow comment in pascal programs )
+: next-1
+  BEGIN
+    next-2 type @ 17 =   ( if next word is '(' .. )
+  WHILE
+    125 WORD DROP        ( skip input up to ')' )
+  REPEAT ;               ( and fetch the next thing )
+
+( redefine again to allow pascal to go over more than one block )
+: next
+  BEGIN
+    next-1 type @ 40 =    ( if next word is '-->' .. )
+  WHILE
+    1 BLK +! 0 >IN !      ( go to start of next block )
+  REPEAT ;                ( and fetch the next thing )
+
+-->
+#+end_src
+
+** block 2007 - error handling
+ #+begin_src forth
+( error handler. print line, put BLOCK on TOS line # on NOS )
+: .line BLOCK ( fetch block number )
+  SWAP 64 * + ( start address of line )
+  63 TYPE ;   ( print 63 characters )
+
+( print error message, error number TOS, and abandon )
+: perror
+  BLK @ IF CR ." pascal compilation error .."
+           CR ." block - " BLK ? ." Line - " >in @ 64 / DUP .
+           CR . BLK @ .line THEN
+        ( point to current pointer position )
+        CR >in @ 64 MOD SPACES ." ^ "
+        CR ." Error number - " . CR QUIT ;
+
+( Check if TOS equals current 'type', error if not )
+: ?error DUP type @ <> ( not equal ? )
+         IF perror ELSE DROP THEN ; -->
+ #+end_src
+
+** block 2008 compile / interpret
+#+begin_src forth
+( compile / execute, depending on state )
+( 'comp/int *' is same as 'STATE @ IF COMPILE * ELSE * THEN' . )
+: (comp/int) R> DUP 2+ >R
+             @
+             STATE @ IF , ELSE EXECUTE THEN ;
+
+: comp/int COMPILE (comp/int)   ( compile runtime code )
+            FIND , ;            ( and CFA iof next word )
+
+( do these things when 'comp/int word' is compiled )
+IMMEDIATE
+
+-->
+#+end_src
+
+** block 2009 number
+#+begin_src forth
+( convert the number in the input stream, pointed to by >in    )
+( into binary and compile/interpret it. exit with error number )
+( zero if any non-numeric characters )
+: number
+    >in @ >IN !
+    0 0 32 WORD
+    CONVERT
+    C@ 32 = NOT IF <> perror THEN
+    DROP
+    STATE @ IF
+       [compile] LITERAL
+    THEN
+    next ;
+-->
+#+end_src
+
+** block 2010 variables
+#+begin_src forth
+( forward reference to 'expression' )
+VARIABLE expr
+: callexpr expr @ EXECUTE ;
+
+( variable handling )
+: variable
+    find @
+    STATE @ IF , ELSE 2+ THEN
+    next type @
+    35 = IF next callexpr
+            36 ?error
+            comp/int 2*
+            comp/int +
+            next
+         THEN comp/int @ ;
+-->
+#+end_src
+
+** block 2011 function calls
+#+begin_src forth
+( function calls - use these to call forth routines )
+: function
+  find @ >R
+  IF
+    next callexpr
+    BEGIN
+      type @ 37 =
+    WHILE
+      next callexpr
+    REPEAT
+    16 ?error
+    next
+  THEN R>
+  STATE @ IF , ELSE EXECUTE THEN ;
+
+-->
+#+end_src
+
+** block 2012 factor
+#+begin_src forth
+( handle a constant )
+: constant find @
+  STATE @ IF , ELSE 2+ @ THEN next ;
+
+: subexpr next callexpr
+  16 ?error next ;
+
+: factor
+  type @ CASE
+    15 OF subexpr ENDOF
+     0 OF number ENDOF
+    -1 OF variable ENDOF
+    -2 OF constant ENDOF
+    38 OF next MYSELF comp/int NOT ENDOF
+    DEFAULT DROP function ENDCASE ;
+
+-->
+#+end_src
+
+** block 2013 - term
+#+begin_src forth
+: term factor
+  BEGIN type @
+    CASE 3 OF next factor comp/int *   ENDOF
+         4 OF next factor comp/int /   ENDOF
+         5 OF next factor comp/int MOD ENDOF
+         6 OF next factor comp/int AND ENDOF
+         DEFAULT DROP EXIT ENDCASE
+  0 UNTIL ;
+-->
+#+end_src
+
+** block 2014 - simple expressions
+#+begin_src forth
+: simpleexpr
+  type @ CASE
+    1 OF next term ( ignore unary + ) ENDOF
+    2 OF next term comp/int NEGATE ENDOF
+    DEFAULT DROP term
+  ENDCASE
+  BEGIN
+    type @ CASE
+      1 OF next term comp/int +   ENDOF
+      2 OF next term comp/int -   ENDOF
+      7 OF next term comp/int OR  ENDOF
+      8 OF next term comp/int XOR ENDOF
+      DEFAULT DROP EXIT
+    ENDCASE
+  0 UNTIL ;
+
+-->
+#+end_src
+
+** block 2015 - full expression compiler / interpreter
+#+begin_src forth
+: expression simpleexpr
+  BEGIN type @
+    CASE 9 OF  next term comp/int <  ENDOF
+        10 OF  next term comp/int >  ENDOF
+        11 OF  next term comp/int <= ENDOF
+        12 OF  next term comp/int >= ENDOF
+        13 OF  next term comp/int <> ENDOF
+        14 OF  next term comp/int =  ENDOF
+	DEFAULT DROP EXIT ENDCASE
+  0 UNTIL ;
+-->
+#+end_src
+
+** block 2016 ( resolve forward reference to expression )
+#+begin_src forth
+FIND expression expr
+: ( next expression ; IMMEDIATE
+
+: ) . " Improper termination " ;
+
+-->
+#+end_src
+
+
+* PART 2 :
+** block 2017 assignment
+#+begin_src forth
+( assignment statement )
+:assign                 ( we've already found the variable )
+  find @ ,              ( compile its address )
+  next                  ( we might have [ next )
+  type @ 35 = if           ( is it? if so... )
+    next expression        ( read the expression )
+    36 ?error              ( followed by ] )
+    compile 2*             ( double it )
+    compile +              ( add add to form addr )
+    next                   ( next up should be := )
+  then 39 ?error        ( error if it isn't )
+  next expression       ( get the rhs )
+  compile swap          ( put address on top )
+  compile !             ( and store it )
+;
+
+-->
+#+end_src
+
+** block 2018 expression printer
+#+begin_src forth
+( print out expression, or string )
+: writex type @ 31 = ( do we have a ' ? )
+  if
+    [compile] ."     ( it's a string then )
+    next             ( exit pointing to next )
+  else
+    expression       ( an expression )
+    compile .        ( print result )
+  then
+;
+
+-->
+#+end_src
+
+** block 2019 write statement
+#+begin_src forth
+( write statement )
+: write next type @ 15 =  ( followed by ( ? )
+  if
+    next writer           ( we have an expression then )
+    begin
+      type @ 37 =         ( and optionally another )
+    while
+      next writex
+    repeat
+    16 ?error             ( must have a close bracket )
+    next
+  then ;
+
+( writeln )
+: writeln write COMPILE CR ; ( write and newline )
+
+-->
+#+end_src
+
+** block 2020 block compiler
+#+begin_src forth
+( forward reference to statement )
+VARIABLE stmt : stmtex stat @ EXECUTE ;
+
+( compile multiple statements separated by ; )
+: mstat statex   ( must be at least one statement )
+    begin
+      type @ 19 =    ( is there a semi-colon? )
+    while
+      stmtex         ( another statement then )
+    repeat ;
+
+( begin statement, enter after we've got 'begin' )
+: begin mstmt
+    21 ?error        ( should end with END )
+    next ;
+
+-->
+#+end_src
+
+** block 2021 if stmt compiler
+#+begin_src forth
+( if statement, enter after 'if' )
+: if next expression ( need an expression )
+  23 ?error          ( followed by THEN )
+  [compile] if       ( generate IF, same as forth )
+  stmtex
+  type @ 24 =        ( do we have an else? .. )
+  if
+    [compile] else   ( .. if so )
+    stmtex           ( compile false statement )
+  then
+  [compile] then ;   ( finish off total statement )
+
+-->
+#+end_src
+
+** block 2022 while and repeat loops
+#+begin_src forth
+( while .. do loop, enter after we've got the 'while' )
+: while [COMPILE] BEGIN   ( start the construct )
+  next expression         ( need an expression )
+  26 ?error               ( followed by 'do' )
+  [COMPILE] WHILE         ( forth while is ok )
+  stmtex                  ( looped statement )
+  [COMPILE] REPEAT ;      ( end the forth structure )
+
+( repeat .. until loop, enter here after 'repeat' )
+: repeat [COMPILE] BEGIN  ( start the loop )
+  mstmt                   ( multiple statements )
+  28 ?error               ( expect 'until' )
+  next expression         ( need an expression now )
+  [compile] UNTIL ;       ( followed by FORTH UNTIL )
+
+-->
+#+end_src
+
+** block 2023 for loop compiler
+#+begin_src forth
+( define a for loop, in forth, using a variable, i.e.
+  step end start variable FOR .. ENDFOR )
+
+( runtime FOR action .. )
+: (FOR) SWAP OVER !               ( set variable = start value )
+        R>                        ( fetch this return adddress )
+        SWAP >R SWAP >R SWAP >R   ( var, end, start ->R stack  )
+        >R ;                      ( and replace return address )
+
+( compile time FOR action )
+: FOR COMPILE (FOR)
+      HERE ; IMMEDIATE            ( save HERE for ENDFOR )
+
+-->
+#+end_src
+** block 2024 ENDFOR
+#+begin_src forth
+( ENDFOR runtime action .. the hard part! )
+: (ENDF) R>                             ( fetch return address )
+         R> R>                          ( step then end values )
+         SWAP DUP R@ +!         ( add step value into variable )
+         OVER OVER R@ @ SWAP       ( some stack rearrangement! )
+         0<                 ( sign of step value determines... )
+         IF > ELSE < THEN              ( ..which test to apply )
+         IF                           ( has the loop finished? )
+           R> DROP 2DROP           ( drop everything if it has )
+           2+ >R                 ( and skip the branch address )
+         ELSE
+           SWAP >R >R               ( else resave end and step )
+           @ >R                                     ( and loop )
+         THEN ;                                        ( phew! )
+
+: ENDFOR COMPILE (ENDF)                  ( compile time action )
+         , ; IMMEDIATE -->            ( compile branch address )
+#+end_src
+
+** block 2025 pascal for loop
+#+begin_src forth
+( now define pascal for loop )
+: for next -1 ? error        ( need a variable name )
+      find @                 ( save its address on stack )
+      next 39 ?error         ( next we need := )
+      next expression        ( the start value expression )
+      33 ?error              ( the next word must be 'to' )
+      next expression        ( then end expression )
+      type @ 34 =            ( optionally followed by 'by' )
+      IF next expression     ( and a step expression )
+      ELSE COMPILE ! THEN    ( otherwise step value of +! )
+      26 ?error              ( must have 'do' next )
+      COMPILE ROT COMPILE ROT COMPILE SWAP ( rearrange )
+      ,                      ( compile variable address )
+      [COMPILE] FOR          ( then forth for )
+      statex                 ( a looped statement )
+      [COMPILE] ENDFOR ;     ( and we've finished )
+-->
+#+end_src
+
+** block 2026 <statement> rule compiler
+#+begin_src forth
+( statement compiler )
+: statement next   ( get the first thing )
+  type @
+  CASE -1 OF assign   ENDOF
+       20 OF begin    ENDOF
+       22 OF if       ENDOF
+       25 OF while    ENDOF
+       27 OF repeat   ENDOF
+       29 OF write    ENDOF
+       30 OF writeln  ENDOF
+       -2 OF 1 perror ENDOF ( cannot be a constant )
+     DEFAULT words swap U<  ( is it a forth word? )
+        IF function ELSE    ( treat as a function call )
+           1 perror THEN    ( else a syntax error )
+     ENDCASE
+; -->
+#+end_src
+
+** block 2027 {pascal .. }
+#+begin_src forth
+FIND statement stmt !  { resolve forward reference }
+
+( compile pascal statement in forth colon definition )
+: {pascal STATE @ 0= IF ." not available outside colon "
+                        ." definition " CR QUIT THEN
+          statement     ( call the compiler )
+          18 ?error     ( exit on curly bracket )
+; IMMEDIATE
+
+( ------ end of pascal extensions -------------------- )
+
+#+end_src
+
+
+* -- retroforth phrasebook --
+| CREATE | create |
+| FIND   | find   |
+|        |        |
