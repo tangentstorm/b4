@@ -19,5 +19,11 @@ implementation uses pre;
     chk.that( nul.matches( '' ));
   end;
 
+  procedure test_lit;
+  begin
+    chk.that( rx( 'a' ).matches( 'apple' ));
+    chk.that( not rx( 'a' ).matches( 'banana' ));
+  end;
+
 
 end.
