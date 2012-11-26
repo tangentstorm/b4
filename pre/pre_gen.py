@@ -142,13 +142,16 @@ def gen_code_for( line ):
     else: assigns = decls = ''
 
     klass = "%sPattern" % name.title( )
-    print( trim(
+
+    intf = " "
+    impl = trim(
         """
         // -- {name} -------------------------------
 
         type {klass} = class ( pattern )
           constructor create( {ctr_args} );
-          function match( m : matcher ) : boolean; override;
+          function match( s : isource ; root : pnode ) : boolean; override;
+          function visit( m : matcher ) : boolean;
         private{decls}
         end;
 
@@ -161,12 +164,19 @@ def gen_code_for( line ):
            result := m.{name}( {call} )
         end;
 
+        function {klass}.match( s : isource; root : pnode ) : boolean;
+        begin
+           result := true;
+        end;
+
         function {name}( {fun_args} ) : pattern;
         begin
           result := {klass}.create( {call} )
         end;
 
-        """).format( **locals( )))
+        """).format( **locals( ))
+
+    return ( intf, impl )
 
 if __name__=="__main__":
     if "--test" in sys.argv: doctest.testmod()
@@ -176,6 +186,8 @@ if __name__=="__main__":
         print "// ======================================"
         print
         lines = open( "pre.pas" )
+        iface = open( "pre.def", "w" )
+
         line  = ""
 
         # fast forward to the good stuff.
@@ -194,4 +206,6 @@ if __name__=="__main__":
                 line = line.strip( )
             if ( line.startswith( "function" )
                  and line.endswith( "boolean;" )):
-                gen_code_for( line )
+                intf, impl = gen_code_for( line )
+                print impl
+                iface.write( intf )
