@@ -1,5 +1,6 @@
 XPL = ../lib/xpl/code
-FPC = fpc -Fu$(XPL) -Fi$(XPL) -Mobjfpc -gl -FE../gen
+GEN = ../gen
+FPC = fpc -Fu$(XPL) -Fi$(XPL) -Mobjfpc -gl -FE$(GEN) -Fi$(GEN)
 PYTHON = python
 
 main: grin
@@ -11,7 +12,7 @@ grin: grin.pas pre
 	$(FPC) grin
 
 pre_gen.pas : pre.pas pre_gen.py
-	$(PYTHON) pre_gen.py > pre_gen.pas
+	$(PYTHON) pre_gen.py > $(GEN)/pre_gen.pas
 
 clean:
 	rm *~ *.gpi *.o *.pyc
@@ -19,7 +20,10 @@ clean:
 
 run-tests.pas:
 	ln -s $(XPL)/../test/run-tests.pas
+
 test: run-tests.pas grin
 	python $(XPL)/../test/gen-tests.py
+	rm -f run-tests.pas
+	ln -s $(XPL)/../test/run-tests.pas
 	@$(FPC) run-tests.pas
-	./run-tests
+	$(GEN)/run-tests
