@@ -150,8 +150,8 @@ def gen_code_for( line ):
 
         type {klass} = class ( pattern )
           constructor create( {ctr_args} );
-          function match( s : isource ; root : pnode ) : boolean; override;
-          function visit( m : matcher ) : boolean;
+          function match( s : isource ; root : node ) : boolean; override;
+          function match( m : matcher ) : boolean; override;
         private{decls}
         end;
 
@@ -164,7 +164,7 @@ def gen_code_for( line ):
            result := m.{name}( {call} )
         end;
 
-        function {klass}.match( s : isource; root : pnode ) : boolean;
+        function {klass}.match( s : isource; root : node ) : boolean;
         begin
            result := true;
         end;

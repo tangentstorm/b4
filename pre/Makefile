@@ -1,5 +1,5 @@
-XPL = ~/x/code
-FPC = fpc -Fu$(XPL) -Fi$(XPL) -Mobjfpc -gl
+XPL = ../lib/xpl/code
+FPC = fpc -Fu$(XPL) -Fi$(XPL) -Mobjfpc -gl -FE../gen
 PYTHON = python
 
 main: grin

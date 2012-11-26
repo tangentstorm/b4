@@ -8,7 +8,7 @@
 ---------------------------------------------------------------- }
 {$i xpc.inc }
 unit pre;
-interface uses xpc, stacks;
+interface uses xpc, stacks, ll;
 
   type
     Marker  = class end;
@@ -24,6 +24,7 @@ interface uses xpc, stacks;
 
     matcher = class; // forward reference
     Pattern = class
+      function match( s : isource; ctx : node ) : boolean; virtual; abstract;
       function match( m : matcher ) : boolean; virtual; abstract;
     end;
     patterns = array of pattern;
