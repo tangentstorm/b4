@@ -26,7 +26,7 @@
 #   Added support for all tags, TODO priority and checking existence of a tag
 # More information at
 #    http://members.optusnet.com.au/~charles57/GTD
-
+
 """
 The Orgnode module consists of the Orgnode class for representing a
 headline and associated text from an org-mode file, and routines for
@@ -35,7 +35,7 @@ constructing data structures of these classes.
 
 import re, sys
 import datetime
-
+
 def makelist(filename):
    """
    Read an org-mode file and return a list of Orgnode objects
@@ -62,10 +62,11 @@ def makelist(filename):
    deadline_date = ''
    nodelist      = []
    propdict      = dict()
-
+
    for line in f:
        ctr += 1
        hdng = re.search('^(\*+)\s(.*?)\s*$', line)
+
        if hdng:
           if heading:  # we are processing a heading line
              thisNode = Orgnode(level, heading, bodytext, tag1, alltags)
@@ -92,6 +93,7 @@ def makelist(filename):
               if tag2:
                  for t in tag2.split(':'):
                     if t != '': alltags.append(t)
+
        else:      # we are processing a non-heading line
            if line[:10] == '#+SEQ_TODO':
               kwlist = re.findall('([A-Z]+)\(', line)
@@ -116,7 +118,7 @@ def makelist(filename):
               deadline_date = datetime.date(int(dd_re.group(1)),
                                             int(dd_re.group(2)),
                                             int(dd_re.group(3)) )
-
+
    # write out last node
    thisNode = Orgnode(level, heading, bodytext, tag1, alltags)
    thisNode.setProperties(propdict)
@@ -141,7 +143,7 @@ def makelist(filename):
           n.setHeading(prtysrch.group(2))
 
    return nodelist
-
+
 ######################
 class Orgnode(object):
     """
@@ -167,7 +169,7 @@ class Orgnode(object):
         self.properties = dict()
         for t in alltags:
            self.tags[t] = ''
-
+
         # Look for priority in headline and transfer to prty field
 
     def Heading(self):
@@ -195,7 +197,7 @@ class Orgnode(object):
         Top level (one asterisk) has a level of 1.
         """
         return self.level
-
+
     def Priority(self):
         """
         Returns the priority of this headline: 'A', 'B', 'C' or empty
@@ -209,7 +211,7 @@ class Orgnode(object):
         Values values are '', 'A', 'B', 'C'
         """
         self.prty = newprty
-
+
     def Tag(self):
         """
         Returns the value of the first tag.
@@ -245,7 +247,7 @@ class Orgnode(object):
         """
         for t in taglist:
            self.tags[t] = ''
-
+
     def Todo(self):
         """
         Return the value of the TODO tag
@@ -257,7 +259,7 @@ class Orgnode(object):
         Set the value of the TODO tag to the supplied string
         """
         self.todo = value
-
+
     def setProperties(self, dictval):
         """
         Sets all properties using the supplied dictionary of
@@ -271,7 +273,7 @@ class Orgnode(object):
         property does not exist.
         """
         return self.properties.get(keyval, "")
-
+
     def setScheduled(self, dateval):
         """
         Set the scheduled date using the supplied date object
@@ -283,7 +285,7 @@ class Orgnode(object):
         Return the scheduled date object or null if nonexistent
         """
         return self.scheduled
-
+
     def setDeadline(self, dateval):
         """
         Set the deadline (due) date using the supplied date object
@@ -295,7 +297,7 @@ class Orgnode(object):
         Return the deadline date object or null if nonexistent
         """
         return self.deadline
-
+
     def __repr__(self):
         """
         Print the level, heading text and tag of a node and the body
