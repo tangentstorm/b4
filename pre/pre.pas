@@ -8,14 +8,23 @@
 ---------------------------------------------------------------- }
 {$i xpc.inc }
 unit pre;
-interface uses xpc, stacks, ll;
+interface uses xpc, stacks, ll, ascii;
 
   type
     Marker  = class end;
-    ISource = interface
-      procedure next( ch : char );
-      procedure mark( var mk : Marker );
-      procedure back( var mk : Marker );
+    Source = class
+      procedure next( var ch : char );   virtual; abstract;
+      procedure mark( var mk : Marker ); virtual; abstract;
+      procedure back( var mk : Marker ); virtual; abstract;
+    end;
+    StringSource = class ( Source )
+      constructor create( s : string );
+      procedure next( var ch : char );   override;
+      procedure mark( var mk : Marker ); override;
+      procedure back( var mk : Marker ); override;
+    private
+      idx : word;
+      str : string;
     end;
     Token = class
       sym, pos, len : integer;
@@ -24,8 +33,7 @@ interface uses xpc, stacks, ll;
 
     matcher = class; // forward reference
     Pattern = class
-      function match( s : isource; ctx : node ) : boolean; virtual; abstract;
-      function match( m : matcher ) : boolean; virtual; abstract;
+      function match( m : matcher )  : boolean; virtual; abstract;
       function matches( s : string ) : boolean; virtual; abstract;
     end;
     patterns = array of pattern;
@@ -38,13 +46,14 @@ interface uses xpc, stacks, ll;
       classes and functions }
 
     matcher = class
-      src   : ISource;
+      src   : Source;
       ch    : Char;
       marks : stack;
       point : int32;
 
       constructor create;
-      procedure match( s : isource; rule: string );
+      constructor create( s : string );
+      procedure match( s : source; rule: string );
 
     { matcher class internals }
     protected
@@ -96,7 +105,12 @@ implementation
   begin
   end;
 
-  procedure matcher.match( s : isource; rule : string );
+  constructor matcher.create( s	: string );
+  begin
+    self.src := StringSource.create( s );
+  end;
+
+  procedure matcher.match( s : source; rule : string );
   begin
     self.src := s;
     self.sub( rule )
@@ -229,8 +243,25 @@ implementation
   begin
   end;
 
+  constructor StringSource.create( s : string );
+  begin
+    self.idx := 0;
+    self.str := s;
+  end;
 
+  procedure StringSource.next( var ch : char );
+  begin
+    if self.idx = length( self.str ) then ch := ascii.EOT
+    else ch := self.str[ self.idx ];
+  end;
 
+  procedure StringSource.mark( var mk : Marker );
+  begin
+  end;
+
+  procedure StringSource.back( var mk : Marker );
+  begin
+  end;
 
 
 

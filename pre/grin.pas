@@ -3,7 +3,7 @@ program grin;
 uses xpc, pre, stacks;
 
   type
-    FileSource = class ( TInterfacedObject, ISource )
+    FileSource = class ( pre.Source )
       constructor create( path : string );
       procedure next( ch : char );
       procedure mark(var mk : Marker );

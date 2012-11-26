@@ -148,14 +148,15 @@ def gen_code_for( line ):
         function {name}( {fun_args} ) : pattern;
         """
         ).format( **locals( ))
+
     impl = trim(
         """
         // -- {name} -------------------------------
 
         type {klass} = class ( pattern )
           constructor create( {ctr_args} );
-          function match( s : isource ; root : node ) : boolean; override;
           function match( m : matcher ) : boolean; override;
+          function matches( s : string ) : boolean; override;
         private{decls}
         end;
 
@@ -168,9 +169,9 @@ def gen_code_for( line ):
            result := m.{name}( {call} )
         end;
 
-        function {klass}.match( s : isource; root : node ) : boolean;
+        function {klass}.matches( s : string ) : boolean;
         begin
-           result := true;
+           result := self.match( matcher.create( s ));
         end;
 
         function {name}( {fun_args} ) : pattern;
