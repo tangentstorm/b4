@@ -1,0 +1,6 @@
+[submodule "lib/xpl"]
+	path = lib/xpl
+	url = https://github.com/tangentstorm/xpl.git
+[submodule "lib/retro"]
+	path = lib/retro
+	url = https://code.google.com/p/retro-language/

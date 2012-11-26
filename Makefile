@@ -1,21 +1,41 @@
-RETROPATH = ~/vrx
-NGAROTEST = python $(RETROPATH)/test/ngaro/ngarotest.py
+# directory paths, relative to this directory:
+XPL       = ./lib/xpl/code
+GEN	  = ./gen
+PPU	  = $(GEN)
+EXE	  = $(GEN)
+RETROPATH = ./lib/retro
+NGAROTEST = $(RETROPATH)/test/ngaro/ngarotest.py
 
-retro : *.pas
-	fpc -gl -B retro.pas
+# ROOT should be path back to this directory from GEN
+ROOT      = ../
+
+# compiler paths
+FPC       = fpc -gl -B -Fu$(XPL) -Fi$(XPL) -FE$(GEN)
+PYTHON    = python
+
+#------------------------------------------------------
+
+retro : init *.pas
+	$(FPC) retro.pas
+
+
+init    :
+	@mkdir -p $(GEN)
+	@rm -f $(GEN)/library $(GEN)/retroImage
+	@git submodule init
+	@git submodule update
+	@ln -s $(RETROPATH)/library $(GEN)/library
+	@ln -n $(RETROPATH)/retroImage $(GEN)/retroImage
 
 test : retro
-	$(NGAROTEST) -n ./retro
+	cd $(GEN); $(PYTHON) $(ROOT)$(NGAROTEST) -n ./retro
 
 test.files : retro
-	./retro --with $(RETROPATH)/test/files.rx
+	cd $(GEN); ./retro --with $(ROOT)$(RETROPATH)/test/files.rx
 
 test.core : retro
-	./retro --with $(RETROPATH)/test/core.rx
+	cd $(GEN); ./retro --with $(ROOT)$(RETROPATH)/test/core.rx
 
-clean :
-	rm -f *.img
+test.clean :
+	cd $(GEN); rm -f *.img
 
-status : clean
-	clear
-	@git status

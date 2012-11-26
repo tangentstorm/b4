@@ -1,14 +1,14 @@
 *~
+*#
+*.#*
 *.o
-*.gpi
-*.exe
 *.ppu
 *.pyc
+*.exe
+gen
 app/backup
 app/lib
-.idea
 library
-retro
-vrx
 pre/pre_gen.pas
+./retro
 
