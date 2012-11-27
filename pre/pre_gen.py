@@ -165,18 +165,15 @@ def gen_code_for( line ):
         end;
 
         function {klass}.match( m : matcher ) : boolean;
-        begin
-           result := m.{name}( {call} )
+        begin result := m.{name}( {call} )
         end;
 
         function {klass}.matches( s : string ) : boolean;
-        begin
-           result := self.match( matcher.create( s ));
+        begin result := self.match( matcher.create( s ));
         end;
 
         function {name}( {fun_args} ) : pattern;
-        begin
-          result := {klass}.create( {call} )
+        begin result := {klass}.create( {call} )
         end;
 
         """).format( **locals( ))
