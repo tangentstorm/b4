@@ -76,5 +76,29 @@ implementation uses pre;
     should_consume( '',     'abc123' );
   end;
 
+  procedure test_seq;
+  begin
+    pat := seq( ps( 7 ));
+    p( lit( 'once' ));
+    p( lit( ' ' ));
+    p( lit( 'upon' ));
+    p( lit( ' ' ));
+    p( lit( 'a' ));
+    p( lit( ' ' ));
+    p( lit( 'time' ));
+    should_consume( 'once upon a time',
+		    'once upon a time' );
+  end;
+
+  procedure test_hex;
+  begin
+    // regexp to match a hex number in pascal
+    pat := seq( ps( 2 ));
+    p( lit( '$' ));
+    p( rep( any([ '0' .. '9', 'A'..'F', 'a'..'f' ])));
+    should_consume( '',         '1a2b3c' );
+    should_consume( '$1a2b3c',  '$1a2b3c' );
+  end;
+
 
 end.
