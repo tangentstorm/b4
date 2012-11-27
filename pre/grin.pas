@@ -5,9 +5,9 @@ uses xpc, pre, stacks;
   type
     FileSource = class ( pre.Source )
       constructor create( path : string );
-      procedure next( ch : char );
-      procedure mark(var mk : Marker );
-      procedure back(var mk : Marker );
+      procedure next( var ch : char ); override;
+      procedure mark( var mk : Marker ); override;
+      procedure back( var mk : Marker ); override;
       procedure keep;
     private
       hnd : file of char;
@@ -17,7 +17,7 @@ uses xpc, pre, stacks;
   begin
   end;
 
-  procedure filesource.next( ch : char );
+  procedure filesource.next( var ch : char );
   begin
     read( self.hnd, ch );
   end;
