@@ -150,20 +150,16 @@ implementation
   function matcher.sym( const c : char ) : boolean;
   begin
     mark; next;
-    if self.ch = c then begin
-      result := true;
-      keep;
-    end else begin
-      result := false;
-      back;
-    end
+    result := self.ch = c;
+    if result then keep else back;
   end;
 
   { any : tests membership in a set of characters }
   function matcher.any( const cs : charset ) : boolean;
   begin
-    mark; next; //  todo: backtrack
+    mark; next;
     result := self.ch in cs;
+    if result then keep else back;
   end;
 
   { lit : tests equality with a specific symbol }
@@ -176,7 +172,7 @@ implementation
       next;
       if self.ch <> s[ i ] then result := false;
     end;
-    if not result then back;
+    if result then keep else back;
   end;
 
   { alt : can match any one of the given patterns }
@@ -187,12 +183,12 @@ implementation
   function matcher.alt( const ps : patterns ) : boolean;
     var i : integer = 0 ; found : boolean = false;
   begin
-    mark;
-    while not found and ( i < high( ps )) do begin
+    repeat
+      mark;
       found := ps[ i ].match( self );
-      if not found then back;
-      inc( i )
-    end;
+      inc( i );
+      if found then keep else back;
+    until found or ( i > high( ps ));
     result := found;
   end;
 
@@ -228,12 +224,11 @@ implementation
   begin
     mark;
     i := low( ps ); result := true;
-    while result and ( i <= high( ps )) do
-    begin
+    repeat
       result := result and ps[ i ].match( self );
       inc( i )
-    end;
-    if not result then back;
+    until ( i > high( ps )) or not result;
+    if result then keep else back;
   end;
 
   { dictionary routines }
@@ -288,6 +283,7 @@ implementation
 
   procedure matcher.keep;
   begin
+    self.marks.pop;
   end;
 
   procedure matcher.back;

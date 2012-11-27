@@ -76,7 +76,18 @@ implementation uses pre;
     should_consume( '',     'abc123' );
   end;
 
+
   procedure test_seq;
+  begin
+    pat := seq( ps( 2 ));
+    p( lit( '0' ));
+    p( any([ 'x', 'b', 'o' ]));
+    should_consume( '0x', '0x' );
+    should_consume( '0b', '0bx' );
+    should_consume( '',   '0-o' );
+  end;
+
+  procedure test_seq_2;
   begin
     pat := seq( ps( 7 ));
     p( lit( 'once' ));
@@ -86,10 +97,21 @@ implementation uses pre;
     p( lit( 'a' ));
     p( lit( ' ' ));
     p( lit( 'time' ));
-    should_consume( 'once upon a time',
-		    'once upon a time' );
+    should_consume( 'once upon a time', 'once upon a time' );
   end;
 
+  procedure test_alt;
+  begin
+    pat := alt( ps( 2 ));
+    p( lit( 'one' ));
+    p( lit( 'red' ));
+    should_consume( 'one',  'one fish' );
+    should_consume( '',     'two fish' );
+    should_consume( 'red',  'red fish' );
+    should_consume( '',     'blue fish' );
+  end;
+
+
   procedure test_hex;
   begin
     // regexp to match a hex number in pascal
