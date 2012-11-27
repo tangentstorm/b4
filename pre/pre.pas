@@ -109,12 +109,13 @@ implementation
   procedure use_grammar( const iden : string ); begin end;
 
   constructor matcher.create;
-  begin
+  begin self.create( '' );
   end;
 
   constructor matcher.create( s	: string );
   begin
     self.src := StringSource.create( s );
+    self.marks.init( 32 );
   end;
 
   procedure matcher.match( s : source; rule : string );
@@ -135,12 +136,20 @@ implementation
   { lit tests equality with a specific character }
   function matcher.lit( const c : char ) : boolean;
   begin
-    result := self.ch = c ;
+    mark; next;
+    if self.ch = c then begin
+      result := true;
+      keep;
+    end else begin
+      result := false;
+      back;
+    end
   end;
 
   { any tests membership in a set of characters }
   function matcher.any( const cs : charset ) : boolean;
   begin
+    mark; next; //  todo: backtrack
     result := self.ch in cs;
   end;
 
@@ -275,9 +284,10 @@ implementation
   begin
     if self.idx = length( self.str ) then ch := ascii.EOT
     else begin
-      ch := self.str[ self.idx ];
       inc( self.idx );
-    end
+      // writeln(' idx:', self.idx, '  str:', self.str  );
+      ch := self.str[ self.idx ];
+    end;
   end;
 
   procedure StringSource.mark( var mk : Marker );
