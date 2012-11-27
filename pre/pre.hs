@@ -14,8 +14,7 @@ data Exp a            -- a = underlying alphabet ( chars, tokens, etc )
      = Nul            -- the empty string
      | Sym a          -- exact match on one symbol/char/token
      | Any [a]        -- any of a set. eg: "vowels", '0'..'9'
-     | Lit [a]        -- a sequence / string literal
-     | Mul a          -- 0..N copies of one repeating symbol
+     | Lit [a]        -- a string literal ( kind of redundant given Seq )
 
 
 -- recursive structures match context free grammars
