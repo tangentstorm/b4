@@ -66,8 +66,9 @@ interface uses xpc, stacks, ll, ascii;
 
       { primitive : character classes }
       function nul : boolean;
-      function lit( const c  : char ) : boolean;
+      function sym( const c  : char ) : boolean;
       function any( const cs : charset ) : boolean;
+      function lit( const s  : string) : boolean;
 
       { regular expressions }
       function opt( const p : pattern ) : boolean;   // like regexp '?'
@@ -133,8 +134,8 @@ implementation
     result := true;
   end;
 
-  { lit tests equality with a specific character }
-  function matcher.lit( const c : char ) : boolean;
+  { sym : tests equality with a specific symbol }
+  function matcher.sym( const c : char ) : boolean;
   begin
     mark; next;
     if self.ch = c then begin
@@ -153,7 +154,20 @@ implementation
     result := self.ch in cs;
   end;
 
-  { alt can match any one of the given patterns }
+  { lit : tests equality with a specific symbol }
+  function matcher.lit( const s : string ) : boolean;
+    var i : word;
+  begin
+    mark;
+    result := true;
+    for i := 1 to length( s ) do begin
+      next;
+      if self.ch <> s[ i ] then result := false;
+    end;
+    if not result then back;
+  end;
+
+  { alt : can match any one of the given patterns }
   // !! NOTE: in this implementation, the first match wins, so it acts
   //    like a parsing expression grammar. Most of the languages I'm
   //    parsing are LL(1), so I don't think this actually makes any
