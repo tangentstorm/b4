@@ -128,7 +128,7 @@ implementation
   { these hand-written routines are used by the objects
     generated in pre_gen.pas }
 
-  { nul always matches, without consuming any characters }
+  { nul : always matches, without consuming any characters }
   function matcher.nul : boolean;
   begin
     result := true;
@@ -147,7 +147,7 @@ implementation
     end
   end;
 
-  { any tests membership in a set of characters }
+  { any : tests membership in a set of characters }
   function matcher.any( const cs : charset ) : boolean;
   begin
     mark; next; //  todo: backtrack
@@ -185,7 +185,7 @@ implementation
   end;
 
 
-  { opt ( optional ) tries to match a pattern,
+  { opt : ( optional ) tries to match a pattern,
     but if the pattern doesn't match, it backtracks
     and returns true anyway.
     algebraically, opt p = alt ( p , nul ) }
@@ -196,7 +196,7 @@ implementation
     result := true;
   end;
 
-  { rep ( repeating ) is like opt, but it will keep consuming
+  { rep : ( repeating ) is like opt, but it will keep consuming
     input until the underlying pattern fails. since matching 0
     copies is still a match, rep always succeeds }
   function matcher.rep( const p : pattern ) : boolean;
@@ -209,7 +209,7 @@ implementation
     result := true;
   end;
 
-  { seq ( sequence ) simply matches each pattern from left to right.
+  { seq : ( sequence ) simply matches each pattern from left to right.
     it succeeds if and only if each pattern in the sequence succeeds. }
   function matcher.seq( const ps : patterns ) : boolean;
     var i : integer = 0;
@@ -237,7 +237,7 @@ implementation
     result := true;
   end;
 
-  { lookup searches through the dictionary backward, so that the last
+  { lookup : searches through the dictionary backward, so that the last
     entry added is the one returned }
   function lookup( const iden : string; var p : pattern ) : boolean;
     var i : integer; found : boolean = false;
@@ -251,7 +251,7 @@ implementation
     result := found;
   end;
 
-  { sub invokes a rule ( provided it's found in the dictionary ) }
+  { sub : invokes a rule ( provided it's found in the dictionary ) }
   function matcher.sub( const iden : string ) : boolean;
     var p : pattern;
   begin
