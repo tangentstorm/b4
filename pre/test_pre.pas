@@ -112,6 +112,23 @@ implementation uses pre;
   end;
 
 
+  procedure test_sub;
+  begin
+    def( 'lower', any([ 'a'..'z' ]));
+    def( 'digit', any([ '0'..'9' ]));
+    def( 'upper', any([ 'A'..'Z' ]));
+    def( 'alpha', alt( ps( 2 )));
+    p( sub( 'upper' ));
+    p( sub( 'lower' ));
+    def( 'alphas', rep( sub( 'alpha' )));
+
+    pat := sub( 'alphas' );
+    should_consume( 'aBc',  'aBc123' );
+    should_consume( '',     '123aBc' );
+    should_consume( 'zZ',   'zZ3Zz' );
+  end;
+
+
   procedure test_hex;
   begin
     // regexp to match a hex number in pascal
