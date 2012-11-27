@@ -11,12 +11,16 @@ unit pre;
 interface uses xpc, stacks, ll, ascii;
 
   type
+
     Marker  = class end;
+    MarkerStack = specialize Stack< Marker >;
+
     Source = class
       procedure next( var ch : char );   virtual; abstract;
       procedure mark( var mk : Marker ); virtual; abstract;
       procedure back( var mk : Marker ); virtual; abstract;
     end;
+
     StringSource = class ( Source )
       constructor create( s : string );
       procedure next( var ch : char );   override;
@@ -26,9 +30,11 @@ interface uses xpc, stacks, ll, ascii;
       idx : word;
       str : string;
     end;
+
     Token = class
       sym, pos, len : integer;
     end;
+
     CharSet = set of Char;
 
     matcher = class; // forward reference
@@ -48,7 +54,7 @@ interface uses xpc, stacks, ll, ascii;
     matcher = class
       src   : Source;
       ch    : Char;
-      marks : stack;
+      marks : MarkerStack;
       point : int32;
 
       constructor create;
@@ -73,7 +79,8 @@ interface uses xpc, stacks, ll, ascii;
       function def( const iden : string; const p : pattern ) : boolean;
       function sub( const iden : string ) : boolean;
 
-      { stack management }
+      { state management }
+      procedure next;
       procedure mark;
       procedure back;
       procedure keep;
@@ -230,9 +237,16 @@ implementation
   end;
 
 
+  procedure matcher.next;
+  begin
+    self.src.next( self.ch )
+  end;
 
   procedure matcher.mark;
+    var mk : marker;
   begin
+    self.src.mark( mk );
+    self.marks.push( mk );
   end;
 
   procedure matcher.keep;
@@ -240,7 +254,15 @@ implementation
   end;
 
   procedure matcher.back;
+    var mk : marker;
   begin
+    mk := self.marks.pop;
+    self.src.back( mk )
+  end;
+
+
+  type StringMarker = class( Marker )
+    idx : word
   end;
 
   constructor StringSource.create( s : string );
@@ -252,15 +274,22 @@ implementation
   procedure StringSource.next( var ch : char );
   begin
     if self.idx = length( self.str ) then ch := ascii.EOT
-    else ch := self.str[ self.idx ];
+    else begin
+      ch := self.str[ self.idx ];
+      inc( self.idx );
+    end
   end;
 
   procedure StringSource.mark( var mk : Marker );
   begin
+    mk := StringMarker.create;
+    ( mk as stringmarker ).idx := self.idx;
   end;
 
   procedure StringSource.back( var mk : Marker );
   begin
+    assert( mk is stringmarker );
+    self.idx := ( mk as stringmarker ).idx;
   end;
 
 

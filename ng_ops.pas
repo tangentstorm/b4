@@ -25,7 +25,7 @@ unit ng.ops; implementation
     if ( t < length( ram )) then data.push( ram[ t ])
     else show_debugger( 'failed on [ ' + inttostr( t ) + ' @ ]: address out of bounds.' )
   end;
-  
+
   { STORE : (na-) - put nos into ram at tos }
   procedure vm.oSTO;
   begin TN;
@@ -47,7 +47,7 @@ unit ng.ops; implementation
   begin t := data.pop;
     data.push( ports[ t ] );
     ports[ t ] := 0;
-  end; 
+  end;
   procedure vm.oOUT ; { np- } begin TN; ports[ t ] := n; end;
   procedure vm.oWAIT; { - } begin runio; end;
 
@@ -62,8 +62,8 @@ unit ng.ops; implementation
     data.push( n mod t ); { yep. mod comes first }
     data.push( n div t );
   end;
-  procedure vm.oINC ; begin inc( data.cell[ data.sp ] ) end;
-  procedure vm.oDEC ; begin dec( data.cell[ data.sp ] ) end;
+  procedure vm.oINC ; begin inc( data.cells[ data.sp ] ) end;
+  procedure vm.oDEC ; begin dec( data.cells[ data.sp ] ) end;
 
   { -- logic -------------------------------------------------- }
 
@@ -83,20 +83,20 @@ unit ng.ops; implementation
     while ( v.ip < length( v.ram ) - 1 )
       and ( v.ram[ v.ip + 1 ] = 0 ) do inc( v.ip ); { skip over no-ops }
   end;
-  
+
   procedure vm.oJMP; begin jump_and_roll( self, ram[ ip + 1 ])  end;
   procedure vm.oJLT; begin TN if t <  n then oJMP else inc( ip ) end;
   procedure vm.oJGT; begin TN if t >  n then oJMP else inc( ip ) end;
   procedure vm.oJNE; begin TN if t <> n then oJMP else inc( ip ) end;
   procedure vm.oJEQ; begin TN if t =  n then oJMP else inc( ip ) end;
-  
+
   { invoke / return }
   procedure vm.oIVK; begin addr.push( ip ); jump_and_roll( self, ram[ ip ]); end;
   procedure vm.oRET; begin ip := addr.pop end;
   procedure vm.oLOOP;
   begin
-    dec( data.cell[ data.sp ] );
-    if data.cell[ data.sp ] > 0 then
+    dec( data.cells[ data.sp ] );
+    if data.cells[ data.sp ] > 0 then
       jump_and_roll( self, ram[ ip + 1 ])
     else begin
       inc( ip );
@@ -107,7 +107,7 @@ unit ng.ops; implementation
   { zex : exit (return) if TOS = 0 ( sort of like ~assert~ ) }
   procedure vm.oZEX;
   begin
-    if data.cell[ data.sp ] = 0 then begin
+    if data.cells[ data.sp ] = 0 then begin
       data.pop;
       ip := addr.pop;
     end
@@ -130,8 +130,8 @@ unit ng.ops; implementation
 
 
   procedure vm.init_optable;
-    
-    procedure addop(	 
+
+    procedure addop(
 		id	 : int32;
 		go	 : thunk;
 		tok, sig : token;
@@ -145,7 +145,7 @@ unit ng.ops; implementation
       self.optbl[ id ] := rec;
     end; { addop }
 
-    
+
     const _ = false; X = true;
   begin
     setlength( self.optbl, 31 );
@@ -185,5 +185,5 @@ unit ng.ops; implementation
   end; { init_optable }
 
 {$IFDEF NESTUNITS}
-end.				   
+end.
 {$ENDIF}

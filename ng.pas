@@ -17,7 +17,7 @@ interface uses xpc, stacks, sim, kvm, posix, sysutils;
 { interface > types }
 
     vm	   = object
-      data, addr : stack;
+      data, addr : specialize stack< int32 >;
       ram, ports : array of int32;
       devices	 : array of device;
       ip	 : integer;              { instruction pointer }
@@ -124,7 +124,7 @@ implementation
     {$i+}
     if ioresult = 0 then begin
       size := filesize( self.imgfile );
-      // log.debug([ 'image size = ', size, ' cells' ]);
+      // log.debug([ 'image size = ', size, ' cellss' ]);
       setlength( self.ram, size );
       // log.debug([ 'ram = array [', low( self.ram ),
       //             '..', high( self.ram ), ']' ]);
