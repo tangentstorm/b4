@@ -19,6 +19,7 @@ interface uses xpc, stacks, ll, ascii;
       procedure next( var ch : char );   virtual; abstract;
       procedure mark( var mk : Marker ); virtual; abstract;
       procedure back( var mk : Marker ); virtual; abstract;
+      function consumed : string; virtual; abstract;
     end;
 
     StringSource = class ( Source )
@@ -26,6 +27,7 @@ interface uses xpc, stacks, ll, ascii;
       procedure next( var ch : char );   override;
       procedure mark( var mk : Marker ); override;
       procedure back( var mk : Marker ); override;
+      function consumed : string; override;
     private
       idx : word;
       str : string;
@@ -60,6 +62,7 @@ interface uses xpc, stacks, ll, ascii;
       constructor create;
       constructor create( s : string );
       procedure match( s : source; rule: string );
+      function consumed : string;
 
     { matcher class internals }
     protected
@@ -124,6 +127,11 @@ implementation
     self.src := s;
     self.sub( rule )
   end;
+
+  function matcher.consumed : string;
+  begin result := self.src.consumed;
+  end;
+
 
   { these hand-written routines are used by the objects
     generated in pre_gen.pas }
@@ -153,7 +161,7 @@ implementation
     mark; next; //  todo: backtrack
     result := self.ch in cs;
   end;
-
+
   { lit : tests equality with a specific symbol }
   function matcher.lit( const s : string ) : boolean;
     var i : word;
@@ -316,7 +324,10 @@ implementation
     self.idx := ( mk as stringmarker ).idx;
   end;
 
-
+  function StringSource.consumed : string;
+  begin
+    result := copy( self.str, 1, self.idx );
+  end;
 
 { initialization : seed the engine with a simple ebnf parser }
 
