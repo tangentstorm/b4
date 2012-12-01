@@ -352,21 +352,23 @@ implementation
 
   {-- strings as input sources ------------------}
 
-  { Why make explicit objects for string sources instead of just using strings?
-    Strings are the most common case ( which is why the interface hides all this
-    from the user -- see test_pre.pas for example usage ), but I would like to
-    pattern match on all kinds of things. Some examples:
+  { Why make explicit objects for string sources instead of just using
+    strings?  Strings are the most common case ( which is why the
+    interface hides all this from the user -- see test_pre.pas for
+    example usage ), but I would like to pattern match on all kinds of
+    things. Some examples:
 
       - DOM elements for validating XML
       - argument types ( for type-checking inside a compiler )
       - spatial movements for mouse gestures or handwriting recognition.
 
-    Regular expressions and grammars can be applied to recognize all of these
-    things, and this extra overhead is what allows it to happen.
+    Regular expressions and grammars can be applied to recognize all
+    of these things, and this extra overhead is what allows it to
+    happen.
 
-    <Granted, this is somewhat premature, and the matcher interface will have
-    to be updated to use generic types rather than just chars before this can
-    actually be applied.> }
+    <Granted, this is somewhat premature, and the matcher interface
+    will have to be updated to use generic types rather than just
+    chars before this can actually be applied.> }
 
   constructor StringSource.create( s : string );
   begin
@@ -374,14 +376,16 @@ implementation
     self.str := s;
   end;
 
-  { This same concept explains StringMarker. To mark a position in a string,
-    you just use an offset. So why not just an int? Because if we're matching
-    trees or graphs we'd need a path rather than a simple number.
+  { This same concept explains StringMarker. To mark a position in a
+    string, you just use an offset. So why not just an int? Because if
+    we're matching trees or graphs we'd need a path rather than a
+    simple number.
 
-    Note also that =StringMarker= is not exposed in the interface section, so
-    it's private. Outside callers only know that they're getting a =Marker=,
-    but they don't have any way to inspect or interfere with it. This makes
-    =Marker= an abstract data type. }
+    Note also that =StringMarker= is not exposed in the interface
+    section, so it's private. Outside callers only know that they're
+    getting a =Marker=, but they don't have any way to inspect or
+    interfere with it. This makes =Marker= an abstract data type. }
+
   type StringMarker = class( Marker )
     idx : word
   end;
