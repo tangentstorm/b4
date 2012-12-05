@@ -15,9 +15,20 @@ PYTHON    = python
 
 #------------------------------------------------------
 
-retro : init *.pas
-	$(FPC) retro.pas
+targets:
+	@echo 'available targets:'
+	@echo '--------------------------'
+	@echo 'make build -> build ./gen/retro'
+	@echo 'make retro -> build and run ./gen/retro'
+	@echo 'make test  -> run all tests'
+	@echo
+	@echo for grammar engine, cd ./pre
 
+retro : build
+	cd $(GEN); ./retro
+
+build : init  ng/*.pas
+	@$(FPC) ng/retro.pas
 
 init    :
 	@mkdir -p $(GEN)
@@ -27,15 +38,17 @@ init    :
 	@ln -s $(RETROPATH)/library $(GEN)/library
 	@ln -n $(RETROPATH)/retroImage $(GEN)/retroImage
 
-test : retro
+test: test.ngaro test.core test.files. test.clean
+
+test.ngaro : init
 	cd $(GEN); $(PYTHON) $(ROOT)$(NGAROTEST) -n ./retro
 
-test.files : retro
+test.files : init
 	cd $(GEN); ./retro --with $(ROOT)$(RETROPATH)/test/files.rx
 
-test.core : retro
+test.core : init
 	cd $(GEN); ./retro --with $(ROOT)$(RETROPATH)/test/core.rx
 
-test.clean :
+test.clean : init
 	cd $(GEN); rm -f *.img
 
