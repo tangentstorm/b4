@@ -4,7 +4,7 @@
 
  - [[https://github.com/sabren/b4][b4 github repo]]
  - twitter: [[https://twitter.com/tangentstorm][@tangentstorm]] / [[https://twitter.com/#!/search/realtime/%23b4lang][#b4lang]]
- - irc: [[irc://irc.freenode.org/b4][#b4 on freenode]]
+ - irc: [[irc://irc.freenode.org/b4lang][#b4lang on freenode]]
  - reddit: [[http://reddit.com/r/b4lang][/r/b4lang]]
 
 * Orientation
