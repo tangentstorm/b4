@@ -1,0 +1,51 @@
+#+TITLE: retro pascal
+#+DATE: 2012-12-05
+
+* DRAFT retro pascal
+A small pascal implementation that works with retro and runs on the ngaro virtual machine.
+
+** the pascal stack
+- the pascal stack starts at end of ram and grows backward
+- special variable =BASE= works like =HERE= but but gets smaller
+- =STACK= < =HERE= indicates a potential stack or heap overflow
+- if the halting problem is unanswerable for the pascal code /and/ it can grow dynamically, then the stack manager needs to check for overflows on each call.
+- else we can precompute up front and not worry about it ( In theory, anyway. it would require some analysis to actually do it of course. )
+- if using retro routines inside pascal, then retro needs to check for heap overflows too.
+
+** pascal "registers"
+*** the ngaro vm doesn't offer any special registers, so 'registers' would just be fixed locations in ram.
+*** special purpose registers
+- =STACK= :: holds the depth of the stack
+- maybe also:
+  - =BASE= :: stores old value of =STACK= during procedure
+  - =RESV= :: holds the result variable?
+  - =SELF= :: hold a reference to =self= in object methods
+*** general purpose registers for variables? : /maybe/
+**** argument for using registers:
+- Using ram to store variables probably makes sense, compared to doing a bunch of shuffling on retro's data stack.
+- Using a /fixed location/ in ram (a register) would prevent the need for a lot of pointer arithmetic when looking things up in the pascal stack.
+**** argument against:
+- Register values would need to be pushed and popped to call subroutines anyway, though a smart compiler could probably minimize this.
+
+** calling conventions
+- return stack is used as normal
+- first argument goes in TOS, second argument goes in NOS
+  ( TOS and NOS refer to the normal retro data stack )
+- further arguments are moved to the pascal stack
+- local variables use the pascal stack
+- arguments are consumed and result ( if any ) will be on TOS
+  - this means the effect on the retro data stack is always ~( arg\ast - )~ or ~( arg\ast - result )~
+
+** integration with retroforth ( for interactive code )
+*** calling pascal code from retro
+- in retro's dict, when calling procedures, maybe have =NAME= to pull args directly from stack and =NAME(= to precompile arguments separated by commas and ending with =)=.
+- use word =PASCAL= to parse and execute a single pascal statement
+  - =PASCAL INC(x);=
+  - =PASCAL BEGIN= ... =END;=
+- use =PASCAL MODULE= ... =END= to define a module ( =chain= and ={{= ... =}}= in retro )
+- use =PASCAL PROGRAM= ... =END= to define a module and /also/ a single word to trigger execution of the module's =BEGIN= ... =END= block.
+
+*** calling retro from pascal
+- call any retro word as a procedure or function with pascal syntax, provided it's a valid pascal identifier.
+  - probably would not be type checked?
+- allow arbitrary retro code (using retro syntax) via =RETRO= ... =END;= statement ( any retro code would be valid, except of course a word called =END= )
