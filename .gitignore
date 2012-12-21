@@ -12,3 +12,4 @@ library
 pre/pre_gen.pas
 ./retro
 
+run-tests.pas
