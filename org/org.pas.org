@@ -4,241 +4,28 @@ copyright 2012 michal j. wallace <[[http://tangentstorm.com/]]>
 inspired by orgnode.py,
 copyright 2010 charles cave <[[http://members.optusnet.com.au/~charles57/GTD]]>
 
-* module org
-#+begin_src pascal :tangle ../gen/org.pas :noweb tangle
-  {$i xpc.inc}
-  unit org;
-  interface uses xpc, li, di, ll, stacks;
-    <<class.orgnode>>
-    <<node_types>>
-    <<enums>>
-    procedure parse( var tx : text );
-  implementation
-    <<parse>>
-  end;
-#+end_src
-
-* SECTION [2/2] data types
+* [2/2] data types
 ** DONE orgnode data type
-#+name: class.orgnode
-#+begin_src pascal
-  type org_node = class ( li.node )
-    depth      : cardinal;
-    headln     : string;
-    content    : specialize list<org_node>;
-    tags       : stringdict;
-    keyword    : string;
-    priority   : cardinal;
-    scheduled,
-    deadline   : string; {todo: datetime;}
-    properties : stringdict;
-  end;
-#+end_src
 ** DONE global token type
-#+name: enums
-#+begin_src pascal
-  type
-    node_type  = (
-      nt_block, nt_meta, nt_macro, nt_result );
-    block_type = (
-      bl_center, bl_docbook, bl_example,
-      bl_html, bl_latex, bl_lstlisting, { ?? }
-      bl_quote, bl_result, bl_src, bl_verbatim, bl_verse );
-    tok_meta   = (
-      tm_bind,           tm_caption,       tm_category,      tm_columns,
-      tm_description,    tm_docbook,       tm_drawers,
-      tm_email,          tm_export_exclude_tags,
-      tm_export_select_tags,
-      tm_filetags,       tm_header,        tm_headers,
-      tm_html,           tm_include,       tm_infojs_opt,       tm_keywords,
-      tm_label,          tm_language,      tm_latex,            tm_latex_class,
-      tm_latex_class_options,              tm_latex_header,     tm_link,
-      tm_link_home,      tm_link_up,       tm_macro,            tm_mathjax,
-      tm_name,           tm_options,       tm_orgtbl,           tm_priorities,
-      tm_property,       tm_results,       tm_seq_todo,         tm_setupfile,
-      tm_startup,        tm_tags,          tm_tblfm,            tm_tblname,
-      tm_title,          tm_todo,          tm_typ_todo,         tm_xslt );
-#+end_src
-
-* SECTION [5/5] org parser
+* [5/5] org parser
 ** DONE main parser routine
-#+name: parse
-#+begin_src pascal
-  procedure parse( var tx : text );
-  const
-    max_depth = 8;
-  var
-    line, prev : string;
-    depth : cardinal = 0;
-    stack : specialize stacks.stack<org_node>;
-    <<parse.headline>>
-    <<parse.block>>
-    <<parse.table>>
-  begin
-    stack.create( max_depth );
-    prev := '';
-    while not eof( tx ) do begin
-      readln( tx, line );
-      case line[ 1 ] of
-        '*' : emit( headline );
-        '#' : if startswith( dnstr( line ), '#+begin'  ) then emit( block )
-              else if line[ 2 ] = '+' then emit_meta( line )
-              else emit_comment( line );
-        ':' : if line[ 2 ] = ' ' then emit_verbatim( line )
-              else parse_drawer;
-        '|' : emit( table );
-       else emit_markup( line );
-    end
-  end;
-#+end_src
-
 ** DONE parse headlines
-#+name: parse.headlines
-#+begin_src pascal
-  procedure headline;
-  var
-    i : byte = 1;
-    j : byte;
-  begin
-    result := false;
-    if line[ i ] = '*' then begin
-      result := true;
-      while line[ i ] = '*' do inc( i );
-      for j := i downto depth do stack.pop;
-      depth := i;
-    end
-  end;
-#+end_src
-
 ** DONE parse block
-#+name: parse.block
-#+begin_src pascal
-  function block : block_node
-  begin
-    result := block_node.create( line );
-    repeat read( tx, line ) until result.consume_end( line );
-  end;
-#+end_src
-
 ** DONE parse drawer
-#+name: parse.drawers
-#+begin_src pascal
-  function drawer : drawer_node;
-  begin
-    result := drawer_node.create( line );
-    repeat read( tx, line ) until result.consume_end( line )
-  end;
-#+end_src
-
 ** DONE parse tables
-#+name: parse.table
-#+begin_src pascal
-  function table : table_node
-  begin
-    result := table_node.create;
-    repeat
-      if line[ 1 ] = '|' then result.row( line )
-      else result.divider( line );
-      readline( tx, line )
-    until line[ 1 ] not in [ '|','+' ];
-  end;
-#+end_src
-
 
 * TODO [4/4] emitter class
 ** DONE declaration
-#+begin_src pascal
-  type emitter = class( orgvisitor )
-    procedure emit( line : string );
-    procedure comment( line : string );
-    procedure verbatim( line : string );
-    procedure markup( line : string );
-  end;
-#+end_src
-
 ** DONE emit comment line
-#+begin_src pascal
-  procedure emitter.comment( line : string );
-  begin
-    self.nodes.append( comment_node.create( line ));
-  end;
-#+end_src
-
 ** DONE emit verbatim lines
-#+begin_src pascal
-  procedure emitter.verbatim( line : string );
-  begin
-    self.nodes.append( comment_node.create( line ));
-  end;
-#+end_src
-
 ** DONE emit markup lines
-#+begin_src pascal
-  procedure emitter.markup( line : string );
-  begin
-    self.nodes.append( markup_node.create( line ));
-  end;
-#+end_src
-
 
 * orgnode subclasses
-#+name: node_types
-#+begin_src pascal
-  type
-    table_node   = class( org_node )
-      lines : stringlist;
-      procedure row( line : string );
-      procedure divider( line : string );
-    end;
-    divider_node = class( org_node )
-    end;
-    block_node   = class( org_node )
-      function consume_end( line : string ) : boolean;
-    end;
-    drawer_node  = class( org_node )
-      pairs : stringdict;
-      function consume_end( line : string ) : boolean
-    end;
-#+end_src
-
 * class =table_node=
 ** DONE =table_node.row=
-#+begin_src pascal
-  procedure table_node.row( line : string );
-  begin
-    self.lines.append( line );
-  end;
-#+end_src
-
 ** DONE =table_node.divider=
-#+begin_src pascal
-  procedure table_node.divider( line : string );
-  begin
-    self.lines.append( line )
-  end;
-#+end_src
-
 ** DONE =block_node.consume_end=
-#+begin_src pascal
-  function block_node.consume_end( line : string ) : boolean;
-  begin
-    result := startswith( dnstr( line ), '#+end_' );
-    if result then self.endline := line
-    else self.pairs.append( line )
-  end;
-#+end_src
-
 ** DONE =drawer_node.consume_end=
-#+begin_src pascal
-  function drawer_node.consume_end( line : string ) : boolean;
-  begin
-    // pretty sure it's case sensitive:
-    result := startswith( line, ':end:' );
-    if result then self.endline := line
-    else self.pairs.append( line )
-  end;
-#+end_src
-
 
 * parser
 | node | pat  | rep | xform | keep  | type  |
@@ -254,7 +41,7 @@ copyright 2010 charles cave <[[http://members.optusnet.com.au/~charles57/GTD]]>
 * templates
 | meta | 0 |   |
 
-* TODO [1/10] things that go elsewhere
+* TODO [2/10] things that go elsewhere
 ** TODO add d-style method syntax to any type                    :wejal:fpc:
 #+begin_src pascal
   function get_method( typ, meth );
@@ -264,30 +51,8 @@ copyright 2010 charles cave <[[http://members.optusnet.com.au/~charles57/GTD]]>
   end;
 #+end_src
 
-** TODO test for startswith
-#+name: test_startswith
-#+begin_src pascal
-  procedure test_startswith;
-  begin
-    check( startswith('apple', 'a' ));
-    check( not startswith('a', 'apple'));
-  end;
-#+end_src
-
-** DONE startswith
-#+name: startswith
-#+begin_src pascal
-  procedure startswith(const haystack, needle : string);
-  var i : cardinal;
-  begin
-    result := true;
-    while result and ( i < length( needle )) do
-    begin
-      inc( i );
-      result := haystack[ i ] = needle[ i ]
-    end
-  end;
-#+end_src
+** DONE test for stri.startswith
+** DONE stri.startswith
 
 ** TODO generate visitor interfaces                                    :grin:
 ** TODO generate default visitor
