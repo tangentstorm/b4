@@ -48,9 +48,7 @@ CREATE list2 200 ALLOT list2 sort
 #+end_example
 
 
-
-* PART 1 : lexer and expression evaluator
-** the "begin" statement ( example outline only )
+* the "begin" statement ( example outline only )
 #+begin_example forth
 ( begin-statement compiler )
 : begin
@@ -64,6 +62,8 @@ CREATE list2 200 ALLOT list2 sort
     NOT IF syntaxerror THEN ;
 #+end_example
 
+
+* PART 1 : lexer and expression evaluator
 ** block 2000 - pascal extensions to forth
 #+begin_src forth
 ( Pascal extensions to FORTH
@@ -130,7 +130,6 @@ Why repeat the list?
 In the first section, he's creating a bunch of empty definitions in the forth dictionary.
 
 Here, he redefined "|" to mean "," -- which means write to memory. So he's essentially creating an array of pointers to the empty dictionary entries.
-
 
 ** block 2003
 #+begin_src forth
@@ -584,7 +583,8 @@ VARIABLE stmt : stmtex stat @ EXECUTE ;
 ; -->
 #+end_src
 
-** block 2027 {pascal .. }
+
+*** block 2027 {pascal .. }
 #+begin_src forth
 FIND statement stmt !  { resolve forward reference }
 
