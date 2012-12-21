@@ -6,6 +6,7 @@ interface uses xpc, di, li, ll, stacks, stri;
     node_type = (
       nt_document,
       nt_headline,
+      nt_blank,
       nt_markup,
       nt_comment,
       nt_block,
@@ -58,11 +59,13 @@ interface uses xpc, di, li, ll, stacks, stri;
 
     generic element<tag_t,val_t> = class ( li.node )
     private
-      type this = specialize element< tag_t, val_t >;
+      type
+        this = specialize element< tag_t, val_t >;
+        elements = specialize list<this>;
     public
       tag       : tag_t;
       value     : val_t;
-      children  : specialize list<this>;
+      children  : elements;
       constructor create( t : tag_t );
       constructor create( t : tag_t; v : val_t );
       procedure append( t : tag_t );
@@ -116,6 +119,7 @@ implementation
   constructor element.create( t : tag_t );
   begin
     self.tag := t;
+    self.children := elements.create;
   end;
 
   constructor element.create( t : tag_t; v : val_t );
@@ -187,7 +191,7 @@ implementation
 
   function parse( var tx : text; out root : org_node ) : boolean;
     const
-      max_depth	= 8;
+      k_max_depth = 8;
     var
       line  : string;
       depth : cardinal = 0;
@@ -216,14 +220,14 @@ implementation
     function parse_block : block_node;
     begin
       result := block_node.create( line );
-      repeat read( tx, line )
-      until result.consume_end( line );
+      repeat readln( tx, line )
+      until eof( tx ) or result.consume_end( line );
     end;
 
     function parse_drawer : drawer_node;
     begin
       result := drawer_node.create( line );
-      repeat read( tx, line ) until result.consume_end( line )
+      repeat readln( tx, line ) until result.consume_end( line )
     end;
 
     function parse_table : table_node;
@@ -235,16 +239,20 @@ implementation
 	readln( tx, line )
       until not (line[ 1 ] in [ '|','+' ]);
     end;
-  begin
-    stack.create( max_depth );
+
+  begin { parse }
+    stack.init( k_max_depth );
     root := org_node.create( nt_document );
     focus := root;
     while not eof( tx ) do begin
       readln( tx, line );
-      case line[ 1 ] of
+      // log.debug([ '>>' + line ]);
+      if length( line ) = 0 then emit( nt_blank )
+      else case line[ 1 ] of
 	'*' : emit( nt_headline );
-	'#' : if startswith( dnstr( line ), '#+begin'  ) then parse_block
-	      else if line[ 2 ] = '+' then emit( nt_meta )
+	'#' : if startswith( dnstr( line ), '#+begin' ) then parse_block
+	      else if ( length( line ) > 1 ) and ( line[ 2 ] = '+' )
+              then emit( nt_meta )
 	      else emit( nt_comment );
         ':' : if line[ 2 ] = ' ' then emit( nt_verbatim )
               else parse_drawer;
@@ -252,7 +260,7 @@ implementation
       else emit( nt_markup );
       end
     end;
-  end;
+  end; { parse }
 
 initialization
 end.
