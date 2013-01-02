@@ -1,5 +1,7 @@
 #+TITLE: The b4 programming language.
 
+* About
+
 *b4* is a tiny concatenative programming language, a bit like forth, but with a strong bias toward stepwise refinement and interactive media (like games).
 
  - [[https://github.com/sabren/b4][b4 github repo]]
@@ -7,14 +9,47 @@
  - irc: [[irc://irc.freenode.org/b4lang][#b4lang on freenode]]
  - reddit: [[http://reddit.com/r/b4lang][/r/b4lang]]
 
-* Orientation
+B4 shares a virtual machine with [[http://retroforth.org/][retroforth]]. (At the time of this writing, B4 is just retroforth, but the final version will be shaved down to a tiny subset suitable for an introductory programming course.)
+
+* Compiling and Running the Code
+
+  1. *Install free pascal 2.7.1* -- the code uses features of the svn trunk version of the compiler, so /either/:
+   - *easy way:* download the [[ftp://ftp.freepascal.org/pub/fpc/snapshot/trunk/][nightly development build for your platform]]
+   - *or* compile fpc manually (unnecessary, but this is what i do)
+     - install freepascal 2.6.0 (you need the stable fpc to compile the trunk version)
+     - get the source from one of the following places :
+       - ~git clone git://github.com/graemeg/lazarus.git~  (via [[http://wiki.freepascal.org/git_mirrors][fpwiki:git_mirrors]] )
+         /(git is probably the best option)/
+       - ~svn checkout http://svn.freepascal.org/svn/fpc/trunk fpc~
+       - download the [[ftp://ftp.freepascal.org/pub/fpc/snapshot/trunk/source/fpc.zip][nightly source zipfile]]
+     - Now run: ~cd compiler; make~
+     - This will generate the ~fpc~ binary, which you can then use to compile the code here.
+
+  2. Clone this git repository, using one of the links github supplies at the top of the page.
+
+  3. *run*: ~cd b4; make retro~
+
+* Other files in this repository:
+
+This repo has become a sort of staging area for code related to the course I'm writing. Most of this stuff is written in pascal, unless otherwise specified:
+
+| app  | prototype of a full-screen terminal (truetype, using [[http://lazarus.freepascal.org/][lazarus]])            |
+| b4a  | a single-pass assembler (no lookahead or forward jumps), written in perl |
+| go   | miscellaneous little free pascal demos (console mode)                    |
+| grin | a grammar interpreter (parsing combinators in pascal+python)             |
+| mn   | some crazy notes about ascii delimiters :)                               |
+| ng   | my pascal port of the ngaro vm                                           |
+| org  | work-in-progress parser for org-mode files (like this one)               |
+
+
+* Background
 
 B4 is a forth-like language. Quick *intros to forth* (free and online):
 
  - [[http://www.colorforth.com/POL.htm][Programming a Problem-Oriented Language]]
  - [[http://www.forth.com/starting-forth/][Starting Forth]]
 
-B4 runs on an implementation of the *ngaro virtual machine*, stolen from retroforth. We'll probably steal more from retro, but B4 isn't retroforth. It's something different.
+B4 runs on an implementation of the *ngaro virtual machine*, from retroforth.
 
  - [[http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html][ngaro virtual machine reference]]
  - [[http://retroforth.org/][retroforth]]
