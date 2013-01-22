@@ -1,16 +1,16 @@
 # directory paths, relative to this directory:
-XPL       = ./lib/xpl/code
-GEN	  = ./gen
+XPL       = lib/xpl/code
+GEN	  = gen
 PPU	  = $(GEN)
 EXE	  = $(GEN)
-RETROPATH = ./lib/retro
+RETROPATH = lib/retro
 NGAROTEST = $(RETROPATH)/test/ngaro/ngarotest.py
 
 # ROOT should be path back to this directory from GEN
 ROOT      = ../
 
 # compiler paths
-FPC       = fpc -gl -B -Fu$(XPL) -Fi$(XPL) -FE$(GEN)
+FPC       = fpc -gl -B -Sgic -Fu$(XPL) -Fi$(XPL) -FE$(GEN)
 PYTHON    = python
 
 #------------------------------------------------------
@@ -35,7 +35,7 @@ init    :
 	@rm -f $(GEN)/library $(GEN)/retroImage
 	@git submodule init
 	@git submodule update
-	@ln -s $(RETROPATH)/library $(GEN)/library
+	@ln -s ../$(RETROPATH)/library $(GEN)/library
 	@ln -n $(RETROPATH)/retroImage $(GEN)/retroImage
 
 test: test.ngaro test.core test.files. test.clean
