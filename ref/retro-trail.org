@@ -1492,7 +1492,7 @@ later in the source.
 Notice that the "number" code uses "preserve" to save and restore the "base"
 for us.
 
-** vocabularies 
+** vocabularies
 *** And now for vocabularies. This is where things get trickier.
 
   create dicts 64 allot
@@ -2028,11 +2028,28 @@ global .s save bye
 ( Copyright [c] 2010,        Marc Simpson                                     )
 ( Copyright [c] 2010,        Jay Skeer                                        )
 ( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
 
-( Assembler and Metacompiler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+* OUTPUT =kernel.rx=
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
+( Retro ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+( Copyright [c] 2008 - 2012, Charles Childers                                 )
+( Copyright [c] 2009 - 2010, Luke Parrish                                     )
+( Copyright [c] 2010,        Marc Simpson                                     )
+( Copyright [c] 2010,        Jay Skeer                                        )
+( Copyright [c] 2012,        Michal J Wallace                                 )
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+
+
+* CODE | stage 1
+** ( Image Size ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 36 1024 * constant IMAGE-SIZE
+#+end_src
+** ( Assembler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 
-( Assembler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 variables| target origin 'WORD 'MACRO 'DATA 'PRIM link chain latest |
 here [ !target ] [ !origin ] bi IMAGE-SIZE allot
 
@@ -2063,9 +2080,9 @@ here [ !target ] [ !origin ] bi IMAGE-SIZE allot
 : $,          ( $-  ) withLength [ @+ m, ] times 0 m, drop ;
 : shrink      (  -  ) t-here "\nShrinking kernel to %d cells\n" puts
                       t-here @origin 6 + ! t-here @origin 3 + ! ;
-
-( Metacompiler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-
+#+end_src
+** ( Metacompiler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 {{
   : <self-compile>  &m, reclass ;
 ---reveal---
@@ -2111,8 +2128,9 @@ here [ !target ] [ !origin ] bi IMAGE-SIZE allot
 : patch     (   - ) @link [ @chain ! ] [ "\nLast header at %d" puts ] bi ;
 : mark      (   - ) @target !chain ;
 : setClass  ( aa- ) ! ;
-
-( Image Relocator ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Image Relocator ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 {{
   : for      ( n-   )  here 5 , ; compile-only
   : next     (  -   )  6 , 7 , , ; compile-only
@@ -2125,33 +2143,26 @@ here [ !target ] [ !origin ] bi IMAGE-SIZE allot
 ---reveal---
   : bootNew  ( - )     relocate save 0 push ;
 }}
-
-( Avoid keymap issues ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Avoid keymap issues ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 devector keymap:handler
-
-( Setup target memory for new image ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Setup target memory for new image ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : ; ( - ) ;, ;, ;; [[
 jump, 0 m,
 reset
 
 #+end_src
-
-* OUTPUT =kernel.rx=
+* CODE | stage 2
+** ( Kernel Begins ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
-( Retro ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-( Copyright [c] 2008 - 2012, Charles Childers                                 )
-( Copyright [c] 2009 - 2010, Luke Parrish                                     )
-( Copyright [c] 2010,        Marc Simpson                                     )
-( Copyright [c] 2010,        Jay Skeer                                        )
-( Copyright [c] 2012,        Michal J Wallace                                 )
-( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-
-
-( Kernel Begins ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 IMAGE-SIZE  constant CORE
 CORE 0000 + constant HEAP
-
-( Initial Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Initial Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 mark variable last    ( Pointer to the most recent dictionary header          )
 HEAP variable: heap   ( Starting address of the data/code heap                )
 variable compiler     ( Is the compiler on or off?                            )
@@ -2195,8 +2206,9 @@ t: .primitive  (  a- )
 
 ' .primitive   word: .primitive
 "( a- ) Class for functions corresponding to VM opcodes; used for simple optimizations" :doc
-
-( Primitives ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Primitives ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: dup dup dup, ;
 "( n-nn ) Duplicate TOS" :doc
 
@@ -2223,7 +2235,7 @@ p: xor xor xor, ;
 
 p: @ @ @, ;
 "( a-n ) Fetch a value from a memory location" :doc
- 
+
 p: ! ! !, ;
 "( na- ) Store a value to a memory location" :doc
 
@@ -2283,8 +2295,10 @@ w: @+ @+ dup, 1+, swap, @, ;
 
 w: !+ !+ dup, 1+, push, !, pop, ;
 "( ca-a ) Store a value to an address, return next address" :doc
+#+end_src
+** ( Core Compiler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Core Compiler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 w: here here heap # @, ;
 "( -a ) Next free address in **heap**" :doc
 
@@ -2305,8 +2319,10 @@ m: push push 5 # , ;
 
 m: pop  pop  6 # , ;
 "( -n ) Pop a value off the address stack" :doc
+#+end_src
+** ( Conditionals and Flow Control ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Conditionals and Flow Control ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 m: 0; t-0; 25 # , ;
 "( n-n || n- ) If TOS is not zero, do nothing. If TOS is zero, drop TOS and exit the function" :doc
 
@@ -2315,8 +2331,10 @@ m: repeat t-repeat here ;
 
 m: again t-again  8 # , , ;
 "( R: -  C: a- ) Jump to the code following the most recent **repeat**" :doc
+#+end_src
+** ( Console Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Console Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 -1 variable: update
 
 w: redraw redraw update # @, 0; drop, 0 # 3 # out, ;
@@ -2336,8 +2354,10 @@ w: <puts> <puts> (puts) drop, ;
 
 w: puts puts <puts> ;
 "( $- ) Display a string" :doc
+#+end_src
+** ( Console Input ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Console Input ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 variable  break                       ( Holds the delimiter for 'accept'   )
 
 -1 variable: remapping                   ( Allow extended whitespace?         )
@@ -2418,8 +2438,10 @@ i: (accept)
 
 w: accept accept break # !, tib eat (accept) 0 # swap, !+ drop, ;
 "( c- ) Read a string, ending with the specified character. The string is returned in **tib**" :doc
+#+end_src
+** ( Colon Compiler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Colon Compiler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 -1 variable: vector
 
 w: d->class d->class  1+, ;
@@ -2460,8 +2482,10 @@ w: : :   create ' .word # last # @, d->class !, ]] vector? ;
 
 m: ( t-(  ') # accept ;
 "( ``- ) Parse for ) and ignore everything it reads" :doc
+#+end_src
+** ( Quotes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Quotes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 
 ( reference diagram:                                           )
 (                                                              )
@@ -2509,8 +2533,10 @@ m: ] ] ( af- ) ( a = placeholder for quote jump, f = old compile state  )
                  (       | the call to 'quote will restore it  )
                  (       | when the containing function runs   )
 "( -a ) End a quote (code block)" :doc
+#+end_src
+** ( Combinators ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Combinators ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 i: empty ;
 ( [ - ] internal helper corresponding to an empty quote )
 
@@ -2528,8 +2554,10 @@ w: dip dip swap, push, do pop, ;
 
 w: sip sip over ' do # dip ;
 "( nq-n ) Call a quote with an item on the stack, restoring that item after the quote returns" :doc
+#+end_src
+** ( Conditionals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Conditionals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 i: false (  -n  )  0 # ;
 ( [ -f ] helper, returns 0 for false )
 
@@ -2559,8 +2587,10 @@ w: < <    ( xy-f  ) >if jump: false then jump: true
 
 w: > >    ( xy-f  ) <if jump: false then jump: true
 "( xy-f ) Compare two values for greater than" :doc
+#+end_src
+** ( Strings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Strings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 w: compare compare
    repeat
      dup, @, push, 1+, swap,
@@ -2596,8 +2626,10 @@ w: atib atib memory # @, STRING-LENGTH 2 # * - ;
 
 w: " t-" ' atib # ' tib # :is '" # accept ' tib # :devector atib ;
 "( ``-$ ) temporary function to create strings until __`` is defined" :doc
+#+end_src
+** ( Numbers [Parsing & Display] ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Numbers [Parsing & Display] ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 4 elements #value num negate? flag
 
 10 variable: base
@@ -2645,8 +2677,10 @@ i: (isnumber)
 
 w: isNumber? isNumber? ( $-f ) isNegative? flag # on (isnumber) drop, flag # @, ;
 "( $-f ) See if a string is a valid number in the current **base**" :doc
+#+end_src
+** ( Startup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Startup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 w: boot boot         (  -  )
    copytag # puts 32 # putc version # puts cr ;
 "( - ) Called when the image first loads; use for custom startup routines" :doc
@@ -2663,8 +2697,10 @@ i: run-on-boot  (  -  )
    -12 # query ch #     !,  ( Console Height  )
    boot ;
 ( NEEDS-DESCRIPTION )
+#+end_src
+** ( Dictionary Search ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Dictionary Search ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 2 elements name found
 
 i: prepare  ( a-a  ) found # off name # !, last # @, ;
@@ -2685,8 +2721,10 @@ w: find find     ( $-af ) prepare <search> done ;
 
 w: ' t-'      ( "-a  ) 32 # accept tib find 0 # !if d->xt @, ; then drop, 0 # ;
 "( ``-a ) Interpret time: return the address ('xt') of a name" :doc
+#+end_src
+** ( Word Prefixes and "Not Found" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Word Prefixes and "Not Found" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 label: ___   "___" $,
 
 i: get      ( $-$  ) dup, @, ___ # 2 # +, !, 1+, ;
@@ -2707,8 +2745,10 @@ w: <notFound> <notFound> ( -f ) tib getLength 2 # >if try then ;
 
 w: notFound notFound   ( -  ) <notFound> 0; drop, cr tib puts 32 # putc '? # putc cr ;
 "( - ) Called when a name is not found. Calls **<notFound>** and displays an error message  if necessary" :doc
+#+end_src
+** ( Listener ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Listener ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 w: ok ok      (   - ) compiler # @, not 0; drop, cr okmsg # puts ;
 "( - ) Displays the ``ok`` prompt" :doc
 
@@ -2723,8 +2763,9 @@ i: process ( af- ) 0 # !if xt:class jump: withClass then drop jump: number
 
 w: listen listen  (   - ) repeat ok 32 # accept tib find process again ;
 "( - ) Top level interpreter. Reads and process input." :doc
-
-( Initial Dictionary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Initial Dictionary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 last         data: last
 "( -a ) Variable; pointer to most recent dictionary  header" :doc
 
@@ -2780,22 +2821,28 @@ tabAsWhitespace data: tabAsWhitespace
 "( -a ) Variable; treat tab as whitespace?" :doc
 
 patch
+#+end_src
+** ( Finish Metacompiled Part ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
+  main: run-on-boot jump: listen
+  endKernel shrink bootNew
+#+end_src
+* CODE | stage 3
+** -------
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
+  ( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+  ( Ok, at this point the new image should be in control so we have a normal,   )
+  ( though brutally minimal Retro system from here on.                          )
+  ( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 
-( Finish Metacompiled Part ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-main: run-on-boot jump: listen
-endKernel shrink bootNew
+  : :doc keepString last @ d->doc ! ;
+  " ( $- ) attach documentation string to latest defined function" :doc
 
+#+end_src
 
-( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-( Ok, at this point the new image should be in control so we have a normal,   )
-( though brutally minimal Retro system from here on.                          )
-( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** ( Stack Words ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-: :doc keepString last @ d->doc ! ;
-" ( $- ) attach documentation string to latest defined function" :doc
-
-
-( Stack Words ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 : nip   (  xy-y    ) swap drop ;
 " ( xy-y ) Drop the NOS from the stack" :doc
 
@@ -2819,8 +2866,10 @@ endKernel shrink bootNew
 
 : ?dup  (   n-n || n-nn )  dup 0; ;
 " ( -n ) Duplicate TOS if non-zero. If zero, leave value alone" :doc
+#+end_src
+** ( Scope ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Scope ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 create list  ( -a )  0 , 0 ,
 
 : {{ ( - )  vector off last @ dup list !+ ! ;
@@ -2834,8 +2883,10 @@ create list  ( -a )  0 , 0 ,
   [ list @ last ! ]
   [ list @ [ last repeat @ dup @ list 1+ @ != 0; drop again ] do ! ] if ;
 " ( - ) Close a namespace, sealing off private symbols" :doc
+#+end_src
+** ( Vectored Execution ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Vectored Execution ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 : devector  ( "-  ) ' 0; :devector ;
 " ( ``- ) Same as **:devector**, but parses for name of function" :doc
 
@@ -2869,8 +2920,10 @@ create list  ( -a )  0 , 0 ,
   [ split off                default: ---reveal---          ] is ---reveal---
   [ split off                default: }}                    ] is }}
 }}
+#+end_src
+** ( Dictionary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Dictionary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 {{
   create a 0 , create b 0 , create c 0 , create xt 0 ,
   : skim       ( a-a )
@@ -2889,7 +2942,7 @@ create list  ( -a )  0 , 0 ,
   : :hide      ( a-  )
     dup xt->d last @ == [ drop last @ @ last ! ] [ <hide> ] if ;
   " ( a- ) Remove a name from a dictionary. Specify the address of a function. Used by **hide**" :doc
-  
+
   : hide       ( "-  ) ' 0; :hide ;
   " ( ``- ) Remove a name from the dictionary" :doc
 }}
@@ -2901,8 +2954,10 @@ hide vector
 
 : reclass:     ( a"- ) d' d->class ! ;
 " ( a``- ) Same as **reclass**, but parse for function to change class of" :doc
+#+end_src
+** ( Initial Prefixes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Initial Prefixes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 {{
   : xt:class ( a-aa ) dup xt->d 0; d->class @ withClass ;
 ---reveal---
@@ -2924,8 +2979,10 @@ hide vector
   : __2  ( a-  ) &xt:class sip xt:class ; &.macro reclass
   " ( a- ) Prefix; execute function twice" :doc
 }}
+#+end_src
+** ( Classes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Classes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 : .compiler    (  a- ) @compiler &do &drop if ;
 " ( a- ) Class for functions that can only be used inside a definition" :doc
 
@@ -2934,16 +2991,19 @@ hide vector
 
 : compile-only (  "- ) &.compiler reclass ;
 " ( ``- ) Set the most recent function to **.compiler** class" :doc
-
-( Remap some classes for efficiency and safety ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Remap some classes for efficiency and safety ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 here
 {{
   : c: ( "- ) &.compiler reclass: ;
   c: pop    c: push   c: 0;     c: ;;    c: ;      c: repeat c: again
 }}
 !heap
+#+end_src
+** ( Compiler Macros ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Compiler Macros ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 : `     ( "-  )
   ' ?dup 0 != -1 ==
   [ .data @which @d->class , ]
@@ -2953,8 +3013,10 @@ here
 
 : jump: ( "- ) ' 0; 8 , , ; compile-only
 " ( ``- ) Compile a jump to another function" :doc
+#+end_src
+** ( Additional Combinators ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Additional Combinators ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 : []      (    -    ) ` [ ` ] ; immediate
 " ( - ) Empty quote" :doc
 
@@ -3040,15 +3102,17 @@ here
     <each@> ;
   " ( ...t- ) Supercombinator for applying a quote to each item in various data structures.\nProvide one of the following stack forms:\n\n    ARRAY:  aq-\n    BUFFER: anq-\n    STRING: $q-\n    LIST: lq-\n\nFor LIST, *l* should be a variable pointing to the list.\n\nThe quote will be given the address of the current element with each time it is invoked by each@." :doc
 }}
-
-( Memory Blocks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Memory Blocks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 : copy   ( aan-  ) [ &@+ dip !+ ] times 2drop ;
 " ( aan- ) Copy n values from source (a1) to dest (a2)" :doc
 
 : fill   ( ann-  ) swap !here [ @here swap !+ ] times drop ;
 " ( ann- ) Fill (n2) memory locations starting at (a) with value (n1)" :doc
-
-( Conditionals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Conditionals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 : ahead  (   -a  ) 8 , here 0 , ;
 " ( -a ) Used in conditionals; compiles a branch to be patched in later" :doc
 
@@ -3057,8 +3121,10 @@ here
 
 : within ( xlu-f ) &over dip <= &>= dip and ;
 " ( xlu-f ) Is (x) within lower (l) and upper (u) bounds?" :doc
+#+end_src
+** ( Data Structures ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Data Structures ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 : variable:  ( n"-  ) create , ;
 " ( n``- ) Create a new variable with an initial value " :doc
 
@@ -3081,8 +3147,10 @@ here
   : elements ( n"-  ) dup list swap &element times drop ;
   " ( n``- ) Create a series of variables" :doc
 }}
+#+end_src
+** ( Numbers and Math ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Numbers and Math ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 : decimal ( - ) 10 !base ;
 " ( - ) Switch **base** to 10" :doc
 
@@ -3094,8 +3162,10 @@ here
 
 : binary  ( - )  2 !base ;
 " ( - ) Switch **base** to  2" :doc
+#+end_src
+** ( Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 {{
   create buf   32 allot
   2 elements digits pos
@@ -3118,8 +3188,10 @@ here
 
 : putn  ( n- ) toString puts ;
 " ( n- ) Display a number" :doc
+#+end_src
+** ( Parsing prefixes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Parsing prefixes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 : .parse  (  a- ) do ;
 " ( a- ) Class for parsing prefixes" :doc
 
@@ -3141,9 +3213,9 @@ here
   : __'   ( $-n ) @ .data         ; parsing
   " ( $-n ) Return character following '" :doc
 }}
-
-
-( Chained Vocabularies ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Chained Vocabularies ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 create dicts 64 allot
 " ( -a ) Array; used by chained vocabularies and search order code" :doc
 
@@ -3198,8 +3270,9 @@ create dicts 64 allot
   create dup xt->d swap :hide
   [ @d->xt @last !d->xt ] [ @d->class @last !d->class ] bi ;
 " ( a``- ) Rename a function" :doc
-
-( Extend 'find' and 'xt->d' to search chains before global ~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Extend 'find' and 'xt->d' to search chains before global ~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 {{
   5 elements flag dt name safety xt
   : search  (  -   ) @dicts repeat 0; dup dicts + <%> @xt do 1- again ;
@@ -3218,8 +3291,9 @@ create dicts 64 allot
     @flag [ @dt ] [ @name default: xt->d ] if ;
   &lookup is xt->d
 }}
-
-( Extend Prefix Handler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Extend Prefix Handler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 {{
   4 elements xt class name flag
   create ___ 95 , 95 , 95 , 0 ,
@@ -3242,8 +3316,9 @@ create dicts 64 allot
     flag on tib (split prefix) &handle &drop if @flag ;
   &try is <notFound>
 }}
-
-( Core Strings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Core Strings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 {{
   : buffers  ( -a )
     @memory        STRING-LENGTH   -  ( tib     )
@@ -3283,8 +3358,9 @@ hide "   ( next we define __" and can use proper strings )
   : "    ( "-$ ) [ '" accept pad 1- keep ] withPad ; immediate
   "( ``-$ ) Parse and return a string" :doc
 }}
-
-( Formatted String Display ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Formatted String Display ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 -1 variable: formatted
 "( -a ) Variable; toggles whether **puts** uses escape sequences or not" :doc
 
@@ -3312,8 +3388,10 @@ hide "   ( next we define __" and can use proper strings )
   : simple ( $- ) [ @ putc ] 2 ( STRING ) each@ ;
   [ update off @formatted [ complex drop ] &simple if update on redraw ] is <puts>
 }}
+#+end_src
+** ( Debugging ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-( Debugging ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 : depth   (    -n ) -5 5 out wait 5 in ;
 "( -n ) Return number of items on stack" :doc
 
@@ -3335,9 +3413,9 @@ hide "   ( next we define __" and can use proper strings )
   "( - ) List all names in dictionary" :doc
 }}
 
-
-( Keymap ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-
+#+end_src
+** ( Keymap ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 {{
   : dictionary.find/xt ( string:name - xt )  find [ @d->xt ] [ drop #0 ] if ;
 
@@ -3349,8 +3427,9 @@ hide "   ( next we define __" and can use proper strings )
 
   [ prefix? [ drop getc:unfiltered seekHandler dup 0 <> [ nip dip cr ] [ 2drop ] if 0 ] ifTrue ] is keymap:handler
 }}
-
-( Misc. Words ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Misc. Words ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 : save     (  -  ) 1 4 out wait ;
 "( - ) Save the image" :doc
 
@@ -3394,8 +3473,9 @@ hide "   ( next we define __" and can use proper strings )
 : variables|  ( "- )
   repeat getToken "|" compare if; tib header 0 , again ;
 "( ``- ) Create a series of variables" :doc
-
-( Internal Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Internal Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 global
 chain: internals'
   &quote  create quote  @last !d->xt &.word reclass
@@ -3408,8 +3488,9 @@ chain: internals'
 
 hide string
 hide quote
-
-( Generic Buffer ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Generic Buffer ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 global
 chain: buffer'
 {{
@@ -3439,8 +3520,9 @@ chain: buffer'
 }}
 ;chain
 "( - ) vocabulary for dealing with LIFO buffers" :doc
-
-( Text Strings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Text Strings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 with buffer'
 chain: strings'
 {{
@@ -3525,8 +3607,9 @@ chain: strings'
 ;chain
 without
 "( - ) vocabulary with functions for dealing with strings" :doc
-
-( Access Words Within Chains Directly ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( Access Words Within Chains Directly ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 with strings'
 : __^  ( "- )
   splitAtChar: ' find
@@ -3544,8 +3627,9 @@ with strings'
 "( ``- ) Load a vocabulary from the *library* if it is not already loaded (parsing)" :doc
 
  without
-
-( types' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( types' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 chain: types'
   0 constant ARRAY  ( -n )
   "( -n ) Type constant for arrays" :doc
@@ -3566,8 +3650,9 @@ chain: types'
   dup d->class @ xt->d dup [ d->name ] [ drop "unknown" ] if "class: %s\n" puts
       d->doc @ dup [ ] [ drop "no documentation provided" ] if puts cr ;
 "( ``- ) provide information about a function" :doc
-
-( cleanup and save ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+end_src
+** ( cleanup and save ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 global .s save bye
 
 #+end_src
