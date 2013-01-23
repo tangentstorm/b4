@@ -30,7 +30,7 @@
 
 The process of building a new retroImage is a straightforward, though not trivial, process. It involves several stages, and some tricks. This is a commentary on the code, which should help make the process easier to understand.
 
-* TODO Stage 1: The Metacompiler
+* [0/7] Stage 1: The Metacompiler
 ** TODO ===================
 The first of the three stages of Retro is the metacompiler. This comprises
 the assembler, and secondary compiler, and is used to create a new image.
@@ -443,12 +443,7 @@ devector keymap:handler
 ** TODO Setup target memory for new image
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : ; ( - ) ;, ;, ;; [[
-jump, 0 m,
-reset
-
 #+end_src
-
-*** :  ; ( - ) ;, ;, ;; [[
 
 Ok, now this one is the last definition in the metacompiler. We redefine ";"
 to lay down two return instructions (";,"), and then end the definition and
@@ -458,10 +453,23 @@ TIP:
 
   If you are pressed for space, you can save a fair amount of memory by
   removing the second ";," here.
-*** - setup img
-One final bit:
+
+
+
+*** TODO what happened to this cleanup line? 
 
   here [ !target ] [ !origin ] bi IMAGE-SIZE allot
+
+*** TODO where is the "after" version of =is= for using the two return codes?
+Or... what else is it for? debugger support?
+
+*** One final bit:
+
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
+jump, 0 m,
+reset
+#+end_src
+
   jump, 0 m,
   reset
 
@@ -469,10 +477,10 @@ Starting at "here", allocate space for the new image, set "target" and "origin"
 to point to it, then compile a jump instruction, with a target of zero. This
 will be modified later, by "main:". And finally, "reset" to ensure the data
 stack is in a clean state.
-* TODO Stage 2: The Kernel
-** TODO Kernel Begins
-*** [0/1] Layout of the Image
-**** TODO { update this text to reflect the new situation for TIB }
+
+* [3/14] Stage 2: The Kernel
+** [0/1] Layout of the Image
+*** TODO ~{ update this text to reflect the new situation for TIB }~
 
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 IMAGE-SIZE  constant CORE
@@ -485,13 +493,9 @@ CORE 0000 + constant HEAP
 
 Create a few constants, which determine the basic memory layout. It looks like:
 
-+----------------+----------------------------------------------------+
 | 0              | Start of memory. The kernel goes here              |
-+----------------+----------------------------------------------------+
 | 0 + IMAGE-SIZE | End of kernel, start of TIB (text input buffer)    |
-+----------------+----------------------------------------------------+
 | TIB + 512      | Start of heap. This is set to TIB + 512 by default |
-+----------------+----------------------------------------------------+
 
 If you need to save memory, reducing the TIB is a quick and easy way to do so.
 I'd leave it at least 81 characters long, but making it a bit longer than the
@@ -503,8 +507,7 @@ WARNING:
   long strings. If you overwrite memory, you may need to exit and reload, or
   even restore the image from a backup in some cases.
 
-** TODO Initial Variables 
-*** | initial variables
+** [0/3] Initial Variables 
 At this point the metacompiler functions are created, there is space set aside
 for a new image, and things are ready to proceed. So on to the kernel.
 *** TODO =last= .. =which=
@@ -551,32 +554,69 @@ stable if you are making changes to the kernel. (Specifically, it's there
 to ensure that no functions are located at addresses reserved for Ngaro
 bytecodes.)
 
-** TODO the =,= word
+** TODO DEF , ~{ the heap writer }~
+
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: ,           ( n-  ) heap # @, dup, 1+, push, !, pop, heap # !, ;
 #+end_src
-** TODO classes
+
+** DONE ~{ word classes }~
+
+*** DEF withClass
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: withClass   ( ac- ) 1-, push, ;
+#+end_src
+
+This is identical (by default) to =do=, but serves as a hook for gaining
+more control over how classes are handled.
+
+*** DEF .word
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: .word       (  a- ) compiler # @, 0 # !if , ; then jump: withClass
+#+end_src
+
+The class handler for normal functions. If interpreting, execute the xt
+of the function. If the compiler is active, lay down a call to the xt
+instead.
+
+*** DEF .macro
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: .macro      (  a- ) jump: withClass
 #+end_src
+
+The core class for compiler macros. Basically "immediate" functions; this
+always calls the xt.
 
 *** DEF =.data=
 :PROPERTIES:
 :ID: .data
 :END:
-
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: .data       (  a- ) compiler # @, 0; drop, 1 # , , ;
+#+end_src
+
+The class handler for data structures. It either leaves the xt on the stack
+(if interpreting), or compiles it as a literal.
+
+*** DEF =.primitive=
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: .primitive  (  a- )
     dup, @, 0 # =if compiler # @, -1 # =if 2 # +, @, then then jump: .word
+#+end_src
+*** classes for the words so far
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
-' .word      'WORD  setClass
 ' .macro     'MACRO setClass
 ' .data      'DATA  setClass
 ' .primitive 'PRIM  setClass
+#+end_src
 
+This bit assigns the classes to the variables that the metacompiler will later
+use when creating the initial dictionary. Without this, we'd have no easy way
+to reference the classes in the new kernel.
+
+*** TODO docs for the words so far ~{ looks like these can be inlined... }~
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 ' , word: ,
 "( n- ) Place TOS **here** and increment **heap** by 1 " :doc
 
@@ -595,40 +635,6 @@ t: .primitive  (  a- )
 ' .primitive   word: .primitive
 "( a- ) Class for functions corresponding to VM opcodes; used for simple optimizations" :doc
 #+end_src
-***  t: withClass ( ac- ) 1-, push, ;
-
-This is identical (by default) to "do", but serves as a hook for gaining
-more control over how classes are handled.
-
-***  t: .word     (  a- ) compiler # @, #0 !if , ; then jump: do
-
-The class handler for normal functions. If interpreting, execute the xt
-of the function. If the compiler is active, lay down a call to the xt
-instead.
-
-***  t: .macro    (  a- ) jump: do
-
-The core class for compiler macros. Basically "immediate" functions; this
-always calls the xt.
-
-***  t: .data     (  a- ) compiler # @, 0; drop, #1 , , ;
-
-The class handler for data structures. It either leaves the xt on the stack
-(if interpreting), or compiles it as a literal.
-
-  ' .word  'WORD  setClass
-  ' .macro 'MACRO setClass
-  ' .data  'DATA  setClass
-
-This bit assigns the classes to the variables that the metacompiler will later
-use when creating the initial dictionary. Without this, we'd have no easy way
-to reference the classes in the new kernel.
-
-  -1 variable: update
-
-This variable is used to control whether or not the display is updated. On
-some VM implementations, you can improve performance by turning it "off" before
-writing large amounts of text to the screen, then "on" when done.
 
 ** TODO Primitives : =dup= .. =!+=
 *** . 
@@ -889,11 +895,18 @@ Note the continued use of "t-" as a prefix to avoid confusion with the
 functions in the metacompiler.
 
 Most of these will be hidden at the end of the core.rx source.
-** TODO Console Output =update= / =redraw= .. =puts=
+** TODO Console Output
+*** DONE DEF =update=
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
-
 -1 variable: update
+#+end_src
 
+This variable is used to control whether or not the display is updated. On
+some VM implementations, you can improve performance by turning it "off" before
+writing large amounts of text to the screen, then "on" when done.
+
+*** TODO def redraw - puts 
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: redraw redraw update # @, 0; drop, 0 # 3 # out, ;
 "( - ) Update the display. Can be disabled temporarily by **update**" :doc
 
@@ -1834,7 +1847,7 @@ Display some statistics on the new kernel for diagnostic purposes.
 Once =bootNew= is called, there is no going back. The old image is replaced by
 the new one, so be sure to keep a backup handy in case changes break things.
 
-* TODO Stage 3: Extend The Language
+* [0/32] Stage 3: Extend The Language
 ** ===================
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
   ( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
@@ -1847,7 +1860,7 @@ the new one, so be sure to keep a backup handy in case changes break things.
 
 #+end_src
 
-** ( Stack Words ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Stack Words ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 : nip   (  xy-y    ) swap drop ;
@@ -1874,7 +1887,7 @@ the new one, so be sure to keep a backup handy in case changes break things.
 : ?dup  (   n-n || n-nn )  dup 0; ;
 " ( -n ) Duplicate TOS if non-zero. If zero, leave value alone" :doc
 #+end_src
-** | more stack and variable operations
+** TODO | more stack and variable operations
 As noted by the comment above, at this point we have only the basic set of
 functions and variables available. We start by defining more stack and variable
 operations.
@@ -1886,7 +1899,7 @@ operations.
 *** :  -!    (  na-     ) dup push @ swap - pop ! ;
 *** :  ++    (   a-     ) 1 swap +! ;
 *** :  --    (   a-     ) 1 swap -! ;
-** ( Scope ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Scope ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 create list  ( -a )  0 , 0 ,
@@ -1903,7 +1916,7 @@ create list  ( -a )  0 , 0 ,
   [ list @ [ last repeat @ dup @ list 1+ @ != 0; drop again ] do ! ] if ;
 " ( - ) Close a namespace, sealing off private symbols" :doc
 #+end_src
-** | Then the scope functions:
+** TODO | Then the scope functions:
 
   create list  ( -a )  0 , 0 ,
 *** :  {{ ( - )  last @ dup list ! list 1+ ! ;
@@ -1937,7 +1950,7 @@ the header of "big", and pointing its link field to the header of "foo".
 *** :  :is       ( aa- ) dup 8 swap ! 1+ ! ;
 *** :  devector  ( "-  ) ' 0; :devector ;
 *** :  is        ( a"- ) ' 0; :is ;
-** ( Vectored Execution ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Vectored Execution ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 : devector  ( "-  ) ' 0; :devector ;
@@ -1974,7 +1987,7 @@ the header of "big", and pointing its link field to the header of "foo".
   [ split off                default: }}                    ] is }}
 }}
 #+end_src
-** | revectoring
+** TODO | revectoring
 
 Retro allows for functions created via the colon compiler to be revectored.
 This provides support for altering existing functionality at a later time and
@@ -2148,7 +2161,7 @@ Turn the compiler off.
 *** :  ]]    (  - ) compiler on  ;
 
 Turn the compiler on.
-** ( Dictionary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Dictionary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 {{
@@ -2182,7 +2195,7 @@ hide vector
 : reclass:     ( a"- ) d' d->class ! ;
 " ( a``- ) Same as **reclass**, but parse for function to change class of" :doc
 #+end_src
-** ( Initial Prefixes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Initial Prefixes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 {{
@@ -2207,7 +2220,7 @@ hide vector
   " ( a- ) Prefix; execute function twice" :doc
 }}
 #+end_src
-** ( Classes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Classes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 : .compiler    (  a- ) @compiler &do &drop if ;
@@ -2219,7 +2232,7 @@ hide vector
 : compile-only (  "- ) &.compiler reclass ;
 " ( ``- ) Set the most recent function to **.compiler** class" :doc
 #+end_src
-** ( Remap some classes for efficiency and safety ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Remap some classes for efficiency and safety ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 here
 {{
@@ -2228,7 +2241,7 @@ here
 }}
 !heap
 #+end_src
-** ( Compiler Macros ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Compiler Macros ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 : `     ( "-  )
@@ -2241,7 +2254,7 @@ here
 : jump: ( "- ) ' 0; 8 , , ; compile-only
 " ( ``- ) Compile a jump to another function" :doc
 #+end_src
-** ( Additional Combinators ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Additional Combinators ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 : []      (    -    ) ` [ ` ] ; immediate
@@ -2330,7 +2343,7 @@ here
   " ( ...t- ) Supercombinator for applying a quote to each item in various data structures.\nProvide one of the following stack forms:\n\n    ARRAY:  aq-\n    BUFFER: anq-\n    STRING: $q-\n    LIST: lq-\n\nFor LIST, *l* should be a variable pointing to the list.\n\nThe quote will be given the address of the current element with each time it is invoked by each@." :doc
 }}
 #+end_src
-** | Now for more combinators.
+** TODO | Now for more combinators.
 
 *** : []      (    -    ) ` [ ` ] ; immediate
 
@@ -2605,7 +2618,7 @@ later in the source.
 
 Notice that the "number" code uses "preserve" to save and restore the "base"
 for us.
-** ( Memory Blocks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Memory Blocks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 : copy   ( aan-  ) [ &@+ dip !+ ] times 2drop ;
 " ( aan- ) Copy n values from source (a1) to dest (a2)" :doc
@@ -2613,7 +2626,7 @@ for us.
 : fill   ( ann-  ) swap !here [ @here swap !+ ] times drop ;
 " ( ann- ) Fill (n2) memory locations starting at (a) with value (n1)" :doc
 #+end_src
-** ( Conditionals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Conditionals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 : ahead  (   -a  ) 8 , here 0 , ;
 " ( -a ) Used in conditionals; compiles a branch to be patched in later" :doc
@@ -2624,7 +2637,7 @@ for us.
 : within ( xlu-f ) &over dip <= &>= dip and ;
 " ( xlu-f ) Is (x) within lower (l) and upper (u) bounds?" :doc
 #+end_src
-** ( Data Structures ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Data Structures ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 : variable:  ( n"-  ) create , ;
@@ -2650,7 +2663,7 @@ for us.
   " ( n``- ) Create a series of variables" :doc
 }}
 #+end_src
-** ( Numbers and Math ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Numbers and Math ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 : decimal ( - ) 10 !base ;
@@ -2665,7 +2678,7 @@ for us.
 : binary  ( - )  2 !base ;
 " ( - ) Switch **base** to  2" :doc
 #+end_src
-** ( Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 {{
@@ -2691,7 +2704,7 @@ for us.
 : putn  ( n- ) toString puts ;
 " ( n- ) Display a number" :doc
 #+end_src
-** ( Parsing prefixes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Parsing prefixes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 : .parse  (  a- ) do ;
@@ -2716,7 +2729,7 @@ for us.
   " ( $-n ) Return character following '" :doc
 }}
 #+end_src
-** | prefix parsing
+** TODO | prefix parsing
 
 With this covered, the code moves on to replace the simple prefix handler with
 one aware of Luke's parsing prefixes:
@@ -2806,7 +2819,7 @@ Next up: a more flexible output function.
 
 This is a variable controlling whether to use the complex output or the
 default, simpler output.
-** ( Chained Vocabularies ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Chained Vocabularies ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 create dicts 64 allot
 " ( -a ) Array; used by chained vocabularies and search order code" :doc
@@ -2863,7 +2876,7 @@ create dicts 64 allot
   [ @d->xt @last !d->xt ] [ @d->class @last !d->class ] bi ;
 " ( a``- ) Rename a function" :doc
 #+end_src
-** | vocabularies
+** TODO | vocabularies
 *** And now for vocabularies. This is where things get trickier.
 
   create dicts 64 allot
@@ -2981,7 +2994,7 @@ order.
   }}
 
 These use "default:" to fall back into the original definitions as neccessary.
-** ( Extend 'find' and 'xt->d' to search chains before global ~~~~~~~~~~~~~~~~~~ )
+** TODO ( Extend 'find' and 'xt->d' to search chains before global ~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 {{
   5 elements flag dt name safety xt
@@ -3002,7 +3015,7 @@ These use "default:" to fall back into the original definitions as neccessary.
   &lookup is xt->d
 }}
 #+end_src
-** ( Extend Prefix Handler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Extend Prefix Handler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 {{
   4 elements xt class name flag
@@ -3027,7 +3040,7 @@ These use "default:" to fall back into the original definitions as neccessary.
   &try is <notFound>
 }}
 #+end_src
-** ( Core Strings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Core Strings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 {{
   : buffers  ( -a )
@@ -3069,7 +3082,7 @@ hide "   ( next we define __" and can use proper strings )
   "( ``-$ ) Parse and return a string" :doc
 }}
 #+end_src
-** ( Formatted String Display ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Formatted String Display ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 -1 variable: formatted
 "( -a ) Variable; toggles whether **puts** uses escape sequences or not" :doc
@@ -3100,7 +3113,7 @@ hide "   ( next we define __" and can use proper strings )
 }}
 #+end_src
 
-** | formatted strings
+** TODO | formatted strings
 *** number display
 
   {{
@@ -3155,7 +3168,7 @@ VM implementations.
   }}
 
 And wrap that all up.
-** ( Debugging ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Debugging ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 : depth   (    -n ) -5 5 out wait 5 in ;
@@ -3180,7 +3193,7 @@ And wrap that all up.
 }}
 
 #+end_src
-** ( Keymap ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Keymap ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 {{
   : dictionary.find/xt ( string:name - xt )  find [ @d->xt ] [ drop #0 ] if ;
@@ -3194,7 +3207,7 @@ And wrap that all up.
   [ prefix? [ drop getc:unfiltered seekHandler dup 0 <> [ nip dip cr ] [ 2drop ] if 0 ] ifTrue ] is keymap:handler
 }}
 #+end_src
-** ( Misc. Words ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Misc. Words ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 : save     (  -  ) 1 4 out wait ;
 "( - ) Save the image" :doc
@@ -3241,7 +3254,7 @@ And wrap that all up.
 "( ``- ) Create a series of variables" :doc
 #+end_src
 
-** | Just about done...
+** TODO | Just about done...
 *** : depth   (    -n ) -5 5 out wait 5 in ;
 
 Gets the stack depth.
@@ -3332,7 +3345,7 @@ example of its usage:
 
 These bits of documenation can be extracted into a separate file later with
 little effort.
-** ( Internal Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Internal Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 global
 chain: internals'
@@ -3348,8 +3361,8 @@ hide string
 hide quote
 #+end_src
 
-* TODO Appendix: Core Libraries
-** | Math Operations                                                  :math:
+* [0/10] Appendix: Core Libraries
+** TODO | Math Operations                                             :math:
 : pow  ( bp-n ) 1 swap [ over * ] times nip ;
 : abs  (  n-n ) dup 0 < &negate ifTrue ;
 : min  ( ab-c ) 2over < &drop &nip  if ;
@@ -3366,7 +3379,7 @@ hide quote
 ---reveal---
 *** :  random     (  -x ) ?seed (random) abs ;
 }}
-** ( Generic Buffer ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Generic Buffer ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 global
 chain: buffer'
@@ -3399,7 +3412,7 @@ chain: buffer'
 "( - ) vocabulary for dealing with LIFO buffers" :doc
 #+end_src
 
-** | Generic Buffer
+** TODO | Generic Buffer
 global
 chain: buffer'
 {{
@@ -3416,7 +3429,7 @@ chain: buffer'
 *** :  set       ( a-  ) !buffer empty ;
 }}
 ;chain
-** ( Text Strings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Text Strings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 with buffer'
 chain: strings'
@@ -3504,7 +3517,7 @@ without
 "( - ) vocabulary with functions for dealing with strings" :doc
 #+end_src
 
-** | Text Strings
+** TODO | Text Strings
 with| buffer' |
 chain: strings'
 {{
@@ -3559,7 +3572,7 @@ chain: strings'
 *** :  splitAtChar: ( $"-$$ )
     32 accept tib @ .data ` splitAtChar ; immediate
 ;chain
-** ( Access Words Within Chains Directly ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( Access Words Within Chains Directly ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 with strings'
 : __^  ( "- )
@@ -3580,7 +3593,7 @@ with strings'
  without
 #+end_src
 
-** | Access Words Within Chains Directly
+** TODO | Access Words Within Chains Directly
 with strings'
 : __^  ( "- )
   splitAtChar: ' find
@@ -3597,7 +3610,7 @@ with strings'
     &drop [ "library/" prepend cut ".rx" append :include ] if ;
 }}
 global
-** | Files                                                           :files:
+** TODO | Files                                                      :files:
 chain: files'
 {{
   3 elements fid fsize active
@@ -3635,7 +3648,7 @@ chain: files'
     [ @+ dup 0 = &done [ @fid write drop ] if @active ] while ;
 }}
 ;chain
-** ( types' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** TODO ( types' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 chain: types'
   0 constant ARRAY  ( -n )
@@ -3659,14 +3672,14 @@ chain: types'
 "( ``- ) provide information about a function" :doc
 #+end_src
 
-** | types'
+** TODO | types'
 chain: types'
   0 constant ARRAY  ( -n )
   1 constant BUFFER ( -n )
   2 constant STRING ( -n )
   3 constant LIST   ( -n )
 ;chain
-* Appendix: Cleanup
+* Appendix: Cleanup, save, and power off
 ** -
 hide =if
 hide !if
@@ -3685,5 +3698,5 @@ global .s save bye
 
 * tasklist
 ** TODO make =okmsg= assignable, in case you just want to change the string.
-** perhaps this means using counted strings?
+*** perhaps this means using strings with known lengths
 
