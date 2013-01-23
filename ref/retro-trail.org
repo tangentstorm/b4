@@ -294,33 +294,36 @@ required comparision or flow control.
 : elements  ( n"- ) &variable times ;
 : entry     ( a"- ) t-here dup !latest @link m, !link m, m, 0 m, getToken $, ;
 : word:     ( a"- ) @'WORD  entry ;
+#+end_src
+**** data:
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : data:     ( a"- ) @'DATA  entry ;
 #+end_src
 
-**** | jump - data
-***** :  jump:  ( "-  ) jump, ' m, ;
+***** | jump - data
+****** :  jump:  ( "-  ) jump, ' m, ;
 
 Compile a jump instruction into the target memory. This is used in a
 couple of places to keep the address stack shallow, and to improve
 performance slightly.
 
-***** :  repeat (  -a ) t-here ;
-***** :  again  ( a-  ) jump, m, ;
+****** :  repeat (  -a ) t-here ;
+****** :  again  ( a-  ) jump, m, ;
 
 We redefine repeat/again to work in the target memory instead of the
 current image.
 
-***** :  variable: ( n"- ) label: m, ;
-***** :  variable  (  "- ) 0 variable: ;
-***** :  elements  ( n"- ) &variable times ;
+****** :  variable: ( n"- ) label: m, ;
+****** :  variable  (  "- ) 0 variable: ;
+****** :  elements  ( n"- ) &variable times ;
 
 Create labels pointing to data in the target image. These correspond
 to the identically named functions in the current image.
 
-***** :  entry     ( a"- ) t-here @link m, !link m, m, getToken $, ;
-***** :  word:     ( a"- ) @'WORD  entry ;
-***** :  macro:    ( a"- ) @'MACRO entry ;
-***** :  data:     ( a"- ) @'DATA  entry ;
+****** :  entry     ( a"- ) t-here @link m, !link m, m, getToken $, ;
+****** :  word:     ( a"- ) @'WORD  entry ;
+****** :  macro:    ( a"- ) @'MACRO entry ;
+****** :  data:     ( a"- ) @'DATA  entry ;
 *** p: w: m:
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : w:        ( ""- )
@@ -468,29 +471,103 @@ will be modified later, by "main:". And finally, "reset" to ensure the data
 stack is in a clean state.
 * TODO Stage 2: The Kernel
 ** TODO Kernel Begins
+*** [0/1] Layout of the Image
+**** TODO { update this text to reflect the new situation for TIB }
+
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 IMAGE-SIZE  constant CORE
 CORE 0000 + constant HEAP
 #+end_src
-** TODO Initial Variables : =last= .. =.primitive=
+
+  IMAGE-SIZE  constant CORE
+  CORE 0000 + constant TIB
+  TIB   512 + constant HEAP
+
+Create a few constants, which determine the basic memory layout. It looks like:
+
++----------------+----------------------------------------------------+
+| 0              | Start of memory. The kernel goes here              |
++----------------+----------------------------------------------------+
+| 0 + IMAGE-SIZE | End of kernel, start of TIB (text input buffer)    |
++----------------+----------------------------------------------------+
+| TIB + 512      | Start of heap. This is set to TIB + 512 by default |
++----------------+----------------------------------------------------+
+
+If you need to save memory, reducing the TIB is a quick and easy way to do so.
+I'd leave it at least 81 characters long, but making it a bit longer than the
+longest strings you'll be creating is a good idea.
+
+WARNING:
+
+  If you make TIB too small, you can overwrite non-kernel code as you type
+  long strings. If you overwrite memory, you may need to exit and reload, or
+  even restore the image from a backup in some cases.
+
+** TODO Initial Variables 
+*** | initial variables
+At this point the metacompiler functions are created, there is space set aside
+for a new image, and things are ready to proceed. So on to the kernel.
+*** TODO =last= .. =which=
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 mark variable last    ( Pointer to the most recent dictionary header          )
 HEAP variable: heap   ( Starting address of the data/code heap                )
 variable compiler     ( Is the compiler on or off?                            )
 variable which        ( Pointer to dictionary header of the most recently     )
                       ( looked up word                                        )
+#+end_src
 
+These should be pretty easy to grasp. Note the use of "mark" to flag the "last"
+variable, which will be updated afterthe initial dictionary is created.
+
+*** TODO |memory fb fw fh cw ch
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 6 elements memory fb fw fh cw ch
+#+end_src
 
+*** TODO copytag, version, build, okmsg
+
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 label: copytag   "Retro" $,
 label: version   "11.5" $,
 label: build     "2012.12.10" $,
 label: okmsg     "ok  " $,
+#+end_src
 
+  pad
+  label: copytag   "Retro" $,
+  label: version   "11.1" $,
+  label: build     time toString $,
+  label: okmsg     "ok  " $,
+
+Ngaro assumes that addresses of functions will be greater than the number of
+opcodes. The "pad" function injects a bunch of NOP's to make sure that things
+are setup correctly.
+
+Some strings. "copytag" and "version" and "build" are displayed when Retro
+starts, while "okmsg" serves as the prompt for the listener.
+
+The padding isn't always needed, but seems to help keep the rebuilds more
+stable if you are making changes to the kernel. (Specifically, it's there
+to ensure that no functions are located at addresses reserved for Ngaro
+bytecodes.)
+
+*** TODO the =,= word
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: ,           ( n-  ) heap # @, dup, 1+, push, !, pop, heap # !, ;
+#+end_src
+*** TODO classes
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: withClass   ( ac- ) 1-, push, ;
 t: .word       (  a- ) compiler # @, 0 # !if , ; then jump: withClass
 t: .macro      (  a- ) jump: withClass
+#+end_src
+
+**** DEF =.data=
+:PROPERTIES:
+:ID: .data
+:END:
+
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: .data       (  a- ) compiler # @, 0; drop, 1 # , , ;
 t: .primitive  (  a- )
     dup, @, 0 # =if compiler # @, -1 # =if 2 # +, @, then then jump: .word
@@ -518,144 +595,165 @@ t: .primitive  (  a- )
 ' .primitive   word: .primitive
 "( a- ) Class for functions corresponding to VM opcodes; used for simple optimizations" :doc
 #+end_src
-*** | initial variables
-At this point the metacompiler functions are created, there is space set aside
-for a new image, and things are ready to proceed. So on to the kernel.
 
-  IMAGE-SIZE  constant CORE
-  CORE 0000 + constant TIB
-  TIB   512 + constant HEAP
-
-Create a few constants, which determine the basic memory layout. It looks like:
-
-+----------------+----------------------------------------------------+
-| 0              | Start of memory. The kernel goes here              |
-+----------------+----------------------------------------------------+
-| 0 + IMAGE-SIZE | End of kernel, start of TIB (text input buffer)    |
-+----------------+----------------------------------------------------+
-| TIB + 512      | Start of heap. This is set to TIB + 512 by default |
-+----------------+----------------------------------------------------+
-
-If you need to save memory, reducing the TIB is a quick and easy way to do so.
-I'd leave it at least 81 characters long, but making it a bit longer than the
-longest strings you'll be creating is a good idea.
-
-WARNING:
-
-  If you make TIB too small, you can overwrite non-kernel code as you type
-  long strings. If you overwrite memory, you may need to exit and reload, or
-  even restore the image from a backup in some cases.
-
-Moving on:
-
-  mark variable last  ( Pointer to the most recent dictionary header            )
-  HEAP variable: heap ( Starting address of the data/code heap                  )
-  variable compiler   ( Is the compiler on or off?                              )
-  variable which      ( Pointer to dictionary header of the most recently       )
-                      ( looked up word                                          )
-These should be pretty easy to grasp. Note the use of "mark" to flag the "last"
-variable, which will be updated afterthe initial dictionary is created.
-
-  pad
-  label: copytag   "Retro" $,
-  label: version   "11.1" $,
-  label: build     time toString $,
-  label: okmsg     "ok  " $,
-
-Ngaro assumes that addresses of functions will be greater than the number of
-opcodes. The "pad" function injects a bunch of NOP's to make sure that things
-are setup correctly.
-
-Some strings. "copytag" and "version" and "build" are displayed when Retro
-starts, while "okmsg" serves as the prompt for the listener.
-
-The padding isn't always needed, but seems to help keep the rebuilds more
-stable if you are making changes to the kernel. (Specifically, it's there
-to ensure that no functions are located at addresses reserved for Ngaro
-bytecodes.)
 ** TODO Primitives : =dup= .. =!+=
+*** .
+These are functions that map directly to Ngaro instructions. We will use the
+instructions directly in most cases (to save some overhead), but this serves
+to allow normal definitions to use them if desired.
+
+*** stack operations
+**** dup
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: dup dup dup, ;
 "( n-nn ) Duplicate TOS" :doc
-
-p: 1+  1+  1+, ;
-"( n-n ) Increment TOS by 1 " :doc
-
-p: 1-  1-  1-, ;
-"( n-n ) Decrement TOS by 1 " :doc
-
+#+end_src
+**** swap
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: swap swap swap, ;
 "( xy-yx ) Exchange positions of TOS and NOS" :doc
+#+end_src
 
+**** drop
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: drop drop drop, ;
 "( n- ) Drop TOS from the stack" :doc
-
+#+end_src
+*** bitwise operations { also logical operations since true is -1 }
+**** and
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: and and and, ;
 "( xy-n ) Bitwise AND" :doc
-
+#+end_src
+**** or
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: or or or, ;
 "( xy-n ) Bitwise OR" :doc
-
+#+end_src
+**** xor
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: xor xor xor, ;
 "( xy-n ) Bitwise XOR" :doc
-
+#+end_src
+*** memory operations
+**** @
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: @ @ @, ;
 "( a-n ) Fetch a value from a memory location" :doc
-
+#+end_src
+**** !
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: ! ! !, ;
 "( na- ) Store a value to a memory location" :doc
-
+#+end_src
+*** arithmetic operations
+**** +
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: + + +, ;
 "( xy-n ) Add two values (x+y)" :doc
-
+#+end_src
+**** -
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: - - -, ;
 "( xy-n ) Subtract two values (x-y)" :doc
-
+#+end_src
+**** *
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: * * *, ;
 "( xy-n ) Multiply two values (x*y)" :doc
-
+#+end_src
+**** /mod
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: /mod /mod /mod, ;
 "( xy-rq ) Divide and Remainder. This performs symmetric division" :doc
-
+#+end_src
+**** << { shift left, or multiply by 2 }
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: << << <<, ;
 "( xy-n ) Shift bits left (x<<y)" :doc
-
+#+end_src
+**** >> { shift right, or divide by 2 }
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: >> >> >>, ;
 "( xy-n ) Shift bits right (x>>y)" :doc
-
+#+end_src
+**** 1-
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
+p: 1-  1-  1-, ;
+"( n-n ) Decrement TOS by 1 " :doc
+#+end_src
+**** 1+
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
+p: 1+  1+  1+, ;
+"( n-n ) Increment TOS by 1 " :doc
+#+end_src
+*** i/o operations
+**** out
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: out out out, ;
 "( np- ) Write a value to an I/O port" :doc
-
+#+end_src
+**** in
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 p: in in in, ;
 "( p-n ) Read a value from an I/O port" :doc
+#+end_src
 
+** Additional stack, variable, and math functions.
+*** wait { not the primitive }
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: wait wait 0 # 0 # out, wait, ;
 "( - ) Wait for an I/O event" :doc
+#+end_src
 
+**** TODO t: wait (   -   )  #0 #0 out, wait, ;
+
+The "wait," instruction needs a bit of extra help to actually trigger an I/O
+event. This provides it.
+*** over
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: over over push, dup, pop, swap, ;
 "( xy-xyx ) Place a copy of NOS over TOS" :doc
-
+#+end_src
+*** not
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: not not -1 # xor, ;
 "( x-y ) Same as -1 xor; invert TOS and subtract 1" :doc
-
+#+end_src
+*** on
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: on on -1 # swap, !, ;
 "( a- ) Set a variable to -1 (true)" :doc
-
+#+end_src
+*** off
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: off off 0 # swap, !, ;
 "( a- ) Set a variable to  0 (false)" :doc
-
+#+end_src
+*** =/= and =mod=
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: / / /mod, swap, drop, ;
 "( xy-q ) Divide two numbers (x/y)" :doc
 
 w: mod mod /mod, drop, ;
 "( xy-r ) Modulus of two numbers (x%y)" :doc
-
+#+end_src
+*** negate
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: negate negate -1 # *, ;
 "( x-y ) Invert sign of TOS" :doc
-
+#+end_src
+*** do
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: do do 1-, push, ;
 "( a- ) Call a function by address" :doc
+#+end_src
 
+This is used to invoke a function. The =1-,= is used to account for the way the
+VM increments the instruction pointer.
+
+*** @+ / !+
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: @+ @+ dup, 1+, swap, @, ;
 "( a-ac ) Fetch a value from an address, return the next address and the value" :doc
 
@@ -663,53 +761,19 @@ w: !+ !+ dup, 1+, push, !, pop, ;
 "( ca-a ) Store a value to an address, return next address" :doc
 #+end_src
 
-*** | primitives
-****  t: dup  (  n-nn )  dup,  ;      t: 1+   (  n-n  )  1+,   ;
-****  t: 1-   (  n-n  )  1-,   ;      t: swap ( xy-yx )  swap, ;
-****  t: drop (  n-   )  drop, ;      t: and  ( xy-n  )  and,  ;
-****  t: or   ( xy-n  )  or,   ;      t: xor  ( xy-n  )  xor,  ;
-****  t: @    (  a-n  )  @,    ;      t: !    ( na-   )  !,    ;
-****  t: +    ( xy-n  )  +,    ;      t: -    ( xy-n  )  -,    ;
-****  t: *    ( xy-n  )  *,    ;      t: /mod ( xy-qr )  /mod, ;
-****  t: <<   ( xy-n  )  <<,   ;      t: >>   ( xy-n  )  >>,   ;
-****  t: out  ( np-   )  out,  ;      t: in   (  p-n  )  in,   ;
-
-These are functions that map directly to Ngaro instructions. We will use the
-instructions directly in most cases (to save some overhead), but this serves
-to allow normal definitions to use them if desired.
-
-****  t: wait (   -   )  #0 #0 out, wait, ;
-
-The "wait," instruction needs a bit of extra help to actually trigger an I/O
-event. This provides it.
-
-****  t: over  (  xy-xyx )  push, dup, pop, swap, ;
-****  t: not   (   x-y   )  #-1 xor, ;
-****  t: on    (   a-    )  #-1 swap, !, ;
-****  t: off   (   a-    )   #0 swap, !, ;
-****  t: /     (  xy-q   )  /mod, swap, drop, ;
-****  t: mod   (  xy-r   )  /mod, drop, ;
-****  t: negate (  x-y   )  #-1 *, ;
-
-Additional stack, variable, and math functions that are quite useful.
-
-****  t: do    (   a-    )  1-, push, ;
-
-This is used to invoke a function. The 1-, is used to account for the way the
-VM increments the instruction pointer.
-
-****  t: @+    (   a-ac  )  dup, 1+, swap, @, ;
-****  t: !+    (  ca-a   )  dup, 1+, push, !, pop, ;
-
 Rather handy functions for "fetch from and return next" and "store to and
 return next". This allows easy access to linear arrays or strings:
 
+#+begin_example retro
   ( an example of using @+ )
   create array 1 , 2 , 3 ,
   array @+ putn @+ putn @+ putn drop
+#+end_example
+
+** TODO Core Compiler: =here= .. =pop=
 
 Continuing on, we now have the core of the actual colon compiler:
-** TODO Core Compiler: =here= .. =pop=
+
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
 w: here here heap # @, ;
@@ -1564,196 +1628,113 @@ Now to the word prefixes...
 This sets up a small string providing a template for the prefix names. In
 Retro, all prefixes are named with two leading underscores. This template
 will be modified by the remaining prefix code.
-** TODO Word Prefixes and "Not Found"
+** [1/4] Word Prefixes and "Not Found"
+*** TODO DEF get                                                 :internal:
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
-
 label: ___   "___" $,
-
 i: get      ( $-$  ) dup, @, ___ # 2 # +, !, 1+, ;
 ( NEEDS-DESCRIPTION )
+#+end_src
 
+Given a string, take the first character, modify the prefix template, and
+return the string sans the first character.
+
+*** TODO DEF xt:class                                            :internal:
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 i: xt:class ( d-aa ) dup, d->xt @, swap, d->class @, ;
 ( NEEDS-DESCRIPTION )
-
+#+end_src
+Given a dictionary header, return an xt and class.
+*** TODO DEF try                                                 :internal:
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 i: try      (  -   )
    tib get find 0 #
    !if d->xt @, ___ # find
       0 # !if xt:class withClass 0 # ; then drop,
    then drop, -1 # ;
 ( NEEDS-DESCRIPTION )
+#+end_src
 
+See if the token starts with a prefix. If so, invoke the prefix and return 0.
+If not, return -1.
+
+*** DONE DEF =notFound=
+:PROPERTIES:
+:ID: notFound
+:END:
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: <notFound> <notFound> ( -f ) tib getLength 2 # >if try then ;
 "( -f ) Called by **notFound**; hook for custom error handling. Used by the prefix system. Returns  a flag of 0 if the error is cleared, or -1 if not " :doc
 
 w: notFound notFound   ( -  ) <notFound> 0; drop, cr tib puts 32 # putc '? # putc cr ;
 "( - ) Called when a name is not found. Calls **<notFound>** and displays an error message  if necessary" :doc
 #+end_src
-*** get - notFound
-****  t: get      ( $-$  ) dup, @, ___ # #2 +, !, 1+, ;
-
-Given a string, take the first character, modify the prefix template, and
-return the string sans the first character.
-
-****  t: xt:class ( d-aa ) dup, d->xt @, swap, d->class @, ;
-
-Given a dictionary header, return an xt and class.
-
-****  t: try      (  -   )
-     tib get find #0
-     !if d->xt @, ___ # find
-        #0 !if xt:class withClass #0 ; then drop,
-     then drop, #-1 ;
-
-See if the token starts with a prefix. If so, invoke the prefix and return 0.
-If not, return -1.
-
-****  t: <notFound> ( -f ) tib getLength #2 >if try then ;
-****  t: notFound   ( -  ) <notFound> 0; drop cr tib puts #32 putc '? # putc cr ;
 
 These are called when a token is not found in the dictionary. They display
-an error message. Also, they invoke the prefix handlers first. Later the
-"<notFound>" portion is extended to allow for an additional type of prefix:
+an error message. Also, they invoke the prefix handlers first. [[Later]] the
+=<notFound>= portion is extended to allow for an additional type of prefix:
 parsing prefixes.
 
 Now on to the listener itself...
-** TODO Listener
-#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
+** TODO Listener
+*** DONE DEF =ok=
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: ok ok      (   - ) compiler # @, not 0; drop, cr okmsg # puts ;
 "( - ) Displays the ``ok`` prompt" :doc
+#+end_src
 
+If the compiler is off, this displays the prompt in =okmsg=. This procedure can be revectored later if you want different behavior.
+
+**** TODO make =okmsg= assignable, in case you just want to change the string.
+
+*** DONE DEF =build#=                                              :internal:
+:PROPERTIES:
+:ID: build#
+:END:
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 i: build#  (   - ) tib toNumber ' .data # jump: withClass
 ( NEEDS-DESCRIPTION )
+#+end_src
 
+Convert the string in TIB to a number, then invoke [[id:.data][the =.data= class]] via
+=withClass=.
+
+*** DONE DEF =number=                                              :internal:
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 i: number  (   - ) tib isNumber? 0 # !if jump: build# then jump: notFound
 ( NEEDS-DESCRIPTION )
+#+end_src
 
+Check the string in TIB. If it's a number, then =build#=, otherwise run
+id:notFound.
+
+*** DONE DEF =process=                                             :internal:
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 i: process ( af- ) 0 # !if xt:class jump: withClass then drop jump: number
 ( NEEDS-DESCRIPTION )
+#+end_src
 
+If a string in TIB corresponds to a known word, fetch its class, and execute it via =withClass=. Otherwise, execute =number=.
+
+*** DONE DEF =listen=
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: listen listen  (   - ) repeat ok 32 # accept tib find process again ;
 "( - ) Top level interpreter. Reads and process input." :doc
 #+end_src
 
-*** | listener
-****  t: ok      (   - ) compiler # @, not 0; drop, cr okmsg # puts ;
-
-If the compiler is off, this displays the prompt in "okmsg". It can be
-altered later if you want different action.
-
-****  t: word    (  d- ) xt:class jump: withClass
-
-Handle functions. Basically get the xt and class pair, and then invoke
-"withClass" to call the class handler.
-
-****  t: build#  (   - ) tib toNumber ' .data # withClass ;
-
-Convert the string in TIB to a number, then invoke the ".data" class via
-"withClass".
-
-****  t: number  (   - ) tib isNumber? #0 !if build# ; then notFound ;
-
-Check the string in TIB. If it's a number, then "build#", otherwise run
-"notFound".
-
-****  t: process ( af- ) #0 !if word ; then drop number ;
-
-If a string in TIB corresponds to a name, execute "word"; otherwise
-execute "number".
-
-****  t: listen  (   - ) repeat ok #32 accept tib find process again ;
-
 The listener itself. Display the prompt, read a whitespace delimited token,
 search the dictionary for it, and call "process" to handle it. Then repeat,
 forever. (Or until "bye" is called)
+** [0/4] Extra documentation for the initial dictionary.
+*** TODO <try and regroup these things, just for the documentation here> :mjw:
+I /think/ these are variables declared early on in the process, before the dictionary structure is set up and working. Not 100% sure. Perhaps they can be moved inline?
+*** TODO <ungrouped>
+:PROPERTIES:
+:TS: <2013-01-23 01:49AM>
+:ID: kpe3xmt0zzf0
+:END:
 
-Now we're nearly done the second stage. We still need build the initial
-dictionary:
-
-  ' 1+           word: 1+            ' 1-           word: 1-
-  ' swap         word: swap          ' drop         word: drop
-  ' and          word: and           ' or           word: or
-  ' xor          word: xor           ' @            word: @
-  ' !            word: !             ' +            word: +
-  ' -            word: -             ' *            word: *
-  ' /mod         word: /mod          ' <<           word: <<
-  ' >>           word: >>            ' tib          word: tib
-  ' dup          word: dup           ' in           word: in
-  ' out          word: out           ' accept       word: accept
-  ' here         word: here          ' ,            word: ,
-  ' create       word: create
-  ' :            word: :             ' header       word: header
-  ' cr           word: cr            ' putc         word: putc
-  ' remapKeys    word: remapKeys     ' <puts>       word: <puts>
-  ' over         word: over
-  ' not          word: not           ' on           word: on
-  ' off          word: off           ' /            word: /
-  ' mod          word: mod           ' negate       word: negate
-  ' do           word: do            ' nums         word: numbers
-  ' wait         word: wait          ' t-'          word: '
-  ' @+           word: @+            ' !+           word: !+
-  ' keepString   word: keepString    ' getLength    word: getLength
-  ' withLength   word: withLength
-  ' withClass    word: withClass     ' .word        word: .word
-  ' .macro       word: .macro        ' .data        word: .data
-  ' d->class     word: d->class      ' d->xt        word: d->xt
-  ' d->name      word: d->name       ' boot         word: boot
-  ' toNumber     word: toNumber      ' isNumber?    word: isNumber?
-  ' ok           word: ok            ' listen       word: listen
-  ' getc         word: getc          ' find         word: find
-  ' notFound     word: notFound      ' <notFound>   word: <notFound>
-  ' puts         word: puts          ' compare      word: compare
-  ' redraw       word: redraw        ' if           word: if
-  ' ifTrue       word: ifTrue        ' ifFalse      word: ifFalse
-  ' dip          word: dip           ' sip          word: sip
-  ' =            word: =             ' <>           word: <>
-  ' <            word: <             ' >            word: >
-  ' <=           word: <=            ' >=           word: >=
-
-  ' t-;          macro: ;            ' ;;           macro: ;;
-  ' t-=if        macro: =if          ' t->if        macro: >if
-  ' t-<if        macro: <if          ' t-!if        macro: !if
-  ' t-then       macro: then         ' t-repeat     macro: repeat
-  ' t-again      macro: again        ' t-0;         macro: 0;
-  ' push         macro: push         ' pop          macro: pop
-  ' [            macro: [            ' ]            macro: ]
-  ' t-(          macro: (
-
-    last         data: last          compiler     data: compiler
-    fb           data: fb            fw           data: fw
-    fh           data: fh            memory       data: memory
-    cw           data: cw            ch           data: ch
-    heap         data: heap          which        data: which
-    remapping    data: remapping     eatLeading?  data: eatLeading?
-    base         data: base          update       data: update
-    version      data: version       build        data: build
-    tabAsWhitespace data: tabAsWhitespace
-
-Well, that's done. Not too hard, thanks to the dictionary building stuff
-from the metacompiler. When the new image is started by "bootNew", the list
-above is *all* that you have access to. Complete enough to allow for a lot
-to be done, but still small enough to be easily managed.
-
-  patch
-
-This seals off the initial dictionary. It updates the variable flagged by
-"mark" (which becomes "last") to point to the final entry created, leaving us
-with a useable dictionary.
-
-  main: run-on-boot jump: listen
-
-The last actual bit of code in stage 2: the main entry point. This calles
-"run-on-boot" to update the memory and display variables, and then jumps
-to the listener.
-
-  endKernel bootNew
-
-Display some statistics on the new kernel for diagnostic purposes.
-
-"bootNew" will copy the target memory over the old image, and then jump to it.
-Once "bootNew" is called, there is no going back. The old image is replaced by
-the new one, so be sure to keep a backup handy in case changes break things.
-** TODO Initial Dictionary
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 last         data: last
 "( -a ) Variable; pointer to most recent dictionary  header" :doc
@@ -1796,26 +1777,58 @@ base         data: base
 
 update       data: update
 "( -a ) Variable; flag indicating whether or not **redraw** should update the display" :doc
+#+end_src
 
+*** TODO =version= , =build=
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 version      data: version
 "( -$ ) String holding version information" :doc
 
 build        data: build
 "( -$ ) String holding a build identifier" :doc
-
+#+end_src
+*** TODO =vector= =tabAsWhitespace=                                  :settings:
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 vector       data: vector
 "( -a ) Variable; compile function as a vector" :doc
 
 tabAsWhitespace data: tabAsWhitespace
 "( -a ) Variable; treat tab as whitespace?" :doc
-
-patch
 #+end_src
-** TODO Finish Metacompiled Part
+
+** DONE Finish Metacompiled Part
+
+Well, that's done. Not too hard, thanks to the dictionary building stuff
+from the metacompiler. When the new image is started by "bootNew", the list
+above is *all* that you have access to. Complete enough to allow for a lot
+to be done, but still small enough to be easily managed.
+
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
+  patch
+#+end_src
+
+This seals off the initial dictionary. It updates the variable flagged by
+=mark= (which becomes =last=) to point to the final entry created, leaving us
+with a useable dictionary.
+
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
   main: run-on-boot jump: listen
+#+end_src
+
+The last actual bit of code in stage 2: the main entry point. This calles
+=run-on-boot= to update the memory and display variables, and then jumps
+to the listener.
+
+
+#+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
   endKernel shrink bootNew
 #+end_src
+
+Display some statistics on the new kernel for diagnostic purposes.
+
+=bootNew= will copy the target memory over the old image, and then jump to it.
+Once =bootNew= is called, there is no going back. The old image is replaced by
+the new one, so be sure to keep a backup handy in case changes break things.
 
 * TODO Stage 3: Extend The Language
 ** ===================
