@@ -30,63 +30,73 @@
 
 The process of building a new retroImage is a straightforward, though not trivial, process. It involves several stages, and some tricks. This is a commentary on the code, which should help make the process easier to understand.
 
-* [0/7] Stage 1: The Metacompiler
-** TODO ===================
-The first of the three stages of Retro is the metacompiler. This comprises
-the assembler, and secondary compiler, and is used to create a new image.
-There are some tricky things:
+* [8/11] Stage 1: The Metacompiler
+** DONE Introduction
+The first of the three stages of Retro is the metacompiler. This comprises the assembler and secondary compiler, and is used to create a new image. There are some tricky things:
 
 1) The target memory is allocated
-2) But all pointers compiled in it need to be adjusted to be relative to
-   zero, so it'll continue working after replacing the old image
-3) We can't know the locations of the class handler until we are finished
-   laying down a fair portion of the new kernel
-4) When we move the image to overwrite the old one, we can't rely on any
-   code locations in either image
+2) But all pointers compiled in it need to be adjusted to be relative to zero, so it'll continue working after replacing the old image
+3) We can't know the locations of the class handler until we are finished laying down a fair portion of the new kernel
+4) When we move the image to overwrite the old one, we can't rely on any code locations in either image
 
 So let's begin.
 
-  2560 constant IMAGE-SIZE
-
-This just specifies how much memory to set aside for the initial kernel built
-by the metacompiler. If you need to increase, it's safer to increase in small
-increments and rebuild rather than trying a big jump. (Large increases can
-cause the new image to overwrite the bootNew routine, which is an easy way
-to generate a badly corrupted image.)
-
-  7 elements target origin 'WORD 'MACRO 'DATA link chain
-
-A list of variables used by the metacompiler.
-
-+--------+----------------------------------------------------------+
-| target | Holds a pointer to the next free address in the target   |
-|        | memory. This is similar to "heap"                        |
-+--------+----------------------------------------------------------+
-| origin | Holds a pointer to the start of the target memory        |
-+--------+----------------------------------------------------------+
-| 'WORD  | Holds a pointer to the .word class                       |
-+--------+----------------------------------------------------------+
-| 'MACRO | Holds a pointer to the .macro class                      |
-+--------+----------------------------------------------------------+
-| 'DATA  | Holds a pointer to the .data class                       |
-+--------+----------------------------------------------------------+
-| link   | Holds pointer to prior entry (for initial dictionary)    |
-+--------+----------------------------------------------------------+
-| chain  | Holds pointer to variable that will become "last"        |
-+--------+----------------------------------------------------------+
-
-** TODO Image Size
+** DONE =IMAGE-SIZE=
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 36 1024 * constant IMAGE-SIZE
 #+end_src
-** TODO Assembler
+
+This just specifies how much memory to set aside for the initial kernel built by the metacompiler. If you need to increase, it's safer to increase in small increments and rebuild rather than trying a big jump. (Large increases can cause the new image to overwrite the =bootNew= routine, which is an easy way to generate a badly corrupted image.)
+
+** DONE variables
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
-
 variables| target origin 'WORD 'MACRO 'DATA 'PRIM link chain latest |
-here [ !target ] [ !origin ] bi IMAGE-SIZE allot
+#+end_src
 
+A list of variables used by the metacompiler.
+
+| target | Holds a pointer to the next free address in the target memory. This is similar to "heap" |
+| origin | Holds a pointer to the start of the target memory                                        |
+| 'WORD  | Holds a pointer to the .word class                                                       |
+| 'MACRO | Holds a pointer to the .macro class                                                      |
+| 'DATA  | Holds a pointer to the .data class                                                       |
+| link   | Holds pointer to prior entry (for initial dictionary)                                    |
+| chain  | Holds pointer to variable that will become "last"                                        |
+| latest | Holds pointer to most recently defined entry                                             |
+
+** DONE allocate ram for new image
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
+here [ !target ] [ !origin ] bi IMAGE-SIZE allot
+#+end_src
+
+Starting at =here=, allocate space for the new image, set =target= and =origin= to point to it.
+
+** DONE target memory writer
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : m,  ( n-  ) @target !+ !target ;
+#+end_src
+
+This is like "," but it writes the value to the target memory instead of the standard heap. Each time it's called, "target" is increased by one.
+
+** DONE assembler
+*** DONE def vm:
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : vm: ( n"- ) ` : .data ` m, ` ; ;
+#+end_src
+
+This is used to build functions that lay down opcodes into the target memory space. Functionally, the following forms would be equivilent:
+
+#+begin_example retro
+
+  0 vm: nop,
+
+:  nop, 0 m, ;
+
+#+end_example
+
+The use of =vm:= helps keep things a bit more readable though, so it is preferred to do it this way.
+*** DONE opcode assemblers
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
    0 vm: nop,          1 vm: lit,          2 vm: dup,
    3 vm: drop,         4 vm: swap,         5 vm: push,
    6 vm: pop,          7 vm: loop,         8 vm: jump,
@@ -98,120 +108,104 @@ here [ !target ] [ !origin ] bi IMAGE-SIZE allot
   24 vm: >>,          25 vm: 0;           26 vm: 1+,
   27 vm: 1-,          28 vm: in,          29 vm: out,
   30 vm: wait,
+#+end_src
 
+Create functions for laying down each opcode. This is pretty easy to grasp. The number is the opcode number (in decimal), and the names all end with a comma to distinguish them from higher-level functions.
+
+** [8/9] metacompler words
+*** DONE def t-here
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : t-here      (  -n ) @target @origin - ;
-: pad         ( -   ) 32 @origin + !target ;
+#+end_src
+
+Like =here=, but returns a pointer in the target buffer. The pointer is set relative to =origin=, not the physical start of the target buffer.
+
+*** DONE def pad
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
+: pad         (  -  ) 32 @origin + !target ;
+#+end_src
+
+Used to ensure that function addresses are greater than the number of opcodes.
+
+*** DONE def endKernel
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : endKernel   (  -  )
   t-here "\nKernel ends @ %d\n" puts
   IMAGE-SIZE t-here - "%d cells free" puts
   depth 1 >= [ "\nError in stack depth!: " puts .s ] ifTrue ;
+#+end_src
+
+This is called at the end of the initial kernel. It does some sanity checks on the stack depth and displays some statistics on the size of the kernel.
+
+*** DONE def main:
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : main:       (  -  ) t-here [ "\nMAIN @ %d" puts ] [ @origin 1+ ! ] bi ;
+#+end_src
+
+This is called to mark the main entry point in the image. It replaces the jump at the image start with a jump to the code that follows it.
+
+*** DONE def label:
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : label:      ( "-  ) t-here constant ;
+#+end_src
+
+Create a symbolic name pointing to something in the target space, with the pointer being relative to =origin=.
+
+*** DONE def #
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : #           ( n-  ) lit, m, ;
+#+end_src
+
+This is used to compile a value as a literal. In normal definitons you'd just do:
+
+#+begin_example retro
+:  foo 1 2 + ;
+#+end_example
+
+However, the classes are not aware of the target image. So we manually tell Retro to compile them.
+
+#+begin_example retro
+:  foo 1 # 2 # + ;
+#+end_example
+
+This continues with the next function:
+
+*** DONE def __#
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : __#         ( $-  ) lit, toNumber m, ; parsing
+#+end_src
+
+This is a parsing prefix; it serves as a shortcut for numbers. Instead of doing:
+
+#+begin_example retro
+  1 # 2 #
+#+end_example
+
+We can do:
+
+#+begin_example retro
+  #1 #2
+#+end_example
+
+Which I find a bit cleaner.
+
+*** DONE def $,
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : $,          ( $-  ) withLength [ @+ m, ] times 0 m, drop ;
+#+end_src
+
+Copy a string from the current image into the target memory space.
+
+The above finishes off what I consider the core of the assembler. The code then moves on to extend this into a target compiler and machine forth dialect.
+
+*** TODO def shrink
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : shrink      (  -  ) t-here "\nShrinking kernel to %d cells\n" puts
                       t-here @origin 6 + ! t-here @origin 3 + ! ;
 #+end_src
 
-*** assembler
-**** :  m,  ( n-  ) @target !+ !target ;
-
-This is like "," but it writes the value to the target memory instead
-of the standard heap. Each time it's called, "target" is increased by
-one.
-
-**** :  vm: ( n"- ) ` : .data ` m, ` ; ;
-
-This is used to build functions that lay down opcodes into the target
-memory space. Functionally the following forms would be equivilent:
-
-  0 vm: nop,
-**** :  nop, 0 m, ;
-
-The use of "vm:" helps keep things a bit more readable though, so it
-is preferred to do it this way.
-
-     0 vm: nop,          1 vm: lit,          2 vm: dup,
-     3 vm: drop,         4 vm: swap,         5 vm: push,
-     6 vm: pop,          7 vm: loop,         8 vm: jump,
-     9 vm: ;,           10 vm: >jump,       11 vm: <jump,
-    12 vm: !jump,       13 vm: =jump,       14 vm: @,
-    15 vm: !,           16 vm: +,           17 vm: -,
-    18 vm: *,           19 vm: /mod,        20 vm: and,
-    21 vm: or,          22 vm: xor,         23 vm: <<,
-    24 vm: >>,          25 vm: 0;           26 vm: 1+,
-    27 vm: 1-,          28 vm: in,          29 vm: out,
-    30 vm: wait,
-
-Create functions for laying down each opcode. This is pretty easy
-to grasp. The number is the opcode number (in decimal), and the names
-all end with a comma to distinguish them from higher-level functions.
-
-**** :  pad         ( -   ) 32 @origin + !target ;
-
-Used to ensure that function addresses are greater than the number of
-opcodes.
-
-**** :  t-here      (  -n ) @target @origin - ;
-
-Like "here", but returns a pointer in the target buffer. The pointer
-is set relative to zero, not the physical start of the target buffer.
-
-**** :  endKernel   (  -  )
-    t-here "\nKernel ends @ %d\n" puts
-    IMAGE-SIZE t-here - "%d cells free" puts
-    depth 1 >= [ "\nError in stack depth!: " puts .s ] ifTrue ;
-
-This is called at the end of the initial kernel. It does some sanity checks
-on the stack depth and displays some statistics on the size of the kernel.
-
-**** :  main:       (  -  ) t-here [ "\nMAIN @ %d" puts ] [ @origin 1+ ! ] bi ;
-
-This is called to mark the main entry point in the image. It replaces the
-jump at the image start with a jump to the code that follows it.
-
-**** :  label:      ( "-  ) t-here constant ;
-
-Create a symbolic name pointing to something in the target space, with the
-pointer being relative to zero.
-
-**** :  #           ( n-  ) lit, m, ;
-
-This is used to compile a value as a literal. In normal definitons you'd just
-do:
-
-**** :  foo 1 2 + ;
-
-However, the classes are not aware of the target image. So we manually tell
-Retro to compile them.
-
-**** :  foo 1 # 2 # + ;
-
-This continues with the next function:
-
-**** :  __#         ( $-  ) lit, toNumber m, ; parsing
-
-This is a parsing prefix; it serves as a shortcut for numbers. Instead of
-doing:
-
-  1 # 2 #
-
-We can do:
-
-  #1 #2
-
-Which I find a bit cleaner.
-
-**** :  $,          ( $-  ) withLength [ @+ m, ] times 0 m, drop ;
-
-Copy a string from the current image into the target memory space.
-
-The above finishes off what I consider the core of the assembler. The code
-then moves on to extend this into a target compiler and machine forth
-dialect.
 ** TODO Metacompiler
-*** t: i:
+*** TODO def t: and i:  { t: is done, but add a note about i: }
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 {{
   : <self-compile>  &m, reclass ;
@@ -221,16 +215,12 @@ dialect.
 }}
 #+end_src
 
-**** :  t: ( "-  ) label: nop, nop, &m, reclass ;
-
-Since : creates a dictionary header in the current image, we can't use it to
-create functions in the target. We define "t:" (for "target :") to create a
-label, compile two nop instructions, and then change the label's class to call
+Since =:= creates a dictionary header in the current image, we can't use it to create functions in the target. We define =t:= (for "target :") to create a label, compile two nop instructions, and then change the label's class to call
 "m,"
 
-Since the Retro VM is direct threaded, this basically makes a function in the
-target compile a call to itself when referenced. The following forms would
-be functionally identical:
+Since the Retro VM is direct threaded, this basically makes a function in the target compile a call to itself when referenced. The following forms would be functionally identical:
+
+#+begin_example retro
 
   ( without t: or # )
   label: foo  lit, 1 m, lit, 2 m, ;, ;,
@@ -240,29 +230,17 @@ be functionally identical:
   t: foo #1 #2 ;, ;,
   t: bar foo ;, ;,
 
+#+end_example
+
 As can be seen, the second is much more compact and readable.
 
-Note the double ;, at the end of the functions. Retro 11 expects colon
-definitions to end in a double return. This could be stripped out to save
-space, but some of the debugging tools (such as dissect' and autopsy.rx)
-require this to locate the end of a function in memory.
+*** NOTE: the end-of-function marker
+
+Note the double ;, at the end of the functions. Retro 11 expects colon definitions to end in a double return. This could be stripped out to save space, but some of the debugging tools (such as dissect' and autopsy.rx) require this to locate the end of a function in memory.
 
 Later on a modified ";" is defined to do this for us.
 
-  {{
-    : cond ( -a ) @target 0 m, ;
-  ---reveal---
-    : =if  ( -a ) !jump, cond ;
-    : <if  ( -a ) >jump, cond ;
-    : >if  ( -a ) <jump, cond ;
-    : !if  ( -a ) =jump, cond ;
-    : then ( a- ) t-here swap ! ;
-  }}
-
-Primitive conditionals mapping to the VM conditional jumps. Since the
-initial kernel does not support quotes, this is used to allow for any
-required comparision or flow control.
-*** if/then
+*** TODO def { =if <if >if !if then }
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 {{
   : cond ( -a ) @target 0 m, ;
@@ -274,57 +252,70 @@ required comparision or flow control.
   : then ( a- ) t-here swap ! ;
 }}
 #+end_src
-****  | "if" variants --
-*****  t: (if)     ( -a            )  , here #0 , ;
-*****  t: t-=if    ( R: xy-  C: -a )  #12 jump: (if)
-*****  t: t->if    ( R: xy-  C: -a )  #11 jump: (if)
-*****  t: t-<if    ( R: xy-  C: -a )  #10 jump: (if)
-*****  t: t-!if    ( R: xy-  C: -a )  #13 jump: (if)
-*****  t: t-then   ( R: -    C: a- )  here swap, !, ;
-*** jump: - data:
+
+Primitive conditionals mapping to the VM conditional jumps. Since the initial kernel does not support quotes, this is used to allow for any required comparision or flow control.
+
+*** def =jump:=
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : jump:  ( "-  ) jump, ' m, ;
-: repeat (  -a ) t-here ;
-: again  ( a-  ) jump, m, ;
-
-: tallot  ( n- ) [ 0 m, ] times ;
-
-: variable: ( n"- ) label: m, ;
-: variable  (  "- ) 0 variable: ;
-: elements  ( n"- ) &variable times ;
-: entry     ( a"- ) t-here dup !latest @link m, !link m, m, 0 m, getToken $, ;
-: word:     ( a"- ) @'WORD  entry ;
 #+end_src
-**** data:
-#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
-: data:     ( a"- ) @'DATA  entry ;
-#+end_src
-
-***** | jump - data
-****** :  jump:  ( "-  ) jump, ' m, ;
 
 Compile a jump instruction into the target memory. This is used in a
 couple of places to keep the address stack shallow, and to improve
 performance slightly.
 
-****** :  repeat (  -a ) t-here ;
-****** :  again  ( a-  ) jump, m, ;
+*** DONE def =repeat= / =again=
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
+: repeat (  -a ) t-here ;
+: again  ( a-  ) jump, m, ;
+#+end_src
 
-We redefine repeat/again to work in the target memory instead of the
-current image.
+We redefine repeat/again to work in the target memory instead of the current image.
 
-****** :  variable: ( n"- ) label: m, ;
-****** :  variable  (  "- ) 0 variable: ;
-****** :  elements  ( n"- ) &variable times ;
+*** TODO tallot
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
+: tallot  ( n- ) [ 0 m, ] times ;
+#+end_src
 
-Create labels pointing to data in the target image. These correspond
-to the identically named functions in the current image.
+*** DONE variable factories
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
+: variable: ( n"- ) label: m, ;
+: variable  (  "- ) 0 variable: ;
+: elements  ( n"- ) &variable times ;
+#+end_src
 
-****** :  entry     ( a"- ) t-here @link m, !link m, m, getToken $, ;
-****** :  word:     ( a"- ) @'WORD  entry ;
-****** :  macro:    ( a"- ) @'MACRO entry ;
-****** :  data:     ( a"- ) @'DATA  entry ;
-*** p: w: m:
+Create labels pointing to data in the target image. These correspond to the identically named functions in the current image.
+
+** [3/6] functions to build the initial dictionary
+*** TODO def entry word: data: { are these obsolete given p: w: m: ?  and where is macro ??}
+
+A big round of functions used to create the initial dictionary in the new
+kernel. Taking these one at a time:
+
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
+: entry     ( a"- ) t-here dup !latest @link m, !link m, m, 0 m, getToken $, ;
+#+end_src
+
+Given a pointer, a class, and a string with the name, create a new header. Generally this should not be used directly; instead use "word:", "macro:", and "data:"
+
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
+: word:     ( a"- ) @'WORD  entry ;
+#+end_src
+
+Given a pointer, parse for a name and create a header with a class of ".word"
+
+{ macro ??? }
+
+Given a pointer, parse for a name and create a header with a class of ".macro"
+
+
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
+: data:     ( a"- ) @'DATA  entry ;
+#+end_src
+
+Given a pointer, parse for a name and create a header with a class of ".data"
+
+*** TODO def p: w: m:
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : w:        ( ""- )
   t-here dup !latest @link m, !link @'WORD m, t-here 0 m, 0 m, getToken $, t-here swap @origin + ! t: ;
@@ -337,91 +328,34 @@ to the identically named functions in the current image.
 : m:        ( ""- )
   t-here dup !latest @link m, !link @'MACRO m, t-here 0 m, 0 m, getToken $, t-here swap @origin + ! t: ;
 #+end_src
-*** doc - setClass
+
+*** TODO def :doc
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : :doc
   t-here [ $, ] dip @latest @origin + 3 + ! ;
-
+#+end_src
+*** DONE def patch
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : patch     (   - ) @link [ @chain ! ] [ "\nLast header at %d" puts ] bi ;
+#+end_src
+
+You should call "patch" at the end of the kernel source to seal the initial dictionary. Once that's done, relocation should be possible.
+
+*** DONE def mark
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : mark      (   - ) @target !chain ;
+#+end_src
+
+Mark the cell at t-here as the variable that will corespond with "last". This variable is set later by...
+
+*** DONE def setClass
+#+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : setClass  ( aa- ) ! ;
 #+end_src
-**** | code
-***** :  patch     (   - ) @link [ @chain ! ] [ "\nLast header at %d" puts ] bi ;
-***** :  mark      (   - ) @target !chain ;
-***** :  setClass  ( aa- ) ! ;
 
-A big round of functions used to create the initial dictionary in the new
-kernel. Taking these one at a time:
+Now we run into a problem. We can create headers, but the class locations aren't easily knowable. We get around this by using =setClass= to assign the ='WORD=  ='MACRO=  and ='DATA= variables to the class handlers we create.
 
-  entry
-
-Given a pointer, a class, and a string with the name, create a new header.
-Generally this should not be used directly; instead use "word:", "macro:",
-and "data:"
-
- word:
-
-Given a pointer, parse for a name and create a header with a class of ".word"
-
-  macro:
-
-Given a pointer, parse for a name and create a header with a class of ".macro"
-
-  data:
-
-Given a pointer, parse for a name and create a header with a class of ".data"
-
-  setClass
-
-Now we run into a problem. We can create headers, but the class locations
-aren't easily knowable. We get around this by using "setClass" to assign
-the 'WORD  'MACRO  and  'DATA variables to the class handlers we create.
-
-Two more left...
-
-  mark
-
-Mark the cell at t-here as the variable that will corespond with "last". This
-variable is set later by...
-
-  patch
-
-You should call "patch" at the end of the kernel source to seal the initial
-dictionary. Once that's done, relocation should be possible.
-
-  {{
-    : for      ( n-   )  here 5 , ; compile-only
-    : next     (  -   )  6 , 7 , , ; compile-only
-    : @+       ( a-ac )  dup 1+ swap @ ;
-    : !+       ( ca-a )  dup 1+ push ! pop ;
-    : copy     ( aan- )  for push @+ pop !+ next drop drop ;
-    : wait     ( - )     0 0 out [[ 30 , ]] ;
-    : save     ( - )     1 4 out 0 0 out wait ;
-    : relocate ( - )     origin @ 0 IMAGE-SIZE copy ;
-  ---reveal---
-    : bootNew  ( - )     cr relocate save 0 push ;
-  }}
-
-This bit is hairy. Once the target image is created, we need to replace the
-original image with the new one. This involves reading it cell by cell, and
-writing it to the main memory, starting at address zero. Pretty straightforward.
-
-However there is a catch. Since the new image will (generally) differ from the
-old one, **this code can not call anything in the old or new images**.
-
-So, to make this work, I define all needed factors using only primitives and
-macros that inline raw Ngaro bytecode. The mechanics here are murky, but I've
-not found a better solution yet.
-
-Once "bootNew" finishes relocating the kernel it saves the new image file and
-uses a trick ("0 push ;") to jump to the new image. Assuming that there are
-no serious bugs, the new image should be ready to extend.
-
-If anything does go wrong you may have to manually kill the VM and restore
-the image from a clean backup.
-
-** TODO Image Relocator
+** DONE Image Relocator
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 {{
   : for      ( n-   )  here 5 , ; compile-only
@@ -436,47 +370,38 @@ the image from a clean backup.
   : bootNew  ( - )     relocate save 0 push ;
 }}
 #+end_src
+
+This bit is hairy. Once the target image is created, we need to replace the original image with the new one. This involves reading it cell by cell, and writing it to the main memory, starting at address zero. Pretty straightforward.
+
+However there is a catch. Since the new image will (generally) differ from the old one, /this code can not call anything in the old or new images/.
+
+So, to make this work, I define all needed factors using only primitives and macros that inline raw Ngaro bytecode. The mechanics here are murky, but I've not found a better solution yet.
+
+Once "bootNew" finishes relocating the kernel it saves the new image file and uses a trick ("0 push ;") to jump to the new image. Assuming that there are no serious bugs, the new image should be ready to extend.
+
+If anything does go wrong you may have to manually kill the VM and restore the image from a clean backup.
+
 ** TODO Avoid keymap issues
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 devector keymap:handler
 #+end_src
-** TODO Setup target memory for new image
+** DONE Setup target memory for new image
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 : ; ( - ) ;, ;, ;; [[
 #+end_src
 
-Ok, now this one is the last definition in the metacompiler. We redefine ";"
-to lay down two return instructions (";,"), and then end the definition and
-exit the compiler manually (using ";; [[").
+Ok, now this one is the last definition in the metacompiler. We redefine ";" to lay down two return instructions (";,"), and then end the definition and exit the compiler manually (using ";; [[").
 
-TIP:
+*TIP:* If you are pressed for space, you can save a fair amount of memory by removing the second ";," here.
 
-  If you are pressed for space, you can save a fair amount of memory by
-  removing the second ";," here.
-
-
-
-*** TODO what happened to this cleanup line? 
-
-  here [ !target ] [ !origin ] bi IMAGE-SIZE allot
-
-*** TODO where is the "after" version of =is= for using the two return codes?
-Or... what else is it for? debugger support?
-
-*** One final bit:
+One final bit:
 
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
 jump, 0 m,
 reset
 #+end_src
 
-  jump, 0 m,
-  reset
-
-Starting at "here", allocate space for the new image, set "target" and "origin"
-to point to it, then compile a jump instruction, with a target of zero. This
-will be modified later, by "main:". And finally, "reset" to ensure the data
-stack is in a clean state.
+Compile a jump instruction, with a target of zero. This will be modified later, by "main:". And finally, "reset" to ensure the data stack is in a clean state.
 
 * [3/14] Stage 2: The Kernel
 ** [0/1] Layout of the Image
@@ -497,20 +422,16 @@ Create a few constants, which determine the basic memory layout. It looks like:
 | 0 + IMAGE-SIZE | End of kernel, start of TIB (text input buffer)    |
 | TIB + 512      | Start of heap. This is set to TIB + 512 by default |
 
-If you need to save memory, reducing the TIB is a quick and easy way to do so.
-I'd leave it at least 81 characters long, but making it a bit longer than the
-longest strings you'll be creating is a good idea.
+If you need to save memory, reducing the TIB is a quick and easy way to do so.  I'd leave it at least 81 characters long, but making it a bit longer than the longest strings you'll be creating is a good idea.
 
 WARNING:
 
-  If you make TIB too small, you can overwrite non-kernel code as you type
-  long strings. If you overwrite memory, you may need to exit and reload, or
-  even restore the image from a backup in some cases.
+  If you make TIB too small, you can overwrite non-kernel code as you type long strings. If you overwrite memory, you may need to exit and reload, or even restore the image from a backup in some cases.
 
-** [0/3] Initial Variables 
+** [2/4] Initial Variables
 At this point the metacompiler functions are created, there is space set aside
 for a new image, and things are ready to proceed. So on to the kernel.
-*** TODO =last= .. =which=
+*** DONE =last= .. =which=
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 mark variable last    ( Pointer to the most recent dictionary header          )
 HEAP variable: heap   ( Starting address of the data/code heap                )
@@ -519,15 +440,14 @@ variable which        ( Pointer to dictionary header of the most recently     )
                       ( looked up word                                        )
 #+end_src
 
-These should be pretty easy to grasp. Note the use of "mark" to flag the "last"
-variable, which will be updated afterthe initial dictionary is created.
+These should be pretty easy to grasp. Note the use of =mark= to flag the =last= variable, which will be updated after the initial dictionary is created.
 
 *** TODO |memory fb fw fh cw ch
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 6 elements memory fb fw fh cw ch
 #+end_src
 
-*** TODO copytag, version, build, okmsg
+*** DONE copytag, version, build, okmsg
 
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 label: copytag   "Retro" $,
@@ -536,23 +456,13 @@ label: build     "2012.12.10" $,
 label: okmsg     "ok  " $,
 #+end_src
 
-  pad
-  label: copytag   "Retro" $,
-  label: version   "11.1" $,
-  label: build     time toString $,
-  label: okmsg     "ok  " $,
+Some strings. "copytag" and "version" and "build" are displayed when Retro starts, while "okmsg" serves as the prompt for the listener.
 
-Ngaro assumes that addresses of functions will be greater than the number of
-opcodes. The "pad" function injects a bunch of NOP's to make sure that things
-are setup correctly.
+*** TODO call pad { i think this moved up to the top ?? }
 
-Some strings. "copytag" and "version" and "build" are displayed when Retro
-starts, while "okmsg" serves as the prompt for the listener.
+Ngaro assumes that addresses of functions will be greater than the number of opcodes. The "pad" function injects a bunch of NOP's to make sure that things are setup correctly.
 
-The padding isn't always needed, but seems to help keep the rebuilds more
-stable if you are making changes to the kernel. (Specifically, it's there
-to ensure that no functions are located at addresses reserved for Ngaro
-bytecodes.)
+The padding isn't always needed, but seems to help keep the rebuilds more stable if you are making changes to the kernel. (Specifically, it's there to ensure that no functions are located at addresses reserved for Ngaro bytecodes.)
 
 ** TODO DEF , ~{ the heap writer }~
 
@@ -560,34 +470,29 @@ bytecodes.)
 t: ,           ( n-  ) heap # @, dup, 1+, push, !, pop, heap # !, ;
 #+end_src
 
-** DONE ~{ word classes }~
-
-*** DEF withClass
+** [5/7] classes
+*** DONE DEF withClass
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: withClass   ( ac- ) 1-, push, ;
 #+end_src
 
-This is identical (by default) to =do=, but serves as a hook for gaining
-more control over how classes are handled.
+This is identical (by default) to =do=, but serves as a hook for gaining more control over how classes are handled
 
-*** DEF .word
+*** DONE DEF .word
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: .word       (  a- ) compiler # @, 0 # !if , ; then jump: withClass
 #+end_src
 
-The class handler for normal functions. If interpreting, execute the xt
-of the function. If the compiler is active, lay down a call to the xt
-instead.
+The class handler for normal functions. If interpreting, execute the xt of the function. If the compiler is active, lay down a call to the xt instead.
 
-*** DEF .macro
+*** DONE DEF .macro
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: .macro      (  a- ) jump: withClass
 #+end_src
 
-The core class for compiler macros. Basically "immediate" functions; this
-always calls the xt.
+The core class for compiler macros. Basically "immediate" functions; this always calls the xt.
 
-*** DEF =.data=
+*** DONE DEF =.data=
 :PROPERTIES:
 :ID: .data
 :END:
@@ -595,15 +500,15 @@ always calls the xt.
 t: .data       (  a- ) compiler # @, 0; drop, 1 # , , ;
 #+end_src
 
-The class handler for data structures. It either leaves the xt on the stack
-(if interpreting), or compiles it as a literal.
+The class handler for data structures. It either leaves the xt on the stack (if interpreting), or compiles it as a literal.
 
-*** DEF =.primitive=
+*** DONE DEF =.primitive=
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: .primitive  (  a- )
     dup, @, 0 # =if compiler # @, -1 # =if 2 # +, @, then then jump: .word
 #+end_src
-*** classes for the words so far
+
+*** TODO classes for the words so far
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 
 ' .macro     'MACRO setClass
@@ -611,11 +516,9 @@ t: .primitive  (  a- )
 ' .primitive 'PRIM  setClass
 #+end_src
 
-This bit assigns the classes to the variables that the metacompiler will later
-use when creating the initial dictionary. Without this, we'd have no easy way
-to reference the classes in the new kernel.
+This bit assigns the classes to the variables that the metacompiler will later use when creating the initial dictionary. Without this, we'd have no easy way to reference the classes in the new kernel.
 
-*** TODO docs for the words so far ~{ looks like these can be inlined... }~
+*** TODO docs for the words so far ~{ looks like these can be inlined...? }~
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 ' , word: ,
 "( n- ) Place TOS **here** and increment **heap** by 1 " :doc
@@ -638,9 +541,7 @@ to reference the classes in the new kernel.
 
 ** TODO Primitives : =dup= .. =!+=
 *** . 
-These are functions that map directly to Ngaro instructions. We will use the
-instructions directly in most cases (to save some overhead), but this serves
-to allow normal definitions to use them if desired.
+These are functions that map directly to Ngaro instructions. We will use the instructions directly in most cases (to save some overhead), but this serves to allow normal definitions to use them if desired.
 
 *** stack operations
 **** dup
@@ -738,38 +639,39 @@ p: out out out, ;
 p: in in in, ;
 "( p-n ) Read a value from an I/O port" :doc
 #+end_src
-** Additional stack, variable, and math functions.
-*** wait { not the primitive }
+** [2/9] Additional stack, variable, and math functions.
+*** DONE wait
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: wait wait 0 # 0 # out, wait, ;
 "( - ) Wait for an I/O event" :doc
 #+end_src
 
-**** TODO t: wait (   -   )  #0 #0 out, wait, ;
+The "wait," instruction needs a bit of extra help to actually trigger an I/O event. This provides it.
 
-The "wait," instruction needs a bit of extra help to actually trigger an I/O
-event. This provides it.
-*** over
+*** TODO over
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: over over push, dup, pop, swap, ;
 "( xy-xyx ) Place a copy of NOS over TOS" :doc
 #+end_src
-*** not
+
+*** TODO not
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: not not -1 # xor, ;
 "( x-y ) Same as -1 xor; invert TOS and subtract 1" :doc
 #+end_src
-*** on
+
+*** TODO on
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: on on -1 # swap, !, ;
 "( a- ) Set a variable to -1 (true)" :doc
 #+end_src
-*** off
+
+*** TODO off
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: off off 0 # swap, !, ;
 "( a- ) Set a variable to  0 (false)" :doc
 #+end_src
-*** =/= and =mod=
+*** TODO =/= and =mod=
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: / / /mod, swap, drop, ;
 "( xy-q ) Divide two numbers (x/y)" :doc
@@ -777,12 +679,14 @@ w: / / /mod, swap, drop, ;
 w: mod mod /mod, drop, ;
 "( xy-r ) Modulus of two numbers (x%y)" :doc
 #+end_src
-*** negate
+
+*** TODO negate
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: negate negate -1 # *, ;
 "( x-y ) Invert sign of TOS" :doc
 #+end_src
-*** do
+
+*** DONE do
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: do do 1-, push, ;
 "( a- ) Call a function by address" :doc
@@ -791,7 +695,7 @@ w: do do 1-, push, ;
 This is used to invoke a function. The =1-,= is used to account for the way the
 VM increments the instruction pointer.
 
-*** @+ / !+
+*** TODO @+ / !+
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: @+ @+ dup, 1+, swap, @, ;
 "( a-ac ) Fetch a value from an address, return the next address and the value" :doc
@@ -800,14 +704,14 @@ w: !+ !+ dup, 1+, push, !, pop, ;
 "( ca-a ) Store a value to an address, return next address" :doc
 #+end_src
 
-Rather handy functions for "fetch from and return next" and "store to and
-return next". This allows easy access to linear arrays or strings:
+Rather handy functions for "fetch from and return next" and "store to and return next". This allows easy access to linear arrays or strings:
 
 #+begin_example retro
   ( an example of using @+ )
   create array 1 , 2 , 3 ,
   array @+ putn @+ putn @+ putn drop
 #+end_example
+
 ** TODO Core Compiler: =here= .. =pop=
 
 Continuing on, we now have the core of the actual colon compiler:
@@ -1089,6 +993,7 @@ This is used to prevent backspaces from going before the start of the TIB.
 
 Read input into the TIB, ending when the delimiter is encountered.
 ** [7/8] Colon Compiler :  =vector= .. =( .. )=
+
 *** DONE VAR vector
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 -1 variable: vector
@@ -1735,8 +1640,8 @@ If a string in TIB corresponds to a known word, fetch its class, and execute it 
 
 *** DONE DEF =listen=
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
-w: listen listen  (   - ) repeat ok 32 # accept tib find process again ;
-"( - ) Top level interpreter. Reads and process input." :doc
+  w: listen listen  (   - ) repeat ok 32 # accept tib find process again ;
+     "( - ) Top level interpreter. Reads and process input." :doc
 #+end_src
 
 The listener itself. Display the prompt, read a whitespace delimited token,
