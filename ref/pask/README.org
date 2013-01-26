@@ -1,0 +1,12 @@
+
+* Pask
+
+This is another prototype Pascal compiler.
+
+Pask is written by John Earnest. John has a bunch of other interesting things here:
+
+https://github.com/JohnEarnest/Mako
+
+-- including his own virtual machine and forth implementation, on which he's built various games and language interpreters. Really cool stuff! :)
+
+Anyway, I told him about the winfield83 paper, and he was kind enough to share this.
