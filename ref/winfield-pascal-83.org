@@ -2,8 +2,14 @@
 #+AUTHOR: Allan Winfield
 #+DATE: 1983
 
-* example code to sort an array of numbers
 
+* Pascal in Forth
+
+This is first of two articles describing a set of Pascal like extensions to Forth. The intention here is not for a full-blown Pascal compiler but to provide the Forth programmer with the option of writing those parts of a task which are best described with a Pascal like syntax in Pascal. The philosophy behind this idea is in the widely held view that, while most languages are good for some things few, if any, are good at everything and instead of trying to design new all embracing wonder-languages, it might be more productive to develop multilingual programming environments! Whether you hold this view or not, the extension of Forth into Pascal is still an interesting exercise and a worthy test of power and flexibility of Forth.
+
+Before going any further, perhaps I should givne an example of the way I see this amalgam of Forth and Pascal working in practice. Suppose that we need to sort a list of numbers into ascending order. A standard algorithm for doing this might be expressed very clearly in a Pascal/Forth hybrid as shown in /fig 1/.
+
+#+name fig1
 #+begin_example forth
 ( Create a 100 element array 'list' )
 CREATE list 200 ALLOT
@@ -34,7 +40,19 @@ VARIABLE noswops
 } ;
 #+end_example
 
-* example forth to call the pascal function
+* Basic Ideas
+
+Initially one of the principal requirements was for complete interchangeability between Forth and Pascal, so that Forth routines may call previously defined words written in Pascal and vice versa. It is particularly useful for Pascal to be able to make use of the large set of standard Forth words. As an example, suppose we need to print a number, right justified, from within a Pascal routine. A convenient way would be to call the Forth word =.R= as if it were a Pascal procedure, ie:
+
+#+begin_example forth
+.R( i, 5 );
+#+end_example
+
+to print the conents of variable =i=, in a field width of 5. This should work very well if we can arrange that the expressions enclosed by brackets leave their results on the stack at run time, which is precisely where the Forth word =.R= will expect to find its input parameters!
+
+Passing results back from Pascal defined words into Forth is not quite so straightforward, since a Pascal program cannot easily take values off (or leave them on) the stack. Pascal does all of its arithmetic with variables, so it would seem sensible to allow Pascal and Forth to share the same variables, and communicate results through them. In id:fig1, the array =list= was created in Forth, but manipulated in =sortlist= exactly as if it were a 1-dimensional Pascal =ARRAY=. A Forth definition to sort any list, whose address is supplied on the stack, might then be written as in /fig 2/:
+
+#+name: fig2
 #+begin_example forth
 ( sort any 100 element list into ascending order )
 : sort                   ( addr -> )
@@ -47,8 +65,42 @@ CREATE list1 200 ALLOT list1 sort
 CREATE list2 200 ALLOT list2 sort
 #+end_example
 
+/Fig 3/ summarises the structure of a colon definition incorporating both Forth and Pascal. The Pascal statements are enclosed by ={pascal= and =}= (the word ={pascal= is the new 'compiling' word which is really the subject of these articles). There may be any number of segments of Forth and Pascal in the same definition, although more than one or two might be confusing!
 
-* the "begin" statement ( example outline only )
+#+name: fig3
+#+begin_example forth
+: new-word
+          ... some FORTH words ...
+  {pascal ... some Pascal statements ... }
+          ... more FORTH words ...
+  etc. ;
+#+end_example
+
+Possibly the most demanding design constraint is that the compiled Pascal should be as close as possible to the equivalent compiled Forth, so that there is little or no compromise on execution speed for routines written in Pascal. Thus, as an example, the Pascal statement:
+
+#+begin_example pascal
+IF a = 2 THEN i := j + k;
+#+end_example
+
+should, ideally, compile into the same internal form as the Forth phrase:
+
+#+begin_example forth
+a @ 2 = IF j @ k @ + i! THEN
+#+end_example
+
+Of course it is unlikely that a program written entirely in Forth would make such a heavy use of variables as this, but the ability to mix Pascal and Forth (and Assembler, on many Forth systems) should allow us plenty of opportunity for optimising any time-critical part of a program.
+
+* The Algorithm
+
+Readers of the two excellent articles in issue 1 of SOFT: 'Writing Compilers in Basic' and 'Infix Maths in Forth' will already be aware of the power and versatility of the technique known as 'recursive descent' and so I make no apology for using this here. In fact, structured languages like Pascal lend themselves particularly well to compilation by recursive descent, because their syntax is often highly recursive -- that is, defined in terms of itself. An example of this in pascal is that a 'statement' (amongst other things) might consist of the reserved word =BEGIN=, followed by any number of statements separated by =;=, and terminated by =END=. Thus, when the statement compiler encounters the word =BEGIN= it will simply call itself.
+
+This structure is difficult to describe in words, but very much easier to see when expressed as a 'syntax graph'. For example /fig 4/ illustrates the syntax graph for =begin-statement=.
+
+* TODO fig 4 ( railroad diagram )
+
+The principle funciton of the syntax graph is to specify exactly the syntax of a programming language. That is its primary use to 'users' of the language. However, for compiler writers, syntax graphs do lead almost directly to a compilation algorithm to the extent that each syntax graph will normally have one subroutine associated with it in the compiler. Of course the syntax graph doesn't tell us what the output of the compiler should be -- that is a question of 'semantics' -- but it does dictate the fundimental structure of the compiler. To illustrate this /fig 5/ show an outline colon-definition for =begin-statement=, which comes directly from the syntax graph in /fig 4/. This would be called by the statement routine whenever the reserved wourd =BEGIN= has been found.
+
+* /Fig 5./ the "begin" statement ( example outline only )
 #+begin_example forth
 ( begin-statement compiler )
 : begin
@@ -62,8 +114,42 @@ CREATE list2 200 ALLOT list2 sort
     NOT IF syntaxerror THEN ;
 #+end_example
 
+* The Forth Basics
 
-* PART 1 : lexer and expression evaluator
+The total program splits very conveniently into two parts; the arithmetic expression compiler, and the statement compiler, so I shall describe the former here and the later in the [[second part of this article]]. Although I am at risk of re-inventing some wheels here (see the [[second reference]]!) it does turn out that the expression compiler is useful in its own right as an infix arithmetic compiler/interpreter, as I will show later.
+
+First, however, we must establish the basic routines for parsing the input stream and identifying Pascal reserved words. Given the design constraints outlined earlier, we can see that a Pascal program will contain five basic word types:
+
+ - Pascal reserved words
+ - Numbers
+ - References to Forth variables
+ - References to Forth constants
+ - Other words to be treated as Forth functions or procedures.
+
+What we require is a basic routine to 'fetch the next thing from the input stream' and classify it as one of these five basic types.
+
+Since the final three types (variable, constant, or function) will all be words in the dictionary when the Pascal program is compiled, it is clear that a dictionary search wil lbe needed somewhere in this routine. Why not, therefore, create a special vocabulary containing the Pascal reseverd words and let the Forth dictionary search word =FIND= do all the work for us?
+
+When =FIND= is executed it will fetch the next word from the input stream (delimited by =space=), and search the =CONTEXT= vocabulary for a matching word. If successful it returns the (unique) address of the dictionary entry for that word, or the value zero if not. (This is the Code Field Address or CFA). All that we need to do in our basic parsing routine (which I call =next=), is to arrange that the Pascal reserved word vocabulary is =CONTEXT= when =FIND= is executed. This will ensure that it is searched before the rest of the Forth dictionary, avoiding any conflict between similar Pascal and Forth words. We can then use the CFA to classify the word into one of the five types above.
+
+All of this happens in [[blocks 2001-2006]], listed at the end of this article. The pascal reserved words are a set of empty definitions in the vocabulary =pascal-words=, in block 2001. The classification of reserved words is achieved by attempting to match the CFA returned by =FIND= with one of the entries in a special table containing the reserved words CFAs (=cfa-table=, [[block 2003]]), thena  value from 1 to 40 is returned, corresponding to the position of the reserved word in =cfa-table=. If no match is found then =next= (blocks [[2005]] and [[2006]]) compares the CFA with =vcode= and =ccode=, the CFAs for variable and constant, respectively. No further matching is necessary, since if all of these tests fail the word must have been either a number, or a Forth function or procedure call, and a value of zero returned by =FIND= will, of course, indicate a number (or a syntax error!)
+
+The final result of =next= is returned in the variable =type=; values 1-40 indicate Pascal reserved words, -2 constants, -1 variables, 0 numbers, or any other value for references to Forth words (defined by colon definitions). Thus, after loading blocks 2001-2006 into a Forth system, we may test these by typing:
+
+#+begin_src forth
+next +      type ? 1  ok     (Pascal '+')
+next begin  type ? 20 ok     (and 'begin')
+next 27     type ? 0  ok     (a number)
+VARIABLE fred
+1 CONSTANT true
+next fred   type ? -1 ok     (a variable)
+next true   type ? -2 ok     (a constant)
+next .R     type L 12524 ok  (the CFA of .R)
+#+end_src
+
+Although it may come as a surprise, the development of the word =next= was one of the most difficult problems of this entire application. Everything else falls into place with remarkable ease!
+
+* { code for the tokenizer (=next=) }
 ** block 2000 - pascal extensions to forth
 #+begin_src forth
 ( Pascal extensions to FORTH
@@ -210,6 +296,59 @@ FIND words @ CONSTANT ccode   ( code pointer for constant )
 -->
 #+end_src
 
+
+
+* The Expression Compiler
+
+Blocks [[2009]]-[[2015]] contain the arithmetic expression compiler starting, in usual Forth fashion, with the lowest level definitions: =number=, =variable=, etc, and working up to the highest level: =expression= in block 2015. These closely follow, both in name and structure, the corresponding syntax graphs of /fig 6/ (A reasonably faithful subset of standard Pascal arithmetic syntax, as described in the [[third reference]]).
+
+Now, while I do not propose to examine in detail each of the colon definitions in these blocks, it is important at this stage to establish what the =output= of the compiler should be, and how to achieve it. If we consider as an example the simple arithmetic expression:
+
+#+begin_src pascal
+A * 2
+#+end_src
+
+the compiler should translate this into the equivalent Forth expression:
+
+#+begin_src forth
+A @ 2 *
+#+end_src
+
+We notice straight away that when the compiler comes across a variable it should generate the code to 'push the value of the variable onto the stack' and, likewise, when a number appears in the input expression, the compiler should generate the code to 'push the number'. This is precisely what =variable= and =number= do (=variable= is complicated a little by single dimensonal array handling as well). Providing that =A= is a predefined Forth variable, then =A= and 2 are both syntactically correct 'factors' (see [[fig 6]]), and tracing a route through the syntax graphs, starting at =expression=, will eventuall arrive at the starred position in the graph for =term=. At this point we know that we must have had two valid factors, separated by =*= (otherwise this route would not have been followed) and the compiler may output the code for =*=.
+
+There is really very little structural difference between a compiler and an interpreter. The principle distinction is that an interpreter actually performs the operation indicated by the input expression during translation, whereas a compiler instead generates some code that will perform the same operation later, at run-time. Combining this observation (which was a revelation to me when I first realised it!), with the Forth convention that anything insidea colon definition is compiled, and anything else interpreted leads to the possibility of making the compiler into an interpreter as well! To make this happen we need only write, for example:
+
+#+begin_example forth
+STATE @ IF           ( if we are inside a colon definition... )
+          COMPILE *  ( then compile '*' )
+        ELSE         ( else we are not compiling )
+          *          ( so do it now )
+        THEN
+#+end_example
+
+in the =term= routine, after having picked up two 'factors' separated by =*=. Since this is rather long winded I have defined a new compiling word =comp/int *= with exactly the same effect.
+
+* Infix Expressions
+
+An unexpected and useful byproduct of this quest for Pascal in Forth is that the arithmetic expression compiler/interpreter may be used as a stand-alone utility enabling us to write arithmetic expressions -- in Forth -- in 'infix' notation rather than the usual Reverse Polish. To this end I have defined the =IMMEDIATE= word ={=, in block [[2016]], which simply calls =expression=. Now =expression= will exit when a word is found that is recognised but is not syntactically correct (and oll of the =CASE= comparisions fail), thus =}= is a suitable terminator. So, to write an infix expression, just place it between curly brackets, as in the following examples:
+
+#+begin_src forth
+VARIABLE A ok          ( Define A )
+VARIABLE B ok          ( Define B )
+10 A ! 20 B ! ok       ( A=10, B=20 )
+{ A + 2 * B } . 50 ok
+{ ( A + 2 ) * B ) . 240 ok
+
+: testA<B { A < B } IF ." yes" THEN ; ok
+testA<B yes ok
+
+: formula { A * A + B * B } ." =" . ; ok
+formula = 500 ok
+#+end_src
+
+Notice that the result of evaluating an infix expression remains on the stack where it may be used by subsequent Forth operation in the normal way.
+
+* error handling
 ** block 2007 - error handling
  #+begin_src forth
 ( error handler. print line, put BLOCK on TOS line # on NOS )
@@ -375,6 +514,7 @@ VARIABLE expr
   0 UNTIL ;
 -->
 #+end_src
+
 
 ** block 2016 ( resolve forward reference to expression )
 #+begin_src forth
