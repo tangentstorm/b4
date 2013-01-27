@@ -3,7 +3,8 @@
 #+DATE: 1983
 
 
-* Pascal in Forth
+* Part 1
+** Pascal in Forth
 
 This is first of two articles describing a set of Pascal like extensions to Forth. The intention here is not for a full-blown Pascal compiler but to provide the Forth programmer with the option of writing those parts of a task which are best described with a Pascal like syntax in Pascal. The philosophy behind this idea is in the widely held view that, while most languages are good for some things few, if any, are good at everything and instead of trying to design new all embracing wonder-languages, it might be more productive to develop multilingual programming environments! Whether you hold this view or not, the extension of Forth into Pascal is still an interesting exercise and a worthy test of power and flexibility of Forth.
 
@@ -40,7 +41,7 @@ VARIABLE noswops
 } ;
 #+end_example
 
-* Basic Ideas
+** Basic Ideas
 
 Initially one of the principal requirements was for complete interchangeability between Forth and Pascal, so that Forth routines may call previously defined words written in Pascal and vice versa. It is particularly useful for Pascal to be able to make use of the large set of standard Forth words. As an example, suppose we need to print a number, right justified, from within a Pascal routine. A convenient way would be to call the Forth word =.R= as if it were a Pascal procedure, ie:
 
@@ -90,17 +91,17 @@ a @ 2 = IF j @ k @ + i! THEN
 
 Of course it is unlikely that a program written entirely in Forth would make such a heavy use of variables as this, but the ability to mix Pascal and Forth (and Assembler, on many Forth systems) should allow us plenty of opportunity for optimising any time-critical part of a program.
 
-* The Algorithm
+** The Algorithm
 
 Readers of the two excellent articles in issue 1 of SOFT: 'Writing Compilers in Basic' and 'Infix Maths in Forth' will already be aware of the power and versatility of the technique known as 'recursive descent' and so I make no apology for using this here. In fact, structured languages like Pascal lend themselves particularly well to compilation by recursive descent, because their syntax is often highly recursive -- that is, defined in terms of itself. An example of this in pascal is that a 'statement' (amongst other things) might consist of the reserved word =BEGIN=, followed by any number of statements separated by =;=, and terminated by =END=. Thus, when the statement compiler encounters the word =BEGIN= it will simply call itself.
 
 This structure is difficult to describe in words, but very much easier to see when expressed as a 'syntax graph'. For example /fig 4/ illustrates the syntax graph for =begin-statement=.
 
-* TODO fig 4 ( railroad diagram )
+** TODO fig 4 ( railroad diagram )
 
 The principle funciton of the syntax graph is to specify exactly the syntax of a programming language. That is its primary use to 'users' of the language. However, for compiler writers, syntax graphs do lead almost directly to a compilation algorithm to the extent that each syntax graph will normally have one subroutine associated with it in the compiler. Of course the syntax graph doesn't tell us what the output of the compiler should be -- that is a question of 'semantics' -- but it does dictate the fundimental structure of the compiler. To illustrate this /fig 5/ show an outline colon-definition for =begin-statement=, which comes directly from the syntax graph in /fig 4/. This would be called by the statement routine whenever the reserved wourd =BEGIN= has been found.
 
-* /Fig 5./ the "begin" statement ( example outline only )
+** /Fig 5./ the "begin" statement ( example outline only )
 #+begin_example forth
 ( begin-statement compiler )
 : begin
@@ -114,7 +115,7 @@ The principle funciton of the syntax graph is to specify exactly the syntax of a
     NOT IF syntaxerror THEN ;
 #+end_example
 
-* The Forth Basics
+** The Forth Basics
 
 The total program splits very conveniently into two parts; the arithmetic expression compiler, and the statement compiler, so I shall describe the former here and the later in the [[second part of this article]]. Although I am at risk of re-inventing some wheels here (see the [[second reference]]!) it does turn out that the expression compiler is useful in its own right as an infix arithmetic compiler/interpreter, as I will show later.
 
@@ -149,8 +150,9 @@ next .R     type L 12524 ok  (the CFA of .R)
 
 Although it may come as a surprise, the development of the word =next= was one of the most difficult problems of this entire application. Everything else falls into place with remarkable ease!
 
-* { code for the tokenizer (=next=) }
-** block 2000 - pascal extensions to forth
+** [3/7] { code for the tokenizer }
+*** DONE block 2000 - pascal extensions to forth
+**** forth
 #+begin_src forth
 ( Pascal extensions to FORTH
   ---------------------------------------------------
@@ -168,7 +170,27 @@ Although it may come as a surprise, the development of the word =next= was one o
 
 FORTH DEFINITIONS DECIMAL -->
 #+end_src
-** block 2001 - reseverd words
+
+**** retro
+#+begin_src retro  :tangle "~/b/awpas83.rx" :padline yes :noweb tangle
+
+( Pascal extensions to retro                                    )
+( ------------------------------------------------------------  )
+( The following blocks define two new compiling words, '{' and  )
+( '{pascal'. '{' allows infix expressions to be incorporated    )
+( into retro by writing '{ infix expression }' and '{pascal'    )
+( allows Pascal statements to be included in a retro colon      )
+( definition, '{pascal ...Pascal statements... }'.              )
+
+( The code is based on a pair of 1983 articles in SOFT magazine )
+( by [now Dr.] Alan Winfield, entitled "Pascal in Forth"        )
+
+reset global decimal                ( normalize the environment )
+needs forth' with forth'            ( forth-like vocabulary     )
+#+end_src
+
+*** DONE block 2001 - reseverd words
+**** forth
 #+begin_src forth
 ( Define all Pascal reserved words. Keep these in a separate )
   vocabulary to avoid conflict with similar FORTH words. )
@@ -190,8 +212,36 @@ C .     C not   C :=      C -->
 
 --->
 #+end_src
+**** retro
+#+begin_src retro  :tangle "~/b/awpas83.rx" :padline yes :noweb tangle
 
-** block 2002 - cfa table ( "code field address ")
+( Define all Pascal reserved words. Keep these in a separate )
+( vocabulary to avoid conflict with normal retro words       )
+chain: pascal-words
+
+: C create ;                        ( abbreviations to save  )
+: | , ;                             ( typing and conflicts   )
+
+( dr winfield had : F find ; here. looks like in forth 79,   )
+( 'find' read a token. so we'll do the same. )
+: F  ` getToken find 0= if drop 0 then ;
+"( '-a ) parse for word and return its address. zero if not found" :doc
+
+( Define as empty definitions so that FIND will work.        )
+( NOTE: do not insert any comment until after next FORTH.    )
+
+C +     C -     C *       C /       C mod     C and
+C or    C xor   C <       C >       C <=      C >=
+C <>    C =     C (       C )       C {       C }
+C ;     C begin C end     C if      C then    C else
+C while C do    C repeat  C until   C write   C writeln
+C "     C for   C to      C by      C [       C ]
+C .     C not   C :=
+
+#+end_src
+
+*** DONE block 2002 - cfa table ( "code field address ")
+**** forth
 #+begin_src forth
 C cfa-table
 F +     | F -     | F *      | F /      | F mod    | F and     |
@@ -217,7 +267,34 @@ In the first section, he's creating a bunch of empty definitions in the forth di
 
 Here, he redefined "|" to mean "," -- which means write to memory. So he's essentially creating an array of pointers to the empty dictionary entries.
 
-** block 2003
+**** retro
+#+begin_src retro  :tangle "~/b/awpas83.rx" :padline yes :noweb tangle
+
+C cfa-table
+F +     | F -     | F *      | F /      | F mod    | F and     |
+F or    | F xor   | F <      | F >      | F <=     | F >=      |
+F <>    | F =     | F (      | F )      | F {      | F }       |
+F ;     | F begin | F end    | F if     | F then   | F else    |
+F while | F do    | F repeat | F until  | F write  | F writeln |
+F "     | F for   | F to     | F by     | F [      | F ]       |
+F .     | F not   | F :=     |
+
+;chain ( Go back into retro )
+
+( 'cfa-table' is a table of the Code Field Addresses of the      )
+( reserved word definitions in the previous block. Note that ',' )
+( is redefined as '|' to allow definition of the pascal ','      )
+
+#+end_src
+
+Why repeat the list?
+
+In the first section, he's creating a bunch of empty definitions in the forth dictionary.
+
+Here, he redefined "|" to mean "," -- which means write to memory. So he's essentially creating an array of pointers to the empty dictionary entries.
+
+*** TODO block 2003
+**** forth
 #+begin_src forth
 40 CONSTANT words ( total number of reserved words above )
 
@@ -238,7 +315,28 @@ Here, he redefined "|" to mean "," -- which means write to memory. So he's essen
 -->
 #+end_src
 
-** block 2004 variables for the parser
+**** retro
+#+begin_src retro  :tangle "~/b/awpas83.rx" :padline yes :noweb tangle
+
+38 constant numTokens   ( total number of reserved words above )
+
+( Search the pascal CFA table for a match with the CFA on top  )
+( of the stack, return a value 1..words if found, or leave the )
+( input CFA on TOS if not )
+
+: match-cfas ( a-t|a )
+  numTokens 0 do                     ( step through cfa-table )
+      dup
+      I 2* ^pascal-words'cfa-table + @       ( fetch I'th cfa )
+      = if                                   ( if match found )
+          drop I 1+ leave          ( exit, leaving I+1 on TOS )
+        then
+      loop ;                              ( else try next cfa )
+
+#+end_src
+
+*** TODO block 2004 variables for the parser
+**** forth
 #+begin_src forth
 ( parsing variables .. )
 VARIABLE >in    ( temporary storage of >IN value )
@@ -254,7 +352,25 @@ FIND words @ CONSTANT ccode   ( code pointer for constant )
 -->
 #+end_src
 
-** block 2005 - next ( parses for tokens )
+**** retro
+#+begin_src retro  :tangle "~/b/awpas83.rx" :padline yes :noweb tangle
+
+( parsing variables .. )
+VARIABLE >in    ( temporary storage of >IN value )
+VARIABLE find   ( result of FIND on next input word )
+VARIABLE type   ( index of token as position in pascal cfa table )
+                ( '+' = 1, '-' = 2, etc )
+
+( identify the value of the code pointers for variable / create )
+( and constant, so that 'next' will be able to differentiate )
+
+FIND type  @ CONSTANT vcode   ( code pointer for variable )
+FIND words @ CONSTANT ccode   ( code pointer for constant )
+
+#+end_src
+
+*** TODO block 2005 - next ( parses for tokens )
+**** forth
 # the author said this was the hardest one to come up with
 
 #+begin_src forth
@@ -275,7 +391,29 @@ FIND words @ CONSTANT ccode   ( code pointer for constant )
     ELSE DROP THEN ; -->  ( leave stack empty )
 #+end_src
 
-** block 2006 forth parser tweaks
+**** retro
+#+begin_src retro  :tangle "~/b/awpas83.rx" :padline yes :noweb tangle
+
+( 'next' assigns a 'type' to the next word in the input stream )
+(  type = 1..words : pascal reserved word     )
+(         -1       : a variable               )
+(         -2       : a constant               )
+(  any other value is an existing forth word. )
+: next-2 >IN @ >in ! ( save >IN in case we need to backtrack )
+    ( try to find next word in pascal words at compile time )
+    [COMPILE] pascal-words FIND [COMPILE] FORTH
+    DUP find !    ( save result of FIND in find )
+    match-cfas    ( and search the cfa table for match )
+    DUP type !    ( place the result in type )
+    DUP words SWAP U< IF   ( if no match was found ... )
+       @ DUP vcode = IF -1 type ! THEN  ( test for var )
+             ccode = IF -2 type ! THEN  ( test for const )
+    ELSE DROP THEN ; -->  ( leave stack empty )
+
+#+end_src
+
+*** TODO block 2006 forth parser tweaks
+**** forth
 #+begin_src forth
 ( redefine 'next' to allow comment in pascal programs )
 : next-1
@@ -296,9 +434,31 @@ FIND words @ CONSTANT ccode   ( code pointer for constant )
 -->
 #+end_src
 
+**** retro
+#+begin_src retro  :tangle "~/b/awpas83.rx" :padline yes :noweb tangle
+
+( redefine 'next' to allow comment in pascal programs )
+: next-1
+  BEGIN
+    next-2 type @ 17 =   ( if next word is '(' .. )
+  WHILE
+    125 WORD DROP        ( skip input up to ')' )
+  REPEAT ;               ( and fetch the next thing )
+
+( redefine again to allow pascal to go over more than one block )
+: next
+  BEGIN
+    next-1 type @ 40 =    ( if next word is '-->' .. )
+  WHILE
+    1 BLK +! 0 >IN !      ( go to start of next block )
+  REPEAT ;                ( and fetch the next thing )
+
+#+end_src
 
 
-* The Expression Compiler
+
+
+** The Expression Compiler
 
 Blocks [[2009]]-[[2015]] contain the arithmetic expression compiler starting, in usual Forth fashion, with the lowest level definitions: =number=, =variable=, etc, and working up to the highest level: =expression= in block 2015. These closely follow, both in name and structure, the corresponding syntax graphs of /fig 6/ (A reasonably faithful subset of standard Pascal arithmetic syntax, as described in the [[third reference]]).
 
@@ -328,7 +488,7 @@ STATE @ IF           ( if we are inside a colon definition... )
 
 in the =term= routine, after having picked up two 'factors' separated by =*=. Since this is rather long winded I have defined a new compiling word =comp/int *= with exactly the same effect.
 
-* Infix Expressions
+** DONE Infix Expressions
 
 An unexpected and useful byproduct of this quest for Pascal in Forth is that the arithmetic expression compiler/interpreter may be used as a stand-alone utility enabling us to write arithmetic expressions -- in Forth -- in 'infix' notation rather than the usual Reverse Polish. To this end I have defined the =IMMEDIATE= word ={=, in block [[2016]], which simply calls =expression=. Now =expression= will exit when a word is found that is recognised but is not syntactically correct (and oll of the =CASE= comparisions fail), thus =}= is a suitable terminator. So, to write an infix expression, just place it between curly brackets, as in the following examples:
 
@@ -348,46 +508,8 @@ formula = 500 ok
 
 Notice that the result of evaluating an infix expression remains on the stack where it may be used by subsequent Forth operation in the normal way.
 
-* error handling
-** block 2007 - error handling
- #+begin_src forth
-( error handler. print line, put BLOCK on TOS line # on NOS )
-: .line BLOCK ( fetch block number )
-  SWAP 64 * + ( start address of line )
-  63 TYPE ;   ( print 63 characters )
-
-( print error message, error number TOS, and abandon )
-: perror
-  BLK @ IF CR ." pascal compilation error .."
-           CR ." block - " BLK ? ." Line - " >in @ 64 / DUP .
-           CR . BLK @ .line THEN
-        ( point to current pointer position )
-        CR >in @ 64 MOD SPACES ." ^ "
-        CR ." Error number - " . CR QUIT ;
-
-( Check if TOS equals current 'type', error if not )
-: ?error DUP type @ <> ( not equal ? )
-         IF perror ELSE DROP THEN ; -->
- #+end_src
-
-** block 2008 compile / interpret
-#+begin_src forth
-( compile / execute, depending on state )
-( 'comp/int *' is same as 'STATE @ IF COMPILE * ELSE * THEN' . )
-: (comp/int) R> DUP 2+ >R
-             @
-             STATE @ IF , ELSE EXECUTE THEN ;
-
-: comp/int COMPILE (comp/int)   ( compile runtime code )
-            FIND , ;            ( and CFA iof next word )
-
-( do these things when 'comp/int word' is compiled )
-IMMEDIATE
-
--->
-#+end_src
-
-** block 2009 number
+** TODO { code for expression compiler }
+*** block 2009 number
 #+begin_src forth
 ( convert the number in the input stream, pointed to by >in    )
 ( into binary and compile/interpret it. exit with error number )
@@ -405,7 +527,7 @@ IMMEDIATE
 -->
 #+end_src
 
-** block 2010 variables
+*** block 2010 variables
 #+begin_src forth
 ( forward reference to 'expression' )
 VARIABLE expr
@@ -425,7 +547,7 @@ VARIABLE expr
 -->
 #+end_src
 
-** block 2011 function calls
+*** block 2011 function calls
 #+begin_src forth
 ( function calls - use these to call forth routines )
 : function
@@ -445,7 +567,7 @@ VARIABLE expr
 -->
 #+end_src
 
-** block 2012 factor
+*** block 2012 factor
 #+begin_src forth
 ( handle a constant )
 : constant find @
@@ -466,7 +588,7 @@ VARIABLE expr
 -->
 #+end_src
 
-** block 2013 - term
+*** block 2013 - term
 #+begin_src forth
 : term factor
   BEGIN type @
@@ -479,7 +601,7 @@ VARIABLE expr
 -->
 #+end_src
 
-** block 2014 - simple expressions
+*** block 2014 - simple expressions
 #+begin_src forth
 : simpleexpr
   type @ CASE
@@ -500,7 +622,7 @@ VARIABLE expr
 -->
 #+end_src
 
-** block 2015 - full expression compiler / interpreter
+*** block 2015 - full expression compiler / interpreter
 #+begin_src forth
 : expression simpleexpr
   BEGIN type @
@@ -515,8 +637,45 @@ VARIABLE expr
 -->
 #+end_src
 
+** error handling
+*** block 2007 - error handling
+ #+begin_src forth
+( error handler. print line, put BLOCK on TOS line # on NOS )
+: .line BLOCK ( fetch block number )
+  SWAP 64 * + ( start address of line )
+  63 TYPE ;   ( print 63 characters )
 
-** block 2016 ( resolve forward reference to expression )
+( print error message, error number TOS, and abandon )
+: perror
+  BLK @ IF CR ." pascal compilation error .."
+           CR ." block - " BLK ? ." Line - " >in @ 64 / DUP .
+           CR . BLK @ .line THEN
+        ( point to current pointer position )
+        CR >in @ 64 MOD SPACES ." ^ "
+        CR ." Error number - " . CR QUIT ;
+
+( Check if TOS equals current 'type', error if not )
+: ?error DUP type @ <> ( not equal ? )
+         IF perror ELSE DROP THEN ; -->
+ #+end_src
+
+*** block 2008 compile / interpret
+#+begin_src forth
+( compile / execute, depending on state )
+( 'comp/int *' is same as 'STATE @ IF COMPILE * ELSE * THEN' . )
+: (comp/int) R> DUP 2+ >R
+             @
+             STATE @ IF , ELSE EXECUTE THEN ;
+
+: comp/int COMPILE (comp/int)   ( compile runtime code )
+            FIND , ;            ( and CFA iof next word )
+
+( do these things when 'comp/int word' is compiled )
+IMMEDIATE
+
+-->
+#+end_src
+*** block 2016 ( resolve forward reference to expression )
 #+begin_src forth
 FIND expression expr
 : ( next expression ; IMMEDIATE
