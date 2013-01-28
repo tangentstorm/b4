@@ -540,7 +540,7 @@ This bit assigns the classes to the variables that the metacompiler will later u
 #+end_src
 
 ** TODO Primitives : =dup= .. =!+=
-*** . 
+*** .
 These are functions that map directly to Ngaro instructions. We will use the instructions directly in most cases (to save some overhead), but this serves to allow normal definitions to use them if desired.
 
 *** stack operations
@@ -809,7 +809,7 @@ This variable is used to control whether or not the display is updated. On
 some VM implementations, you can improve performance by turning it "off" before
 writing large amounts of text to the screen, then "on" when done.
 
-*** TODO def redraw - puts 
+*** TODO def redraw - puts
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 w: redraw redraw update # @, 0; drop, 0 # 3 # out, ;
 "( - ) Update the display. Can be disabled temporarily by **update**" :doc
@@ -1067,7 +1067,7 @@ to "on".
 At this point we no longer need the old ":" from the old image, so we can
 reuse the name here, rather than start it off with a "t-" prefix.
 
-*** DONE DEF =[[= 
+*** DONE DEF =[[=
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 m: [[ [[ compiler # off ;
 "( - ) Turn compiler off" :doc
@@ -1117,7 +1117,7 @@ w: quote quote ( -a  ) ( -- runtime -------------------------------- )
   1+, ;          (  a-a  | point to start of code, jump to end )
 "( -a ) Helper function for quotations" :doc
 #+end_src
-*** def [ 
+*** def [
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 m: [ [ ( -a )      ( -- compile-time---------------------------- )
   ' quote # ,    (   -   | compile a call to quote             )
@@ -1129,7 +1129,7 @@ m: [ [ ( -a )      ( -- compile-time---------------------------- )
 "( - ) Start a quote (code block)" :doc
 #+end_src
 **** TODO t: [        (    -naa ) compiler # @, #8 , here #0 , here compiler # on ;
-*** def ] 
+*** def ]
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 m: ] ] ( af- ) ( a = placeholder for quote jump, f = old compile state  )
    ;;            ( af-af | compile a return from quoted code   )
@@ -2725,10 +2725,13 @@ Next up: a more flexible output function.
 This is a variable controlling whether to use the complex output or the
 default, simpler output.
 ** TODO ( Chained Vocabularies ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+*** dicts
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 create dicts 64 allot
 " ( -a ) Array; used by chained vocabularies and search order code" :doc
-
+#+end_src
+***
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 {{
   2 elements active prior
   create "|" 124 ,  0 ,
@@ -3074,21 +3077,36 @@ VM implementations.
 
 And wrap that all up.
 ** TODO ( Debugging ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+*** depth
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
 : depth   (    -n ) -5 5 out wait 5 in ;
 "( -n ) Return number of items on stack" :doc
+#+end_src
 
+Gets the stack depth.
+
+*** def reset
+
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 : reset   ( ...-  ) depth repeat 0; 1- nip again ;
 "( ...- ) Remove all items from stack" :doc
+#+end_src
 
+Remove all items on the data stack. This is useful after experimenting to get back to clean stack quickly.
+
+*** def .s
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 {{
   : (.s)  0; 1- swap push (.s) pop dup putn space ;
 ---reveal---
   : .s    depth [ "\n<%d> " puts ] sip (.s) ;
   "( - ) Display all items on stack" :doc
 }}
+#+end_src
 
+*** def words
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 {{
   : list    ( a-  ) [ d->name puts space ] 3 ( ^types'LIST ) each@ ;
   : others  (  -  ) @dicts repeat 0; cr dup dicts + list 1- again ;
@@ -3098,6 +3116,10 @@ And wrap that all up.
 }}
 
 #+end_src
+
+Display all names in the dictionary, and any active vocabuaries.
+
+
 ** TODO ( Keymap ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 {{
@@ -3160,31 +3182,14 @@ And wrap that all up.
 #+end_src
 
 ** TODO | Just about done...
-*** : depth   (    -n ) -5 5 out wait 5 in ;
-
-Gets the stack depth.
-
 *** : reset   ( ...-  ) depth repeat 0; 1- nip again ;
-
-Remove all items on the data stack. This is useful after experimenting to
-get back to clean stack quickly.
 
 *** : .s      (    -  )
   depth [ "\n<%d> " puts ] sip 0;
   heap  [ dup [ swap , ] times
               [ here 1- @ dup putn space -1 allot ] times ] preserve ;
 
-Display the stack. I'd love a better way of doing this, but so far this seems
-to work ok.
-
-  {{
-    : list    ( a-  ) [ d->name puts space ] 3 ( LIST ) each@ ;
-    : others  (  -  ) @dicts repeat 0; cr dup dicts + list 1- again ;
-  ---reveal---
-    : words   (  -  ) cr formatted dup [ off others cr last list ] preserve ;
-  }}
-
-Display all names in the dictionary, and any active vocabuaries.
+Display the stack. I'd love a better way of doing this, but so far this seems to work ok.
 
 *** : save     (  -  ) 1 4 out wait ;
 
@@ -3203,8 +3208,7 @@ Read a whitespace delimited token, and add it to the temporary string buffer.
 *** :  :include ( $-  ) 2 4 out wait ;
 *** :  include  ( "-  ) getToken :include ;
 
-If you VM supports reading input from files, these will let you include
-files directly.
+If you VM supports reading input from files, these will let you include files directly.
 
 *** : time     (  -n ) -8 5 out wait 5 in ;
 
@@ -3213,13 +3217,11 @@ Returns the current time (or a bogus value) as Unix epoch time.
 *** : delay    ( n-  ) time + [ dup time > ] while drop ;
 
 
-If your VM supports the time query, this will allow you to delay execution
-for approximately the number of seconds specified.
+If your VM supports the time query, this will allow you to delay execution for approximately the number of seconds specified.
 
 *** : getEnv   ( a$- ) -10 5 out wait ;
 
-If your VM supports access to the host environment, this will let you query
-it.
+If your VM supports access to the host environment, this will let you query it.
 
 *** later
 *** :  later    (  -  ) 2pop swap 2push ;
@@ -3230,26 +3232,24 @@ A fun thing. Defer execution until the caller returns. For instance,
 *** :  b 3 putn a 4 putn ;
   b
 
-With this, the core language is done. If you don't want/need the extra
-vocabularies, you can save and exit here, or continue on to define what
-you want.
+With this, the core language is done. If you don't want/need the extra vocabularies, you can save and exit here, or continue on to define what you want.
 
 *** doc{
 
 *** :  doc{     ( "-  ) repeat getToken "}doc" compare if; again ;
 
-This is used to allow embedding of documentation into the source files. An
-example of its usage:
+This is used to allow embedding of documentation into the source files. An example of its usage:
 
+#+begin_example retro
   doc{
   | **foo**
   | This function adds 471 to any variable passed to it.
   }doc
+  :  foo 471 swap +! ;
+#+end_example
 
-*** :  foo 471 swap +! ;
+These bits of documenation can be extracted into a separate file later with little effort.
 
-These bits of documenation can be extracted into a separate file later with
-little effort.
 ** TODO ( Internal Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 global
@@ -3565,7 +3565,7 @@ chain: types'
   2 constant STRING ( -n )
   "( -n ) Type constant for strings" :doc
 
-  3 constant LIST   ( -n )
+  3 constant LIST  ( -n )
   "( -n ) Type constant for linked lists" :doc
 ;chain
 "( - ) vocabulary with constants for data types. Used with **each@**" :doc
@@ -3604,4 +3604,3 @@ global .s save bye
 * tasklist
 ** TODO make =okmsg= assignable, in case you just want to change the string.
 *** perhaps this means using strings with known lengths
-
