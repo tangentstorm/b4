@@ -87,8 +87,6 @@ Suppose Cheney had worked his magic by creating a tree structure?
   - one part holds data
   - the other cell holds the address of another cell
   
-By the way, it has always baffled me in lisp why CAR ("contents of the address register") holds data whereas the CDR ("contents of the data register") holds the link to the rest of the list. But this is a mystery for another day.
-
 Anyway... Suppose you wanted to reference another part of the tree? Well instead of a pointer, you could use something like a hyperlink. That is: you could create a token that identified the node (like a primary key in a database, or the `id` attribute in XML). Then you could use some kind of lookup system to find the correct node in the tree.
 
 Come to think of it... Isn't that pretty much how lisp actually works? You can play tricks with the layout of a `cons` cell if you really want to, but at least 90% of the time, they work like trees, and if you want to keep a reference to another tree, you give it a name and use the name instead.
@@ -115,4 +113,11 @@ What was that tree structure called? Oh yeah. A *heap*. I could use a heap to mo
 Notes
 =====
 
-There's an online book about text editors -- [The Craft of Text Editing, or: Emacs for the Modern World](http://www.finseth.com/craft/) -- that talks about having a floating gap of space inside the text buffer, and moving the gap around as the cursor moves. The image of this gap image kept occurring to me as I thought about defragmenting the memory using the index. I think it may make sense to use something like that to minimize the amount of data that you have to move when defragmenting, compared to packing it all to one side. This would of course break `Mark` and `Release` but they are obsolete anyway.
+- There's an online book about text editors -- [The Craft of Text Editing, or: Emacs for the Modern World](http://www.finseth.com/craft/) -- that talks about having a floating gap of space inside the text buffer, and moving the gap around as the cursor moves. The image of this gap image kept occurring to me as I thought about defragmenting the memory using the index. I think it may make sense to use something like that to minimize the amount of data that you have to move when defragmenting, compared to packing it all to one side. This would of course break `Mark` and `Release` but they are obsolete anyway.
+
+
+- In the original draft, I wrote:
+
+> It has always baffled me in lisp why CAR ("contents of the address register") holds data whereas the CDR ("contents of the data register") holds the link to the rest of the list. But this is a mystery for another day.
+
+[ttmrichter](http://www.txt.io/ttmrichter) pointed out that LISP was originally implemented on an [IBM 704](http://en.wikipedia.org/wiki/IBM_704), which used a 36-bit machine word, broken into two 15-bit parts and two 3 bit parts. The 15-bit parts stored the *address* and *decrement* that the instruction applied to (the decrement being a negative offset). These two words are the actual origin of `CAR` and `CDR` in LISP, and the reason I was baffled was that I was just plain wrong. :)
