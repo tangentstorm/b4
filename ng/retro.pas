@@ -1,83 +1,100 @@
+{$i xpc.inc}
 program retro;
 uses xpc, ng, sysutils;
 
+  type
+    TRetroConfig = record
+		     padSize   : int32;
+		     imgPath   : string;
+		     debug     : boolean;
+		     dumpAfter : boolean;
+		     inputs    : array of string;
+		   end;
+
+  function configure( var cfg : TRetroConfig ) : boolean;
+
+    procedure fail( msg : string );
+    begin
+      writeln; writeln( msg );
+      result := false;
+    end; { fail }
+
+    { if file exists, add to array of inputs to include }
+    procedure with_file( const path : string );
+    begin
+      if sysutils.fileexists( path )
+	then with cfg do
+	begin
+	  { we can't just call include until we initialize the vm, and
+	    we can'd do that until we're done with args, so we use the
+	    inputs array as a buffer. }
+	  setlength( inputs, length( inputs ) + 1 );
+	  inputs[ length( inputs ) - 1 ] := path;
+	end
+      else fail( '"' + path + '" not found' );
+    end; { with_file }
+
+  { configure }
   var
-    inputs : array of string;
-    vm	   : ng.vm;
+    p : string;
+    i : integer = 1;
 
-{ helper routines for main loop }
-
-  var init_failed : boolean = false;
-    
-  { helper routine for startup errors }
-  procedure die( msg : string );
   begin
-    writeln;
-    writeln( msg );
-    init_failed := true;
-  end; { die }
+    with cfg do begin
 
-  { if file exists, add to array of inputs to include }
-  procedure with_file( const path : string );
-  begin
-    if sysutils.fileexists( path ) then begin
-      { we can't just call include until we initialize the vm, and
-	we can'd do that until we're done with args, so we use the
-	inputs array as a buffer. }
-      setlength( inputs, length( inputs ) + 1 );
-      inputs[ length( inputs ) - 1 ] := path;
-    end else die( '"' + path + '" not found' );
-  end; { with_file }
+      { defaults  - would be nice if this were in the record definition... :/ }
+      imgPath := '';
+      padSize := -1;
+      dumpAfter := false;
+      debug := false;
 
+      result := true; { false will indicate failure }
+
+      { parse the command line parameters }
+      i := 1;
+      while result and ( i <= paramcount ) do begin
+	p := paramstr( i );
+	if (p = '--debug') or (p = '-d') then debug := true
+	else if p = '--dump' then dumpAfter := true
+	else if p = '--with' then
+	  if i + 1 <= paramcount then begin
+	    inc( i );
+	    with_file( paramstr( i ))
+	  end else fail( 'no filename given for --with' )
+	else if p = '--pad' then
+	  if i + 1 <= paramcount then begin
+	    inc( i ); padsize := strtoint( paramstr( i ))
+	  end else fail( 'expected a number after --pad' )
+	else if p = '--image' then begin
+	  inc( i ); imgPath := paramstr( i );
+	end
+	else begin { no prefix, so expect image name }
+	  if imgpath = '' then imgpath := paramstr( i )
+	  else fail( 'error: more than one image path given.' )
+	end;
+	inc( i )
+      end;
+      if imgPath = '' then imgPath := 'retroImage';
+      if ( padsize = -1 ) then padsize := 100000;
+    end
+  end; { configure }
 
+
 { main code }
-
 var
-  i	     : integer;
-  imgpath    : string = '';
-  fallback   : string = 'retroImage';
-  debug	     : boolean;
-  p	     : string;
-  dump_after : boolean = false;
-  padsize    : int32   = -1;
-
+  cfg	  : TRetroConfig;
+  waiting : boolean;
+  path	  : string;
+  vm	  : ng.vm;
 begin
-  i := 1;
-  while ( i <= paramcount ) and not init_failed do begin
-    p := paramstr( i );
-    if p = '-d' then  debug := true
-    else if p = '--dump' then dump_after := true
-    else if p = '--with' then
-      if i + 1 <= paramcount then begin
-	inc( i );
-	with_file( paramstr( i ))
-      end else die( 'no filename given for --with' )
-    else if p = '--pad' then
-      if i + 1 <= paramcount then begin
-	inc( i );
-	padsize := strtoint( paramstr( i ))
-      end else die( 'expected a number after --pad' )
-    else if p = '--image' then begin { do nothing. this is for ngarotest } end
-    else begin { no prefix, so expect image name }
-      if imgpath = '' then imgpath := paramstr( i )
-      else die( 'error: more than one image path given.' )
-    end;
-    inc( i )
-  end;
-
-  if imgpath = '' then imgpath := fallback;
-  if ( imgpath = fallback ) and ( padsize = -1 ) then padsize := 100000;
-
-
-{ main code , continued }
-
-  if not init_failed then begin
+  if configure( cfg ) then with cfg do
+  begin
     {$i-} vm.init( imgpath, debug, padsize ); {$i+}
     if ioresult <> 0 then die( 'couldn''t open image file: ' + imgpath )
     else begin
-      for p in inputs do vm.include( p );
+      for path in inputs do vm.include( path );
       vm.loop;
-      if dump_after then vm.dump
+      if dumpAfter then vm.dump
     end
   end
 end.
