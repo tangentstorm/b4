@@ -1,5 +1,6 @@
 # directory paths, relative to this directory:
 XPL       = lib/xpl/code
+LNPAS     = lib/linenoise
 GEN	  = gen
 PPU	  = $(GEN)
 EXE	  = $(GEN)
@@ -10,7 +11,7 @@ NGAROTEST = $(RETROPATH)/test/ngaro/ngarotest.py
 ROOT      = ../
 
 # compiler paths
-FPC       = fpc -gl -B -Sgic -Fu$(XPL) -Fi$(XPL) -FE$(GEN)
+FPC       = fpc -gl -B -Sgic -Fu$(XPL) -Fu$(LNPAS) -Fi$(XPL) -FE$(GEN)
 PYTHON    = python
 
 #------------------------------------------------------
@@ -25,7 +26,7 @@ targets:
 	@echo for grammar engine, cd ./pre
 
 retro : build
-	cd $(GEN); ./retro
+	cd $(GEN); ./retro -e
 
 build : init  ng/*.pas
 	@$(FPC) ng/retro.pas

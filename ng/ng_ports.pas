@@ -39,7 +39,7 @@ unit ng.ports; implementation
   { keyboard handler }
   function vm.handle_keyboard( msg : int32 ) : int32;
   begin
-    result := ord( kvm.readkey );
+    result := ord( kbd.readkey );
   end;
 
   { input file handler }

@@ -103,7 +103,7 @@ unit ng.debug; implementation
       inc( i );
     until i >= e; { can be greater if we read an argument in last cell }
     
-    if kvm.readkey <> #13 then ip := high( ram ) + 1;  { halt machine. todo: call it ascii.esc }
+    if kbd.readkey <> #13 then ip := high( ram ) + 1;  { halt machine. todo: call it ascii.esc }
   end; { show_debugger }
 
 {$IFDEF NESTUNITS}

@@ -121,7 +121,7 @@ unit ng.ops; implementation
     writeln;
     writeln( '<< press enter to continue, or type "q" to quit >>' );
     repeat
-      case kvm.readkey of
+      case kbd.readkey of
 	'q' : halt;
 	#13 : ok := true;
       end;

@@ -1,6 +1,6 @@
 {$i xpc.inc }
 unit ng;
-interface uses xpc, stacks, kvm, posix, sysutils;
+interface uses xpc, stacks, kvm, kbd, posix, sysutils;
 
   type
     pvm	   = ^vm;

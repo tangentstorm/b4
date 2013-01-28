@@ -4,3 +4,6 @@
 [submodule "lib/retro"]
 	path = lib/retro
 	url = https://code.google.com/p/retro-language/
+[submodule "lib/linenoise"]
+	path = lib/linenoise
+	url = git@github.com:tangentstorm/linenoise.git

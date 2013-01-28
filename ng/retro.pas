@@ -1,6 +1,6 @@
 {$i xpc.inc}
 program retro;
-uses xpc, ng, sysutils;
+uses xpc, ng, ln, sysutils, cx;
 
   type
     TRetroConfig = record
@@ -8,8 +8,9 @@ uses xpc, ng, sysutils;
 		     imgPath   : string;
 		     debug     : boolean;
 		     dumpAfter : boolean;
+		     lineEdit  : boolean;
 		     inputs    : array of string;
-		   end;
+		   end;	       
 
   function configure( var cfg : TRetroConfig ) : boolean;
 
@@ -46,6 +47,7 @@ uses xpc, ng, sysutils;
       imgPath := '';
       padSize := -1;
       dumpAfter := false;
+      lineEdit := false;
       debug := false;
 
       result := true; { false will indicate failure }
@@ -56,6 +58,7 @@ uses xpc, ng, sysutils;
 	p := paramstr( i );
 	if (p = '--debug') or (p = '-d') then debug := true
 	else if p = '--dump' then dumpAfter := true
+	else if (p = '--editline') or (p = '-e') then lineEdit := true
 	else if p = '--with' then
 	  if i + 1 <= paramcount then begin
 	    inc( i );
@@ -79,13 +82,49 @@ uses xpc, ng, sysutils;
     end
   end; { configure }
 
+  { optional line editor }
 
+  var
+    waiting : boolean; { true when waiting on input }
+    buff    : string = '';
+
+  { replacement for ng.vm.handle_keyboard }
+  type EdlinDevice = object
+    edln    : ln.LineEditor;
+    constructor init;
+    function handle ( msg : int32 ) : int32;
+    procedure step;
+  end;
+
+  constructor EdlinDevice.init;
+  begin
+    edln := ln.ed;
+    edln.prompt := 'ok> '
+  end;
+
+  procedure EdlinDevice.step;
+  begin
+    edln.step;
+  end;
+
+  function EdlinDevice.handle ( msg : int32 ) : int32;
+  begin
+    while length( buff ) = 0 do begin
+      while not edln.done do edln.step;
+      buff := edln.flush + #10;
+      writeln;
+    end;
+    result := ord( buff[ 1 ]);
+    delete( buff, 1, 1 );
+  end; { handle_keyboard_buffer }
+  
+
 { main code }
 var
-  cfg	  : TRetroConfig;
-  waiting : boolean;
-  path	  : string;
-  vm	  : ng.vm;
+  cfg	: TRetroConfig;
+  path	: string;
+  vm	: ng.vm;
+  edev	: EdlinDevice;
 begin
   if configure( cfg ) then with cfg do
   begin
@@ -93,6 +132,11 @@ begin
     if ioresult <> 0 then die( 'couldn''t open image file: ' + imgpath )
     else begin
       for path in inputs do vm.include( path );
+      if cfg.lineEdit then begin
+	{ devices should probably all be objects, not functions... }
+	edev.init;
+	vm.devices[1] := @edev.handle;
+      end;
       vm.loop;
       if dumpAfter then vm.dump
     end
