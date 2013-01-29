@@ -1,0 +1,1 @@
+fpc tokenize.pas  && ./tokenize < ~/vrx/image/kernel.rx
