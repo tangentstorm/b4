@@ -1,0 +1,103 @@
+
+needs vt' with vt'        ( mostly for debugging )
+  needs enum'               ( for enum| , which we'll curry to start at 0 )
+  needs math' with math'    ( for random )
+  needs forth' with forth'  ( for "for", "if", etc . always put this one last )
+
+  : shl << ;
+  : var| ` variables| ;
+
+  : dup2 ( xy-xyxy ) over over ;
+  : randint ( n-n ) random swap mod ;
+  
+  
+  
+  : asbit
+    dup 32 < push       ( r: -f )
+    32 mod 1 swap shl   ( o-n )
+    pop ;               ( n-nf r: f- )
+  "( o-nf ) converts the ordinal to a bit. f=0 on overflow, else -1" :doc
+  
+  : ≠ <> ;
+  "( xy-f ) just a fancy way to say !=" :doc
+  
+  : in asbit ( so-snf ) if 2drop 0 else and 0 ≠ then ;
+  "( so-f ) is ordinal o in set s? { false when o>32 }" :doc
+  
+  : incl asbit if or then ;
+  "( so-s ) include an ordinal item in the set" :doc
+  : excl asbit if not and then ;
+  "( so-s ) exclude an ordinal item from the set" :doc
+  
+  
+  : @inc over @ swap incl ! ;
+  "( ao- ) like =incl= but takes a pointer" :doc
+  
+  : @excl over @ swap excl ! ;
+  "( ao- ) like =excl= but takes a pointer" :doc
+  
+  needs enum'
+  : enum| 0 ^enum'enum| ;
+  chain: minesweep'
+(  {{ )
+    variables| H W |
+    1024 constant maxgrid
+    create grid maxgrid allot
+    variable size
+    enum| ·mine ·cover ·flag ·hint |
+    : newcell 1 asbit ;
+    : clipbounds ( wh-wh )
+      ( if: ) dup2 * maxgrid > 0; drop
+      ( then: ) "too big. clipping to 32*32" puts 32 32 ;
+    : resize ( wh- ) H ! W ! ;
+    : makegrid ( wh- )
+      ( wh-wh ) clipbounds dup2 resize
+      ( fill is: | axn- | n copies of x at a. so... )
+      ( wh- ) * grid newcell rot fill ;
+    : hasmine "( C-f ) given a cell, does it contain a mine?"
+      ·mine in ;
+    : randint ( n-n ) random swap mod ;
+    : inc 1+ ;
+    : @inc ( a- ) dup @ inc swap ! ; (  todo: there is almost certainly a combinator for this )
+    : addmines ( #- )
+      for
+        grid size randint + dup  ( -aa )
+        @ ·mine in if         ( #aa-#a )
+          drop inc             ( #a-# )
+        else ·mine incl !      ( #a- )
+        then
+      next ;
+    : hasmine? ·mine in ;
+    
+    
+    var| gameOver? |
+    
+    ( these two are just hooks so we can implement out of order )
+    : showall |m "( a- ) showall: revector me!" cr puts |w ;
+    : uncover |m "( a- ) uncover: revector me!" cr puts |w ;
+    
+    ( these two are callbacks intended to be used with a pluggable ui )
+    : on_safe |g "safe." puts cr |w ;
+    "( a- ) callback triggereed prodding a empty cell" :doc
+    
+    : on_dead |r "BOOM!" puts cr |w ;
+    "( a- ) callback triggereed prodding a mine" :doc
+    
+    : .prod
+      dup hasmine?    (  a-af )
+      dup gameOver? ! ( af-af | gameOver? := hasMine? )
+      if    showall on_dead
+      else  uncover on_safe
+      then ;
+    "( a- ) prod the cell at a for a mine, and see what happens... :)" :doc
+    
+    
+    
+    
+(  ---reveal--- )
+    : newgame ( #wh ) H ! W ! makegrid addmines ;
+    : newgame gameOver? off newgame ;
+    "( - ) set up a new game" :doc
+(  }} )
+  ;chain
+with minesweep'
