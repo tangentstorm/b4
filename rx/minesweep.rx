@@ -11,6 +11,8 @@ needs vt' with vt'        ( mostly for debugging )
   : randint ( n-n ) random swap mod ;
   
   
+  : dec 1- ;
+  : @dec ( a- ) dup @ dec swap ! ; (  todo: same as @inc. find a combinator. )
   
   : asbit
     dup 32 < push       ( r: -f )
@@ -21,7 +23,7 @@ needs vt' with vt'        ( mostly for debugging )
   : ≠ <> ;
   "( xy-f ) just a fancy way to say !=" :doc
   
-  : in asbit ( so-snf ) if 2drop 0 else and 0 ≠ then ;
+  : in? asbit ( so-snf ) if 2drop 0 else and 0 ≠ then ;
   "( so-f ) is ordinal o in set s? { false when o>32 }" :doc
   
   : incl asbit if or then ;
@@ -30,7 +32,7 @@ needs vt' with vt'        ( mostly for debugging )
   "( so-s ) exclude an ordinal item from the set" :doc
   
   
-  : @inc over @ swap incl ! ;
+  : @incl over @ swap incl ! ;
   "( ao- ) like =incl= but takes a pointer" :doc
   
   : @excl over @ swap excl ! ;
@@ -67,8 +69,9 @@ needs vt' with vt'        ( mostly for debugging )
         else ·mine incl !      ( #a- )
         then
       next ;
-    : hasmine? ·mine in ;
-    
+    : hasmine? ·mine in? ;
+    : cell ( xy-a ) W @ * + grid + ;
+    "( xy-a ) given coordinates, return the address of the cell" :doc
     
     var| gameOver? |
     
@@ -94,6 +97,40 @@ needs vt' with vt'        ( mostly for debugging )
     
     
     
+    
+    : inbounds?   0 H @ within   0 W @ within   and ;
+    "( xy-f ) is the point somewhre inside the minefield?" :doc
+    : cell.has? push cell @ pop in? ;
+    "( xyo-f ) is the ordinal o within the set at address a?"
+    
+    : needsfill?
+      dup2 inbounds?
+      ·cover cell.has?
+      and ;
+    "( xy-f ) should the floodfill routine visit this cell?" :doc
+    : (x,y) |c '( putc |g swap putn |c ", " |g puts putn  |c ') putc |w ;
+    "( xy- ) output coordinate pair as a string" :doc
+    
+    : on_flood (x,y) ;
+    "( xy- ) callback for floodfill. unvectored, it just shows the point" :doc
+    
+    : flood
+      dup2 needsfill?
+      if
+        dup2 on_flood
+        dup2 dec flood      ( north )
+        dup2 inc flood      ( south )
+        swap
+        dup2 inc swap flood ( east )
+        dup2 dec swap flood ( west )
+      then ;
+    "( xy-f )" :doc
+    
+    : floodfill
+      ( callback ) is on_flood
+      flood
+      devector on_flood ;
+    "( xy:- ) "
 (  ---reveal--- )
     : newgame ( #wh ) H ! W ! makegrid addmines ;
     : newgame gameOver? off newgame ;
