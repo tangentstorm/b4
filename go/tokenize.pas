@@ -19,14 +19,16 @@ program tokens( input, output );
     result := '';
     repeat result := result + ch;
     until next( ch ) in stop;
-    if action = keep then result := result + ch;
-    writeln( result );
+
+    write( ^_ ); { unit sep }
+    if action = keep then write( result, ch, ^_ )
+    else write( result, ^_, ch );
   end;
 
 begin
   repeat
     case next( ch ) of
-      #0 .. #32 : ;
+      #0 .. #32 : write( ch );
       '(' : scan([ ')' ], keep );
       '"' : scan([ '"' ], keep );
       otherwise scan([ #0 .. #32 ], drop )
