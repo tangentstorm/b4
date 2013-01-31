@@ -116,14 +116,14 @@ uses crt, math;
   procedure fill( a, b : integer; c: TColor );
     var
       r	       : array[ 1 .. 100 ] of TPoint2D;
-      back     : TColor;
+      bg     : TColor;
       rcounter : byte;
       up, down : boolean;
 
     procedure checkup;
     begin
       if (b < 0) then exit;
-      if (getpixel( a, b - 1 ) = back) then
+      if (getpixel( a, b - 1 ) = bg) then
 	if not up then begin
 	  up   := true;
 	  inc( rcounter );
@@ -138,7 +138,7 @@ uses crt, math;
     procedure checkdown;
     begin
       if (b > getmaxy) then exit;
-      if (getpixel( a, b + 1 ) = back) then
+      if (getpixel( a, b + 1 ) = bg) then
 	if not down then begin
 	  down := true;
 	  inc( rcounter );
@@ -154,10 +154,10 @@ uses crt, math;
     procedure fillone;
       var x, x1: integer;
     begin
-      if getpixel( a, b ) <> back then exit;
+      if getpixel( a, b ) <> bg then exit;
       x := a;
       up := false; down := false;
-      while (a <= getmaxx) and (getpixel( a, b) = back) do
+      while (a <= getmaxx) and (getpixel( a, b) = bg) do
       begin
 	checkup;
 	checkdown;
@@ -165,7 +165,7 @@ uses crt, math;
       end;
       x1 := a-1;
       a := x-1;
-      while (a >= 0) and (getpixel( a, b) = back) do
+      while (a >= 0) and (getpixel( a, b) = bg) do
       begin
 	checkup;
 	checkdown;
@@ -175,11 +175,11 @@ uses crt, math;
     end; { fillone }
 
   begin
-    back := getpixel( a, b );
+    bg := getpixel( a, b );
     setcolor( c );
     if (a < 0) or (a > getmaxx) or
        (b < 0) or (b > getmaxy) or
-       (back = c)
+       (bg = c)
     then exit
     else begin
       rcounter := 0;
