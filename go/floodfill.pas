@@ -29,21 +29,17 @@ uses crt, math;
   var
     canvas   : TCanvas;
     penColor : TColor;
-    triangle : TTriangle =
-	      (( x : 50;  y: 100),
-	       ( x : 100; y: 100),
-	       ( x : 150; y: 150));
 
   { --- a very simple abstract canvas ---- }
   { this could eventually become an object, but mostly I'm just
     stubbing out the things that depend on the graph unit. }
 
   const
-    getmaxx = 320-1;		
-    getmaxy = 200-1;		
-    black   = 0;		
+    getmaxx = 320-1;
+    getmaxy = 200-1;
+    black   = 0;
     white   = 15;
-
+
   function getpixel( const x, y	: integer ) : TColor;
   begin
     getpixel := canvas[ x, y ];
@@ -51,7 +47,9 @@ uses crt, math;
 
   procedure putpixel( const x, y : integer; const color : TColor );
   begin
-    canvas[ x, y ] := color
+    if ( x >= 0 ) and ( x <= getmaxx ) and
+       ( y >= 0 ) and ( y <= getmaxy )
+    then canvas[ x, y ] := color
   end; { putpixel }
 
   procedure setcolor( const color : TColor );
@@ -66,22 +64,62 @@ uses crt, math;
       halt;
     end;
   end; { assert }
-
-  procedure line( const x1, y1, x2, y2 : integer );
-    var i : integer;
+
+  procedure line( x1, y1, x2, y2 : integer );
+    var x, y : integer; m, b : real;
   begin
-    assert( y1 = y2, 'horizontal lines only. sorry.' );
-    assert( x1 <= x2, 'line must go left to right.' );
-    for i := x1 to x2 do putpixel( i, y1, penColor );
-  end;
+    { special cases for vertical and horizontal lines.
+      vertical is critical to avoid dividing by 0.
+      horizontal is just an easy optimization. }
+    if x1 = x2 then for y := y1 to y2 do putpixel( x1, y, penColor )
+    else if y1 = y2 then for x := x1 to x2 do putpixel( x, y1, penColor )
+    else if x1 > x2 then line( x2, y2, x1, y1 )
+    else begin
 
+      {$ifdef debug}
+      crt.textColor( white );
+      writeln('( ', x1:2, ', ', y1:2, ' ) -> ',
+              '( ', x2:2, ', ', y2:2, ' ) ' );
+      {$endif}
+
+      { slope is dy-dx ( "rise over run" ) }
+      m := ( y2 - y1 ) / ( x2 - x1 );
+
+      {$ifdef debug}
+      crt.textColor( green );
+      writeln( 'm := ( ', y2, ' - ', y1, ') / ( ', x2, ' - ', x1, ' )' );
+      writeln( 'm := ', m:4:2 );
+      {$endif}
+
+      { now calculate the base:
+	-----------------------------------------
+	line formula:  y  = m * x  + b
+	therefore:     y1 = m * x1 + b
+		  -b + y1 = m * x1
+                      -b  = m * x1 - y1
+	}              b := -((m * x1) - y1);
+
+      {$ifdef debug}
+      crt.textColor( magenta );
+      writeln( 'b := ', y1, ' -( ', m, ' * ', x1, ' )' );
+      writeln( 'b := ', floor( b ));
+      assert( y1 = ( m * x1 ) + b, 'self-check failed' );
+      {$endif}
+
+      for x := x1 to x2 do begin
+	y := floor( m * x + b );
+	putpixel( x, y, penColor );
+      end
+    end
+  end;
+
   procedure fill( a, b : integer; c: byte );
     var
       r	       : array[ 1 .. 100 ] of TPoint2D;
       back     : TColor;
       rcounter : byte;
       up, down : boolean;
-	       
+
     procedure checkup;
     begin
       if (b < 0) then exit;
@@ -96,9 +134,9 @@ uses crt, math;
 	end else up := true
       else up := false;
     end; { checkup }
-	       
+
     procedure checkdown;
-    begin      
+    begin
       if (b > getmaxy) then exit;
       if (getpixel( a, b + 1 ) = back) then
 	if not down then begin
@@ -112,7 +150,7 @@ uses crt, math;
 	else down := true
       else down := false;
     end; { checkdown }
-
+
     procedure fillone;
       var x, x1: integer;
     begin
@@ -155,8 +193,7 @@ uses crt, math;
       end
     end
   end;
-
-
+
   type
     pixelproc = procedure(const x, y : integer;
 			  const c    : TColor );
@@ -176,7 +213,7 @@ uses crt, math;
       for x := x1 to x2 do
 	callback( x, y, getpixel( x, y ));
   end;
-  
+
   procedure rand( const x, y : integer; const c : TColor );
   begin
     putpixel( x, y, floor( random * 256 ))
@@ -194,13 +231,61 @@ uses crt, math;
     crt.gotoxy( x, y );
     write( '0' );
   end;
+
+  function rnd( x : integer ) : integer;
+  begin
+    rnd := floor( random * x )
+  end;
 
+  { bisect the screen with various lines }
+  procedure randlines;
+    var i : byte;
+  begin
+    for i := 0 to 255 do begin
+      setcolor( i mod $e + 1 );
+      if odd( i )
+	then line( 0, rnd( crt.windmaxy ), crt.windmaxx, rnd( crt.windmaxy ))
+      else line( rnd( crt.windmaxx ), 0, rnd( crt.windmaxx ), crt.windmaxy )
+    end
+  end; { randlines }
+
+
+  procedure triangle( abc : TTriangle );
+  var i : byte; p1, p2 : TPoint2D;
+  const
+    colors : array[ 0..2 ] of byte
+	      = ( red, green, blue );
+  begin
+    p2 := abc[ 2 ];     { leading point }
+    for i := 0 to 2 do
+    begin
+      setcolor( colors[ i ]);
+      p1 := p2;         { trailing point}
+      p2 := abc[ i ];
+      line( p1.x, p1.y, p2.x, p2.y )
+    end
+  end;
+
+ const
+   ABC : TTriangle = // Fact: 93% of all triangles in the US are named ABC.
+         (( x : 25; y: 42 ),
+	  ( x : 50; y:  3 ),
+	  ( x : 75; y: 16 ));
+
+  var p : TPoint2D;
 begin
   crt.clrscr;
-  //forpixels( @rand );
+  randomize;
   forpixels( @clear );
-  putpixel( 10, 10, red );
-  setcolor( white );
+
+  { various experiments: }
+  // forpixels( @rand );
+  // randlines;
+  // putpixel( 10, 10, red );
+
+  for p in ABC do putpixel( p.x, p.y, yellow );
+  triangle( ABC );
+
   // fill( 50, 50, 15 );
   forpixels( @show );
 end.
