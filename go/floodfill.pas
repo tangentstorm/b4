@@ -99,10 +99,10 @@ uses crt, math;
       writeln( 'b := ', y1, ' -( ', m, ' * ', x1, ' )' );
       writeln( 'b := ', floor( b ));
       {$endif}
-      
+
       oldy := floor( m * x1 + b );
       assert( oldy=y1, 'self-check failed' );
-      
+
       for x := x1 to x2 do begin
 	y := floor( m * x + b );
 	if abs( y - oldy ) <= 1
@@ -120,10 +120,15 @@ uses crt, math;
       rcounter : byte;
       up, down : boolean;
 
+    function needsfill( x, y : integer ) : boolean;
+    begin
+      needsfill := getpixel( x, y ) = bg
+    end;
+
     procedure checkup;
     begin
       if (b < 0) then exit;
-      if (getpixel( a, b - 1 ) = bg) then
+      if needsfill( a, b - 1 ) then
 	if not up then begin
 	  up   := true;
 	  inc( rcounter );
@@ -138,7 +143,7 @@ uses crt, math;
     procedure checkdown;
     begin
       if (b > getmaxy) then exit;
-      if (getpixel( a, b + 1 ) = bg) then
+      if needsfill( a, b + 1 ) then
 	if not down then begin
 	  down := true;
 	  inc( rcounter );
@@ -154,10 +159,10 @@ uses crt, math;
     procedure fillone;
       var x, x1: integer;
     begin
-      if getpixel( a, b ) <> bg then exit;
+      if not needsfill( a, b ) then exit;
       x := a;
       up := false; down := false;
-      while (a <= getmaxx) and (getpixel( a, b) = bg) do
+      while (a <= getmaxx) and needsfill( a, b ) do
       begin
 	checkup;
 	checkdown;
@@ -165,7 +170,7 @@ uses crt, math;
       end;
       x1 := a-1;
       a := x-1;
-      while (a >= 0) and (getpixel( a, b) = bg) do
+      while (a >= 0) and needsfill( a, b) do
       begin
 	checkup;
 	checkdown;
