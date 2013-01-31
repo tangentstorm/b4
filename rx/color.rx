@@ -1,0 +1,15 @@
+( routines to make retro more colorful )
+needs vt' with vt'
+
+chain: color'
+( red notfound ---------------- )
+( don't understand yet why this doesn't work: )
+( : redNotFound which |r notFound |w ; &redNotFound &notFound  :is )
+( so i just redefine it: )
+: redNotFound   ( -  ) <notFound> 0; drop |r cr tib puts 32 putc '? putc cr |w ;
+"( - ) Called when a name is not found." :doc
+
+' redNotFound ' notFound :is
+
+;chain
+without
