@@ -1,0 +1,47 @@
+( b4 psuedo-assembler for retro/ngaro                            )
+( -------------------------------------------------------------- )
+( This translates b4 assembly language to ngaro opcodes.         )
+( -------------------------------------------------------------- )
+needs ng' with ng'
+needs vt' with vt'
+chain: b4'
+{{
+  : ? |r "TODO: " puts puts |w ;
+  : | ` ; ` immediate ; immediate
+---reveal---
+  : NOP  nop,   | "(   -   )" :doc
+  : LIT: lit,   | "(   -n  )" :doc
+  : DUP  dup,   | "(  n-nn )" :doc
+  : DEL  drop,  | "(  n-   )" :doc
+  : SWP  swap,  | "( xy-yx )" :doc
+  : PSH  push,  | "(  n-   )" :doc
+  : POP  pop,   | "(   -n  )" :doc
+  : INC  1+,    | "(  n-   )" :doc
+  : DEC  1-,    | "(  n-   )" :doc
+  : ADD  +,     | "( nn-n  )" :doc
+  : SUB  -,     | "( nn-n  )" :doc
+  : MUL  *,     | "( nn-n  )" :doc
+  : DVM  /mod,  | "( xy-rq )" :doc
+  : SHL  <<,    | "( nb-n  )" :doc
+  : SHR  >>,    | "( nb-n  )" :doc
+  : NOT  not    | "(  n-n  )" :doc ( new )
+  : AND  and,   | "( nn-n  )" :doc
+  :  OR  or,    | "( nn-n  )" :doc
+  : XOR  xor,   | "( nn-n  )" :doc
+  :  EQ  =      | "( nn-f  )" :doc
+  :  NE  !=     | "( nn-f  )" :doc
+  :  LT  <      | "( nn-f  )" :doc
+  :  GT  >      | "( nn-f  )" :doc
+  :  LE  <=     | "( nn-f  )" :doc
+  :  GE  >=     | "( nn-f  )" :doc
+  : RET  ;,     | "(   -   )" :doc
+  : JMP: jump,  | "(   -   )" :doc
+  : ELS: "ELS:" ? | "(  n-?  )" :doc  (  TODO )
+  : NXT: loop,  | "(  n-?  )" :doc
+  : ZRT  0;,    | "(  n-?  )" :doc
+  : GET  @,     | "(  a-n  )" :doc
+  : PUT  !,     | "( na-   )" :doc
+  : IRQ "IRQ"   ? | "( gm-   )" :doc (  TODO )
+}}
+;chain
+without without
