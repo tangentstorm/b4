@@ -286,6 +286,6 @@ begin
   for p in ABC do putpixel( p.x, p.y, yellow );
   triangle( ABC );
 
-  // fill( 50, 50, 15 );
+  fill( 50, 50, 15 );
   forpixels( @show );
 end.
