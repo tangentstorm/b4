@@ -1,0 +1,43 @@
+( ngaro assembler                                                )
+( -------------------------------------------------------------- )
+( Retro provides an assembler in examples/languages/assembler.rx )
+( but this is aimed at generating entire images, which means all )
+( the words write to the ram of the new image.                   )
+(                                                                )
+( Retro /also/ provides various keywords corresponding to the    )
+( primitives, but these are often enhanced, hidden, or modified  )
+( for convenience. For example, 'wait also emits [ 0 0 out ],    )
+( and the low level jumps are hidden in favor of higher level    )
+( words like "if".                                               )
+(                                                                )
+( In contrast, this assembler writes to the current image's ram, )
+( allowing it to be used inside word definitions.                )
+(                                                                )
+( -------------------------------------------------------------- )
+chain: ng'
+{{
+  : | ` , ` ; ` immediate ; immediate
+---reveal---
+
+  : nop,   0 |      : lit,   1 |      : dup,   2 |
+  : drop,  3 |      : swap,  4 |      : push,  5 |
+  : pop,   6 |      : loop,  7 |      : jump,  8 |
+  : ;,     9 |      : >jump, 0 |      : <jump, 1 |
+  : !jump, 2 |      : =jump, 3 |      : @,     4 |
+  : !,     5 |      : +,     6 |      : -,     7 |
+  : *,     8 |      : /mod,  9 |      : and,   0 |
+  : or,    1 |      : xor,   2 |      : <<,    3 |
+  : >>,    4 |      : 0;,    5 |      : 1+,    6 |
+  : 1-,    7 |      : in,    8 |      : out,   9 |
+  : wait,  0 |
+
+  : lit,,   lit,  |
+  : loop,,  loop, |
+  : jump,,  jump, |
+  : >jump,, jump, |
+  : <jump,, jump, |
+  : !jump,, jump, |
+  : =jump,, jump, |
+}}
+;chain
+
