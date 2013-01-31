@@ -1,3 +1,20 @@
+{ pascal implementation of a floodfill algorithm.
+----------------------------------------------------------
+  The date on this file was 5/31/1994. Given the formatting
+  and the use of (a,b) for coordinates in the original, I
+  undoubtably typed this by hand.
+
+  It was probably translated from a book on graphics
+  programming ( "tricks of the graphics gurus" perhaps? )
+  or taken from a textfile or magazine article on the
+  subject. In any case, the floodfill algorithm is public
+  domain, and as far as I am concerned, so is this
+  implementataion.
+
+  --mjw, cleaning it up 1/31/2013
+  for translation to retroforth for minesweep.rx
+---------------------------------------------------------- }
+
 program fillroutine;
 uses
   Graph,bgistuff;
