@@ -19,7 +19,7 @@ seen = {}
 ng_ops =\
     """
     nop lit dup drop swap push pop
-    loop jump ; >jump <jump !jump =jump 
+    loop jump ; >jump <jump !jump =jump
     @ ! + - * /mod and or xor << >> 0;
     1+ 1- in out wait
     """.split()
@@ -40,14 +40,14 @@ STR, NUM, WORD, VAR, DEF, MACRO, PRIM, NEW, REM, SPACE  = range( 10 )
 theme = 'gYwCWMyrBw'
 ansi  = 'krgybmcwKRGYBMCW'
 
-for item in [ 
+for item in [
     ":", ";", "t:", "w:", "m:", "p:", "i:", ":doc", "data:",
     "[", "]", "label:", "variable", "variable:",
     "constant", "#", ",", "'", "`", "elements", "$,"
-    "if", "!if", "then", ".word", "$,", "setClass"
-              
+    "if", "!if", "then", ".word", "$,", "setClass",
+    "{{", "---reveal---", "}}",
     ]: kind[ item ] = MACRO
-for item in [ 
+for item in [
     "last", "fb", "fw", "fh", "cw", "ch", "memory",
     "heap", "which", "remapping", "eatLeading?", "base",
     ]: kind[ item ] = VAR
@@ -84,7 +84,10 @@ var.thisWord = None
 def compile( tok ):
     defs.setdefault( var.thisWord, [ ]).append( tok )
 
-class MakeWord( Exception ): pass
+class MakeWord( Exception ):
+    def __init__( self, count ):
+        super( MakeWord, self ).__init__()
+        self.count = count
 
 def compileOn( tok ): emit( bg( 'K' ))
 def compileOff( tok ): emit( bg( 'k' ))
@@ -95,22 +98,23 @@ def defineWord( tok ):
         'variable'  : VAR,
         'variable:' : VAR,
         'label:' : VAR,
+        ':'  : WORD,
         'p:' : PRIM,
         'w:' : WORD,
         'm:' : MACRO,
-        ':'  : WORD,
         # not sure about these yet:
         't:' : NEW,
         'i:' : NEW,
     }[ var.compWord ]
-    compileOn( tok )
+    if kind[ tok ] not in [ VAR ]:
+        compileOn( tok )
+    count = 2 if tok in 'p: w: m: t: i:'.split() else 1
     var.thisWord = tok
-    raise MakeWord
+    raise MakeWord( count )
 
 callback = {}
 for item in [ "[" , "]]" ]:
     callback[ item ] = compileOn
-
 
 immediate = {}
 donothing = lambda : ()
@@ -120,7 +124,7 @@ for item in [ ":", "t:", "w:", "m:", "i:", "p:",
     immediate[ item ] = functools.partial(
         lambda item : var.set( 'compWord', item ),
         item )
-for item in [ ";", "]", "[[" ]:
+for item in [ ";", ";;", "[[" ]:
     callback[ item ] = compileOff
 
 compiler = False
@@ -131,15 +135,18 @@ def tokens():
         if all( ord( ch ) <= 32 for ch in tok ):
             yield tok, SPACE
             continue
-        
+
         try:
             if withnext: withnext( tok )
             elif compiler: compile( tok )
             lastword = tok
             withnext = callback.get( tok )
-        except MakeWord:
+        except MakeWord, mw:
             yield tok, DEF
-            withnext = None
+            if mw.count == 1 : withnext = None
+            else:
+                def withnext( tok ):
+                    raise MakeWord( mw.count - 1 )
             continue
 
         if tok.startswith( '(' ): yield tok, REM
@@ -153,7 +160,7 @@ def tokens():
 def main():
     for tok, typ in tokens() :
         immediate.get( tok, donothing )()
-        if DEF == typ: 
+        if DEF == typ:
             if tok in defs: dups.append(( tok, defs[ tok ] ))
             defs[ tok ] = []
         elif REM == typ: pass
