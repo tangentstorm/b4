@@ -114,96 +114,30 @@ uses crt, math;
   end;
 
   procedure fill( a, b : integer; c: TColor );
-    var
-      r	       : array[ 1 .. 100 ] of TPoint2D;
-      bg     : TColor;
-      rcounter : byte;
-      up, down : boolean;
+    var bg : TColor;
 
     function needsfill( x, y : integer ) : boolean;
     begin
-      needsfill := getpixel( x, y ) = bg
+      needsfill := ( x >= 0 ) and ( x <= getmaxx ) and
+		   ( y >= 0 ) and ( y <= getmaxy ) and
+		   ( getpixel( x, y ) = bg )
     end;
 
-    procedure checkup;
+    procedure flood( x, y : integer );
     begin
-      if (b < 0) then exit;
-      if needsfill( a, b - 1 ) then
-	if not up then begin
-	  up   := true;
-	  inc( rcounter );
-	  with r[rcounter] do begin
-	    x := a;
-	    y := b-1;
-	  end
-	end else up := true
-      else up := false;
-    end; { checkup }
-
-    procedure checkdown;
-    begin
-      if (b > getmaxy) then exit;
-      if needsfill( a, b + 1 ) then
-	if not down then begin
-	  down := true;
-	  inc( rcounter );
-	  with r[rcounter] do begin
-	    x  := a;
-	    y  := b+1;
-	  end
-	end
-	else down := true
-      else down := false;
-    end; { checkdown }
-
-    procedure fillrow;
-      var x1, x2 : integer;
-    begin
-      if not needsfill( a, b ) then exit;
-      up := false; down := false;
-
-      x1 := a; { remember start position }
-
-      { go east --> }
-      while ( a <= getmaxx ) and needsfill( a, b ) do
+      if needsfill( x, y ) then
       begin
-	checkup;
-	checkdown;
-	inc( a );
+	putpixel( x, y, c );
+	flood( x, y - 1 ); // north
+	flood( x, y + 1 ); // south
+	flood( x + 1, y ); // east
+	flood( x - 1, y ); // west
       end;
-      x2 := a-1;
-
-      a := x1;
-      { <-- go west }
-      while (a >= 0) and needsfill( a, b ) do
-      begin
-	checkup;
-	checkdown;
-	dec( a );
-      end;
-      x1 := a + 1;
-
-      line( x1, b, x2, b );
-    end; { fillrow }
+    end;
 
   begin
     bg := getpixel( a, b );
-    setcolor( c );
-    if (a < 0) or (a > getmaxx) or
-       (b < 0) or (b > getmaxy) or
-       (bg = c)
-    then exit
-    else begin
-      rcounter := 0;
-      fillrow;
-      while rcounter <> 0 do
-      begin
-	a := r[ rcounter ].x;
-	b := r[ rcounter ].y;
-	rcounter := rcounter-1;
-	fillrow;
-      end
-    end
+    flood( a, b );
   end;
 
   type
