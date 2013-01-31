@@ -66,27 +66,23 @@ uses crt, math;
   end; { assert }
 
   procedure line( x1, y1, x2, y2 : integer );
-    var x, y : integer; m, b : real;
+    var x, y, oldy, dy : integer; m, b : real;
   begin
-    { special cases for vertical and horizontal lines.
-      vertical is critical to avoid dividing by 0.
-      horizontal is just an easy optimization. }
+    { special cases for vertical and horizontal lines. vertical check is
+      critical to avoid division by 0. horizontal is just an optimization. }
     if x1 = x2 then for y := y1 to y2 do putpixel( x1, y, penColor )
     else if y1 = y2 then for x := x1 to x2 do putpixel( x, y1, penColor )
-    else if x1 > x2 then line( x2, y2, x1, y1 )
+    else if x1 > x2 then line( x2, y2, x1, y1 ) { always go left to right }
     else begin
 
-      {$ifdef debug}
-      crt.textColor( white );
-      writeln('( ', x1:2, ', ', y1:2, ' ) -> ',
-              '( ', x2:2, ', ', y2:2, ' ) ' );
+      {$ifdef debug} crt.textColor( white );
+      writeln('( ', x1:2, ', ', y1:2, ' ) -> ', '( ', x2:2, ', ', y2:2, ' ) ' );
       {$endif}
 
       { slope is dy-dx ( "rise over run" ) }
       m := ( y2 - y1 ) / ( x2 - x1 );
 
-      {$ifdef debug}
-      crt.textColor( green );
+      {$ifdef debug} crt.textColor( green );
       writeln( 'm := ( ', y2, ' - ', y1, ') / ( ', x2, ' - ', x1, ' )' );
       writeln( 'm := ', m:4:2 );
       {$endif}
@@ -97,23 +93,27 @@ uses crt, math;
 	therefore:     y1 = m * x1 + b
 		  -b + y1 = m * x1
                       -b  = m * x1 - y1
-	}              b := -((m * x1) - y1);
-
+      }                b := -((m * x1) - y1);
       {$ifdef debug}
       crt.textColor( magenta );
       writeln( 'b := ', y1, ' -( ', m, ' * ', x1, ' )' );
       writeln( 'b := ', floor( b ));
-      assert( y1 = ( m * x1 ) + b, 'self-check failed' );
       {$endif}
-
+      
+      oldy := floor( m * x1 + b );
+      assert( oldy=y1, 'self-check failed' );
+      
       for x := x1 to x2 do begin
 	y := floor( m * x + b );
-	putpixel( x, y, penColor );
+	if abs( y - oldy ) <= 1
+	  then putpixel( x, y, penColor )
+	  else line( x, y, x, oldy - sign( oldy-y)  );
+	oldy := y;
       end
     end
   end;
 
-  procedure fill( a, b : integer; c: byte );
+  procedure fill( a, b : integer; c: TColor );
     var
       r	       : array[ 1 .. 100 ] of TPoint2D;
       back     : TColor;
@@ -286,6 +286,6 @@ begin
   for p in ABC do putpixel( p.x, p.y, yellow );
   triangle( ABC );
 
-  fill( 50, 50, 15 );
+  fill( 5, 5, magenta );
   forpixels( @show );
 end.
