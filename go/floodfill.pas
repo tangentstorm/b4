@@ -156,28 +156,35 @@ uses crt, math;
       else down := false;
     end; { checkdown }
 
-    procedure fillone;
-      var x, x1: integer;
+    procedure fillrow;
+      var x1, x2 : integer;
     begin
       if not needsfill( a, b ) then exit;
-      x := a;
       up := false; down := false;
-      while (a <= getmaxx) and needsfill( a, b ) do
+
+      x1 := a; { remember start position }
+
+      { go east --> }
+      while ( a <= getmaxx ) and needsfill( a, b ) do
       begin
 	checkup;
 	checkdown;
 	inc( a );
       end;
-      x1 := a-1;
-      a := x-1;
-      while (a >= 0) and needsfill( a, b) do
+      x2 := a-1;
+
+      a := x1;
+      { <-- go west }
+      while (a >= 0) and needsfill( a, b ) do
       begin
 	checkup;
 	checkdown;
 	dec( a );
       end;
-      line( a+1, b, x1, b );
-    end; { fillone }
+      x1 := a + 1;
+
+      line( x1, b, x2, b );
+    end; { fillrow }
 
   begin
     bg := getpixel( a, b );
@@ -188,13 +195,13 @@ uses crt, math;
     then exit
     else begin
       rcounter := 0;
-      fillone;
+      fillrow;
       while rcounter <> 0 do
       begin
 	a := r[ rcounter ].x;
 	b := r[ rcounter ].y;
 	rcounter := rcounter-1;
-	fillone;
+	fillrow;
       end
     end
   end;
