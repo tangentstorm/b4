@@ -45,12 +45,19 @@ hex
 ;
 
 ( row )
-variable i
 : dec 1- ;
 : row ( 9 ) repeat 0; dec dup putn space again ;
 
 
-: q reset &ok :devector ; "quit the game" :doc
+
+: grok |g cr "ok " $ |w ; "( - ) green ok prompt" :doc
+: help
+  |w "Type " $ |Y "words " $
+  |w "to see a list of words you can try, or " $
+  |Y "play " $ |w "to play the game again." $ |w cr ;
+  "a rudimentary help message." :doc
+: q reset clear &grok &ok :is |W "Welcome to Retro!" $ cr help ;
+"( ?- ) quits mineswpr and returns to retro prompt" :doc
 : mineswpr reset &draw &ok :is ; "play the game" :doc
 : play mineswpr ; "alias for mineswpr" :doc
 mineswpr
