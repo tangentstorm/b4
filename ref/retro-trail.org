@@ -81,7 +81,7 @@ This is like "," but it writes the value to the target memory instead of the sta
 ** DONE assembler
 *** DONE def vm:
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle
-: vm: ( n"- ) ` : .data ` m, ` ; ;
+: vm: ( n"- ) ` : .data ` m, ` ; 
 #+end_src
 
 This is used to build functions that lay down opcodes into the target memory space. Functionally, the following forms would be equivilent:
@@ -1752,7 +1752,7 @@ Display some statistics on the new kernel for diagnostic purposes.
 Once =bootNew= is called, there is no going back. The old image is replaced by
 the new one, so be sure to keep a backup handy in case changes break things.
 
-* [0/32] Stage 3: Extend The Language
+* [7/35] Stage 3: Extend The Language
 ** ===================
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
   ( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
@@ -1765,8 +1765,13 @@ the new one, so be sure to keep a backup handy in case changes break things.
 
 #+end_src
 
-** TODO ( Stack Words ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** DONE stack words
+As noted by the comment above, at this point we have only the basic set of
+functions and variables available. We start by defining more stack and variable
+operations.
+
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
+( Stack Words ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 
 : nip   (  xy-y    ) swap drop ;
 " ( xy-y ) Drop the NOS from the stack" :doc
@@ -1792,21 +1797,10 @@ the new one, so be sure to keep a backup handy in case changes break things.
 : ?dup  (   n-n || n-nn )  dup 0; ;
 " ( -n ) Duplicate TOS if non-zero. If zero, leave value alone" :doc
 #+end_src
-** TODO | more stack and variable operations
-As noted by the comment above, at this point we have only the basic set of
-functions and variables available. We start by defining more stack and variable
-operations.
 
-*** :  nip   (  xy-y    ) swap drop ;
-*** :  rot   ( xyz-yzx  ) push swap pop swap ;
-*** :  tuck  (  xy-yxy  ) dup rot rot ;
-*** :  +!    (  na-     ) dup push @ + pop ! ;
-*** :  -!    (  na-     ) dup push @ swap - pop ! ;
-*** :  ++    (   a-     ) 1 swap +! ;
-*** :  --    (   a-     ) 1 swap -! ;
-** TODO ( Scope ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** DONE Then the scope functions:
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
-
+( Scope ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 create list  ( -a )  0 , 0 ,
 
 : {{ ( - )  vector off last @ dup list !+ ! ;
@@ -1821,42 +1815,40 @@ create list  ( -a )  0 , 0 ,
   [ list @ [ last repeat @ dup @ list 1+ @ != 0; drop again ] do ! ] if ;
 " ( - ) Close a namespace, sealing off private symbols" :doc
 #+end_src
-** TODO | Then the scope functions:
-
-  create list  ( -a )  0 , 0 ,
-*** :  {{ ( - )  last @ dup list ! list 1+ ! ;
-*** :  ---reveal--- ( - ) last @ list 1+ ! ;
-*** :  }} ( - )
-    list @ list 1+ @ =if list @ last ! ;; then
-    list @ [ last repeat @ dup @ list 1+ @ =if ;; then again ] do ! ;
 
 These are hairy, but basically involve relinking the dictionary chain. The
 simplest case:
 
-*** :  foo 1 2 + ;
+#+begin_example retro
+ :  foo 1 2 + ;
   {{
     : bar foo foo * ;
   }}
+#+end_example
 
 Would leave "foo" visible, and hide "bar". This is pretty easy to do, but the
 scope control goes a bit further:
 
-*** :  foo 1 2 + ;
+#+begin_example retro
+ :  foo 1 2 + ;
   {{
     : bar foo foo * ;
   ---reveal---
     : big bar putn ;
   }}
+#+end_example
 
-Would leave "foo" and "big" visible, but hide "bar". This is done by locating
-the header of "big", and pointing its link field to the header of "foo".
+Would leave =foo= and =big= visible, but hide =bar=. This is done by locating
+the header of =big=, and pointing its link field to the header of =foo=.
 
-*** :  :devector ( a-  ) dup 0 swap ! 1+ 0 swap ! ;
-*** :  :is       ( aa- ) dup 8 swap ! 1+ ! ;
-*** :  devector  ( "-  ) ' 0; :devector ;
-*** :  is        ( a"- ) ' 0; :is ;
-** TODO ( Vectored Execution ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** DONE vectored execution
+
+Retro allows for functions created via the colon compiler to be revectored. This provides support for altering existing functionality at a later time and is done by replacing the two nop's at the start of each colon definition with a jump to the new function.
+
+Devectoring is done by replacing the jump with two nop's.
+
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
+( Vectored Execution ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 
 : devector  ( "-  ) ' 0; :devector ;
 " ( ``- ) Same as **:devector**, but parses for name of function" :doc
@@ -1866,7 +1858,13 @@ the header of "big", and pointing its link field to the header of "foo".
 
 : default:  ( "-  ) ' 2 + , ; ' .macro last @ d->class !
 " ( ``- ) Compile call to default definition of a function, ignoring any revectoring" :doc
+#+end_src
 
+This compiles a call to a default definition, skipping the possible revectoring. It's useful for extending an existing function.
+
+** TODO { refile these }
+
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 : HEADERS   (  -n ) 32 ;
 " ( -n ) Returns number of private headers permitted" :doc
 
@@ -1892,183 +1890,9 @@ the header of "big", and pointing its link field to the header of "foo".
   [ split off                default: }}                    ] is }}
 }}
 #+end_src
-** TODO | revectoring
-
-Retro allows for functions created via the colon compiler to be revectored.
-This provides support for altering existing functionality at a later time and
-is done by replacing the two nop's at the start of each colon definition with
-a jump to the new function.
-
-Devectoring is done by replacing the jump with two nop's.
-
-*** :  default:  ( "-  ) ' 2 + , ; ' .macro last @ d->class !
-
-This compiles a call to a default definition, skipping the possible revectoring.
-It's useful for extending an existing function.
-
-{{
-  create a 0 , create b 0 , create c 0 , create xt 0 ,
-*** :  skim       ( a-a )
-    last repeat @ over over d->xt @ =if nip ;; then 0; again ;
-*** :  getHeaders ( $-  )
-    xt ! 0 a ! 0 b ! 0 c !
-    last repeat @ 0; dup d->xt @ xt @ =if dup b ! @ a ! ;; then dup c ! again ;
-*** :  <hide>     ( a-  ) getHeaders b @ 0; drop a @ c @ ! ;
-  ---reveal---
-*** :  d'         ( "-a ) ' drop which @ ;
-*** :  xt->d      ( a-d || a-0 ) dup skim over over = [ - ] [ nip ] if ;
-*** :  :hide      ( a-  )
-    dup xt->d last @ = [ drop last @ @ last ! ] [ <hide> ] if ;
-*** :  hide       ( "-  ) ' 0; :hide ;
-}}
-
-This set of functions is used to access and manipulate the dictionary.
-
-  d'
-
-This acts like ' but returns a dictionary header rather than the contents of
-the xt field. If you look here, you'll see that it uses ' to do the search,
-discards the xt, and pulls the actual header address out of "which".
-
-  xt->d
-
-If you have an xt, this will try to find a dictionary header that corresponds
-to it. If it fails, it'll return a zero.
-
-*** : hide
-  hide
-
-These relink the dictionary to hide a single header. You can either provide
-an xt or parse for a name.
-
-  hide list
-
-Hide a factor used in the creation of scopes.
-
-*** :  reclass      (  a- ) last @ d->class ! ;
-
-Change the class of the most recently defined function to the specified class.
-
-*** :  reclass:     ( a"- ) d' d->class ! ;
-
-Change the class of a function to the specified class. Parses for the function
-name.
-
-  {{
-    : xt:class ( a-aa ) dup xt->d 0; d->class @ withClass ;
-  ---reveal---
-    : __&  ( a-  ) .data              ;     &.macro reclass
-    : __@  ( a-n ) xt:class &@  .word ;     &.macro reclass
-    : __!  ( na- ) xt:class &!  .word ;     &.macro reclass
-    : __+  ( na- ) xt:class &+! .word ;     &.macro reclass
-    : __-  ( na- ) xt:class &-! .word ;     &.macro reclass
-    : __2  ( a-  ) &xt:class sip xt:class ; &.macro reclass
-  }}
-
-The initial set of prefixes. Note that we redefine "xt:class" here. It's
-slightly different than the non-exposed one in the kernel.
-
-+---+------------------------------------------------------+
-| & | Return the address (xt) of a named item              |
-+---+------------------------------------------------------+
-| @ | Fetch a value from a variable                        |
-+---+------------------------------------------------------+
-| ! | Store a value to a variable                          |
-+---+------------------------------------------------------+
-| + | Add a value to the value stored in a variable        |
-+---+------------------------------------------------------+
-| - | Subtract a value from the value stored in a variable |
-+---+------------------------------------------------------+
-| 2 | Execute a function twice.                            |
-+---+------------------------------------------------------+
-
-At this point we only have basic prefixes; support for parsing prefixes will
-be created later.
-
-*** :  .primitive   (  a- ) dup @ 0 = [ @compiler [ 2 + @ ] ifTrue ] ifTrue .word ;
-*** :  .compiler    (  a- ) @compiler &do &drop if ;
-
-In the kernel, we have three classes: .word, .macro, and .data. Here we define
-two additionals.
-
-  .primitive
-
-This is used for the handful of functions that map to a single Ngaro
-instruction. If the function is not revectored, and the compiler is active,
-it will inline the instruction rather than laying down a call. Otherwise, it
-acts the same as the ".word" class.
-
-  .compiler
-
-This provides an alternative to ".macro" for things that are only intended
-to be used inside a definition. At the interpreter, things with this class
-are silently ignored.
-
-*** :  immediate    (   - ) &.macro reclass ;
-
-Change the class of the most recent function to ".macro"
-
-*** :  compile-only (  "- ) &.compiler reclass ;
-
-Change the class of the most recent function to ".compiler".
-
-Now that we have some new classes, let's change the class of some existing
-functions to ".primitive" to improve performance:
-
-*** :  p: ( "- ) &.primitive reclass: ;
-  p: 1+     p: 1-     p: swap   p: drop  p: and    p: or     p: xor    p: @
-  p: !      p: +      p: -      p: *     p: /mod   p: <<     p: >>     p: dup
-  p  : in     p: out
-  hide p:
-
-And a couple of things to ".compiler" for safety.:
-
-*** :  c: ( "- ) &.compiler reclass: ;
-  c: pop    c: push   c: 0;     c: ;;    c: ;      c: repeat c: again
-  hide c:
-
-Ok, now on to backtick:
-
-*** :  `     ( "-  )
-    ' dup 0 !if .data @which @d->class , ;; then
-    drop tib isNumber? -1
-    =if tib toNumber .data &.data , ;; then
-    notFound ; compile-only
-
-This is similar to "postpone", but with a subtle difference. We use it in cases
-where we wish to create state-aware macros. This is probably best seen with an
-example.
-
-  ( A function to inline "1 2 +" into a definition )
-*** :  foo  1 , 1 , 1 , 2 , 16 , ; compile-only
-
-Ouch. Too many magic numbers. We could clean this up with the classes:
-
-  ( A function to inline "1 2 +" into a definition )
-*** :  foo  1 .data 2 .data &+ .primitive ; compile-only
-
-Longer, but more readable. With backtick we can do this instead:
-
-  ( A function to inline "1 2 +" into a definition )
-*** :  foo  ` 1 ` 2 ` + ; compile-only
-
-This is identical in functionality to the version using classes, but much
-more compact and readable.
-
-*** : jump: ( "- ) ' 0; 8 , , ; compile-only
-
-Compile a jump to a named function.
-
-*** :  [[    (  - ) compiler off ; immediate
-
-Turn the compiler off.
-
-*** :  ]]    (  - ) compiler on  ;
-
-Turn the compiler on.
-** TODO ( Dictionary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+** DONE dictionary words
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
-
+ ( Dictionary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 {{
   create a 0 , create b 0 , create c 0 , create xt 0 ,
   : skim       ( a-a )
@@ -2078,12 +1902,28 @@ Turn the compiler on.
     last repeat @ 0; dup d->xt @ xt @ == [ dup b ! @ a ! 0 ] [ -1 ] if 0; drop dup c ! again ;
   : <hide>     ( a-  ) getHeaders b @ 0; drop a @ c @ ! ;
 ---reveal---
+#+end_src
+
+This set of functions is used to access and manipulate the dictionary.
+
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
   : d'         ( "-a ) ' drop which @ ;
   " ( ``-a ) Parse for a name and return the dictionary header corresponding to it" :doc
+#+end_src
 
+
+This acts like ' but returns a dictionary header rather than the contents of the xt field. If you look here, you'll see that it uses ' to do the search, discards the xt, and pulls the actual header address out of "which".
+#+end_src
+
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
   : xt->d      ( a-d || a-0 ) dup skim over over == [ - ] [ nip ] if ;
   " ( a-d ) Given an address, return the corresponding dictionary header or 0 if not found" :doc
+#+end_src
 
+If you have an xt, this will try to find a dictionary header that corresponds
+to it. If it fails, it'll return a zero.
+
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
   : :hide      ( a-  )
     dup xt->d last @ == [ drop last @ @ last ! ] [ <hide> ] if ;
   " ( a- ) Remove a name from a dictionary. Specify the address of a function. Used by **hide**" :doc
@@ -2091,18 +1931,30 @@ Turn the compiler on.
   : hide       ( "-  ) ' 0; :hide ;
   " ( ``- ) Remove a name from the dictionary" :doc
 }}
+#+end_src
+
+These relink the dictionary to hide a single header. You can either provide
+an xt or parse for a name.
+
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 hide list
 hide vector
+#+end_src
 
+Hide a factor used in the creation of scopes.
+
+** DONE reclass
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 : reclass      (  a- ) last @ d->class ! ;
 " ( a- ) Change class of most recent function to specified class" :doc
 
 : reclass:     ( a"- ) d' d->class ! ;
 " ( a``- ) Same as **reclass**, but parse for function to change class of" :doc
 #+end_src
-** TODO ( Initial Prefixes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
+** DONE initial prefixes
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
+( Initial Prefixes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 {{
   : xt:class ( a-aa ) dup xt->d 0; d->class @ withClass ;
 ---reveal---
@@ -2125,8 +1977,40 @@ hide vector
   " ( a- ) Prefix; execute function twice" :doc
 }}
 #+end_src
-** TODO ( Classes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+
+The initial set of prefixes. Note that we redefine "xt:class" here. It's
+slightly different than the non-exposed one in the kernel.
+
+| & | Return the address (xt) of a named item              |
+| @ | Fetch a value from a variable                        |
+| ! | Store a value to a variable                          |
+| + | Add a value to the value stored in a variable        |
+| - | Subtract a value from the value stored in a variable |
+| 2 | Execute a function twice.                            |
+
+At this point we only have basic prefixes; support for parsing prefixes will
+be created later.
+** TODO classes { .primitive was moved to the kernel  } 
+
+In the kernel, we have three classes: .word, .macro, and .data. Here we define
+two additionals.
+
+  .primitive
+
+This is used for the handful of functions that map to a single Ngaro
+instruction. If the function is not revectored, and the compiler is active,
+it will inline the instruction rather than laying down a call. Otherwise, it
+acts the same as the ".word" class.
+
+  .compiler
+
+This provides an alternative to ".macro" for things that are only intended
+to be used inside a definition. At the interpreter, things with this class
+are silently ignored.
+
+
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
+( Classes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 
 : .compiler    (  a- ) @compiler &do &drop if ;
 " ( a- ) Class for functions that can only be used inside a definition" :doc
@@ -2137,8 +2021,20 @@ hide vector
 : compile-only (  "- ) &.compiler reclass ;
 " ( ``- ) Set the most recent function to **.compiler** class" :doc
 #+end_src
-** TODO ( Remap some classes for efficiency and safety ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+
+** TODO remapping
+*** TODO { .primitive again }
+
+Now that we have some new classes, let's change the class of some existing
+functions to ".primitive" to improve performance:
+*** :  p: ( "- ) &.primitive reclass: ;
+  p: 1+     p: 1-     p: swap   p: drop  p: and    p: or     p: xor    p: @
+  p: !      p: +      p: -      p: *     p: /mod   p: <<     p: >>     p: dup
+  p  : in     p: out
+  hide p:
+*** And a couple of things to ".compiler" for safety.:
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
+( Remap some classes for efficiency and safety ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 here
 {{
   : c: ( "- ) &.compiler reclass: ;
@@ -2146,19 +2042,51 @@ here
 }}
 !heap
 #+end_src
-** TODO ( Compiler Macros ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
+** DONE compiler macros
+*** =`= (backtick)
+Ok, now on to backtick:
 
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
+( Compiler Macros ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 : `     ( "-  )
   ' ?dup 0 != -1 ==
   [ .data @which @d->class , ]
   [  tib isNumber? -1 ==
     [ tib toNumber .data &.data , ] &notFound if ] if ; compile-only
-" ( ``- ) Either execute a function, or compile the xt  and a call to the corresponding class         handler. This will also work with numbers" :doc
-
-: jump: ( "- ) ' 0; 8 , , ; compile-only
-" ( ``- ) Compile a jump to another function" :doc
+"( ``- ) Either execute a function, or compile the xt  and a call to the corresponding class handler. This will also work with numbers" :doc
 #+end_src
+
+This is similar to "postpone", but with a subtle difference. We use it in cases where we wish to create state-aware macros. This is probably best seen with an example.
+
+#+begin_example retro
+( A function to inline "1 2 +" into a definition )
+:  foo  1 , 1 , 1 , 2 , 16 , ; compile-only
+#+end_example
+
+Ouch. Too many magic numbers. We could clean this up with the classes:
+
+#+begin_example retro
+( A function to inline "1 2 +" into a definition )
+:  foo  1 .data 2 .data &+ .primitive ; compile-only
+#+end_example
+
+Longer, but more readable. With backtick we can do this instead:
+
+#+begin_example retro
+( A function to inline "1 2 +" into a definition )
+:  foo  ` 1 ` 2 ` + ; compile-only
+#+end_example
+
+This is identical in functionality to the version using classes, but much more compact and readable.
+
+*** =jump:=
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
+: jump: ( "- ) ' 0; 8 , , ; compile-only
+"( ``- ) Compile a jump to another function" :doc
+#+end_src
+
+Compile a jump to a named function.
+
 ** TODO ( Additional Combinators ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
@@ -2248,17 +2176,16 @@ here
   " ( ...t- ) Supercombinator for applying a quote to each item in various data structures.\nProvide one of the following stack forms:\n\n    ARRAY:  aq-\n    BUFFER: anq-\n    STRING: $q-\n    LIST: lq-\n\nFor LIST, *l* should be a variable pointing to the list.\n\nThe quote will be given the address of the current element with each time it is invoked by each@." :doc
 }}
 #+end_src
-** TODO | Now for more combinators.
-
-*** : []      (    -    ) ` [ ` ] ; immediate
+*** TODO | Now for more combinators.
+**** : []      (    -    ) ` [ ` ] ; immediate
 
 Create an empty quote.
 
-*** : while   (   q-    ) [ repeat dup dip swap 0; drop again ] do drop ;
+**** : while   (   q-    ) [ repeat dup dip swap 0; drop again ] do drop ;
 
 Execute quote until quote returns a flag of 0
 
-*** : curry   (  nq-q   ) [ [ ` [ ] dip .data ] dip , ` ] ;
+**** : curry   (  nq-q   ) [ [ ` [ ] dip .data ] dip , ` ] ;
 
 Bind data and an action into a new quote. E.g., the following forms are
 identical in functionality:
@@ -2266,7 +2193,7 @@ identical in functionality:
   5 [ putn ] curry
   [ 5 [ putn ] do ]
 
-*** : take    (  qq-q   ) swap [ [ ` [ ] dip , ] dip .data ` ] ;
+**** : take    (  qq-q   ) swap [ [ ` [ ] dip , ] dip .data ` ] ;
 
 Bind data and an action into a new quote. This is dlightly different
 than "curry" in that these forms are identical:
@@ -2274,31 +2201,31 @@ than "curry" in that these forms are identical:
   5 [ putn ] curry
   [ [ putn ] do 5 ]
 
-*** :  bi      (  xqq-   ) &sip dip do ;
+**** :  bi      (  xqq-   ) &sip dip do ;
 
 Apply each quote to a copy of x
 
-*** :  bi*     ( xyqq-   ) &dip dip do ;
+**** :  bi*     ( xyqq-   ) &dip dip do ;
 
 Apply q1 to x and q2 to y
 
-*** :  bi@     (  xyq-   ) dup bi* ;
+**** :  bi@     (  xyq-   ) dup bi* ;
 
 Apply q to x and y
 
-*** :  tri     ( xqqq-   ) [ &sip dip sip ] dip do ;
+**** :  tri     ( xqqq-   ) [ &sip dip sip ] dip do ;
 
 Apply each quote to a copy of x
 
-*** :  tri*    ( xyzqqq- ) [ [ swap &dip dip ] dip dip ] dip do ;
+**** :  tri*    ( xyzqqq- ) [ [ swap &dip dip ] dip dip ] dip do ;
 
 Apply q1 to x, q2 to y, and q3 to z
 
-*** :  tri@    ( xyzq-   ) 2dup tri* ;
+**** :  tri@    ( xyzq-   ) 2dup tri* ;
 
 Apply q to x, y, and z
 
-*** : cons    (  ab-q   ) 2push ` [ 2pop &.data bi@ ` ] ;
+**** : cons    (  ab-q   ) 2push ` [ 2pop &.data bi@ ` ] ;
 
 Create a quote returning two data elements. These forms are
 identical:
@@ -2306,7 +2233,7 @@ identical:
   1 2 cons
   [ 1 2 ]
 
-*** :  preserve ( aq-    ) swap [ @ ] sip [ [ do ] dip ] dip ! ;
+**** :  preserve ( aq-    ) swap [ @ ] sip [ [ do ] dip ] dip ! ;
 
 Given a variable (a) and a quote (q), preserve the contents of (a) while
 executing the quote, and restore the original contents of (a) after
@@ -2316,7 +2243,7 @@ execution completes.
 
 We'll see this in use later.
 
-*** :  when    (  nqq-n  )
+**** :  when    (  nqq-n  )
     [ over swap do ] dip swap
     [ do -1 ] [ drop 0 ] if 0; pop 2drop ;
 
@@ -2351,7 +2278,7 @@ The "iter" combinator runs a quote (n) times and push counter to stack each time
 
   }}
 
-*** each@
+**** each@
 And now onto "each@". This one is a complex combinator, in that it has
 differing stack effects based on the data types being passed to it. First the
 code:
@@ -2387,26 +2314,46 @@ And the notes from the documentation:
                                  element each time it is invoked.
 
 We'll see this in use later.
+** TODO ( Memory Blocks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
+: copy   ( aan-  ) [ &@+ dip !+ ] times 2drop ;
+" ( aan- ) Copy n values from source (a1) to dest (a2)" :doc
 
-*** : copy   ( aan-  ) [ &@+ dip !+ ] times 2drop ;
+: fill   ( ann-  ) swap !here [ @here swap !+ ] times drop ;
+" ( ann- ) Fill (n2) memory locations starting at (a) with value (n1)" :doc
+#+end_src
+
+*** TODO | memory blocks
+**** : copy   ( aan-  ) [ &@+ dip !+ ] times 2drop ;
 
 This is used to copy a block of memory from one location to another. It is
 not intended for moving blocks backwards, and overlaps may be troublesome.
 
-*** : fill   ( ann-  ) swap !here [ @here swap !+ ] times drop ;
+**** : fill   ( ann-  ) swap !here [ @here swap !+ ] times drop ;
 
 Fill a block of memory with a value. We use "here" to hold this value.
+** TODO ( Conditionals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
+: ahead  (   -a  ) 8 , here 0 , ;
+" ( -a ) Used in conditionals; compiles a branch to be patched in later" :doc
 
-*** : ahead  (   -a  ) 8 , here 0 , ;
+: if;    (  f-   ) ` not ` 0; ` drop ; compile-only
+" ( f- ) Exit function if TOS is a non-zero flag" :doc
+
+: within ( xlu-f ) &over dip <= &>= dip and ;
+" ( xlu-f ) Is (x) within lower (l) and upper (u) bounds?" :doc
+#+end_src
+*** TODO | conditionals
+**** : ahead  (   -a  ) 8 , here 0 , ;
 
 Compile a branch to 0, leaving a pointer to the branch target that we can set
 later.
 
-*** : if;    (  f-   ) ` not ` 0; ` drop ; compile-only
+**** : if;    (  f-   ) ` not ` 0; ` drop ; compile-only
 
 Exits a function if TOS is not zero. Useful in unconditional loops.
 
-*** : within ( xlu-f ) &over dip <= &>= dip and ;
+**** : within ( xlu-f ) &over dip <= &>= dip and ;
 
 Attempt to see if a value is within lower and upper bounds. This is inclusive.
 E.g.,
@@ -2415,20 +2362,46 @@ E.g.,
 
 Would return true, as the upper and lower bounds are included in the set
 checked.
+** TODO ( Data Structures ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
-*** :  variable:  ( n"-  ) create , ;
-*** :  variable   (  "-  ) 0 variable: ;
+: variable:  ( n"-  ) create , ;
+" ( n``- ) Create a new variable with an initial value " :doc
+
+: variable   (  "-  ) 0 variable: ;
+" ( ``- ) Create a new variable with an initial value of 0" :doc
+
+: constant   ( n"-  ) create @last !d->xt ;
+" ( n``- ) Create a numeric constant" :doc
+
+: string:    ( $"-  ) keepString constant ;
+" ( $``- ) Create a string constant" :doc
+
+: allot      (  n-  ) dup 0 < [ +heap ] [ [ 0 , ] times ] if ;
+" ( n- ) Allocate space in the heap" :doc
+
+{{
+  : list     (  n-a ) here swap allot ;
+  : element  (  a-a ) create dup @last !d->xt 1+ ;
+---reveal---
+  : elements ( n"-  ) dup list swap &element times drop ;
+  " ( n``- ) Create a series of variables" :doc
+}}
+#+end_src
+*** data structures
+**** :  variable:  ( n"-  ) create , ;
+**** :  variable   (  "-  ) 0 variable: ;
 
 Variables are created using these. The first form takes an initial value from
 the stack; the second initializes the variable to zero.
 
-*** :  constant   ( n"-  ) create @last !d->xt ;
+**** :  constant   ( n"-  ) create @last !d->xt ;
 
 Here we abuse the classes to create constants. We alter the xt field to hold
 the value of the constant, and let ".data" take care of the details. Trying to
 execute a constant is not possible.
 
-*** : allot      (  n-  ) dup 0 < [ +heap ] [ repeat 0; 1- 0 , again ] if ;
+**** : allot      (  n-  ) dup 0 < [ +heap ] [ repeat 0; 1- 0 , again ] if ;
 
 Allocate (or free) space in the heap. Pass a negative value to free, or a
 positive one to allocate space. This will zero out memory when allocating, but
@@ -2459,115 +2432,6 @@ following can be done to create a simple array with named items:
 
 As can be seen, this can be useful if you need easy access to an array of
 data.
-
-*** numeric bases
-*** :  decimal ( - ) 10 !base ;
-*** :  hex     ( - ) 16 !base ;
-*** :  octal   ( - )  8 !base ;
-*** :  binary  ( - )  2 !base ;
-
-Change the current base. Nothing fancy here.
-
-*** toString
-
-  {{
-    create buf   32 allot
-    2 elements digits pos
-    : split    (   n-... )
-      repeat @base /mod swap numbers + @ swap digits ++ 0; again ;
-    : build    ( ...-    )
-      buf @pos [ @pos swap !+ ] ifTrue
-      @digits [ !+ ] times 0 swap ! ;
-    : negate?  (   n-n   ) dup 0 >= if; negate 45 !pos ;
-  ---reveal---
-    : toString (   n-$   ) 0 [ !pos ] [ !digits ] bi negate? split build buf ;
-  }}
-
-Convert a number into a string. This uses "numbers" from the kernel.
-
-*** : clear (  - ) -1 putc ;
-
-Clear the display.
-
-*** : space (  - ) 32 putc ;
-
-Display a space character.
-
-*** : putn  ( n- ) toString puts ;
-
-Display a number. This does not add a trailing space.
-
-*** : .parse  (  a- ) do ;
-*** :  parsing (   - ) &.parse reclass ;
-  {{
-    : number ( a- ) base [ do toNumber .data ] preserve ;
-  ---reveal---
-    : __$   ( $-n ) &hex     number ; parsing
-    : __#   ( $-n ) &decimal number ; parsing
-    : __%   ( $-n ) &binary  number ; parsing
-    : __'   ( $-n ) @ .data         ; parsing
-  }}
-
-Parsing prefixes from Luke. These aren't functional yet, but will a little
-later in the source.
-
-+---+------------------------------------------------------+
-| $ | Parse a number as hexadecimal                        |
-+---+------------------------------------------------------+
-| # | Parse a number as decimal                            |
-+---+------------------------------------------------------+
-| % | Parse a number as binary                             |
-+---+------------------------------------------------------+
-| ' | Parse and return first character                     |
-+---+------------------------------------------------------+
-
-Notice that the "number" code uses "preserve" to save and restore the "base"
-for us.
-** TODO ( Memory Blocks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
-: copy   ( aan-  ) [ &@+ dip !+ ] times 2drop ;
-" ( aan- ) Copy n values from source (a1) to dest (a2)" :doc
-
-: fill   ( ann-  ) swap !here [ @here swap !+ ] times drop ;
-" ( ann- ) Fill (n2) memory locations starting at (a) with value (n1)" :doc
-#+end_src
-** TODO ( Conditionals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
-: ahead  (   -a  ) 8 , here 0 , ;
-" ( -a ) Used in conditionals; compiles a branch to be patched in later" :doc
-
-: if;    (  f-   ) ` not ` 0; ` drop ; compile-only
-" ( f- ) Exit function if TOS is a non-zero flag" :doc
-
-: within ( xlu-f ) &over dip <= &>= dip and ;
-" ( xlu-f ) Is (x) within lower (l) and upper (u) bounds?" :doc
-#+end_src
-** TODO ( Data Structures ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
-
-: variable:  ( n"-  ) create , ;
-" ( n``- ) Create a new variable with an initial value " :doc
-
-: variable   (  "-  ) 0 variable: ;
-" ( ``- ) Create a new variable with an initial value of 0" :doc
-
-: constant   ( n"-  ) create @last !d->xt ;
-" ( n``- ) Create a numeric constant" :doc
-
-: string:    ( $"-  ) keepString constant ;
-" ( $``- ) Create a string constant" :doc
-
-: allot      (  n-  ) dup 0 < [ +heap ] [ [ 0 , ] times ] if ;
-" ( n- ) Allocate space in the heap" :doc
-
-{{
-  : list     (  n-a ) here swap allot ;
-  : element  (  a-a ) create dup @last !d->xt 1+ ;
----reveal---
-  : elements ( n"-  ) dup list swap &element times drop ;
-  " ( n``- ) Create a series of variables" :doc
-}}
-#+end_src
 ** TODO ( Numbers and Math ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
@@ -2583,6 +2447,30 @@ for us.
 : binary  ( - )  2 !base ;
 " ( - ) Switch **base** to  2" :doc
 #+end_src
+*** numeric bases
+**** :  decimal ( - ) 10 !base ;
+**** :  hex     ( - ) 16 !base ;
+**** :  octal   ( - )  8 !base ;
+**** :  binary  ( - )  2 !base ;
+
+Change the current base. Nothing fancy here.
+
+**** toString
+
+  {{
+    create buf   32 allot
+    2 elements digits pos
+    : split    (   n-... )
+      repeat @base /mod swap numbers + @ swap digits ++ 0; again ;
+    : build    ( ...-    )
+      buf @pos [ @pos swap !+ ] ifTrue
+      @digits [ !+ ] times 0 swap ! ;
+    : negate?  (   n-n   ) dup 0 >= if; negate 45 !pos ;
+  ---reveal---
+    : toString (   n-$   ) 0 [ !pos ] [ !digits ] bi negate? split build buf ;
+  }}
+
+Convert a number into a string. This uses "numbers" from the kernel.
 ** TODO ( Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
@@ -2609,6 +2497,18 @@ for us.
 : putn  ( n- ) toString puts ;
 " ( n- ) Display a number" :doc
 #+end_src
+*** TODO   | output
+**** : clear (  - ) -1 putc ;
+
+Clear the display.
+
+**** : space (  - ) 32 putc ;
+
+Display a space character.
+
+**** : putn  ( n- ) toString puts ;
+
+Display a number. This does not add a trailing space.
 ** TODO ( Parsing prefixes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 
@@ -2634,7 +2534,7 @@ for us.
   " ( $-n ) Return character following '" :doc
 }}
 #+end_src
-** TODO | prefix parsing
+*** TODO   | prefix parsing
 
 With this covered, the code moves on to replace the simple prefix handler with
 one aware of Luke's parsing prefixes:
@@ -2724,6 +2624,34 @@ Next up: a more flexible output function.
 
 This is a variable controlling whether to use the complex output or the
 default, simpler output.
+
+*** TODO   | prefix parsing
+**** : .parse  (  a- ) do ;
+**** :  parsing (   - ) &.parse reclass ;
+  {{
+    : number ( a- ) base [ do toNumber .data ] preserve ;
+  ---reveal---
+    : __$   ( $-n ) &hex     number ; parsing
+    : __#   ( $-n ) &decimal number ; parsing
+    : __%   ( $-n ) &binary  number ; parsing
+    : __'   ( $-n ) @ .data         ; parsing
+  }}
+
+Parsing prefixes from Luke. These aren't functional yet, but will a little
+later in the source.
+
++---+------------------------------------------------------+
+| $ | Parse a number as hexadecimal                        |
++---+------------------------------------------------------+
+| # | Parse a number as decimal                            |
++---+------------------------------------------------------+
+| % | Parse a number as binary                             |
++---+------------------------------------------------------+
+| ' | Parse and return first character                     |
++---+------------------------------------------------------+
+
+Notice that the "number" code uses "preserve" to save and restore the "base"
+for us.
 ** TODO ( Chained Vocabularies ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 *** dicts
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
@@ -2784,8 +2712,8 @@ create dicts 64 allot
   [ @d->xt @last !d->xt ] [ @d->class @last !d->class ] bi ;
 " ( a``- ) Rename a function" :doc
 #+end_src
-** TODO | vocabularies
-*** And now for vocabularies. This is where things get trickier.
+*** TODO   | vocabularies
+**** And now for vocabularies. This is where things get trickier.
 
   create dicts 64 allot
 
@@ -2799,15 +2727,15 @@ We allow up to 64 active vocabularies. This could be reduced to save space.
 Some variables and string constants. We don't have a string parser yet, so
 have to build the strings manually.
 
-*** :  seal   (  - ) last repeat @ 0; @active over @ =if 0 swap ! ;; then again ;
+**** :  seal   (  - ) last repeat @ 0; @active over @ =if 0 swap ! ;; then again ;
 
 Close off a vocabulary.
 
-*** :  revert (  - ) @prior 0; !last 0 !prior ;
+**** :  revert (  - ) @prior 0; !last 0 !prior ;
 
 Revert to the prior vocabulary.
 
-*** :  safety (  - ) "%%" header immediate &revert @last !d->xt ;
+**** :  safety (  - ) "%%" header immediate &revert @last !d->xt ;
 
 Create an initial word in every vocabulary named "%%" that will revert us to
 the prior (hopefully global) vocabulary. This gives us a saftey net to help
@@ -2817,50 +2745,50 @@ recover from mistakes...
 
 The above stuff is hidden away from the global dictionary...
 
-*** :  %%     (  - ) revert ;
+**** :  %%     (  - ) revert ;
 
 Top-level version of "%%".
 
-*** :  <%>    ( a- ) @last !prior !last ;
+**** :  <%>    ( a- ) @last !prior !last ;
 
 Save the current vocabulary, and open a new one. This does not nest.
 
-*** : .chain ( a- ) @dicts &drop &<%> if ;
+**** : .chain ( a- ) @dicts &drop &<%> if ;
 
 The class for handling vocabularies. You shouldn't need to use this directly.
 
-*** : chain: ( "- ) create 0 , &.chain reclass @last !active safety ;
+**** : chain: ( "- ) create 0 , &.chain reclass @last !active safety ;
 
 Create a new vocabulary. This is not nestable. The global dictionary is still
 visible when a new vocabulary is created, so you can still access everything
 defined prior to this.
 
-*** : ;chain (  - ) seal @last @active [ !last ] [ !d->xt ] bi ;
+**** : ;chain (  - ) seal @last @active [ !last ] [ !d->xt ] bi ;
 
 Close off a vocabulary, hiding its contents from the global dictionary.
 
-***  : :with  ( a- ) 0; @dicts 1+ dicts + ! dicts ++ ;
+****  : :with  ( a- ) 0; @dicts 1+ dicts + ! dicts ++ ;
 
 Given an xt of a vocabulary, add it to the search order.
 
-*** : with   ( "- ) ' :with ;
+**** : with   ( "- ) ' :with ;
 
 Parse for a vocabulary name and add it to the search order.
 
-*** :  without ( - ) @dicts 0; 1- !dicts ;
+**** :  without ( - ) @dicts 0; 1- !dicts ;
 
 Remove the most recently added vocabulary from the search order.
 
-*** : global  ( - ) 0 !dicts ;
+**** : global  ( - ) 0 !dicts ;
 
 Remove all vocabularies from the search order.
 
-*** : findInChain ( $a-df ) :with find without ;
+**** : findInChain ( $a-df ) :with find without ;
 
 Search for a name in a specific vocabulary. Returns a dictionary header
 and a flag.
 
-*** : with|  ( "- )
+**** : with|  ( "- )
     global
     repeat
       32 accept tib "|" compare if;
@@ -2872,7 +2800,7 @@ encountered.
 
   }}
 
-*** : rename: ( a"- )
+**** : rename: ( a"- )
      create dup xt->d swap :hide
      [ @d->xt @last !d->xt ] [ @d->class @last !d->class ] bi ;
 
@@ -3021,8 +2949,8 @@ hide "   ( next we define __" and can use proper strings )
 }}
 #+end_src
 
-** TODO | formatted strings
-*** number display
+*** TODO   | formatted strings
+**** number display
 
   {{
     : withBase ( n$q-$ ) [ swap ] dip base [ do ] preserve ;
@@ -3060,13 +2988,13 @@ characters, or other strings. It handles sequences like:
 
 Display a string, dispatching escape sequences to either "char" or "obj" as
 needed.
-*** : simple ( $- ) [ @ putc ] 2 ( STRING ) each@ ;
+**** : simple ( $- ) [ @ putc ] 2 ( STRING ) each@ ;
 
 And here we have an example of that "each@" combinator. This applies a quote
 ("[ @ putc ]") to each item in a string (data type 2). Really, it's a nice
 clean way to do things like this.
 
-*** : defer  ( q- ) update off do update on redraw ;
+**** : defer  ( q- ) update off do update on redraw ;
 
 For performance, disable screen updates until the text is written to the
 output buffers. Won't hurt anything, and makes redraws much faster on some
@@ -3118,7 +3046,6 @@ Remove all items on the data stack. This is useful after experimenting to get ba
 #+end_src
 
 Display all names in the dictionary, and any active vocabuaries.
-
 
 ** TODO ( Keymap ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
 #+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
@@ -3181,62 +3108,62 @@ Display all names in the dictionary, and any active vocabuaries.
 "( ``- ) Create a series of variables" :doc
 #+end_src
 
-** TODO | Just about done...
-*** : reset   ( ...-  ) depth repeat 0; 1- nip again ;
+*** TODO   | Just about done...
+**** : reset   ( ...-  ) depth repeat 0; 1- nip again ;
 
-*** : .s      (    -  )
+**** : .s      (    -  )
   depth [ "\n<%d> " puts ] sip 0;
   heap  [ dup [ swap , ] times
               [ here 1- @ dup putn space -1 allot ] times ] preserve ;
 
 Display the stack. I'd love a better way of doing this, but so far this seems to work ok.
 
-*** : save     (  -  ) 1 4 out wait ;
+**** : save     (  -  ) 1 4 out wait ;
 
 Save the image (if the VM supports it)
 
-*** : bye      (  -  ) cr -9 5 out wait ;
+**** : bye      (  -  ) cr -9 5 out wait ;
 
 Shut down the VM
 
-*** getToken
-*** :  getToken ( "-$ ) 32 accept tib tempString ;
+**** getToken
+**** :  getToken ( "-$ ) 32 accept tib tempString ;
 
 Read a whitespace delimited token, and add it to the temporary string buffer.
 
-*** include
-*** :  :include ( $-  ) 2 4 out wait ;
-*** :  include  ( "-  ) getToken :include ;
+**** include
+**** :  :include ( $-  ) 2 4 out wait ;
+**** :  include  ( "-  ) getToken :include ;
 
 If you VM supports reading input from files, these will let you include files directly.
 
-*** : time     (  -n ) -8 5 out wait 5 in ;
+**** : time     (  -n ) -8 5 out wait 5 in ;
 
 Returns the current time (or a bogus value) as Unix epoch time.
 
-*** : delay    ( n-  ) time + [ dup time > ] while drop ;
+**** : delay    ( n-  ) time + [ dup time > ] while drop ;
 
 
 If your VM supports the time query, this will allow you to delay execution for approximately the number of seconds specified.
 
-*** : getEnv   ( a$- ) -10 5 out wait ;
+**** : getEnv   ( a$- ) -10 5 out wait ;
 
 If your VM supports access to the host environment, this will let you query it.
 
-*** later
-*** :  later    (  -  ) 2pop swap 2push ;
+**** later
+**** :  later    (  -  ) 2pop swap 2push ;
 
 A fun thing. Defer execution until the caller returns. For instance,
 
-*** :  a 1 putn later 2 putn ;
-*** :  b 3 putn a 4 putn ;
+**** :  a 1 putn later 2 putn ;
+**** :  b 3 putn a 4 putn ;
   b
 
 With this, the core language is done. If you don't want/need the extra vocabularies, you can save and exit here, or continue on to define what you want.
 
-*** doc{
+**** doc{
 
-*** :  doc{     ( "-  ) repeat getToken "}doc" compare if; again ;
+**** :  doc{     ( "-  ) repeat getToken "}doc" compare if; again ;
 
 This is used to allow embedding of documentation into the source files. An example of its usage:
 
@@ -3267,7 +3194,7 @@ hide quote
 #+end_src
 
 * [0/10] Appendix: Core Libraries
-** TODO | Math Operations                                             :math:
+** TODO | Math Operations                                              :math:
 : pow  ( bp-n ) 1 swap [ over * ] times nip ;
 : abs  (  n-n ) dup 0 < &negate ifTrue ;
 : min  ( ab-c ) 2over < &drop &nip  if ;
@@ -3317,7 +3244,7 @@ chain: buffer'
 "( - ) vocabulary for dealing with LIFO buffers" :doc
 #+end_src
 
-** TODO | Generic Buffer
+** TODO   | Generic Buffer
 global
 chain: buffer'
 {{
@@ -3422,7 +3349,7 @@ without
 "( - ) vocabulary with functions for dealing with strings" :doc
 #+end_src
 
-** TODO | Text Strings
+** TODO  | Text Strings
 with| buffer' |
 chain: strings'
 {{
@@ -3498,7 +3425,7 @@ with strings'
  without
 #+end_src
 
-** TODO | Access Words Within Chains Directly
+** TODO   | Access Words Within Chains Directly
 with strings'
 : __^  ( "- )
   splitAtChar: ' find
@@ -3515,7 +3442,7 @@ with strings'
     &drop [ "library/" prepend cut ".rx" append :include ] if ;
 }}
 global
-** TODO | Files                                                      :files:
+** TODO | Files                                                     :files:
 chain: files'
 {{
   3 elements fid fsize active
@@ -3577,7 +3504,7 @@ chain: types'
 "( ``- ) provide information about a function" :doc
 #+end_src
 
-** TODO | types'
+** TODO   | types'
 chain: types'
   0 constant ARRAY  ( -n )
   1 constant BUFFER ( -n )
