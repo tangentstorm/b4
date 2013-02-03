@@ -1,0 +1,25 @@
+( -- wirthian sets, like pascal and oberon -- )
+needs enum'
+chain: sets'
+
+: enum| 0 ^enum'enum| ;
+
+: as-bit 32 mod 1 swap << ;
+  "( e-n ) converts the element to a bit." :doc
+
+: in? as-bit ( so-f ) and 0 != ;
+  "( se-f ) is element e in set s?" :doc
+  
+: incl as-bit or ;
+  "( se-s ) include an ordinal item in the set" :doc
+
+: excl as-bit not and ;
+  "( se-s ) exclude an ordinal item from the set" :doc
+  
+: @incl! over @ swap incl ! ;
+  "( ae- ) like =incl= but takes a pointer" :doc
+  
+: @excl! over @ swap excl ! ;
+  "( ae- ) like =excl= but takes a pointer" :doc
+
+;chain
