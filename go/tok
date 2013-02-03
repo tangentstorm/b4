@@ -1,1 +1,4 @@
-fpc tokenize.pas  && ./tokenize < ~/vrx/image/kernel.rx
+fpc tokenize.pas || exit
+./tokenize < ~/vrx/image/kernel.rx
+./tokenize < ~/vrx/image/kernel-01.rx
+./tokenize < ~/vrx/image/kernel-99.rx
