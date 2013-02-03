@@ -191,30 +191,31 @@ decimal
 ( -- retro shell enhancements ------------------------------ )
 with vt' with color'
 : welcome
+  clear
   |W "Welcome to Retro!" $ cr
   |w "Type " $ |Y "words " $
   |w "to see a list of words you can try, or " $
   |Y "play " $ |w "to play the game again." $ |w cr ;
-  "a rudimentary help message." :doc
-
+  "a rudimentary welcome message." :doc
+{{
   : mineswpr-play
     &draw &ok :is
     reset hex
     game-new
-    "mswp'" find [ d->xt @ :with ] ifTrue
-  ;
+    "mswp'" find [ d->xt @ :with ] ifTrue ;
 
   : mineswpr-quit
     without
     reset decimal
-    ' ^color'grok &ok :is
-    welcome
-  ;
+    &grok &ok :is
+    welcome ;
 
   &mineswpr-quit &mineswpr-exit-hook :is
+---reveal---
 
   : play mineswpr-play ;
     "( - ) play minesweeper" :doc
+}}
 2without
 
 ( play )
