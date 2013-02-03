@@ -6,7 +6,7 @@
 #+name: lang-tweaks
 #+begin_src retro
   ( -- language tweaks --------------------------------------- )
-  
+
   : ≥ >= ; "( xy-? ) tests for x ≥ y . same as >=" :doc
   : ≤ <= ; "( xy-? ) tests for x ≤ y . same as <=" :doc
   : ≠ != ; "( xy-f ) just a fancy way to say !=" :doc
@@ -40,46 +40,51 @@
 ** DONE grid-type
 #+name: grid-type
 #+begin_src retro
-with sets'  
-  16 constant W
-  16 constant H
-  create grid W H * allot
-  
-  : cell ( xy-a ) W * + grid + ;
-    "( xy-a ) given coordinates, return the address of the cell" :doc
-  
-  : inbounds?  0 H 1- within  0 W 1- within  and ;
-    "( xy-f ) is the point somewhere inside the minefield?" :doc
-  
-  : randcell W randint H randint cell ;
-    "( -a ) return a cell from the grid, at random" :doc
-  
-  ( cell methods )
-  : has? swap @ swap in? ;
-    "( ce- ) does cell c contain the element e?" :doc
-  
-  ( grid methods )
-  : .fill swap W H * fill ;
-    "( gx- ) fill grid g with value x" :doc
-  
-  : mine-add
-    randcell ·mine has?
-    [ drop recurse ] [ ·mine @incl! ] if ;
-    "( - ) add a mine to a random cell that doesn't yet have one" :doc
-  
-  : game-new
-    gameOver? off
-    ·cover as-bit grid .fill
-    [ mine-add ] times ;
-    "( n- ) set up a new game with n mines" :doc
+  with sets'
+    16 constant W
+    16 constant H
+    32 constant mineCount
+    create grid W H * allot
 
-without
+    : cell ( xy-a ) W * + grid + ;
+      "( xy-a ) given coordinates, return the address of the cell" :doc
+
+    : inbounds?  0 H 1- within  0 W 1- within  and ;
+      "( xy-f ) is the point somewhere inside the minefield?" :doc
+
+    : randcell W randint H randint cell ;
+      "( -a ) return a cell from the grid, at random" :doc
+
+    ( cell methods )
+    : has? swap @ swap in? ;
+      "( ce- ) does cell c contain the element e?" :doc
+
+    ( grid methods )
+    : .fill swap W H * fill ;
+      "( gx- ) fill grid g with value x" :doc
+
+    : mine-add
+      randcell dup ·mine has?
+        [ drop mine-add ]
+        [ ·mine @incl! ] if ;
+      "( - ) add a mine to a random cell that doesn't yet have one" :doc
+
+    : game-new
+      gameOver? off
+      ·cover as-bit grid .fill
+      mineCount
+        [ flagCount ! ]
+        [ [ mine-add ] times ]
+      bi ;
+      "( - ) set up a new game" :doc
+
+  without
 #+end_src
 
 ** TODO floodfill
 #+name: floodfill
 #+begin_src retro
-  
+
   : xy-fill?
     dup2
       inbounds?
@@ -92,7 +97,7 @@ without
   : xy-fill!
     ;
     "( xy- ) actally fill the cell" :doc
-  
+
   : flood
     dup2 xy-fill?
     [ dup2 xy-fill!
@@ -112,7 +117,7 @@ without
 with sets'
   ( -- user actions ---------------------------------------------- )
 
-  : flag+ ·flag @incl! ;
+  : flag+    ·flag @incl! ;
     "( a- ) place a flag on the cell" :doc
 
   : flag- ·flag @excl! ;
@@ -121,7 +126,8 @@ with sets'
   : prod
     ·mine has?
     [ [ gameOver? ! ]
-      [ [ «dead» ] [ «safe» ] if ] bi ;
+      [ [ «dead» ]
+        [ «safe» ] if ] ] bi ;
     "( a-m ) prod the cell for a mine, and see what happens... :)" :doc
 
   : mineswpr-exit-hook ( revectored ) ;
@@ -139,26 +145,26 @@ with vt'
    : draw
      clear   |Y
     "                            MINESWPR.RXE" $
-    |K .s |g cr 
+    |K .s |g cr
     |b "---------------------------------------------------------------------" $ |w cr
     "     0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F  " $ cr
-    "   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+" $ cr 
-    " 0 |                                                               |" $ cr 
-    " 1 |                                                               |" $ cr 
-    " 2 |                                                               |" $ cr 
-    " 3 |                                                               |" $ cr 
-    " 4 |                                                               |" $ cr 
-    " 5 |                                                               |" $ cr 
-    " 6 |                                                               |" $ cr 
-    " 7 |                                                               |" $ cr 
-    " 8 |                                                               |" $ cr 
-    " 9 |                                                               |" $ cr 
-    " A |                                                               |" $ cr 
-    " B |                                                               |" $ cr 
-    " C |                                                               |" $ cr 
-    " D |                                                               |" $ cr 
-    " E |                                                               |" $ cr 
-    " F |                                                               |" $ cr 
+    "   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+" $ cr
+    " 0 |                                                               |" $ cr
+    " 1 |                                                               |" $ cr
+    " 2 |                                                               |" $ cr
+    " 3 |                                                               |" $ cr
+    " 4 |                                                               |" $ cr
+    " 5 |                                                               |" $ cr
+    " 6 |                                                               |" $ cr
+    " 7 |                                                               |" $ cr
+    " 8 |                                                               |" $ cr
+    " 9 |                                                               |" $ cr
+    " A |                                                               |" $ cr
+    " B |                                                               |" $ cr
+    " C |                                                               |" $ cr
+    " D |                                                               |" $ cr
+    " E |                                                               |" $ cr
+    " F |                                                               |" $ cr
     "   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+" $ cr
     |g
     "type cmd at " $ '" . |w "ok" $ |g '" . ":  " $
@@ -180,7 +186,7 @@ without
 #+begin_src retro
 variables| ii jj |
 with forth' with vt'
-  
+
   : (x,y) |c '( putc |g swap putn |c ", " |g puts putn  |c ') putc |w ;
     "( xy- ) output coordinate pair as a string" :doc
 
@@ -190,7 +196,7 @@ with forth' with vt'
       (x,y)
       1-
     again ;
-  
+
   : rows 0 jj !
     repeat jj
       dup @ putn space ( draw-row )
@@ -204,28 +210,11 @@ with forth' with vt'
 ** DONE command parser
 #+name: cmd-parser
 #+begin_src retro
-
-: play
-  repeat getToken
-    [ "1" compare ]
-    [ "2" compare ]
-    [ "3" compare ]
-    [ "4" compare ]
-    [ "5" compare ]
-    [ "6" compare ]
-    [ "7" compare ]
-    [ "8" compare ]
-    [ "8" compare ]
-    [ "9" compare ]
-    [ "a" compare ]
-    [ "b" compare ]
-    [ "c" compare ]
-    [ "d" compare ]
-  again
-  
+hex
+chain: mswp'
   ( ui command syntax )
   : + cell flag+ ;
-  : - cell flag+ ;
+  : - cell flag- ;
   : ? cell prod  ;
   : a A ;
   : b B ;
@@ -234,8 +223,9 @@ with forth' with vt'
   : e E ;
   : f F ;
   : q mineswpr-exit-hook ;
-"minesweeper parser" :doc
-
+   "minesweeper parser" :doc
+;chain
+decimal
 #+end_src
 ** retro shell enhancements
 #+name: shell-tweaks
@@ -249,29 +239,24 @@ with vt' with color'
   |Y "play " $ |w "to play the game again." $ |w cr ;
   "a rudimentary help message." :doc
 
-{{
-
   : mineswpr-play
-    hex reset clear
     &draw &ok :is
-    ` mswp' ` :with
+    reset hex
+    game-new
+    "mswp'" find [ d->xt @ :with ] ifTrue
   ;
 
   : mineswpr-quit
-    ` without
-    decimal reset clear
+    without
+    reset decimal
     ' ^color'grok &ok :is
     welcome
   ;
 
----reveal---
-
   &mineswpr-quit &mineswpr-exit-hook :is
 
-  : mineswpr mineswpr-play ;
+  : play mineswpr-play ;
     "( - ) play minesweeper" :doc
-}}
-
 2without
 #+end_src
 
@@ -292,6 +277,8 @@ needs sets' needs vt'  needs math'
 <<cmd-parser>>
 <<shell-tweaks>>
 
+( play )
+
 #+end_src
 
 * TODO refile these
@@ -309,6 +296,6 @@ needs sets' needs vt'  needs math'
 chain: vt'
 
  |!k 0 vt:bg ; : |!r 1 vt:bg ; : |!g 2 vt:bg ; : |!y 3 vt:bg ;
- |!b 4 vt:bg ; : |!m 5 vt:bg ; : |!c 6 vt:bg ; : |!w 7 vt:bg ; 
+ |!b 4 vt:bg ; : |!m 5 vt:bg ; : |!c 6 vt:bg ; : |!w 7 vt:bg ;
 
 #+end_src
