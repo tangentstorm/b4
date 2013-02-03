@@ -11,7 +11,7 @@ chain: color'
   "( - ) Called when a name is not found." :doc
 
 ( -- green ok prompt ------------ )
-: grok compiler @ [ |g cr "ok " puts |w ] ifFalse ;
+: grok compiler @ [ |K .s |g cr "ok " puts |w ] ifFalse ;
   "( - ) green ok prompt" :doc
 
 ( -- install ------------------- )
