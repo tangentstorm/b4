@@ -1,0 +1,202 @@
+#+title: mineswpr : minesweeper for retro
+#+author: michal j wallace
+#+date: 03 feb 2013
+
+* general modules
+** language tweaks
+*** : ≥ >= ; "( xy-? ) tests for x ≥ y . same as >=" :doc
+*** : ≤ <= ; "( xy-? ) tests for x ≤ y . same as <=" :doc
+*** : ≠ <> ; "( xy-f ) just a fancy way to say !=" :doc
+*** : dec 1- ;
+*** : inc 1+ ;
+*** : dup2 ( xy-xyxy ) over over ;
+*** : shl << ;
+*** : var| ` variables| ;
+*** : @dec ( a- ) dup @ dec swap ! ; (  todo: same as @inc. find a combinator. )
+*** : @inc ( a- ) dup @ inc swap ! ; (  todo: there is almost certainly a combinator for this )
+** wirthian sets
+*** needs enum'
+*** : enum| 0 ^enum'enum| ;
+*** : asbit
+    dup 32 < push       ( r: -f )
+    32 mod 1 swap shl   ( o-n )
+    pop ;               ( n-nf r: f- )
+  "( o-nf ) converts the ordinal to a bit. f=0 on overflow, else -1" :doc
+
+*** : in? asbit ( so-snf ) if 2drop 0 else and 0 != then ;
+  "( so-f ) is ordinal o in set s? { false when o>32 }" :doc
+  
+*** : incl asbit if or then ;
+  "( so-s ) include an ordinal item in the set" :doc
+*** : excl asbit if not and then ;
+  "( so-s ) exclude an ordinal item from the set" :doc
+
+*** : @incl over @ swap incl ! ;
+  "( ao- ) like =incl= but takes a pointer" :doc
+
+*** : @excl over @ swap excl ! ;
+  "( ao- ) like =excl= but takes a pointer" :doc
+
+** grid words ::
+*** variables| H W | hex F W ! F H !
+*** 1024 constant maxgrid
+*** create grid maxgrid allot
+*** variable size
+*** clipbounds ( wh-wh )
+      dup2 * maxgrid <= if drop ( drop the flag )
+      else "too big. clipping to 32*32" puts 32 32
+      then 
+*** resize ( wh- ) H ! W ! ;
+*** wh W @ H @ ;
+
+( fill is: | axn- | n copies of x at a. so... )
+*** makegrid ( wh- )
+ ( wh-wh ) clipbounds resize clearall ;
+"( wh- ) set up the grid" :doc
+*** cell ( xy-a ) W @ * + grid + ;
+"( xy-a ) given coordinates, return the address of the cell" :doc
+*** inbounds?  0 H @ within   0 W @ within   and ;
+"( xy-f ) is the point somewhre inside the minefield?" :doc
+** floodfill
+***  on_flood (x,y) ;
+"( xy- ) callback for floodfill. unvectored, it just shows the point" :doc
+
+***  flood
+  dup2 needsfill?
+  if
+    dup2 on_flood
+    dup2 dec flood      ( north )
+    dup2 inc flood      ( south )
+    swap
+    dup2 inc swap flood ( east )
+    dup2 dec swap flood ( west )
+  then ;
+"( xy-f )" :doc
+
+***  floodfill
+  ( callback ) is on_flood
+  flood
+  devector on_flood ;
+"( xy:- ) "
+ ( -- set bg color -- )
+
+*** needsfill?
+  dup2 inbounds?
+  ·cover cell.has?
+  and ;
+"( xy-f ) should the floodfill routine visit this cell?" :doc
+** general words
+*** : randint ( n-n ) random swap mod ;
+** problem words
+*** cell.has? push cell @ pop in? ;
+"( xyo-f ) is the ordinal o within the set at address a?"
+** trash words
+*** (x,y) |c '( putc |g swap putn |c ", " |g puts putn  |c ') putc |w ;
+"( xy- ) output coordinate pair as a string" :doc
+** virtual terminal words
+*** |!k 0 vt:bg ; : |!r 1 vt:bg ; : |!g 2 vt:bg ; : |!y 3 vt:bg ;
+*** |!b 4 vt:bg ; : |!m 5 vt:bg ; : |!c 6 vt:bg ; : |!w 7 vt:bg ; 
+*** : . putc ; : $ puts ;
+** retro shell enhancements
+*** : grok |g cr "ok " $ |w ; "( - ) green ok prompt" :doc
+*** : help
+  |w "Type " $ |Y "words " $
+  |w "to see a list of words you can try, or " $
+  |Y "play " $ |w "to play the game again." $ |w cr ;
+  "a rudimentary help message." :doc
+*** : q decimal reset clear &grok &ok :is |W "Welcome to Retro!" $ cr help ;
+"( ?- ) quits mineswpr and returns to retro prompt" :doc
+*** : mineswpr reset hex ( F F 2F newgame ) &draw &ok :is ;
+"( - ) play the game" :doc
+*** : play mineswpr ; "alias for mineswpr" :doc
+* application
+** minesweeper logic words
+*** chain: minesweep'
+*** enum| mine cover flag hint |
+*** enum| ·mine ·cover ·flag ·hint |
+*** newcell 1 asbit ;
+*** newgame dup2 H ! W ! makegrid addmines ;
+"( whn- ) width, height, number of words " :doc
+*** newgame gameOver? off newgame ;
+"( - ) set up a new game" :doc
+*** on_safe |g "safe." puts cr |w ;
+"( a- ) callback triggereed prodding a empty cell" :doc
+*** on_dead |r "BOOM!" puts cr |w ;
+"( a- ) callback triggereed prodding a mine" :doc
+
+*** clearall ( wh- ) wh * grid newcell rot fill ;
+*** hasmine "( C-f ) given a cell, does it contain a mine?"
+  ·mine in ;
+*** addmines ( #- )
+  for
+    grid size randint + dup  ( -aa )
+    @ ·mine in if         ( #aa-#a )
+      drop inc             ( #a-# )
+    else ·mine incl !      ( #a- )
+    then
+  next ;
+*** hasmine? ·mine in? ;
+*** var| gameOver? |
+*** showall |m "( a- ) showall: revector me!" cr puts |w ;
+*** uncover |m "( a- ) uncover: revector me!" cr puts |w ;
+*** .prod
+  dup hasmine?    (  a-af )
+  dup gameOver? ! ( af-af | gameOver? := hasMine? )
+  if    showall on_dead
+  else  uncover on_safe
+  then ;
+"( a- ) prod the cell at a for a mine, and see what happens... :)" :doc
+** minesweeper user interface
+*** : draw
+  clear   |Y
+  "                            MINESWPR.RXE" $
+  |K .s |g cr 
+|b "---------------------------------------------------------------------" $ |w cr
+  "     0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F  " $ cr
+  "   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+" $ cr 
+  " 0 |                                                               |" $ cr 
+  " 1 |                                                               |" $ cr 
+  " 2 |                                                               |" $ cr 
+  " 3 |                                                               |" $ cr 
+  " 4 |                                                               |" $ cr 
+  " 5 |                                                               |" $ cr 
+  " 6 |                                                               |" $ cr 
+  " 7 |                                                               |" $ cr 
+  " 8 |                                                               |" $ cr 
+  " 9 |                                                               |" $ cr 
+  " A |                                                               |" $ cr 
+  " B |                                                               |" $ cr 
+  " C |                                                               |" $ cr 
+  " D |                                                               |" $ cr 
+  " E |                                                               |" $ cr 
+  " F |                                                               |" $ cr 
+  "   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+" $ cr
+  |g
+  "type cmd at " $ '" . |w "ok" $ |g '" . ":  " $
+    |Y '+ . |c " = flag  " $
+    |Y '- . |c " = unflag  " $
+    |Y '? . |c " = prod for mine " $
+    |Y 'q . |c " = quit" $
+  cr
+  |g "cmd format: " $  |Y "x y " $ '[ |c . |Y "+-?" $ |c '] . |c "   " $
+  |g "examples: " $ |w "5 C +" $ |y " a b -" $  |W " 2 9 ?" $ |R " q" $ cr
+  |b "---------------------------------------------------------------------" $ cr
+  |W "ok " $ |w
+;
+*** lower case hex helpers
+: a A ;   : b B ;    : c C ;
+: d D ;   : e E ;    : f F ;
+*** : rows 0 jj !
+  repeat jj
+    dup @ putn space ( draw-row )
+    dup ++
+        @ 16 ≥ if |g ;; else |r then
+  again ;
+*** : row (  )
+  W @ repeat 0; 
+    decimal 16 over - ii !
+    draw-cell
+    1- 
+  again ;
+*** : draw-cell ;
+*** variables| jj ii |
