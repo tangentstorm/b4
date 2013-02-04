@@ -16,7 +16,7 @@
 ( -------------------------------------------------------------- )
 chain: ng'
 {{
-  : | ` , ` ; ` immediate ; immediate
+  : | ` , ` ; ; immediate
 ---reveal---
 
   : nop,   0 |      : lit,   1 |      : dup,   2 |
@@ -31,13 +31,14 @@ chain: ng'
   : 1-,    7 |      : in,    8 |      : out,   9 |
   : wait,  0 |
 
-  : lit,,   lit,  |
-  : loop,,  loop, |
-  : jump,,  jump, |
-  : >jump,, jump, |
-  : <jump,, jump, |
-  : !jump,, jump, |
-  : =jump,, jump, |
+  : lit,,   lit,   |
+  : loop,,  loop,  |
+  : jump,,  jump,  |
+  : >jump,, >jump, |
+  : <jump,, <jump, |
+  : !jump,, !jump, |
+  : =jump,, =jump, |
+
 }}
 ;chain
 
