@@ -182,23 +182,20 @@ with vt'
     |W "ok " $ |w ;
  "draw the mineswpr ui / prompt" :doc
 without
-variables| ii jj |
 with| vt' ng' |
 
   : (x,y) |c '( putc |g swap putn |c ", " |g puts putn  |c ') putc |w ;
     "( xy- ) output coordinate pair as a string" :doc
 
-  : row
-     W ii !
-    |c @ putn space |w 
-    .while ii @ 0 ≥ .do
-      ii [ -- ] [ hex @ space putn ] bi
-    .again ;
-
-  : rows
-     cr 0 jj !
+  variables| ii jj |
+  : rows cr 0 jj !
     .repeat
-      jj [ row cr ]
+      jj [ W ii ! |c @ putn space |w
+           .while ii @ 0 > .do
+             ii [ -- ] 
+                [ @ $F swap - jj @ 
+                  hex space 2putn ] bi
+           .again cr ]
          [ ++ ] 
          [ @ H ≥ ] tri
     .until ;
