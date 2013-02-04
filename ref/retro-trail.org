@@ -2125,7 +2125,9 @@ Compile a jump to a named function.
 
 : cons    (  ab-q   ) 2push ` [ 2pop &.data bi@ ` ] ;
 " ( ab-q ) Create a quote returning two data elements" :doc
-
+#+end_src
+** TODO preserve stack comment looks wrong here.
+#+begin_src retro :tangle "~/vrx/image/kernel-01.rx" :padline yes :noweb tangle
 : preserve ( aq-    ) swap &@ sip [ &do dip ] dip ! ;
 " ( aq- ) Given a variable (a) and a quote (q), preserve the contents of (a) while executing  the quote, and restore the original contents  of (a) after execution completes. (a) is removed from the stack before (q) is executed." :doc
 
