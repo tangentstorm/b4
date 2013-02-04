@@ -61,7 +61,6 @@
 
   ( -- variables --------------------------------------------- )
   with sets'
-    enum| «safe» «dead» |
     enum| ·mine ·cover ·flag ·hint |
     vars| gameOver? minefield flagCount |
   without
@@ -96,8 +95,8 @@
 
     : mine-add
       randcell dup ·mine has?
-        [ drop mine-add ]
-        [ ·mine @incl! ] if ;
+        [ drop mine-add !! ]
+        [ ·mine ?? @incl! ?? ] if ;
       "( - ) add a mine to a random cell that doesn't yet have one" :doc
 
     : game-new
@@ -154,12 +153,18 @@ with sets'
   : flag- ·flag @excl! ;
     "( a- ) remove the flag from the cell, if present" :doc
 
-  : prod
-    ·mine has?
-    [ [ gameOver? ! ]
-      [ [ «dead» ]
-        [ «safe» ] if ] ] bi ;
-    "( a-m ) prod the cell for a mine, and see what happens... :)" :doc
+  : «dead» ?? drop ?? ( a- )  ; 
+  : «safe» ?? drop ?? ;
+
+  : prod ?? dup 
+    ·cover has? ??
+    [ ?? dup ·cover @excl!
+      dup ·mine has?
+        [ gameOver? ! ]
+        [ [ «dead» ] [ «safe» ] if ]
+        bi
+    ] [ drop ] if ;
+    "( a- ) prod the cell for a mine, and see what happens... :)" :doc
 
   : mineswpr-exit-hook ( revectored ) ;
 
@@ -212,28 +217,27 @@ with vt'
 without
 #+end_src
 
-** TODO draw the cells
+** TODO draw the cells { still need to show all mines on game over }
 #+name: draw-cells
 #+begin_src retro
-  with| vt' ng' |
-
-    : (x,y) |c '( putc |g swap putn |c ", " |g puts putn  |c ') putc |w ;
-      "( xy- ) output coordinate pair as a string" :doc
-
-    variables| ii jj |
-    : rows cr 0 jj !
-      .repeat
-        jj [ W ii ! |c @ putn space |w
-             .while ii @ 0 > .do
-               ii [ -- ] 
-                  [ @ $F swap - jj @ 
-                    hex space 2putn ] bi
-             .again cr ]
-           [ ++ ] 
-           [ @ H ≥ ] tri
-      .until ;
-
-  2without
+  with| vt' ng' sets' |
+    
+    : (x,y) cell @
+      [ [ ·flag  in? ]  [ '! &|R -1 ] whend
+        [ ·hint  in? ]  [ '8 &|B -1 ] whend
+        [ ·cover in? ]  [ '- &|w -1 ] whend
+        [ ·mine  in? ]  [ 'X &|r  0 ] whend
+                          32 &|b  0   ] do
+     [ |K '[ putc do putc |K '] putc ]
+     [      space do putc space      ] if
+     space ;
+     "( xy- ) output cell as a string" :doc
+    
+    : show cr
+      $10 [ $10 [ over (x,y) ] iter cr drop ] iter ;
+    
+    
+  2without without
 #+end_src
 
 ** DONE command parser
@@ -306,6 +310,8 @@ needs sets' needs vt'  needs math'
 <<cmd-parser>>
 <<shell-tweaks>>
 
+game-new
+show
 ( play )
 
 #+end_src
@@ -328,4 +334,8 @@ chain: vt'
  |!b 4 vt:bg ; : |!m 5 vt:bg ; : |!c 6 vt:bg ; : |!w 7 vt:bg ;
 
 #+end_src
+    : (x,y) |c '( putc |g swap putn |c ", " |g puts putn  |c ') putc |w ;
+      "( xy- ) output coordinate pair as a string" :doc
+
+
 * debug words
