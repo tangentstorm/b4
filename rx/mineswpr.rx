@@ -17,7 +17,7 @@ needs sets' needs vt'  needs math'
 : spaces [ space ] times ; "( n- ) emit n spaces" :doc
 : deep push over pop swap ;
   "( xyz-xyzx ) copies the 3rd item to the top of the stack. ( dup, over, deep... )" :doc
-: cop pop dup push ; 
+: cop pop dup push ;
   "( -n ) copies a value from the return stack" :doc
 with math'
   : randint ( n-n ) random swap mod ;
@@ -67,8 +67,8 @@ without
 
 ( -- variables --------------------------------------------- )
 with sets'
+  enum| ·mine ·cover ·flag ·hint |
   vars| gameOver? minefield flagCount |
-  enum| ·nn ·ne ·ee ·se ·ss ·sw ·ww ·nw ·mine ·cover ·flag ·hint |
 without
 
 with sets'
@@ -114,25 +114,28 @@ with sets'
   : uncover ·cover @excl! ;
     "( c- ) remove the cover from cell c" :doc
 
-  : armed-neighbor-count 1 ;
-    "( c- ) remove the cover from cell c" :doc
+  : armed-neighbor-count @ 8 shr ;
+    "( c-n )  number of armed neighbors ( 0..8 )" :doc
+
+  : armed-neighbor-add $100 swap +! ;
+    "( c- )  increment count of armed neighbors ( 0..8 )" :doc
 
   : c>xy  grid - W /mod ;
-    "( xy-a ) given a cell, return its xy coordinates." :doc
+    "( c-xy ) given a cell, return its xy coordinates." :doc
 
   : randcell W randint H randint cell ;
     "( -a ) return a cell from the grid, at random" :doc
-  
+
   ( grid methods )
   : .fill swap W H * fill ;
     "( gx- ) fill grid g with value x" :doc
-
 
   (  todo: see if i can tie this in with each@ )
   : grid-do grid swap grid-size ??
     [ ( qgi ) over + ( qga ) deep ( qgaq ) do ] iter ;
     "( q- ) for each cell in the grid, push the cell's address, and run q." :doc
 
+  ( minefield methods )
   : mine-add
     randcell dup ·mine has?
       [ drop mine-add ] [ ·mine ?? @incl! ] if ?? ;
@@ -146,7 +149,7 @@ with sets'
        cell [ ·cover has? ] [ ·hint has? not ] bi and
     .else 2drop 0 .then }? ;
     "( xy-f ) should we call xy-fill! on this cell?" :doc
-   
+
   : xy-fill! ( we already know there is a cover and no hint, thanks to 'xy-fill?' )
     cell dup armed-neighbor-count 0 = [ uncover ] [ ·hint @incl! ] if ;
     "( xy- ) actually fill the cell." :doc
@@ -175,13 +178,13 @@ without
 
 with sets'
   ( -- user actions ---------------------------------------------- )
-  : flaggable? ·flag has? .ifso 0 .else ·cover has? not .then ?? ;
+  : flaggable? dup ·flag has? .ifso drop 0 .else ·cover has? .then ;
     "( a-f ) possible to put a flag on this cell?" :doc
 
   : flag+ dup flaggable? [ ·flag @incl! flagCount ++ ] [ drop ] if ;
     "( a- ) place a flag on the cell" :doc
 
-  : flag- ·flag dup2 ( cfcf ) has? [ @excl! flagCount -- ] [ drop ] if ;
+  : flag- ·flag dup2 ( cfcf ) has? [ @excl! flagCount -- ] [ 2drop ] if ;
     "( a- ) remove the flag from the cell, if present" :doc
 
   : prod ?{ dup flag- ·cover has?
@@ -210,7 +213,7 @@ with| vt' ng' sets' |
    [      space do putc space      ] if
    space ;
    "( xy- ) output cell as a string" :doc
-  
+
   : show
     $10 [ dup 2 spaces hex dup odd [ |w ] [ |C ] if putn space
           $10 [ over (x,y) ] iter cr drop ]
@@ -221,7 +224,7 @@ with vt'
    ( -- display words -------------------------------------------- )
 
    : . putc ; : $ puts ;
-   : draw ( clear )
+   : draw clear
     |Y "                            MINESWPR.RXE" $
     |g cr
     |b "---------------------------------------------------------------------" $ |w cr

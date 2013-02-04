@@ -127,11 +127,14 @@
     : uncover ·cover @excl! ;
       "( c- ) remove the cover from cell c" :doc
 
-    : armed-neighbor-count 1 ;
-      "( c- ) remove the cover from cell c" :doc
+    : armed-neighbor-count @ 8 shr ;
+      "( c-n )  number of armed neighbors ( 0..8 )" :doc
+
+    : armed-neighbor-add $100 swap +! ;
+      "( c- )  increment count of armed neighbors ( 0..8 )" :doc
 
     : c>xy  grid - W /mod ;
-      "( xy-a ) given a cell, return its xy coordinates." :doc
+      "( c-xy ) given a cell, return its xy coordinates." :doc
 
     : randcell W randint H randint cell ;
       "( -a ) return a cell from the grid, at random" :doc
@@ -203,13 +206,13 @@ without
 #+begin_src retro
   with sets'
     ( -- user actions ---------------------------------------------- )
-    : flaggable? ·flag has? .ifso 0 .else ·cover has? not .then ?? ;
+    : flaggable? dup ·flag has? .ifso drop 0 .else ·cover has? .then ;
       "( a-f ) possible to put a flag on this cell?" :doc
 
     : flag+ dup flaggable? [ ·flag @incl! flagCount ++ ] [ drop ] if ;
       "( a- ) place a flag on the cell" :doc
 
-    : flag- ·flag dup2 ( cfcf ) has? [ @excl! flagCount -- ] [ drop ] if ;
+    : flag- ·flag dup2 ( cfcf ) has? [ @excl! flagCount -- ] [ 2drop ] if ;
       "( a- ) remove the flag from the cell, if present" :doc
 
     : prod ?{ dup flag- ·cover has?
@@ -259,7 +262,7 @@ with vt'
    ( -- display words -------------------------------------------- )
 
    : . putc ; : $ puts ;
-   : draw ( clear )
+   : draw clear
     |Y "                            MINESWPR.RXE" $
     |g cr
     |b "---------------------------------------------------------------------" $ |w cr
