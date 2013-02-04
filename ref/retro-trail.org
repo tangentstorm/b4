@@ -3531,3 +3531,9 @@ global .s save bye
 * tasklist
 ** TODO make =okmsg= assignable, in case you just want to change the string.
 *** perhaps this means using strings with known lengths
+* NOTE . the new w: scheme for building the dictionaries
+:PROPERTIES:
+:TS: <2013-02-03 10:47PM>
+:ID: ydld85c0f0g0
+:END:
+http://forthworks.com/dev/corpse/article/204
