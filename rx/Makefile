@@ -4,6 +4,6 @@ game: mineswpr.rx retroImage
 mineswpr.rx: ../ref/mineswpr.org
 	../tangle.el ../ref/mineswpr.org
 
-retroImage: setup.rx color.rx sets.rx
+retroImage: setup.rx color.rx sets.rx ng.rx
 	cp ../lib/retro/retroImage .
 	retro --with setup.rx

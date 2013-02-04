@@ -1,5 +1,6 @@
 
 needs sets' needs vt'  needs math'
+
 ( -- language tweaks --------------------------------------- )
 
 : ≥ >= ; "( xy-? ) tests for x ≥ y . same as >=" :doc
@@ -16,6 +17,36 @@ with math'
   : randint ( n-n ) random swap mod ;
 without
 
+( -- debug tools ------------------------------------------- )
+with| vt' ng' |
+{{
+  : .? push |M .s |m pop puts |w ;
+---reveal---
+  : !! |r '! putc .s ;
+  : ?? last @ d->name lit,, ` .? ; immediate
+    "debug tool. at runtime, this will show the stack plus the name of the word in which it was used." :doc
+}}
+2without
+
+( -- imperative flow control ------------------------------- )
+with ng'
+: ;c  ` ?? ` ; ` immediate ; immediate
+: come-from here swap ! ;
+: .ifso ahead ;c
+  "c:  -a  | r:  f-   like IF in forth" :doc
+: .else ahead push come-from pop ;c
+  "c:  a-a | r:   -   forth-style ELSE" :doc
+: .then   come-from ;c          "c:  a-  | r:   -   like THEN in forth" :doc
+: .repeat here ;c
+: .while  here ;c
+: .do     0 lit,, 0 =jump,, here 1- ;c
+: .again
+    push       ( push the location of the jump from .do  )
+      jump,,   ( compile a jump to the position marked by .while )
+    pop come-from ;c
+: .until 0 lit,, =jump,, ;c
+  "compile the UNTIL part of a repeat loop" :doc
+without
 
 ( == minesweeper game ====================================== )
 
@@ -152,24 +183,25 @@ with vt'
  "draw the mineswpr ui / prompt" :doc
 without
 variables| ii jj |
-with forth' with vt'
+with| vt' ng' |
 
   : (x,y) |c '( putc |g swap putn |c ", " |g puts putn  |c ') putc |w ;
     "( xy- ) output coordinate pair as a string" :doc
 
-  : row (  )
-    W @ repeat 0;
-      decimal 16 over - ii !
-      (x,y)
-      1-
-    again ;
+  : row
+     W ii !
+    |c @ putn space |w 
+    .while ii @ 0 ≥ .do
+      ii [ -- ] [ hex @ space putn ] bi
+    .again ;
 
-  : rows 0 jj !
-    repeat jj
-      dup @ putn space ( draw-row )
-      dup ++
-        @ 16 ≥ if |g ;; else |r then
-    again ;
+  : rows
+     cr 0 jj !
+    .repeat
+      jj [ row cr ]
+         [ ++ ] 
+         [ @ H ≥ ] tri
+    .until ;
 
 2without
 hex
