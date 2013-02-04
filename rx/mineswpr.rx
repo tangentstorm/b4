@@ -10,9 +10,13 @@ needs sets' needs vt'  needs math'
 : inc ( a- ) ++ ;
 : shl << ;
 : shr >> ;
+: odd 1 and 0 != ;
 : vars| ` variables| ;
 : dup2 ( xy-xyxy ) over over ;
 : recurse (  -  ) @last @d->xt , ; compile-only ( from forth.rx )
+: spaces [ space ] times ; "( n- ) emit n spaces" :doc
+: deep push over pop swap ;
+  "( xyz-xyzx ) copies the 3rd item to the top of the stack. ( dup, over, deep... )" :doc
 with math'
   : randint ( n-n ) random swap mod ;
 without
@@ -20,10 +24,17 @@ without
 ( -- debug tools ------------------------------------------- )
 with| vt' ng' |
 {{
-  : .? push |M .s |m pop puts |w ;
+  : .? push |y .s pop |Y puts |w ;
+  variable depth
+  : indent 2 * spaces ;
+  : [context] last @ d->name lit,, ;
+  : { cr depth dup ++ @ indent |M puts space '{ putc |w ;
+  : } cr depth dup @ indent -- |M '} putc space puts |w ;
 ---reveal---
-  : !! |r '! putc .s ;
-  : ?? last @ d->name lit,, ` .? ; immediate
+  : !! |R .s |r "!!" puts ;
+  : ?{ [context] ` { ; immediate
+  : }? [context] ` } ; immediate
+  : ?? depth @ spaces [context] ` .? ; immediate
     "debug tool. at runtime, this will show the stack plus the name of the word in which it was used." :doc
 }}
 2without
@@ -31,21 +42,22 @@ with| vt' ng' |
 ( -- imperative flow control ------------------------------- )
 with ng'
 : ;c  ` ?? ` ; ` immediate ; immediate
-: come-from here swap ! ;
-: .ifso ahead ;c
-  "c:  -a  | r:  f-   like IF in forth" :doc
-: .else ahead push come-from pop ;c
-  "c:  a-a | r:   -   forth-style ELSE" :doc
-: .then   come-from ;c          "c:  a-  | r:   -   like THEN in forth" :doc
+{{ ( these two should *not* be immediate. they're called by immediates )
+  : .come-from here swap ! ;
+  : .else-ahead 0 lit,, 0 =jump,, here 1- ;
+---reveal---
+: .ifso .else-ahead  ;c                "c:  -a  | r:  f-   like IF in forth" :doc
+: .else ahead push .come-from pop ;c   "c:  a-a | r:   -   forth-style ELSE" :doc
+: .then   .come-from ;c                "c:  a-  | r:   -   like THEN in forth" :doc
 : .repeat here ;c
 : .while  here ;c
-: .do     0 lit,, 0 =jump,, here 1- ;c
+: .do  .else-ahead ;c
 : .again
     push       ( push the location of the jump from .do  )
       jump,,   ( compile a jump to the position marked by .while )
-    pop come-from ;c
-: .until 0 lit,, =jump,, ;c
-  "compile the UNTIL part of a repeat loop" :doc
+    pop .come-from ;c
+: .until 0 lit,, =jump,, ;c           "compile the UNTIL part of a repeat loop" :doc
+}}
 without
 
 ( == minesweeper game ====================================== )
@@ -63,10 +75,15 @@ with sets'
   32 constant mineCount
   create grid W H * allot
 
+  : grid-size W H * ;
+
   : cell ( xy-a ) W * + grid + ;
     "( xy-a ) given coordinates, return the address of the cell" :doc
 
-  : inbounds?  0 H 1- within  0 W 1- within  and ;
+  : c>xy  grid - W /mod ;
+    "( xy-a ) given a cell, return its xy coordinates." :doc
+
+  : inbounds?  0 H 1- within .ifso 0 W 1- within .else 0 .then ;
     "( xy-f ) is the point somewhere inside the minefield?" :doc
 
   : randcell W randint H randint cell ;
@@ -75,6 +92,10 @@ with sets'
   ( cell methods )
   : has? swap @ swap in? ;
     "( ce- ) does cell c contain the element e?" :doc
+  : uncover ·cover @excl! ;
+    "( c- ) remove the cover from cell c" :doc
+  : armed-neighbor-count 1 ;
+    "( c- ) remove the cover from cell c" :doc
 
   ( grid methods )
   : .fill swap W H * fill ;
@@ -82,99 +103,104 @@ with sets'
 
   : mine-add
     randcell dup ·mine has?
-      [ drop mine-add !! ]
-      [ ·mine ?? @incl! ?? ] if ;
+      [ drop mine-add ] [ ·mine ?? @incl! ] if ?? ;
     "( - ) add a mine to a random cell that doesn't yet have one" :doc
 
-  : game-new
-    gameOver? off
-    ·cover as-bit grid .fill
-    mineCount
-      [ flagCount ! ]
-      [ [ mine-add ] times ]
-    bi ;
-    "( - ) set up a new game" :doc
+  (  todo: see if i can tie this in with each@ )
+  : grid-do grid swap grid-size ??
+    [ ( qgi ) over + ( qga ) deep ( qgaq ) do ] iter ;
+    "( q- ) for each cell in the grid, push the cell's address, and run q." :doc
 
 without
-
-: xy-fill?
-  dup2
-    inbounds?
-    cell [ ·cover has? not ]
-         [ ·hint has? ] bi
-         or
-    and ;
-  "( xy-f ) should the floodfill routine visit this cell?" :doc
-
-: xy-fill!
-  ;
-  "( xy- ) actally fill the cell" :doc
-
-: flood
-  dup2 xy-fill?
-  [ dup2 xy-fill!
-    dup2 1- flood      ( north )
-    dup2 1+ flood      ( south )
-    swap
-    dup2 1+ swap flood ( east )
-         1- swap flood ( west )
-  ] ifTrue ;
-  "( xy-f ) runs the floodfill algorithm on the grid at the given coordinates" :doc
-
 with sets'
-  ( -- user actions ---------------------------------------------- )
 
-  : flag+    ·flag @incl! ;
-    "( a- ) place a flag on the cell" :doc
+  : xy-fill? ?{ dup2 inbounds? ??
+    .ifso ( visit cells that are still covered but do not already have hints )
+       cell [ ·cover has? ] [ ·hint has? not ] bi and
+    .else 2drop 0 .then }? ;
+    "( xy-f ) should we call xy-fill! on this cell?" :doc
+   
+  : xy-fill! ( we already know there is a cover and no hint, thanks to 'xy-fill?' )
+    cell dup armed-neighbor-count 0 = [ uncover ] [ ·hint @incl! ] if ;
+    "( xy- ) actually fill the cell." :doc
 
-  : flag- ·flag @excl! ;
-    "( a- ) remove the flag from the cell, if present" :doc
+  : flood ?{
+    dup2 xy-fill?
+    [ dup2 xy-fill!
+      dup2 1- flood      ( north )
+      dup2 1+ flood      ( south )
+      swap
+      dup2 1+ swap flood ( east )
+           1- swap flood ( west )
+    ] [ 2drop ] if }? ;
+    "( xy-f ) runs the floodfill algorithm on the grid at the given coordinates" :doc
 
-  : «dead» ?? drop ?? ( a- )  ; 
-  : «safe» ?? drop ?? ;
+without
+( -- event handlers ---------------------------------------------- )
 
-  : prod ?? dup 
-    ·cover has? ??
-    [ ?? dup ·cover @excl!
-      dup ·mine has?
-        [ gameOver? ! ]
-        [ [ «dead» ] [ «safe» ] if ]
-        bi
-    ] [ drop ] if ;
-    "( a- ) prod the cell for a mine, and see what happens... :)" :doc
+  : «dead» gameOver? -1 ! [ uncover ] grid-do ?? ;
+    "( a- ) called after detonating cell a" :doc
+
+  : «safe» c>xy flood ;
+    "( a- ) called after prodding cell a with no mine" :doc
 
   : mineswpr-exit-hook ( revectored ) ;
 
+with sets'
+  ( -- user actions ---------------------------------------------- )
+  : flaggable? ·flag has? .ifso 0 .else ·cover has? not .then ?? ;
+    "( a-f ) possible to put a flag on this cell?" :doc
+
+  : flag+ dup flaggable? [ ·flag @incl! flagCount ++ ] [ drop ] if ;
+    "( a- ) place a flag on the cell" :doc
+
+  : flag- ·flag dup2 ( cfcf ) has? [ @excl! flagCount -- ] [ drop ] if ;
+    "( a- ) remove the flag from the cell, if present" :doc
+
+  : prod ?{ dup flag- ·cover has?
+    .ifso
+       dup ·mine has? [ «dead» ] [ «safe» ] if
+    .then }? ;
+    "( a- ) prod the cell for a mine, and see what happens... :)" :doc
+
+  : game-new
+    gameOver? off 0 flagCount !
+    ·cover as-bit grid .fill
+    mineCount [ mine-add ] times ;
+    "( - ) set up a new game" :doc
+
 without
+with| vt' ng' sets' |
+  : |? ;
+  : (x,y) dup odd [ [ |K ] ] [ [ |c ] ] if &|? ` :is
+    cell @
+    [ [ ·flag  in? ]  [ '! &|R dup &|? ` :is -1 ] whend
+      [ ·hint  in? ]  [ '8 &|B -1 ] whend
+      [ ·cover in? ]  [ '- &|w -1 ] whend
+      [ ·mine  in? ]  [ 'X &|r  0 ] whend
+                        32 &|b  0   ] do
+   [ |? '[ putc do putc |? '] putc ]
+   [      space do putc space      ] if
+   space ;
+   "( xy- ) output cell as a string" :doc
+  
+  : show
+    $10 [ dup 2 spaces hex dup odd [ |w ] [ |C ] if putn space
+          $10 [ over (x,y) ] iter cr drop ]
+    iter ;
+
+2without without
 with vt'
    ( -- display words -------------------------------------------- )
 
    : . putc ; : $ puts ;
-   : draw
-     clear   |Y
-    "                            MINESWPR.RXE" $
-    |K .s |g cr
+   : draw ( clear )
+    |Y "                            MINESWPR.RXE" $
+    |g cr
     |b "---------------------------------------------------------------------" $ |w cr
-    "     0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F  " $ cr
-    "   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+" $ cr
-    " 0 |                                                               |" $ cr
-    " 1 |                                                               |" $ cr
-    " 2 |                                                               |" $ cr
-    " 3 |                                                               |" $ cr
-    " 4 |                                                               |" $ cr
-    " 5 |                                                               |" $ cr
-    " 6 |                                                               |" $ cr
-    " 7 |                                                               |" $ cr
-    " 8 |                                                               |" $ cr
-    " 9 |                                                               |" $ cr
-    " A |                                                               |" $ cr
-    " B |                                                               |" $ cr
-    " C |                                                               |" $ cr
-    " D |                                                               |" $ cr
-    " E |                                                               |" $ cr
-    " F |                                                               |" $ cr
-    "   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+" $ cr
-    |g
+    |C "     0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F   " $ cr
+    show
+    |g cr
     "type cmd at " $ '" . |w "ok" $ |g '" . ":  " $
       |Y '+ . |c " = flag  " $
       |Y '- . |c " = unflag  " $
@@ -182,41 +208,26 @@ with vt'
       |Y 'q . |c " = quit" $
     cr
     |g "cmd format: " $  |Y "x y " $ '[ |c . |Y "+-?" $ |c '] . |c "   " $
-    |g "examples: " $ |w "5 C +" $ |y " a b -" $  |W " 2 9 ?" $ |R " q" $ cr
-    |b "---------------------------------------------------------------------" $ cr
+    |g "examples: " $ |w "5 C +" $ |y " a b -" $  |W " 2 9 ?" $ |R " q" $
+                                           |Y   "   r " $ |c "= restart " $ cr
+    |b "---------------------------------------------------------------------" $
+    |K .s cr
     |W "ok " $ |w ;
  "draw the mineswpr ui / prompt" :doc
 without
-with| vt' ng' sets' |
-  
-  : (x,y) cell @
-    [ [ ·flag  in? ]  [ '! &|R -1 ] whend
-      [ ·hint  in? ]  [ '8 &|B -1 ] whend
-      [ ·cover in? ]  [ '- &|w -1 ] whend
-      [ ·mine  in? ]  [ 'X &|r  0 ] whend
-                        32 &|b  0   ] do
-   [ |K '[ putc do putc |K '] putc ]
-   [      space do putc space      ] if
-   space ;
-   "( xy- ) output cell as a string" :doc
-  
-  : show cr
-    $10 [ $10 [ over (x,y) ] iter cr drop ] iter ;
-  
-  
-2without without
 hex
 chain: mswp'
   ( ui command syntax )
-  : + cell flag+ ;
-  : - cell flag- ;
-  : ? cell prod  ;
+  : + depth 2 >= [ cell flag+ ] ifTrue ;
+  : - depth 2 >= [ cell flag- ] ifTrue ;
+  : ? depth 2 >= [ cell prod ]  ifTrue ;
   : a A ;
   : b B ;
   : c C ;
   : d D ;
   : e E ;
   : f F ;
+  : r game-new ;
   : q mineswpr-exit-hook ;
    "minesweeper parser" :doc
 ;chain
@@ -252,5 +263,4 @@ with vt' with color'
 2without
 
 game-new
-show
-( play )
+play
