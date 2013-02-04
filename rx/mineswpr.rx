@@ -17,6 +17,8 @@ needs sets' needs vt'  needs math'
 : spaces [ space ] times ; "( n- ) emit n spaces" :doc
 : deep push over pop swap ;
   "( xyz-xyzx ) copies the 3rd item to the top of the stack. ( dup, over, deep... )" :doc
+: cop pop dup push ; 
+  "( -n ) copies a value from the return stack" :doc
 with math'
   : randint ( n-n ) random swap mod ;
 without
@@ -65,8 +67,8 @@ without
 
 ( -- variables --------------------------------------------- )
 with sets'
-  enum| ·mine ·cover ·flag ·hint |
   vars| gameOver? minefield flagCount |
+  enum| ·nn ·ne ·ee ·se ·ss ·sw ·ww ·nw ·mine ·cover ·flag ·hint |
 without
 
 with sets'
@@ -77,39 +79,64 @@ with sets'
 
   : grid-size W H * ;
 
+  ( point2d methods )
+  : nn 1- ; "( xy-xy ) north" :doc
+  : ss 1+ ; "( xy-xy ) south" :doc
+  : ee swap 1- swap ; "( xy-xy ) east" :doc
+  : ww swap 1- swap ; "( xy-xy ) west" :doc
+  : ne nn ee ; "( xy-xy ) north-east" :doc
+  : se ss ee ; "( xy-xy ) south-east" :doc
+  : sw ss ww ; "( xy-xy ) south-west" :doc
+  : nw nn ww ; "( xy-xy ) north-west" :doc
+
+  {{
+    3 elements x y q
+    : xy x @ y @ ;
+    : qq q @ do ;
+  ---reveal---
+    : neighbors-do q ! y ! x !
+      xy nw qq    xy nn qq    xy ne qq
+      xy ww qq                xy ee qq
+      xy sw qq    xy ss qq    xy sw qq ;
+    "( xyq- ) call q with the xy coordinates of each neighboring point" :doc
+  }}
+
   : cell ( xy-a ) W * + grid + ;
     "( xy-a ) given coordinates, return the address of the cell" :doc
-
-  : c>xy  grid - W /mod ;
-    "( xy-a ) given a cell, return its xy coordinates." :doc
 
   : inbounds?  0 H 1- within .ifso 0 W 1- within .else 0 .then ;
     "( xy-f ) is the point somewhere inside the minefield?" :doc
 
-  : randcell W randint H randint cell ;
-    "( -a ) return a cell from the grid, at random" :doc
-
   ( cell methods )
   : has? swap @ swap in? ;
     "( ce- ) does cell c contain the element e?" :doc
+
   : uncover ·cover @excl! ;
     "( c- ) remove the cover from cell c" :doc
+
   : armed-neighbor-count 1 ;
     "( c- ) remove the cover from cell c" :doc
 
+  : c>xy  grid - W /mod ;
+    "( xy-a ) given a cell, return its xy coordinates." :doc
+
+  : randcell W randint H randint cell ;
+    "( -a ) return a cell from the grid, at random" :doc
+  
   ( grid methods )
   : .fill swap W H * fill ;
     "( gx- ) fill grid g with value x" :doc
 
-  : mine-add
-    randcell dup ·mine has?
-      [ drop mine-add ] [ ·mine ?? @incl! ] if ?? ;
-    "( - ) add a mine to a random cell that doesn't yet have one" :doc
 
   (  todo: see if i can tie this in with each@ )
   : grid-do grid swap grid-size ??
     [ ( qgi ) over + ( qga ) deep ( qgaq ) do ] iter ;
     "( q- ) for each cell in the grid, push the cell's address, and run q." :doc
+
+  : mine-add
+    randcell dup ·mine has?
+      [ drop mine-add ] [ ·mine ?? @incl! ] if ?? ;
+    "( - ) add a mine to a random cell that doesn't yet have one" :doc
 
 without
 with sets'
