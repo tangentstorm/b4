@@ -81,8 +81,8 @@
 
 #+end_src
 
-** DONE grid-type
-#+name: grid-type
+** DONE grid-setup
+#+name: grid-setup
 #+begin_src retro
   with sets'
     16 constant W
@@ -91,7 +91,11 @@
     create grid W H * allot
 
     : grid-size W H * ;
+#+end_src
 
+** DONE point-methods
+#+name: point-methods
+#+begin_src retro
     ( point2d methods )
     : nn 1- ; "( xy-xy ) north" :doc
     : ss 1+ ; "( xy-xy ) south" :doc
@@ -119,7 +123,11 @@
 
     : inbounds?  0 H 1- within .ifso 0 W 1- within .else 0 .then ;
       "( xy-f ) is the point somewhere inside the minefield?" :doc
+#+end_src
 
+** DONE cell methods
+#+name: cell-methods
+#+begin_src retro
     ( cell methods )
     : has? swap @ swap in? ;
       "( ce- ) does cell c contain the element e?" :doc
@@ -138,7 +146,11 @@
 
     : randcell W randint H randint cell ;
       "( -a ) return a cell from the grid, at random" :doc
+#+end_src
 
+** DONE grid methods
+#+name: grid-methods
+#+begin_src retro
     ( grid methods )
     : .fill swap W H * fill ;
       "( gx- ) fill grid g with value x" :doc
@@ -286,7 +298,6 @@ without
 #+end_src
 
 
-
 ** DONE command parser
 #+name: cmd-parser
 #+begin_src retro
@@ -350,7 +361,10 @@ needs sets' needs vt'  needs math'
 ( == minesweeper game ====================================== )
 
 <<variables>>
-<<grid-type>>
+<<grid-setup>>
+<<point-methods>>
+<<cell-methods>>
+<<grid-methods>>
 <<floodfill>>
 <<events>>
 <<user-actions>>
