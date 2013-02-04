@@ -16,10 +16,11 @@ chain: sets'
 : excl as-bit not and ;
   "( se-s ) exclude an ordinal item from the set" :doc
   
-: @incl! over @ swap incl ! ;
+: @incl! over @ swap incl swap ! ;
+     ( aea  aes  ase  as   sa  - )
   "( ae- ) like =incl= but takes a pointer" :doc
   
-: @excl! over @ swap excl ! ;
+: @excl! over @ swap excl swap ! ;
   "( ae- ) like =excl= but takes a pointer" :doc
 
 ;chain
