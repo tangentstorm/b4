@@ -304,8 +304,8 @@
      "( xy- ) output cell as a string" :doc
 
     : show cr
-      $10 [ dup 2 spaces hex dup odd [ |w ] [ |C ] if putn space
-            $10 [ over (x,y) ] iter cr drop ] iter ;
+      H [ dup 2 spaces hex dup odd [ |w ] [ |C ] if putn space
+            W [ over (x,y) ] iter cr drop ] iter ;
       "draw the minefield" :doc
 
   2without
