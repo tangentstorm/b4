@@ -81,8 +81,10 @@
 #+begin_src retro
 
   ( -- variables --------------------------------------------- )
-  enum| ·mine ·cover ·flag ·hint |
+
+  enum| ·mine ·cover ·flag |
   vars| gameOver? minefield flagCount |
+  variable allHints?  ( debug flag )
 
 #+end_src
 
@@ -189,7 +191,8 @@
 
   : neighborhood-safe? armed-neighbor-count 0 = ; "( c-f )" :doc
 
-  : visit uncover ; "( c-f ) actually fill the cell." :doc
+  : visit dup uncover ;
+    "( c-f ) actually fill the cell." :doc
   : keep-going? neighborhood-safe? ;
   : flood-step-hook ; "( - )  just a hook for debugging " :doc
 
@@ -268,9 +271,6 @@
     ] grid-do ;
     "( - ) generate the armed-neighbor-count for each cell on the grid" :doc
 
-  : hints-show [ dup ·mine has? .ifso uncover .else ·hint @incl! .then ] grid-do ;
-    "just for debugging... or cheating :)" :doc
-
   : mine-add
     randcell
     dup ·mine has?
@@ -282,7 +282,7 @@
   : game-new
     ·cover as-bit grid .fill
     mineCount [ mine-add ] times
-    hints-create ( hints-show )
+    hints-create
     0 flagCount !
     gameOver? off ;
     "( - ) set up a new game" :doc
@@ -299,11 +299,20 @@
     : in-brackets |? '[ putc do putc |? '] putc ;
     : no-brackets      space do putc      space ;
 
-    : empty-draw drop                 '-   &|b               no-brackets ;
+    : hint armed-neighbor-count ;
+
     : mine-draw  drop                 'X   &|r               no-brackets ;
     : flag-draw  drop                 '!   &|R dup &|? ` :is in-brackets ;
-    : cover-draw drop                 '-   &|w               in-brackets ;
-    : hint-draw  armed-neighbor-count '0 + &|B               in-brackets ;
+    : hint-draw 
+      hint dup 0 =
+      .ifso      drop                 '-   &|b               no-brackets
+      .else                           '0 + &|B               in-brackets
+      .then ;
+    : cover-draw
+      allHints? @
+        .ifso    hint-draw
+        .else    drop                 '-   &|w               in-brackets
+      .then ;
 
     : (x,y)
 
@@ -313,10 +322,8 @@
       cell dup @
       [ [ ·mine in? gameOver? @ and ]   [ mine-draw  ] whend
         [ ·flag  in? ]                  [ flag-draw  ] whend
-        [ ·hint  in? ]                  [ hint-draw  ] whend
         [ ·cover in? ]                  [ cover-draw ] whend
-        [ drop   -1  ]                  [ empty-draw ] whend ] do
-
+        [ drop   -1  ]                  [ hint-draw  ] whend ] do
      space ;
      "( xy- ) output cell as a string" :doc
 
