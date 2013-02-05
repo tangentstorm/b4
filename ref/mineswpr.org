@@ -228,7 +228,7 @@
 
     ( -- user actions ---------------------------------------------- )
 
-    : flaggable? [ ·flag has? ] [ ·cover has? ] bi nor ;
+    : flaggable? [ ·flag has? not ] [ ·cover has? ] bi and ;
       "( a-f ) possible to put a flag on this cell?" :doc
 
     : flag+
