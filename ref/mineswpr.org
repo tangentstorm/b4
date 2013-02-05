@@ -85,7 +85,7 @@
 
   enum| ·mine ·cover ·flag |
   vars| gameOver? minefield flagCount |
-  variable allHints?  ( debug flag )
+  vars| allHints? flood-here | ( debug stuff )
 
 #+end_src
 
@@ -191,21 +191,16 @@
     "( c-f ) should we call xy-fill! on this cell?" :doc
 
   : neighborhood-safe? armed-neighbor-count 0 = ; "( c-f )" :doc
+  : keep-going? neighborhood-safe? ; "( c-f )" :doc
 
-  : visit dup uncover ;
-    "( c-f ) actually fill the cell." :doc
-  : keep-going? neighborhood-safe? ;
-  : flood-step-hook ; "( - )  just a hook for debugging " :doc
+  : flood-visit uncover ; "( c- ) actually fill the cell." :doc
+  : flood-step-hook ; "( - ) just a hook for debugging " :doc
 
-  : flood cell                     ( xy-c  )
-    dup needs-visit?               (  c-cf )
-      .ifso                        ( cf-c  )
-         dup visit
-             flood-step-hook
-         dup keep-going?
-           .ifso c>xy [ flood ] cardinal-neighbors-do
-           .else drop
-         .then
+  : flood cell
+    dup flood-here ! flood-step-hook ( debug hook )
+    dup flood-visit
+    dup keep-going?
+      .ifso c>xy [ flood ] cardinal-neighbors-do
       .else drop
     .then ;
     "( xy- ) runs the floodfill algorithm on the grid at the given cell" :doc
@@ -304,7 +299,8 @@
 #+begin_src retro
   with vt' with ng'
 
-    : |? ;
+    variable set-bracket-color
+    : |? set-bracket-color @ do ;
 
     : in-brackets |? '[ putc do putc |? '] putc ;
     : no-brackets      space do putc      space ;
@@ -324,12 +320,16 @@
         .else    drop                 '-   &|w               in-brackets
       .then ;
 
-    : (x,y)
+    : make-striped
+      odd .ifso [ |K ] .else [ |c ] .then set-bracket-color ! ;
+      "( y- ) assign set-bracket-color based on line number" :doc
 
-      ( horizontal stripes: )
-      dup odd [ [ |K ] ] [ [ |c ] ] if &|? ` :is
+    : show-flood-cursor 
+      flood-here @ = .ifso [ |M ] set-bracket-color ! .then ;
 
-      cell dup @
+    : (x,y) dup make-striped cell
+      dup show-flood-cursor
+      dup @
       [ [ ·mine in? gameOver? @ and ]   [ mine-draw  ] whend
         [ ·flag  in? ]                  [ flag-draw  ] whend
         [ ·cover in? ]                  [ cover-draw ] whend
@@ -337,7 +337,9 @@
      space ;
      "( xy- ) output cell as a string" :doc
 
-    : show cr
+    : show cr |C
+      "     0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F   "
+      puts cr
       H [ dup 2 spaces hex dup odd [ |w ] [ |C ] if putn space
             W [ over (x,y) ] iter cr drop ] iter ;
       "draw the minefield" :doc
@@ -355,8 +357,7 @@ with vt'
    : draw clear
     |Y "                            MINESWPR.RXE" $
     |g cr
-    |b "---------------------------------------------------------------------" $ |w cr
-    |C "     0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F   " $
+    |b "---------------------------------------------------------------------" $ |w
     show
     |g cr
     "type cmd at " $ '" . |w "ok" $ |g '" . ":  " $
@@ -453,9 +454,16 @@ with sets'
 
 game-new
 
-0 ( debug hook )
-.ifso [ clear show getc 'q = .ifso bye .then ] &flood-step-hook :is .then
+with vt'
+: (xy) |c '( putc |g swap putn |c ", " |g puts putn  |c ') putc |w ;
+  "( xy- ) output coordinate pair as a string" :doc
+without
 
+: on-flood-step clear
+  !! space flood-here @ c>xy (xy)
+  show getc 'q = .ifso bye .then ;
+
+&on-flood-step  &flood-step-hook :is
 play
 
 #+end_src
@@ -479,8 +487,6 @@ chain: vt'
 
 #+end_src
 
-    : (x,y) |c '( putc |g swap putn |c ", " |g puts putn  |c ') putc |w ;
-      "( xy- ) output coordinate pair as a string" :doc
 
 
 * debug words
