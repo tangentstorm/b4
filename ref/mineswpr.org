@@ -26,6 +26,7 @@
   : cop pop dup push ;
     "( -n ) copies a value from the return stack" :doc
   : nor or not ;
+  : drop3 drop drop drop ;
   with math'
     : randint ( n-n ) random swap mod ;
   without
@@ -84,8 +85,8 @@
   ( -- variables --------------------------------------------- )
 
   enum| ·mine ·cover ·flag |
-  vars| gameOver? minefield flagCount |
-  vars| allHints? flood-here | ( debug stuff )
+  vars| gameOver? minefield flagCount active-cell |
+  vars| allHints? flood-cursor | ( debug stuff )
 
 #+end_src
 
@@ -113,27 +114,26 @@
   : sw ss ww ; "( xy-xy ) south-west" :doc
   : nw nn ww ; "( xy-xy ) north-west" :doc
   {{
-    3 elements x y q
-    : xy x @ y @ ;
-    : qq q @ do ;
+    : xy deep deep ;
+    : qq deep do ;
   ---reveal---
 
-    : cardinal-neighbors-do q ! y ! x !
+    : cardinal-neighbors-do
                   xy nn qq
       xy ww qq     ( xy )     xy ee qq
-                  xy ss qq ;
+                  xy ss qq               drop3 ;
      "( xyq- ) invoke q { xy-?? } for points to n,w,e,s" :doc
 
-     : ordinal-neighbors-do q ! y ! x !
+     : ordinal-neighbors-do
       xy nw qq                xy ne qq
                    ( xy )
-      xy sw qq                xy se qq ;
+      xy sw qq                xy se qq   drop3 ;
      "( xyq- ) invoke q { xy-?? } for points to nw,ne,sw,se" :doc
 
-     : neighbors-do q ! y ! x !
+     : neighbors-do
       xy nw qq    xy nn qq    xy ne qq
       xy ww qq     ( xy )     xy ee qq
-      xy sw qq    xy ss qq    xy se qq ;
+      xy sw qq    xy ss qq    xy se qq   drop3 ;
      "( xyq- ) invoke q { xy-?? } for all eight neighboring points" :doc
 
   }}
@@ -190,19 +190,22 @@
     .then ;
     "( c-f ) should we call xy-fill! on this cell?" :doc
 
-  : neighborhood-safe? armed-neighbor-count 0 = ; "( c-f )" :doc
-  : keep-going? neighborhood-safe? ; "( c-f )" :doc
+  : keep-going? armed-neighbor-count 0 = ; "( c-f )" :doc
 
   : flood-visit uncover ; "( c- ) actually fill the cell." :doc
   : flood-step-hook ; "( - ) just a hook for debugging " :doc
 
   : flood cell
-    dup flood-here ! flood-step-hook ( debug hook )
-    dup flood-visit
-    dup keep-going?
-      .ifso c>xy [ flood ] cardinal-neighbors-do
+    dup flood-cursor ! flood-step-hook ( debug hook )
+    dup needs-visit?
+      .ifso
+        dup flood-visit
+        dup keep-going?
+          .ifso c>xy [ flood ] cardinal-neighbors-do
+          .else drop
+        .then
       .else drop
-    .then ;
+    .then 0 flood-cursor ! ;
     "( xy- ) runs the floodfill algorithm on the grid at the given cell" :doc
 
 #+end_src
@@ -212,10 +215,7 @@
 #+begin_src retro
   ( -- event handlers ---------------------------------------------- )
 
-    : «dead»
-      gameOver? on
-      "game over. press any key\n" puts getc drop
-      [ uncover ] grid-do ;
+    : «dead» gameOver? on ;
       "( a- ) called after detonating cell a" :doc
 
     : mineswpr-exit-hook ( revectored ) ;
@@ -300,32 +300,41 @@
   with vt' with ng'
 
     variable set-bracket-color
-    : |? set-bracket-color @ do ;
 
-    : in-brackets |? '[ putc do putc |? '] putc ;
-    : no-brackets      space do putc      space ;
+    : |? set-bracket-color @ do ;
+    : . putc ; : $ puts ;
+
+    : show-flood-cursor
+      flood-cursor @ = .ifso [ |M ] set-bracket-color ! .then ;
+    : show-active-cell
+      active-cell @ =
+      .ifso
+        [ |m ] set-bracket-color !
+        0 active-cell !
+      .then ;
+
+    : |[ [ show-active-cell ] [ show-flood-cursor ] bi |? '[ putc ;
+    : |] |? '] putc ;
+    : hide-brackets [ |k ] set-bracket-color ! ;
 
     : hint armed-neighbor-count ;
 
-    : mine-draw  drop                 'X   &|r               no-brackets ;
-    : flag-draw  drop                 '!   &|R dup &|? ` :is in-brackets ;
-    : hint-draw 
-      hint dup 0 =
-      .ifso      drop                 '-   &|b               no-brackets
-      .else                           '0 + &|B               in-brackets
+    : mine-draw hide-brackets  |[ |r 'X . |] ;
+    : flag-draw                |[ |R '! . |] ;
+    : hint-draw hide-brackets
+      dup hint dup 0 =
+      .ifso drop               |[ |b '- .   |]
+      .else push               |[ |B pop '0 + . |]
       .then ;
     : cover-draw
       allHints? @
         .ifso    hint-draw
-        .else    drop                 '-   &|w               in-brackets
+        .else                  |[ |w '- . |] ;
       .then ;
 
     : make-striped
       odd .ifso [ |K ] .else [ |c ] .then set-bracket-color ! ;
       "( y- ) assign set-bracket-color based on line number" :doc
-
-    : show-flood-cursor 
-      flood-here @ = .ifso [ |M ] set-bracket-color ! .then ;
 
     : (x,y) dup make-striped cell
       dup show-flood-cursor
@@ -350,52 +359,77 @@
 ** DONE draw the playing field
 #+name: draw-field
 #+begin_src retro
-with vt'
-   ( -- display words -------------------------------------------- )
+  ( -- display words -------------------------------------------- )
+  with vt'
 
-   : . putc ; : $ puts ;
-   : draw clear
-    |Y "                            MINESWPR.RXE" $
-    |g cr
-    |b "---------------------------------------------------------------------" $ |w
+  : draw clear
+    gameOver? @
+    .ifso |R
+      "                              GAME OVER! " $
+    .else |Y
+      "                            MINESWPR.RXE" $
+    .then |b cr
+      "-------------------------------------------------------------------" $ |w
     show
-    |g cr
-    "type cmd at " $ '" . |w "ok" $ |g '" . ":  " $
-      |Y '+ . |c " = flag  " $
-      |Y '- . |c " = unflag  " $
-      |Y '? . |c " = prod for mine " $
-      |Y 'q . |c " = quit" $
-    cr
-    |g "cmd format: " $  |Y "x y " $ '[ |c . |Y "+-?" $ |c '] . |c "   " $
-    |g "examples: " $ |w "5 C +" $ |y " a b -" $  |W " 2 9 ?" $ |R " q" $
-                                           |Y   "   r " $ |c "= restart " $ cr
-    |b "---------------------------------------------------------------------" $
-    |K .s cr
-    |W "ok " $ |w ;
- "draw the mineswpr ui / prompt" :doc
-without
+      cr |g "type cmd at '"
+       $ |w "ok"
+       $ |g "':  "
+       $ |Y '+ . |c " = flag  "
+       $ |Y '- . |c " = unflag  "
+       $ |Y '? . |c " = prod for mine "
+       $ |Y 'q . |c " = quit" $
+      cr |g "cmd format: "
+       $ |Y "x y "
+       $ |c '[
+       . |Y "+-?"
+       $ |c '] . "   "
+       $ |g "examples: "
+       $ |w "5 C +"
+       $ |y " a b -"
+       $ |W " 2 9 ?"
+       $ |R " q"
+       $ |Y "   r "
+       $ |c "= restart "
+       $ |b cr
+      "-------------------------------------------------------------------" $ |K
+    .s gameOver? @
+    .ifso |R "game over."
+        $ |r " type "
+        $ |y 'r
+        . |r "  to restart" $
+    .then
+       cr |W "ok " $ |w
+    ; "( - ) draw the mineswpr ui / prompt" :doc
+
+  without
 #+end_src
 
 ** DONE command parser
 #+name: cmd-parser
 #+begin_src retro
-hex
-chain: mswp'
+chain: mswp' "minesweeper parser" :doc
+
+  : with-cell cell dup active-cell ! ;
+  : if-cell-ok push
+    depth 2 >=
+    .ifso
+       dup2 inbounds?
+       .ifso with-cell pop do
+       .else pop drop3
+       .then
+    .then ;
+
   ( ui command syntax )
-  : + depth 2 >= [ cell flag+ ] ifTrue ;
-  : - depth 2 >= [ cell flag- ] ifTrue ;
-  : ? depth 2 >= [ cell prod ]  ifTrue ;
-  : a A ;
-  : b B ;
-  : c C ;
-  : d D ;
-  : e E ;
-  : f F ;
+
+  : + [ flag+ ] if-cell-ok ;
+  : - [ flag- ] if-cell-ok ;
+  : ? [ prod ]  if-cell-ok ;
+  : a $A ;   : b $B ;   : c $C ;
+  : d $D ;   : e $E ;   : f $F ;
   : r game-new ;
   : q mineswpr-exit-hook ;
-   "minesweeper parser" :doc
+
 ;chain
-decimal
 #+end_src
 ** DONE retro shell enhancements
 #+name: shell-tweaks
@@ -460,10 +494,9 @@ with vt'
 without
 
 : on-flood-step clear
-  !! space flood-here @ c>xy (xy)
-  show getc 'q = .ifso bye .then ;
-
-&on-flood-step  &flood-step-hook :is
+  !! space flood-cursor @ c>xy (xy)
+  show getc 'q = .ifso bye .then ; "( - ) floodfill debugger" :doc
+( &on-flood-step  &flood-step-hook :is )
 play
 
 #+end_src
