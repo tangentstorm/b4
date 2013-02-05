@@ -295,20 +295,27 @@
   with vt' with ng'
 
     : |? ;
+
+    : empty-draw drop '- &|b  0 ;
+    : mine-draw drop 'X &|r  0 ;
+    : flag-draw drop '! &|R dup &|? ` :is -1 ;
+    : cover-draw drop '- &|w -1 ;
+    : hint-draw armed-neighbor-count '0 + &|B -1 ;
+
     : (x,y)
 
       ( horizontal stripes: )
       dup odd [ [ |K ] ] [ [ |c ] ] if &|? ` :is
 
       cell dup @
-      [ [ ·mine in? gameOver? @ and ]            [ drop 'X &|r  0 ] whend
-        [ ·flag  in? ]             [ drop '! &|R dup &|? ` :is -1 ] whend
-        [ ·hint  in? ]         [ armed-neighbor-count '0 + &|B -1 ] whend
-        [ ·cover in? ]                           [ drop '- &|w -1 ] whend
-        [ drop   -1  ]                           [ drop '- &|b  0 ] whend ] do
+      [ [ ·mine in? gameOver? @ and ]   [ mine-draw  ] whend
+        [ ·flag  in? ]                  [ flag-draw  ] whend
+        [ ·hint  in? ]                  [ hint-draw  ] whend
+        [ ·cover in? ]                  [ cover-draw ] whend
+        [ drop   -1  ]                  [ empty-draw ] whend ] do
 
-     [ |? '[ putc do putc |? '] putc ]
-     [      space do putc space      ] if
+      [ |? '[ putc do putc |? '] putc ]
+      [  space do putc space  ] if
 
      space ;
      "( xy- ) output cell as a string" :doc
