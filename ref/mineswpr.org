@@ -474,10 +474,6 @@ play
 : self pop dup push ;
 : end pop drop ;
 
-** trash words
-#+begin_src retro
-#+end_src
-
 ** virtual terminal words
 #+begin_src retro
 chain: vt'
@@ -488,5 +484,3 @@ chain: vt'
 #+end_src
 
 
-
-* debug words
