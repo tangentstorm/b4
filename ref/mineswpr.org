@@ -5,9 +5,9 @@
 * language tweaks
 #+name: lang-tweaks
 #+begin_src retro
-
+          
   ( -- language tweaks --------------------------------------- )
-
+  
   : ≥ >= ; "( xy-? ) tests for x ≥ y . same as >=" :doc
   : ≤ <= ; "( xy-? ) tests for x ≤ y . same as <=" :doc
   : ≠ != ; "( xy-f ) just a fancy way to say !=" :doc
@@ -27,7 +27,7 @@
   with math'
     : randint ( n-n ) random swap mod ;
   without
-
+  
   ( -- debug tools ------------------------------------------- )
   with| vt' ng' |
   {{
@@ -45,7 +45,7 @@
       "debug tool. at runtime, this will show the stack plus the name of the word in which it was used." :doc
   }}
   2without
-
+  
   ( -- imperative flow control ------------------------------- )
   with ng'
   : ;c  ` ?? ` ; ` immediate ; immediate
@@ -99,7 +99,7 @@
     ( point2d methods )
     : nn 1- ; "( xy-xy ) north" :doc
     : ss 1+ ; "( xy-xy ) south" :doc
-    : ee swap 1- swap ; "( xy-xy ) east" :doc
+    : ee swap 1+ swap ; "( xy-xy ) east" :doc
     : ww swap 1- swap ; "( xy-xy ) west" :doc
     : ne nn ee ; "( xy-xy ) north-east" :doc
     : se ss ee ; "( xy-xy ) south-east" :doc
@@ -121,7 +121,7 @@
     : cell ( xy-a ) W * + grid + ;
       "( xy-a ) given coordinates, return the address of the cell" :doc
 
-    : inbounds?  0 H 1- within .ifso 0 W 1- within .else 0 .then ;
+    : inbounds? 0 H 1- within .ifso 0 W 1- within .else drop ( W- ) 0 .then ;
       "( xy-f ) is the point somewhere inside the minefield?" :doc
 #+end_src
 
@@ -161,9 +161,16 @@
       "( q- ) for each cell in the grid, push the cell's address, and run q." :doc
 
     ( minefield methods )
-    : mine-add
-      randcell dup ·mine has?
-        [ drop mine-add ] [ ·mine ?? @incl! ] if ?? ;
+    with vt'
+    : inform-neighbors c>xy
+      [ dup2 inbounds? [ cell armed-neighbor-add ] [ 2drop ] if ] neighbors-do ;
+      "( c- ) notify neighboring cells about the mine we just placed" :doc
+    without
+
+    : mine-add randcell dup ·mine has?
+      .ifso drop recurse
+      .else [ ·mine @incl! ] [ inform-neighbors ] bi
+      .then ;
       "( - ) add a mine to a random cell that doesn't yet have one" :doc
 
   without
@@ -174,7 +181,7 @@
 #+begin_src retro
 with sets'
 
-  : xy-fill? ?{ dup2 inbounds? ??
+  : xy-fill? ?{ ?? dup2 inbounds? ??
     .ifso ( visit cells that are still covered but do not already have hints )
        cell [ ·cover has? ] [ ·hint has? not ] bi and
     .else 2drop 0 .then }? ;
@@ -184,8 +191,8 @@ with sets'
     cell dup armed-neighbor-count 0 = [ uncover ] [ ·hint @incl! ] if ;
     "( xy- ) actually fill the cell." :doc
 
-  : flood ?{
-    dup2 xy-fill?
+  : flood ?{ ??
+    dup2 xy-fill? ??
     [ dup2 xy-fill!
       dup2 1- flood      ( north )
       dup2 1+ flood      ( south )
@@ -206,7 +213,7 @@ without
     : «dead» gameOver? -1 ! [ uncover ] grid-do ?? ;
       "( a- ) called after detonating cell a" :doc
 
-    : «safe» c>xy flood ;
+    : «safe» ?{ ?? c>xy !! flood ?? }? ;
       "( a- ) called after prodding cell a with no mine" :doc
 
     : mineswpr-exit-hook ( revectored ) ;
@@ -296,7 +303,6 @@ with vt'
  "draw the mineswpr ui / prompt" :doc
 without
 #+end_src
-
 
 ** DONE command parser
 #+name: cmd-parser
