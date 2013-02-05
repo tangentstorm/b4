@@ -180,31 +180,29 @@
 #+name: floodfill
 #+begin_src retro
 
-  : needs-fill?
-    dup c>xy inbounds?
-    .ifso ( visit cells that are still covered but do not already have hints )
-       [ ·cover has? ]
-       [ ·hint has? not ] bi
-       and
-    .else drop 0 .then ;
+  : needs-visit?                 ( visit cells that are ... )
+    dup c>xy inbounds?           (  - within bounds )
+      .ifso ·cover has?          (  - and still covered )
+      .else drop 0
+    .then ;
     "( c-f ) should we call xy-fill! on this cell?" :doc
 
-  ( we already know there is a cover and no hint, thanks to 'needs-fill?' )
-  : cell-fill!
-    dup armed-neighbor-count 0 = ( cc-cf )
-    .ifso   uncover ( c- )
-    .else  ·hint @incl! ( c- )
-    .then ;
-    "( c- ) actually fill the cell." :doc
+  : neighborhood-safe? armed-neighbor-count 0 = ; "( c-f )" :doc
 
-  : flood
-     dup2 cell dup needs-fill?
-    .ifso cell-fill!
-          dup2 nn flood
-          dup2 ss flood
-          dup2 ee flood
-               ww flood
-    .else 2drop
+  : visit uncover ; "( c-f ) actually fill the cell." :doc
+  : keep-going? neighborhood-safe? ;
+  : flood-step-hook ; "( - )  just a hook for debugging " :doc
+
+  : flood cell                     ( xy-c  )
+    dup needs-visit?               (  c-cf )
+      .ifso                        ( cf-c  )
+         dup visit
+             flood-step-hook
+         dup keep-going?
+           .ifso c>xy [ flood ] cardinal-neighbors-do
+           .else drop
+         .then
+      .else drop
     .then ;
     "( xy- ) runs the floodfill algorithm on the grid at the given cell" :doc
 
@@ -250,10 +248,12 @@
       "( a- ) prod the cell for a mine, and see what happens... :)" :doc
 #+end_src
 
-** TODO minefield words  inform-neighbors needs to be replaced with counter
+** DONE minefield words
 #+name: minefield-words
 #+begin_src retro
-  ( minefield methods )
+
+  ( -- minefield words --------------------------------------- )
+
   : hints-create
     [ dup ·mine has?
         .ifso
@@ -428,7 +428,11 @@ with sets'
 <<shell-tweaks>>
 
 game-new
-( play )
+
+0 ( debug hook )
+.ifso [ clear show getc 'q = .ifso bye .then ] &flood-step-hook :is .then
+
+play
 
 #+end_src
 
