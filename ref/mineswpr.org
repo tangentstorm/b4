@@ -3,6 +3,7 @@
 #+date: 03 feb 2013
 
 * language tweaks
+** misc
 #+name: lang-tweaks
 #+begin_src retro
 
@@ -27,7 +28,10 @@
   with math'
     : randint ( n-n ) random swap mod ;
   without
-
+#+end_src
+** debug tools
+#+name: lang-tweaks
+#+begin_src retro
   ( -- debug tools ------------------------------------------- )
   with| vt' ng' |
   {{
@@ -45,7 +49,10 @@
       "debug tool. at runtime, this will show the stack plus the name of the word in which it was used." :doc
   }}
   2without
-
+#+end_src
+** imperative macros
+#+name: lang-tweaks
+#+begin_src retro
   ( -- imperative flow control ------------------------------- )
   with ng'
   : ;c  ` ?? ` ; ` immediate ; immediate
@@ -74,23 +81,20 @@
 #+begin_src retro
 
   ( -- variables --------------------------------------------- )
-  with sets'
-    enum| ·mine ·cover ·flag ·hint |
-    vars| gameOver? minefield flagCount |
-  without
+  enum| ·mine ·cover ·flag ·hint |
+  vars| gameOver? minefield flagCount |
 
 #+end_src
 
 ** DONE grid-setup
 #+name: grid-setup
 #+begin_src retro
-  with sets'
-    16 constant W
-    16 constant H
-    32 constant mineCount
-    create grid W H * allot
+  16 constant W
+  16 constant H
+  32 constant mineCount
+  create grid W H * allot
 
-    : grid-size W H * ;
+  : grid-size W H * ;
 #+end_src
 
 ** DONE point-methods
@@ -158,48 +162,29 @@
     : grid-do grid-size [ 1- grid + over do ] iterd drop ;
       "( q- ) for each cell in the grid, put the cell's address in tos and run q." :doc
 #+end_src
-** TODO inform-neighbors needs to be replaced with counter
-#+name: minefield-methods
-#+begin_src retro
-    ( minefield methods )
-    with vt'
-    : inform-neighbors c>xy
-      [ dup2 inbounds? [ cell armed-neighbor-add ] [ 2drop ] if ] neighbors-do ;
-      "( c- ) notify neighboring cells about the mine we just placed" :doc
-    without
-
-    : mine-add randcell dup ·mine has?
-      .ifso drop recurse
-      .else [ ·mine @incl! ] [ inform-neighbors ] bi
-      .then ;
-      "( - ) add a mine to a random cell that doesn't yet have one" :doc
-
-    : counts-show [ dup ·mine has? .ifso uncover .else ·hint @incl! .then ] grid-do ;
-
-  without
-#+end_src
-
 ** DONE floodfill
 #+name: floodfill
 #+begin_src retro
-with sets'
 
-  : needs-fill? dup c>xy inbounds?
+  : needs-fill?
+    dup c>xy inbounds?
     .ifso ( visit cells that are still covered but do not already have hints )
        [ ·cover has? ]
        [ ·hint has? not ] bi
        and
     .else drop 0 .then ;
-    "( xy-f ) should we call xy-fill! on this cell?" :doc
+    "( c-f ) should we call xy-fill! on this cell?" :doc
 
   ( we already know there is a cover and no hint, thanks to 'needs-fill?' )
-  : cell-fill! dup ( cc ) armed-neighbor-count 0 =
-    .ifso   uncover ( - )
-    .else  ·hint @incl! ( - )
+  : cell-fill!
+    dup armed-neighbor-count 0 = ( cc-cf )
+    .ifso   uncover ( c- )
+    .else  ·hint @incl! ( c- )
     .then ;
     "( c- ) actually fill the cell." :doc
 
-  : flood dup2 cell dup needs-fill?
+  : flood
+     dup2 cell dup needs-fill?
     .ifso cell-fill!
           dup2 nn flood
           dup2 ss flood
@@ -209,7 +194,6 @@ with sets'
     .then ;
     "( xy- ) runs the floodfill algorithm on the grid at the given cell" :doc
 
-without
 #+end_src
 
 ** DONE event handlers
@@ -233,7 +217,7 @@ without
 ** DONE user actions
 #+name: user-actions
 #+begin_src retro
-  with sets'
+
     ( -- user actions ---------------------------------------------- )
     : flaggable? dup ·flag has? .ifso drop 0 .else ·cover has? .then ;
       "( a-f ) possible to put a flag on this cell?" :doc
@@ -250,6 +234,28 @@ without
       .else drop
       .then ;
       "( a- ) prod the cell for a mine, and see what happens... :)" :doc
+#+end_src
+
+** TODO minefield words  inform-neighbors needs to be replaced with counter
+#+name: minefield-words
+#+begin_src retro
+    ( minefield methods )
+    with vt'
+    : inform-neighbors c>xy
+      [ dup2 inbounds? [ cell armed-neighbor-add ] [ 2drop ] if ] neighbors-do ;
+      "( c- ) notify neighboring cells about the mine we just placed" :doc
+    without
+
+    : counts-show [ dup ·mine has? .ifso uncover .else ·hint @incl! .then ] grid-do ;
+      "just for debugging" :doc
+
+    : mine-add
+      randcell
+      dup ·mine has?
+        .ifso drop recurse
+        .else ·mine @incl!
+      .then ;
+      "( - ) add a mine to a random cell that doesn't yet have one" :doc
 
     : game-new
       gameOver? off 0 flagCount !
@@ -257,13 +263,12 @@ without
       mineCount [ mine-add ] times ;
       "( - ) set up a new game" :doc
 
-  without
 #+end_src
 
 ** DONE draw the cells
 #+name: draw-cells
 #+begin_src retro
-  with| vt' ng' sets' |
+  with vt' with ng'
 
     : |? ;
     : (x,y)
@@ -289,7 +294,7 @@ without
             $10 [ over (x,y) ] iter cr drop ] iter ;
       "draw the minefield" :doc
 
-  2without without
+  2without
 #+end_src
 
 ** DONE draw the playing field
@@ -383,16 +388,16 @@ needs sets' needs vt'  needs math'
 <<lang-tweaks>>
 
 ( == minesweeper game ====================================== )
-
+with sets'
 <<variables>>
 <<grid-setup>>
 <<point-methods>>
 <<cell-methods>>
 <<grid-methods>>
-<<minefield-methods>>
 <<floodfill>>
 <<events>>
 <<user-actions>>
+<<minefield-words>>
 <<draw-cells>>
 <<draw-field>>
 <<cmd-parser>>
@@ -421,6 +426,7 @@ chain: vt'
  |!b 4 vt:bg ; : |!m 5 vt:bg ; : |!c 6 vt:bg ; : |!w 7 vt:bg ;
 
 #+end_src
+
     : (x,y) |c '( putc |g swap putn |c ", " |g puts putn  |c ') putc |w ;
       "( xy- ) output coordinate pair as a string" :doc
 

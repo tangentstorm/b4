@@ -22,7 +22,6 @@ needs sets' needs vt'  needs math'
 with math'
   : randint ( n-n ) random swap mod ;
 without
-
 ( -- debug tools ------------------------------------------- )
 with| vt' ng' |
 {{
@@ -40,7 +39,6 @@ with| vt' ng' |
     "debug tool. at runtime, this will show the stack plus the name of the word in which it was used." :doc
 }}
 2without
-
 ( -- imperative flow control ------------------------------- )
 with ng'
 : ;c  ` ?? ` ; ` immediate ; immediate
@@ -63,21 +61,18 @@ with ng'
 without
 
 ( == minesweeper game ====================================== )
-
+with sets'
 
 ( -- variables --------------------------------------------- )
-with sets'
-  enum| ·mine ·cover ·flag ·hint |
-  vars| gameOver? minefield flagCount |
-without
+enum| ·mine ·cover ·flag ·hint |
+vars| gameOver? minefield flagCount |
 
-with sets'
-  16 constant W
-  16 constant H
-  32 constant mineCount
-  create grid W H * allot
+16 constant W
+16 constant H
+32 constant mineCount
+create grid W H * allot
 
-  : grid-size W H * ;
+: grid-size W H * ;
 ( point2d methods )
 : nn 1- ; "( xy-xy ) north" :doc
 : ss 1+ ; "( xy-xy ) south" :doc
@@ -129,50 +124,35 @@ with sets'
 
 : grid-do grid-size [ 1- grid + over do ] iterd drop ;
   "( q- ) for each cell in the grid, put the cell's address in tos and run q." :doc
-  ( minefield methods )
-  with vt'
-  : inform-neighbors c>xy
-    [ dup2 inbounds? [ cell armed-neighbor-add ] [ 2drop ] if ] neighbors-do ;
-    "( c- ) notify neighboring cells about the mine we just placed" :doc
-  without
 
-  : mine-add randcell dup ·mine has?
-    .ifso drop recurse
-    .else [ ·mine @incl! ] [ inform-neighbors ] bi
-    .then ;
-    "( - ) add a mine to a random cell that doesn't yet have one" :doc
+: needs-fill?
+  dup c>xy inbounds?
+  .ifso ( visit cells that are still covered but do not already have hints )
+     [ ·cover has? ]
+     [ ·hint has? not ] bi
+     and
+  .else drop 0 .then ;
+  "( c-f ) should we call xy-fill! on this cell?" :doc
 
-  : counts-show [ dup ·mine has? .ifso uncover .else ·hint @incl! .then ] grid-do ;
+( we already know there is a cover and no hint, thanks to 'needs-fill?' )
+: cell-fill! 
+  dup armed-neighbor-count 0 = ( cc-cf )
+  .ifso   uncover ( c- )
+  .else  ·hint @incl! ( c- )
+  .then ;
+  "( c- ) actually fill the cell." :doc
 
-without
-with sets'
+: flood
+   dup2 cell dup needs-fill?
+  .ifso cell-fill!
+        dup2 nn flood
+        dup2 ss flood
+        dup2 ee flood
+             ww flood
+  .else 2drop
+  .then ;
+  "( xy- ) runs the floodfill algorithm on the grid at the given cell" :doc
 
-  : needs-fill? dup c>xy inbounds?
-    .ifso ( visit cells that are still covered but do not already have hints )
-       [ ·cover has? ]
-       [ ·hint has? not ] bi
-       and
-    .else drop 0 .then ;
-    "( xy-f ) should we call xy-fill! on this cell?" :doc
-
-  ( we already know there is a cover and no hint, thanks to 'needs-fill?' )
-  : cell-fill! dup ( cc ) armed-neighbor-count 0 =
-    .ifso   uncover ( - )
-    .else  ·hint @incl! ( - )
-    .then ;
-    "( c- ) actually fill the cell." :doc
-
-  : flood dup2 cell dup needs-fill?
-    .ifso cell-fill!
-          dup2 nn flood
-          dup2 ss flood
-          dup2 ee flood
-               ww flood
-    .else 2drop
-    .then ;
-    "( xy- ) runs the floodfill algorithm on the grid at the given cell" :doc
-
-without
 ( -- event handlers ---------------------------------------------- )
 
   : «dead»
@@ -186,32 +166,48 @@ without
 
   : mineswpr-exit-hook ( revectored ) ;
 
-with sets'
-  ( -- user actions ---------------------------------------------- )
-  : flaggable? dup ·flag has? .ifso drop 0 .else ·cover has? .then ;
-    "( a-f ) possible to put a flag on this cell?" :doc
 
-  : flag+ dup flaggable? [ ·flag @incl! flagCount ++ ] [ drop ] if ;
-    "( a- ) place a flag on the cell" :doc
+( -- user actions ---------------------------------------------- )
+: flaggable? dup ·flag has? .ifso drop 0 .else ·cover has? .then ;
+  "( a-f ) possible to put a flag on this cell?" :doc
 
-  : flag- ·flag dup2 ( cfcf ) has? [ @excl! flagCount -- ] [ 2drop ] if ;
-    "( a- ) remove the flag from the cell, if present" :doc
+: flag+ dup flaggable? [ ·flag @incl! flagCount ++ ] [ drop ] if ;
+  "( a- ) place a flag on the cell" :doc
 
-  : prod
-     dup [ flag- ] [ ·cover has? ] bi ( aa-af )
-    .ifso ( af-a ) dup ·mine has? [ «dead» ] [ «safe» ] if
-    .else drop
-    .then ;
-    "( a- ) prod the cell for a mine, and see what happens... :)" :doc
+: flag- ·flag dup2 ( cfcf ) has? [ @excl! flagCount -- ] [ 2drop ] if ;
+  "( a- ) remove the flag from the cell, if present" :doc
 
-  : game-new
-    gameOver? off 0 flagCount !
-    ·cover as-bit grid .fill
-    mineCount [ mine-add ] times ;
-    "( - ) set up a new game" :doc
-
+: prod
+   dup [ flag- ] [ ·cover has? ] bi ( aa-af )
+  .ifso ( af-a ) dup ·mine has? [ «dead» ] [ «safe» ] if
+  .else drop
+  .then ;
+  "( a- ) prod the cell for a mine, and see what happens... :)" :doc
+( minefield methods )
+with vt'
+: inform-neighbors c>xy
+  [ dup2 inbounds? [ cell armed-neighbor-add ] [ 2drop ] if ] neighbors-do ;
+  "( c- ) notify neighboring cells about the mine we just placed" :doc
 without
-with| vt' ng' sets' |
+
+: counts-show [ dup ·mine has? .ifso uncover .else ·hint @incl! .then ] grid-do ;
+  "just for debugging" :doc
+
+: mine-add
+  randcell
+  dup ·mine has?
+    .ifso drop recurse
+    .else ·mine @incl!
+  .then ;
+  "( - ) add a mine to a random cell that doesn't yet have one" :doc
+
+: game-new
+  gameOver? off 0 flagCount !
+  ·cover as-bit grid .fill
+  mineCount [ mine-add ] times ;
+  "( - ) set up a new game" :doc
+
+with vt' with ng'
 
   : |? ;
   : (x,y)
@@ -237,7 +233,7 @@ with| vt' ng' sets' |
           $10 [ over (x,y) ] iter cr drop ] iter ;
     "draw the minefield" :doc
 
-2without without
+2without
 with vt'
    ( -- display words -------------------------------------------- )
 
