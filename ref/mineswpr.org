@@ -25,6 +25,7 @@
     "( xyz-xyzx ) copies the 3rd item to the top of the stack. ( dup, over, deep... )" :doc
   : cop pop dup push ;
     "( -n ) copies a value from the return stack" :doc
+  : nor or not ;
   with math'
     : randint ( n-n ) random swap mod ;
   without
@@ -217,13 +218,10 @@
   ( -- event handlers ---------------------------------------------- )
 
     : «dead»
-         gameOver? -1 !
-         "game over. press any key" puts getc
-         [ uncover ] grid-do ;
+      gameOver? on
+      "game over. press any key\n" puts getc drop
+      [ uncover ] grid-do ;
       "( a- ) called after detonating cell a" :doc
-
-    : «safe» c>xy flood ;
-      "( a- ) called after prodding cell a with no mine" :doc
 
     : mineswpr-exit-hook ( revectored ) ;
 
@@ -234,21 +232,33 @@
 #+begin_src retro
 
     ( -- user actions ---------------------------------------------- )
-    : flaggable? dup ·flag has? .ifso drop 0 .else ·cover has? .then ;
+
+    : flaggable? [ ·flag has? ] [ ·cover has? ] bi nor ;
       "( a-f ) possible to put a flag on this cell?" :doc
 
-    : flag+ dup flaggable? [ ·flag @incl! flagCount ++ ] [ drop ] if ;
+    : flag+
+      dup flaggable?
+        .ifso ·flag @incl! flagCount ++
+        .else drop
+      .then ;
       "( a- ) place a flag on the cell" :doc
 
-    : flag- ·flag dup2 ( cfcf ) has? [ @excl! flagCount -- ] [ 2drop ] if ;
+    : flag-
+      dup ·flag has?
+        .ifso
+          ·flag @excl!
+          flagCount --
+        .else drop
+      .then ;
       "( a- ) remove the flag from the cell, if present" :doc
 
     : prod
-       dup [ flag- ] [ ·cover has? ] bi ( aa-af )
-      .ifso ( af-a ) dup ·mine has? [ «dead» ] [ «safe» ] if
-      .else drop
+      dup flag-
+      dup ·mine has?
+        .ifso drop «dead»
+        .else c>xy flood
       .then ;
-      "( a- ) prod the cell for a mine, and see what happens... :)" :doc
+      "( c- ) prod the cell for a mine, and see what happens... :)" :doc
 #+end_src
 
 ** DONE minefield words
