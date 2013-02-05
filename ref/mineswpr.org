@@ -260,28 +260,34 @@ without
   without
 #+end_src
 
-** TODO draw the cells { still need to show all mines on game over }
+** DONE draw the cells
 #+name: draw-cells
 #+begin_src retro
   with| vt' ng' sets' |
+
     : |? ;
-    : (x,y) dup odd [ [ |K ] ] [ [ |c ] ] if &|? ` :is
+    : (x,y)
+
+      ( horizontal stripes: )
+      dup odd [ [ |K ] ] [ [ |c ] ] if &|? ` :is
+
       cell dup @
-      [ [ ·flag  in? ]  [ drop '! &|R dup &|? ` :is -1 ] whend
-        [ ·hint  in? ]  [ armed-neighbor-count
-                             '0 + &|B -1 ] whend
-        [ ·cover in? ]  [ drop '- &|w -1 ] whend
-        [ ·mine  in? ]  [ drop 'X &|r  0 ] whend
-        [ drop   -1  ]  [ drop '- &|b  0 ] whend ] do
+      [ [ ·mine in? gameOver? @ and ]            [ drop 'X &|r  0 ] whend
+        [ ·flag  in? ]             [ drop '! &|R dup &|? ` :is -1 ] whend
+        [ ·hint  in? ]         [ armed-neighbor-count '0 + &|B -1 ] whend
+        [ ·cover in? ]                           [ drop '- &|w -1 ] whend
+        [ drop   -1  ]                           [ drop '- &|b  0 ] whend ] do
+
      [ |? '[ putc do putc |? '] putc ]
      [      space do putc space      ] if
+
      space ;
      "( xy- ) output cell as a string" :doc
 
     : show cr
       $10 [ dup 2 spaces hex dup odd [ |w ] [ |C ] if putn space
-            $10 [ over (x,y) ] iter cr drop ]
-      iter ;
+            $10 [ over (x,y) ] iter cr drop ] iter ;
+      "draw the minefield" :doc
 
   2without without
 #+end_src
