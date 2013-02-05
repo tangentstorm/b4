@@ -253,29 +253,39 @@
 ** TODO minefield words  inform-neighbors needs to be replaced with counter
 #+name: minefield-words
 #+begin_src retro
-    ( minefield methods )
-    with vt'
-    : inform-neighbors c>xy
-      [ dup2 inbounds? [ cell armed-neighbor-add ] [ 2drop ] if ] neighbors-do ;
-      "( c- ) notify neighboring cells about the mine we just placed" :doc
-    without
+  ( minefield methods )
+  : hints-create
+    [ dup ·mine has?
+        .ifso
+          c>xy
+          [ dup2 inbounds?
+              .ifso cell armed-neighbor-add
+              .else drop drop
+            .then
+          ] neighbors-do
+        .else drop
+      .then
+    ] grid-do ;
+    "( - ) generate the armed-neighbor-count for each cell on the grid" :doc
 
-    : counts-show [ dup ·mine has? .ifso uncover .else ·hint @incl! .then ] grid-do ;
-      "just for debugging" :doc
+  : hints-show [ dup ·mine has? .ifso uncover .else ·hint @incl! .then ] grid-do ;
+    "just for debugging... or cheating :)" :doc
 
-    : mine-add
-      randcell
-      dup ·mine has?
-        .ifso drop recurse
-        .else ·mine @incl!
-      .then ;
-      "( - ) add a mine to a random cell that doesn't yet have one" :doc
+  : mine-add
+    randcell
+    dup ·mine has?
+      .ifso drop recurse
+      .else ·mine @incl!
+    .then ;
+    "( - ) add a mine to a random cell that doesn't yet have one" :doc
 
-    : game-new
-      gameOver? off 0 flagCount !
-      ·cover as-bit grid .fill
-      mineCount [ mine-add ] times ;
-      "( - ) set up a new game" :doc
+  : game-new
+    ·cover as-bit grid .fill
+    mineCount [ mine-add ] times
+    hints-create ( hints-show )
+    0 flagCount !
+    gameOver? off ;
+    "( - ) set up a new game" :doc
 
 #+end_src
 
