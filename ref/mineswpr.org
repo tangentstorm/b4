@@ -31,7 +31,7 @@
   ( -- debug tools ------------------------------------------- )
   with| vt' ng' |
   {{
-    : .? push |y .s pop |Y puts |w ;
+    : .? decimal push |y .s pop |Y puts |w ;
     variable depth
     : indent 2 * spaces ;
     : [context] last @ d->name lit,, ;
@@ -234,9 +234,9 @@ without
     : flag- ·flag dup2 ( cfcf ) has? [ @excl! flagCount -- ] [ 2drop ] if ;
       "( a- ) remove the flag from the cell, if present" :doc
 
-    : prod ?{ dup flag- ·cover has?
-      .ifso
-         dup ·mine has? [ «dead» ] [ «safe» ] if
+    : prod ?{
+       dup [ flag- ] [ ·cover has? ] bi ( aa-af )
+      .ifso ( af-a ) dup ·mine has? [ «dead» ] [ «safe» ] if
       .then }? ;
       "( a- ) prod the cell for a mine, and see what happens... :)" :doc
 
