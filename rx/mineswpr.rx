@@ -73,7 +73,7 @@ vars| allHints? flood-cursor | ( debug stuff )
 
 16 constant W
 16 constant H
-32 constant mineCount
+24 constant mineCount
 create grid W H * allot
 
 : grid-size W H * ;
@@ -142,29 +142,31 @@ create grid W H * allot
 : grid-do grid-size [ 1- grid + over do ] iterd drop ;
   "( q- ) for each cell in the grid, put the cell's address in tos and run q." :doc
 
-: needs-visit?                 ( visit cells that are ... )
-  dup c>xy inbounds?           (  - within bounds )
-    .ifso ·cover has?          (  - and still covered )
-    .else drop 0
-  .then ;
-  "( c-f ) should we call xy-fill! on this cell?" :doc
+: needs-visit? ·cover has? ;
+  "( c-f ) should we call flood-visit! on this cell?" :doc
 
 : keep-going? armed-neighbor-count 0 = ; "( c-f )" :doc
 
 : flood-visit uncover ; "( c- ) actually fill the cell." :doc
 : flood-step-hook ; "( - ) just a hook for debugging " :doc
 
-: flood cell
-  dup flood-cursor ! flood-step-hook ( debug hook )
-  dup needs-visit?
-    .ifso
-      dup flood-visit
-      dup keep-going?
-        .ifso c>xy [ flood ] cardinal-neighbors-do
-        .else drop
+: flood
+  ( check bounds before calling 'cell' b/c 'cell c>xy' allows horizontal wrapping )
+  dup2 inbounds?
+    .ifso cell
+    dup flood-cursor ! flood-step-hook ( debug hook )
+    dup needs-visit?
+      .ifso
+        dup flood-visit
+        dup keep-going?
+          .ifso c>xy [ flood ] cardinal-neighbors-do
+          .else drop
+          .then
+      .else drop
       .then
-    .else drop
-  .then 0 flood-cursor ! ;
+    .else 2drop
+    .then
+  0 flood-cursor ! ;
   "( xy- ) runs the floodfill algorithm on the grid at the given cell" :doc
 
 ( -- event handlers ---------------------------------------------- )
