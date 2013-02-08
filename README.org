@@ -12,16 +12,20 @@
 B4 shares a virtual machine with [[http://retroforth.org/][retroforth]]. (At the time of this writing, B4 is just retroforth, but the final version will be shaved down to a tiny subset suitable for an introductory programming course.)
 
 * Compiling and Running the Code
+# stupid github formatter breaks all the ftp links :/
 
   1. *Install free pascal 2.7.1* -- the code uses features of the svn trunk version of the compiler, so /either/:
-   - *easy way:* download the [[ftp://ftp.freepascal.org/pub/fpc/snapshot/trunk/][nightly development build for your platform]]
+   - *easy way:* download the *nightly development build for your platform*
+     ftp://ftp.freepascal.org/pub/fpc/snapshot/trunk/
+
    - *or* compile fpc manually (unnecessary, but this is what i do)
      - install freepascal 2.6.0 (you need the stable fpc to compile the trunk version)
      - get the source from one of the following places :
-       - ~git clone git://github.com/graemeg/lazarus.git~  (via [[http://wiki.freepascal.org/git_mirrors][fpwiki:git_mirrors]] )
+       - ~git clone git://github.com/graemeg/freepascal.git~  (via [[http://wiki.freepascal.org/git_mirrors][fpwiki:git_mirrors]] )
          /(git is probably the best option)/
        - ~svn checkout http://svn.freepascal.org/svn/fpc/trunk fpc~
-       - download the [[ftp://ftp.freepascal.org/pub/fpc/snapshot/trunk/source/fpc.zip][nightly source zipfile]]
+       - download the nightly source zipfile :
+         - ftp://ftp.freepascal.org/pub/fpc/snapshot/trunk/source/fpc.zip
      - Now run: ~cd compiler; make~
      - This will generate the ~fpc~ binary, which you can then use to compile the code here.
 
