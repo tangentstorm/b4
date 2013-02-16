@@ -79,22 +79,17 @@ chain: editor'
 ---reveal---
   : setBlocks ( n- ) !#blocks here blksz @#blocks * allot !offset new ;
   : edit ( - )
-  : $$i line -- ;
-  : $$j column -- ;
-  : $$k line ++ ;
-  : $$l column ++ ;
-  : $$m $$k beg ;
-  : $$I top ;
-  : $$J beg ;
-  : $$K bot ;
-  : $$L end ;
-  : $$M mid ;
-  : $$D del ;
-  : $$[ blk -- ;
-  : $$] blk ++ ;
     min-wh push push     @ch pop >= @cw pop >= and
     &run [ min-wh swap "requires an " puts putn "x" puts putn
            "or greater display, sorry!\n" puts ] if ;
+  ( dvorak keymap )
+  : $$c line -- ;      : $$C top ;
+  : $$h column -- ;    : $$H beg ;
+  : $$t line ++ ;      : $$T bot ;
+  : $$n column ++ ;    : $$N end ;
+  : $$m $$t beg ;      : $$M mid ;
+  : $$d del ;
+  : $$[ blk -- ;       : $$] blk ++ ;
   : $${ @offset "blocks" ^files'slurp drop ;
   : $$} @offset @#blocks @blksz * "blocks" ^files'spew drop ;
   : $$e active off  e ;
