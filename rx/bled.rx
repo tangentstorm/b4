@@ -2,6 +2,11 @@
 needs files'
 chain: editor'
 {{
+  : 2/ 1 >> ;
+  64 constant cols
+  16 constant rows
+  cols rows * constant blksz
+  
   variables| buffer count |
   : restore ( -   ) &getc :devector ok ;
   : get     ( -c  ) @buffer @ ;
@@ -10,30 +15,29 @@ chain: editor'
   : eval    ( an- ) !count !buffer replace ;
   
   variables| #blocks offset blk line column mode active |
-  : toBlock   1600 * @offset + ;
+  : toBlock   blksz * @offset + ;
   : thisBlock @blk toBlock ;
-  : toLine    80 * thisBlock + ;
-
+  : toLine    cols * thisBlock + ;
   ( check boundaries ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
   : top ( - )  0 !line ;
-  : bot ( - ) 19 !line ;
+  : bot ( - ) rows 1- !line ;
   : beg ( - )  0 !column ;
-  : end ( - ) 79 !column ;
-  : mid ( - ) 41 !column ;
+  : end ( - ) cols 1- !column ;
+  : mid ( - ) rows 2/ !column ;
   : 1st ( - )  0 !blk ;
   : bounds ( - )
     @column -1 = [ end line -- ] ifTrue
-    @column 80 = [ beg line ++ ] ifTrue
+    @column cols = [ beg line ++ ] ifTrue
     @line   -1 = [ top blk  -- ] ifTrue
-    @line   20 = [ bot blk  ++ ] ifTrue
+    @line   rows = [ bot blk  ++ ] ifTrue
     @blk    -1 = [ 1st         ] ifTrue
     @blk    @#blocks >= [ blk -- ] ifTrue ;
   ( display a block ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-  : rows    20 [ dup 80 [ @ putc ] ^types'BUFFER each@ 80 + cr ] times ;
+  : ds/rows rows [ dup cols [ @ putc ] ^types'BUFFER each@ cols + cr ] times ;
   : mode?   @mode [ "INS" ] [ "CMD" ] if ;
   : .block  @column @line @blk mode? "(%s) #%d - %d:%d  " puts ;
-  : bar     80 [ '- putc ] times cr ;
-  : vb      @blk toBlock rows drop bar .block ;
+  : bar     cols [ '- putc ] times cr ;
+  : vb      @blk toBlock ds/rows drop bar .block ; ( visualize block ? )
   : (v)     (   -   ) clear vb ;
   : pos     (   -cl ) @column @line ;
   : get     ( cl-a  ) toLine + ;
@@ -41,12 +45,11 @@ chain: editor'
   : c!      (  a-   ) '* swap ! ;
   : show    ( va-   ) dup c! (v) ! ;
   : display (   -   ) bounds pos get va show ;
-
   ( input processing ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-  : advance? (  -  ) line ++ @line 20 >= [ 0 !line blk ++ ] ifTrue 0 !column ;
+  : advance? (  -  ) line ++ @line rows >= [ 0 !line blk ++ ] ifTrue 0 !column ;
   : del ( - )
     @column dup
-    [ dup 80 =
+    [ dup cols =
       [ drop !column display    0 ]
       [ 32 over @line get ! 1+ -1 ] if
     ] while ;
@@ -65,19 +68,17 @@ chain: editor'
   : rxe.in   (  -c ) mode on remapping [ remapping off input ] preserve mode off ;
   : match    ( c-  ) "$$_" dup [ 2 + ! ] dip find [ @d->xt do ] &drop if ;
   : edit?    ( c-c ) dup 27 = [ rxe.in drop ] ifTrue ;
-
   ( various support bits  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
-  : new        (  - ) @offset 32 1600 @#blocks * fill ;
-  : e          (  - ) thisBlock 1600 eval ;
-  : ea         (  - ) @offset @#blocks 1600 * eval ;
+  : new        (  - ) @offset 32 blksz @#blocks * fill ;
+  : e          (  - ) thisBlock blksz eval ;
+  : ea         (  - ) @offset @#blocks blksz * eval ;
   : run        (  - )
     active on &remap &remapKeys :is clear
     [ display getc edit? match @active ] while &remapKeys :devector ;
+  : min-wh     ( -nn ) rows 2 + cols ;
 ---reveal---
-  : setBlocks  ( n- ) !#blocks here 1600 @#blocks * allot !offset new ;
+  : setBlocks ( n- ) !#blocks here blksz @#blocks * allot !offset new ;
   : edit ( - )
-    @ch 22 >= @cw 80 >= and
-    &run [ "requires an 80x22 or greater display, sorry!\n" puts ] if ;
   : $$i line -- ;
   : $$j column -- ;
   : $$k line ++ ;
@@ -91,8 +92,11 @@ chain: editor'
   : $$D del ;
   : $$[ blk -- ;
   : $$] blk ++ ;
+    min-wh push push     @ch pop >= @cw pop >= and
+    &run [ min-wh swap "requires an " puts putn "x" puts putn
+           "or greater display, sorry!\n" puts ] if ;
   : $${ @offset "blocks" ^files'slurp drop ;
-  : $$} @offset @#blocks 1600 * "blocks" ^files'spew drop ;
+  : $$} @offset @#blocks @blksz * "blocks" ^files'spew drop ;
   : $$e active off  e ;
   : $$E active off ea ;
   : $$z active off    ;
