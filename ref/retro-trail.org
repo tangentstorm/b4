@@ -465,7 +465,6 @@ Ngaro assumes that addresses of functions will be greater than the number of opc
 The padding isn't always needed, but seems to help keep the rebuilds more stable if you are making changes to the kernel. (Specifically, it's there to ensure that no functions are located at addresses reserved for Ngaro bytecodes.)
 
 ** TODO DEF , ~{ the heap writer }~
-
 #+begin_src retro :tangle "~/vrx/image/kernel.rx" :padline yes :noweb tangle
 t: ,           ( n-  ) heap # @, dup, 1+, push, !, pop, heap # !, ;
 #+end_src

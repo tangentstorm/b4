@@ -1,7 +1,31 @@
+#+title: bled : a dvorak-oriented fork of the retro editor
 
-needs files'
-chain: editor'
-{{
+* keymap
+| Key | Action                               |
+|-----+--------------------------------------|
+| c   | Move cursor up                       |
+| h   | Move cursor left                     |
+| t   | Move cursor down                     |
+| r   | Move cursor right                    |
+| e   | Evaluate current block               |
+| E   | Evaluate all blocks                  |
+| m   | Move cursor to start of next line    |
+| C   | Move cursor to top line of block     |
+| H   | Move cursor to start of current line |
+| T   | Move cursor to last line of block    |
+| S   | Move cursor to end of current line   |
+| M   | Center cursor on current line        |
+| z   | Exit RxE                             |
+| Esc | Switch between edit and command mode |
+| {   | Load "blocks"                        |
+| }   | Save "blocks"                        |
+| [   | Switch to previous block             |
+| ]   | Switch to next block                 |
+
+* implementation
+** variables, etc.
+#+name: private
+#+begin_src retro
   : 2/ 1 >> ;
   64 constant cols
   16 constant rows
@@ -13,11 +37,16 @@ chain: editor'
   : next    ( -c  ) @count [ count -- get buffer ++ ] [ 32 restore ] if ;
   : replace ( -   ) &next &getc :is ;
   : eval    ( an- ) !count !buffer replace ;
-  
+
   variables| #blocks offset blk line column mode active |
   : toBlock   blksz * @offset + ;
   : thisBlock @blk toBlock ;
   : toLine    cols * thisBlock + ;
+#+end_src
+
+** check boundaries
+#+name: private
+#+begin_src retro
   ( check boundaries ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
   : top ( - )  0 !line ;
   : bot ( - ) rows 1- !line ;
@@ -32,6 +61,11 @@ chain: editor'
     @line   rows = [ bot blk  ++ ] ifTrue
     @blk    -1 = [ 1st         ] ifTrue
     @blk    @#blocks >= [ blk -- ] ifTrue ;
+#+end_src
+
+** display a block
+#+name: private
+#+begin_src retro
   ( display a block ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
   : ds/rows rows [ dup cols [ @ putc ] ^types'BUFFER each@ cols + cr ] times ;
   : mode?   @mode [ "INS" ] [ "CMD" ] if ;
@@ -45,10 +79,15 @@ chain: editor'
   : c!      (  a-   ) '* swap ! ;
   : show    ( va-   ) dup c! (v) ! ;
   : display (   -   ) bounds pos get va show ;
+#+end_src
+
+** input processing
+#+name: private
+#+begin_src retro
   ( input processing ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
   
   27 constant Esc
-  
+
   : advance? (  -  ) line ++ @line rows >= [ 0 !line blk ++ ] ifTrue 0 !column ;
   : del ( - )
     @column dup
@@ -71,6 +110,11 @@ chain: editor'
   : rxe.in   (  -c ) mode on remapping [ remapping off input ] preserve mode off ;
   : match    ( c-  ) "$$_" dup [ 2 + ! ] dip find [ @d->xt do ] &drop if ;
   : edit?    ( c-c ) dup Esc = [ rxe.in drop ] ifTrue ;
+#+end_src
+
+** various support bits
+#+name: private
+#+begin_src retro
   ( various support bits  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
   : new        (  - ) @offset 32 blksz @#blocks * fill ;
   : e          (  - ) thisBlock blksz eval ;
@@ -79,12 +123,21 @@ chain: editor'
     active on &remap &remapKeys :is clear
     [ display getc edit? match @active ] while &remapKeys :devector ;
   : min-wh     ( -nn ) rows 2 + cols ;
----reveal---
+#+end_src
+
+* public interface
+#+name: public
+#+begin_src retro
   : setBlocks ( n- ) !#blocks here blksz @#blocks * allot !offset new ;
   : edit ( - )
     min-wh push push     @ch pop >= @cw pop >= and
     &run [ min-wh swap "requires an " puts putn "x" puts putn
            "or greater display, sorry!\n" puts ] if ;
+#+end_src
+
+* keymap
+#+name: public
+#+begin_src retro
   ( dvorak keymap )
   : $$c line -- ;      : $$C top ;
   : $$h column -- ;    : $$H beg ;
@@ -98,9 +151,23 @@ chain: editor'
   : $$e active off  e ;
   : $$E active off ea ;
   : $$z active off    ;
-}}
-  128 setBlocks
-;chain
+#+end_src
 
-global
-with editor'
+* OUTPUT bled.rx
+#+begin_src retro  :tangle "~/b/rx/bled.rx" :padline yes :noweb tangle
+  needs files'
+  chain: editor'
+  {{
+    <<private>>
+  ---reveal---
+    <<public>>
+  }}
+    128 setBlocks
+  ;chain
+
+  global
+  with editor'
+#+end_src
+ 
+* [0/0] issues list
+** TODO note the TAB\rarr ESC change in main retro docs..

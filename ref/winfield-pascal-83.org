@@ -456,8 +456,6 @@ FIND words @ CONSTANT ccode   ( code pointer for constant )
 #+end_src
 
 
-
-
 ** The Expression Compiler
 
 Blocks [[2009]]-[[2015]] contain the arithmetic expression compiler starting, in usual Forth fashion, with the lowest level definitions: =number=, =variable=, etc, and working up to the highest level: =expression= in block 2015. These closely follow, both in name and structure, the corresponding syntax graphs of /fig 6/ (A reasonably faithful subset of standard Pascal arithmetic syntax, as described in the [[third reference]]).
