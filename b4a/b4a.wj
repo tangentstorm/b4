@@ -1,0 +1,25 @@
+! b4 assembler : hypothetical example code in wejal
+
+ops = [ 'DUP' 'DROP' 'SWAP' 'PUSH' 'POP ' 'NXT:' 'JMP:'
+        'RET' 'JLT:' 'JGT:' 'JNE:' 'JEQ:' 'GET'  'PUT '
+        'ADD' 'SUB'  'MUL'  'DVM'  'AND ' 'OR'   'XOR '
+        'SHL' 'SHR'  'ZRET' 'INC'  'DEC ' 'IN'   'OUT '
+        'WAIT' ]
+
+: asm ( )
+------------------------------
+i, lines : int; comment : bool
+------------------------------
+for i, line in enum lines.split '\n' do
+  comment := false
+  for word in line while not comment do
+    case word[ 0 ]
+      | '#' : comment := true
+      | ':' : labels[ word[ 1: ]] := here
+    otherwise
+      here ++
+      if word to:int?    then emit
+      ef phase = 1       then pass
+      ef labels[ word ]? then emit
+      ef ops[ word ]?    then emit
+      else raise "unresolved symbol $word on line $ln."
