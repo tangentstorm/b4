@@ -1,0 +1,81 @@
+# b4th: a forth written in b4 assembler
+#---------------------------------------------------------------
+JMP:   main  # skip past all this data stuff
+#---------------------------------------------------------------
+# system variables
+#---------------------------------------------------------------
+:last  0     # most recently created dictionary entry
+:heap  data  # where in ram to write new data
+:state 0     # the compiler state
+
+#---------------------------------------------------------------
+# proto-dictionary for the assembler
+#
+# These are 8-bit character strings. Each is exactly 4 bytes,
+# allowing us to do a simple 32-bit comparison. We don't need
+# any definitions in this dictionary because the opcode to 
+# compile can be calculated simply by subtracting the address
+# stored in "ops"
+#---------------------------------------------------------------
+:ops
+#---------------------------------------------------------------
+'NOP '  # op  0 (  ->   ) "no op" do nothing'
+'LIT:'  # op  1 (  -> n ) "literal" put number on the data stack'
+'DUP '  # op  2 ( n -> n ) "duplicate" copy the TOS'
+'DROP'  # op  3 ( n -> ) "drop" remove the TOS'
+'SWAP'  # op  4 (  -> b a ) "swap" transpose TOS and NOS'
+'PUSH'  # op  5 ( n -> | -> n ) "push" move TOS to the return stack'
+'POP '  # op  6 ( -> n | n -> ) "pop" place top item on return stack in TOS'
+'NXT:'  # op  7 [TOS > 1]:( n -> n ) [else]:( n -> ) "next" # if <>0, DEC and JMP:, else DROP ("for" loop)'
+'JMP:'  # op  8 ( -> ) "jump" # jump to the address in the next cell'
+'RET '  # op  9 ( -> | a -> ) "return" jump to previously stored address'
+'JLT:'  # op 10 ( x y -> ) "jump if less than" jump to address in next cell if x < y'
+'JGT:'  # op 11 ( x y -> ) "jump if greater than" jump to address in next cell if x > y'
+'JNE:'  # op 12 ( x y -> ) "jump if not equal" jump to address in next cell if x ≠ y'
+'JEQ:'  # op 13 ( x y -> ) "jump if equal" jump to address in next cell if x = y'
+'GET '  # op 14 ( a -> n ) "get" fetch the value stored at address a'
+'PUT '  # op 15 ( n a -> ) "put" store value n at address a'
+'ADD '  # op 16 ( n n -> n ) "add" replace TOS and NOS with their sum (x + y)'
+'SUB '  # op 17 ( x y -> n ) "add" replace TOS and NOS with their difference (x - y)'
+'MUL '  # op 18 ( n n -> n ) "mul" replace TOS and NOS with their product (x * y)'
+'DVM '  # op 19 ( x y -> r q ) "dvm" divide TOS by NOS, leaving remainder and quotient (ex# 7 5 -> 2 1 )'
+'AND '  # op 20 ( n n -> n ) "bitwise and"'
+'OR  '  # op 21 ( n n -> n ) "bitwise inclusive or"'
+'XOR '  # op 22 ( n n -> n ) "bitwise exclusive or"'
+'SHL '  # op 23 ( n b -> n ) "shift left"  shift n left by b bits (ex# 1 4 -> 16 )'
+'SHR '  # op 24 ( n b -> n ) "shift right" shift n right by b bits (ex# 65536 12 -> 16 )'
+'ZRET'  # op 25 [TOS ≠ 0]:( n -> n ) [TOS = 0]:( n -- | a -- ) "return if zero"'
+'INC '  # op 26 ( n -> n ) "increment" add 1 to TOS'
+'DEC '  # op 27 ( n -> n ) "decrement" subtract 1 from TOS'
+'IN  '  # op 28 ( p -> n ) "in"  read the value currently in port p'
+'OUT '  # op 29 ( n p -> ) "out" write value n to port p'
+'WAIT'  # op 30 ( varies ) trigger IO after writing to a port with OUT'
+#---------------------------------------------------------------
+
+#-- [ macros ] -------------------------------------------------
+
+# dispatch
+# i/o protocol
+
+
+
+DUP
+
+
+
+
+
+
+#-- [ strings ] ------------------------------------------------
+
+:here $heap GET PUSH RET
+:!if  JNE: 0 here PUSH
+
+:asm # ( - > - ) scans input buffer
+  :JMP: asm.begin
+  :asm.here  0
+  :asm.lines 0 0   # tokenizer pull implementation from stri.pas
+  :asm.begin
+dup 3 then end0
+
+# make generator for lines.split (split on any whitespace)

@@ -1,0 +1,39 @@
+# debugger / subordinate interpreter
+#---------------------------------------------------------------
+# This is a tiny, pure-binary forth interpreter. Input consists
+# of 4-byte sequences, which can either be ngaro instructions or
+# space-terminated strings.
+#
+# We will limit this image to 256 cells (1kb). The 
+# will 
+#
+# We cannot use the VM's return stack for this program, because
+# we want to expose it for the driving VM to use.
+#---------------------------------------------------------------
+JMP: 10
+
+
+
+:top
+
+# instruction to execute ( default to two no-ops )
+# this is the same idea as revectoring in retro:
+# we leave just enough room to compile a jump
+# instruction once we know where to jump.
+# ------------------------------------------------
+:ins0 NOP :ins1 NOP
+
+# clear the instructions:
+LIT: ins0 PUT
+
+
+JMP: top
+
+# this control loop cannot call routines
+# via the return stack because we want 
+# to be able to use and inspect the return
+# stack from outside. nothing but goto
+# statements so as not to screw up the
+# as not to screw up the control stack
+
+
