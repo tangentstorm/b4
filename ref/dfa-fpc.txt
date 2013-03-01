@@ -1,0 +1,111 @@
+[[a[nd
+   |rray
+   |s
+   |sm]
+ |b[egin]
+ |c[ase
+   |lass
+   |onst[
+        |ructor]]
+ |d[e[structor
+     |fault]
+   |i[sp[interface
+        |pose]
+     |v]
+   |o[
+     |wnto]]
+ |e[lse
+   |nd
+   |x[cept
+     |it
+     |ports]]
+ |f[alse
+   |i[le
+     |nal[ization
+         |ly]]
+   |or
+   |unction]
+ |goto
+ |i[f
+   |mplementation
+   |n[
+     |herited
+     |itialization
+     |line
+     |terface]
+   |s]
+ |l[abel
+   |ibrary]
+ |mod
+ |n[ew
+   |il
+   |ot]
+ |o[bject
+   |f
+   |n
+   |perator
+   |r
+   |ut]
+ |p[acked
+   |ro[cedure
+      |gram
+      |perty]]
+ |r[aise
+   |e[cord
+     |peat
+     |sourcestring]]
+ |s[e[lf
+     |et]
+   |h[l
+     |r]
+   |tring]
+ |t[h[en
+     |readvar]
+   |o
+   |r[ue
+     |y]
+   |ype]
+ |u[n[it
+     |til]
+   |ses]
+ |var
+ |w[hile
+   |ith]
+ |xor]
+ (a..z)+ -> iden]
+
+Modifiers	absolute  Overload variables as other types
+Modifiers	abstract  Defines a class method only implemented in subclasses
+Modifiers	alias	  
+Modifiers	assembler 
+Modifiers	cdecl	  Declare a function that uses a C type calling convention
+Modifiers	cppdecl		 
+Modifiers	export	  Module Interface export (ISO Standard)
+Modifiers	external  
+Modifiers	far	  Ignored
+Modifiers	far16	  
+Modifiers	forward		  Resolves Chicken-and-the-egg method calling before defined
+Modifiers	index		  
+Modifiers	local		  
+Modifiers	name		  
+Modifiers	near		  Ignored
+Modifiers	nostackframe	  
+Modifiers	oldfpccall	  
+Modifiers	pascal		  
+Modifiers	private		  
+Modifiers	protected	  
+Modifiers	public		  
+Modifiers	published	  
+Modifiers	read		  
+Modifiers	register	  
+Modifiers	reintroduce	  
+Modifiers	safecall	  
+Modifiers	softfloat	  
+Modifiers	stdcall		  
+Modifiers	virtual		  
+Modifiers	write		  
+Not Implemented Yet Known problems
+System		addr	  Return address of a variable
+System		break	  Exit current loop construct
+System		continue	 Continue with next loop cycle
+System	 abs	Calculate absolute value
