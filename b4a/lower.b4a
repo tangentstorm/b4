@@ -20,8 +20,8 @@
 # initial dictionary, and other data the system needs to function.
 #
 # To prevent the system from treating this data as code, we therefore
-# must start the image by jumping over it. This means we have to
-# decide up front how big it is.
+# must start the image by jumping over this data. That means we have 
+# to decide up front how big it is.
 #
 # We will leave space for a few important variables for compatability
 # with retroforth, followed by a proto-dictionary that holds just
@@ -30,7 +30,7 @@
 
 # 00h - 01h  : 2 cells for the jump
 # ------------------------------------------------
-JMP: 256 # FILL IN THE RIGHT NUMBER!
+JMP: next
 
 
 # 02h - 04h  : 3 cells for the "real" dictionary
@@ -56,7 +56,7 @@ $ch   0  # 0Ah console height
 # cell and can thus be treated as integers as far
 # as we are concerned.
 
-:ops
+$ops
 
 'NOP '    'LIT:'    'DUP '    'DROP'    'SWAP' # 0Bh - 0Fh
 'PUSH'    'POP '    'NXT:'    'JMP:'    'RET ' # 10h - 14h
@@ -66,20 +66,110 @@ $ch   0  # 0Ah console height
 'ZRET'    'INC '    'DEC '    'IN  '    'OUT ' # 24h - 28h
 'WAIT'                                         # 29h
 
+0 # 2Ah : mark the end of opcode, start of macros
 
-0 # 2Ah : mark the end of the opcode list.
+# goal is to be able to let the assembler use a second
+# vm to simplify the bootstrapping process.
+#
+# asm should be able to control this directly.
+
+# possibly:
+# - look the word up in the dictionary
+# - output the word to stdout (so the assembler can read it)
+
+# use cases for words:
+# 1. add a new 4-char word to the dictionary.
+# 2. compile a call to a word
+# 3. execute a word immediately
+# 4. for macros, compile a call to execute the word later
+# 5. distingush words from numbers
+
+# if we use the high bits on the 3 rightmost characters,
+# then we can hold up to 8 colors. can't use the leftmost
+# high bit because it's used to indicate negative numbers
+# so, if token is in $7F000000 .. $7FFFFFFF then it's a 
+# word else it's a 24-bit literal.
+
+:find
+  LIT: ops
+  DUP at
+  DUP  JEQ:
+  NXT: find
+
+# BIOS
+# ------------------------------------------------
+
+:here LIT: heap GET RET
+:.new
+:.def
+
+:.for here RET
+:wait  LIT: 0  DUP         OUT WAIT  RET
+:putc  LIT: 1  LIT: 2      OUT wait  RET
+:getc  LIT: 1  DUP     DUP OUT wait  IN RET
+:here  LIT: heap GET RET
+:over  PUSH DUP POP SWAP RET
+
+:word # ( n -> d c b a ) convert word to 4 chars
+  LIT: 4 DUP
+  NXT: word
+RET
+
+
+
+# LIT: 16777216 # 1 << 24
+# 4 .for 256 DIVM .nxt DROP
+# 1684234849 should be abcd
+
+:main
+# ------------------------------------------------
+# Placeholder for the instruction to execute.
+# This is similar to revectoring in retro: we leave
+# enough room to compile a 'jmp: xxx' instruction.
+# (Or any other instruction.)
+
+$ins0 NOP     $ins1 NOP
+
+
+# prompt for input
+# ------------------------------------------------
+# We have to be careful to (eventually) return to
+# this loop no matter what happens, after executing
+# the above instruction(s). For primitives, we just
+# fall through.
+
+98 putc  52 putc   62 putc  32 putc # "b4> "
+
+
+# read instruction
+# --------------------------------------------------
+# Fetch the next character from the input device. 
+# Normally, this is a single ascii character from the
+# keyboard, but it can actually be any 32 bit binary
+# sequence.
+#
+# For bootstrapping, we will use this fact to transmit
+# up to 4 characters at once.
+#
+# This operation will cause the VM to block (pause)
+# until the instruction is received.
+
+getc
 
 
 
 
 
 
-# --------------- start of interpreter --------------------------
 
 
+#### scraps ####
 
-
-# --- scraps / to redo ---
+# ------------------------------------------------
+# Now that we're back, we will zero out those slots.
+# Retro's normal behavior is to block.
+LIT: 0 LIT: ins0 PUT
+LIT: 0 LIT: ins1 PUT
 
 # However, since we are bootstrapping, we don't yet know where to jump.
 # One approach would be to hand-assemble this code on graph paper
@@ -97,56 +187,8 @@ $ch   0  # 0Ah console height
 # to cell 0 and the instructions will be executed.
 
 
-
-
-
-
-
 # this control loop cannot call routines via the return stack because
 # we want to be able to use and inspect the return stack from outside.
 # therefore, we can't use anything but goto statements (direct jumps).
 # so as not to screw up the control stack.
 
-
-:top
-# ------------------------------------------------
-# Placeholder for the instruction to execute.
-# This is similar to revectoring in retro: we leave
-# we leave just enough room to compile a 'jmp: xxx'
-# instruction. (Or any other instruction.)
-
-:ins0 NOP     :ins1 NOP
-
-
-# ------------------------------------------------
-# We have to be careful to (eventually) return to
-# this loop no matter what happens, after executing
-# the above instruction(s). Therefore, remember the
-# label.
-
-:opok
-
-:read
-# --------------------------------------------------
-# Fetch the next instruction from the input device.
-# Normally this is a single ascii character from the
-# keyboard, but really it could be any input source,
-# and there is room for four bytes.
-#
-# Therefore we can actually send any 32 bit binary
-# sequence, and we can use this to encode
-#
-# This operation will cause the VM to block (pause)
-# until the instruction is received.
-
-1 1 OUT     0 0 OUT     WAIT       1 IN
-
-# ------------------------------------------------
-# Now that we're back, we will zero out those slots.
-# Retro's normal behavior is to block.
-LIT: 0 LIT: ins0 PUT
-LIT: 0 LIT: ins1 PUT
-
-
-
-JMP: top
