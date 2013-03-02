@@ -1,39 +1,152 @@
-# debugger / subordinate interpreter
-#---------------------------------------------------------------
+# B4 - a bootstrap assembler for Ngaro/RetroVM
+# --------------------------------------------------------------
 # This is a tiny, pure-binary forth interpreter. Input consists
 # of 4-byte sequences, which can either be ngaro instructions or
 # space-terminated strings.
-#
-# We will limit this image to 256 cells (1kb). The 
-# will 
-#
-# We cannot use the VM's return stack for this program, because
-# we want to expose it for the driving VM to use.
-#---------------------------------------------------------------
-JMP: 10
 
+
+# Data area.
+# --------------------------------------------------------------
+# When ngaro boots up, the instruction pointer is set to zero, which
+# means it will execute whatever instruction it finds in the first
+# cell.
+#
+# In ngaro, instructions below 31 are executed directly, and higher
+# numbers are treated as subroutine calls. This means that you can't
+# call a procedure that resides before cell 31 without trickery or
+# special treatment.
+#
+# Instead, we are going to use the first part of ram to store our
+# initial dictionary, and other data the system needs to function.
+#
+# To prevent the system from treating this data as code, we therefore
+# must start the image by jumping over it. This means we have to
+# decide up front how big it is.
+#
+# We will leave space for a few important variables for compatability
+# with retroforth, followed by a proto-dictionary that holds just
+# enough to allow retro to boot into forth.
+
+
+# 00h - 01h  : 2 cells for the jump
+# ------------------------------------------------
+JMP: 256 # FILL IN THE RIGHT NUMBER!
+
+
+# 02h - 04h  : 3 cells for the "real" dictionary
+# ------------------------------------------------
+$last   0  # 02h most recently defined header
+$heap   0  # 03h next free spot in ram
+$which  0  # 04h most recently looked up header
+
+
+# 05h - 0Ah  : 6 cells to hold device metadata
+# ------------------------------------------------
+$mem  0  # 05h "memory" in retro. size of ram
+$fb   0  # 06h do we have graphics? (short for framebuffer)
+$fw   0  # 07h framebuffer width
+$fh   0  # 08h framebuffer height
+$cw   0  # 09h console width
+$ch   0  # 0Ah console height
+
+
+# 0Bh - 2Ah : 32 cells for asm dictionary + end mark
+# ------------------------------------------------
+# These are 4-byte strings, which fit in a single
+# cell and can thus be treated as integers as far
+# as we are concerned.
+
+:ops
+
+'NOP '    'LIT:'    'DUP '    'DROP'    'SWAP' # 0Bh - 0Fh
+'PUSH'    'POP '    'NXT:'    'JMP:'    'RET ' # 10h - 14h
+'JLT:'    'JGT:'    'JNE:'    'JEQ:'    'GET ' # 15h - 19h
+'PUT '    'ADD '    'SUB '    'MUL '    'DVM ' # 1Ah - 1Eh
+'AND '    'OR  '    'XOR '    'SHL '    'SHR ' # 1Fh - 23h
+'ZRET'    'INC '    'DEC '    'IN  '    'OUT ' # 24h - 28h
+'WAIT'                                         # 29h
+
+
+0 # 2Ah : mark the end of the opcode list.
+
+
+
+
+
+
+# --------------- start of interpreter --------------------------
+
+
+
+
+# --- scraps / to redo ---
+
+# However, since we are bootstrapping, we don't yet know where to jump.
+# One approach would be to hand-assemble this code on graph paper
+# or something so we could pre-calculate all the jumps, but this is
+# cumbersome and would have to be re-done every time we change our
+# code.
+
+#
+# Instead, we are going to provide a way for the system to self-program.
+#
+# The trick is to start the image with an infinite loop, and leave
+# the first two cells blank. The first time the loop runs, these will
+# be no-ops, but somewhere inside the loop, we will overwrite them
+# with other instructions. At the end of the loop, we will jump back
+# to cell 0 and the instructions will be executed.
+
+
+
+
+
+
+
+# this control loop cannot call routines via the return stack because
+# we want to be able to use and inspect the return stack from outside.
+# therefore, we can't use anything but goto statements (direct jumps).
+# so as not to screw up the control stack.
 
 
 :top
-
-# instruction to execute ( default to two no-ops )
-# this is the same idea as revectoring in retro:
-# we leave just enough room to compile a jump
-# instruction once we know where to jump.
 # ------------------------------------------------
-:ins0 NOP :ins1 NOP
+# Placeholder for the instruction to execute.
+# This is similar to revectoring in retro: we leave
+# we leave just enough room to compile a 'jmp: xxx'
+# instruction. (Or any other instruction.)
 
-# clear the instructions:
-LIT: ins0 PUT
+:ins0 NOP     :ins1 NOP
+
+
+# ------------------------------------------------
+# We have to be careful to (eventually) return to
+# this loop no matter what happens, after executing
+# the above instruction(s). Therefore, remember the
+# label.
+
+:opok
+
+:read
+# --------------------------------------------------
+# Fetch the next instruction from the input device.
+# Normally this is a single ascii character from the
+# keyboard, but really it could be any input source,
+# and there is room for four bytes.
+#
+# Therefore we can actually send any 32 bit binary
+# sequence, and we can use this to encode
+#
+# This operation will cause the VM to block (pause)
+# until the instruction is received.
+
+1 1 OUT     0 0 OUT     WAIT       1 IN
+
+# ------------------------------------------------
+# Now that we're back, we will zero out those slots.
+# Retro's normal behavior is to block.
+LIT: 0 LIT: ins0 PUT
+LIT: 0 LIT: ins1 PUT
+
 
 
 JMP: top
-
-# this control loop cannot call routines
-# via the return stack because we want 
-# to be able to use and inspect the return
-# stack from outside. nothing but goto
-# statements so as not to screw up the
-# as not to screw up the control stack
-
-
