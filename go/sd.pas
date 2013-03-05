@@ -7,91 +7,35 @@
 }
 unit sd;
 
-interface
+interface uses log;
 
 type
-  tBlock = array [ 0..1023 ] of byte;
-  tDrive = object
+  TBlock = array [ 0..1023 ] of byte;
+  TDrive = object {  object because of gpc... probably should drop }
     constructor init ( path : string );
     procedure wipe;
     procedure grow ( n : byte );
-    procedure load ( i : integer; var b : tBlock );
-    procedure save ( i : integer; var b : tBlock );
+    procedure load ( i : integer; var b : TBlock );
+    procedure save ( i : integer; var b : TBlock );
     function block_count : cardinal;
     function byte_count : cardinal;
     destructor done ( );
   private
-    mFile : file of tBlock;
+    mFile : file of TBlock;
   end;
-  
-var main : tDrive;
+
+var
+  main : TDrive;
 
 implementation
-uses log;
+  var
+    empty_block	: TBlock;
+  {$IFDEF GPC}
+    {$i sd_gpc.inc}
+  {$ELSE}
+    {$i sd_fpc.inc}
+  {$ENDIF}
 
-const disk = 'tBlocks.b4sd';
-var empty_block : tblock;
-
-constructor tDrive.init( path : string );
 begin
-  log.debug( 'init' );
-  assign( mFile, path );
-end;
-
-procedure tDrive.wipe;
-begin
-  log.debug( 'wipe' );
-  rewrite( mFile ); // truncates to 0 
-  close( mFile );
-end;
-
-
-procedure tDrive.grow ( n : byte );
-var i : cardinal;
-begin
-  log.debug( 'grow' );
-  append( mFile );
-  for i := 1 to n do write( mFile, empty_block );
-  close( mFile );
-end;
-
-procedure tDrive.load ( i : integer; var b : tBlock );
-begin
-  log.debug( 'load' );
-  reset( mFile );
-  seek( mFile, i );
-  read( mFile, b );
-  close( mFile );
-end;
-
-procedure tDrive.save ( i : integer; var b : tBlock );
-begin
-  log.debug( 'save' );
-  rewrite( mFile );
-  reset( mFile );
-  seek( mFile, i );
-  write( mFile, b );
-  close( mFile );
-end;
-
-function tDrive.block_count ( ) : cardinal;
-begin
-  append( mFile );
-  block_count := filesize( mFile );
-  close( mFile );
-end;
-
-function tDrive.byte_count ( ) : cardinal;
-begin
-  byte_count := self.block_count * sizeof( empty_block );
-end;
-
-destructor tDrive.done ( );
-begin
-end;
-
-var i : integer;
-begin
-  for i := 0 to sizeof( empty_block ) - 1 do
-    empty_block[ i ] := 0;
+  FillDWord( empty_block, 256, 0 );
 end.
