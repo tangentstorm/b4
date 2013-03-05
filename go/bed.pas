@@ -7,8 +7,9 @@
 | copyright (c) 2012 michal j. wallace
 | see LICENSE.org for usage information
 }
+{$i xpc.inc }
 program bed;
-uses crt, gpcutil, sd, log;
+uses xpc, vt, sd, log, kbd, ascii {$ifdef gpc}, gpcutil{$endif};
 
 const
   kw = 64;
@@ -16,75 +17,73 @@ const
   ks = kw * kh;
 
 var
-  gDrive : sd.tDrive;
-  gBuf : sd.tBlock;
-  gx, gy : byte;
-  gDone	 : boolean;
+  gDrive     : sd.tDrive;
+  gBuf	     : sd.tBlock;
+  gx, gy     : byte;
+  gDone	     : boolean;
+  brightflag : byte = 0;
 
 procedure handle_key;
 var
   key : char;
 begin
-  key := crt.readkey;
+  key := kbd.readkey;
   
   case key of
     
     #0 :
       begin
-        key := crt.readkey;
+        key := kbd.readkey;
         case key of
-          crt.ksLEFT  : dec( gx );
-          crt.ksUP    : dec( gy );
-          crt.ksDOWN  : inc( gy );
-          crt.ksRIGHT : inc( gx );
+	  kbd.LEFT  : dec( gx );
+	  kbd.UP    : dec( gy );
+	  kbd.DOWN  : inc( gy );
+	  kbd.RIGHT : inc( gx );
           
           { colors : $08 indicates bright }
-          crt.ksF1 : crt.textattr := crt.red      and not 8;
-          crt.ksF2 : crt.textattr := crt.green    and not 8;
-          crt.ksF3 : crt.textattr := crt.yellow   and not 8;
-          crt.ksF4 : crt.textattr := crt.blue     and not 8;
-          crt.ksF5 : crt.textattr := crt.magenta  and not 8;
-          crt.ksF6 : crt.textattr := crt.cyan     and not 8;
-          crt.ksF7 : crt.textattr := crt.white    and not 8;
-          crt.ksF8 : crt.textattr := crt.black    and not 8; 
+	  kbd.F1 : vt.fg( ord(vt.red) + brightflag );
+	  kbd.F2 : vt.fg( ord(vt.grn) + brightflag );
+	  kbd.F3 : vt.fg( ord(vt.yel) + brightflag );
+	  kbd.F4 : vt.fg( ord(vt.blu) + brightflag );
+	  kbd.F5 : vt.fg( ord(vt.mgn) + brightflag );
+	  kbd.F6 : vt.fg( ord(vt.cyn) + brightflag );
+	  kbd.F7 : vt.fg( ord(vt.wht) + brightflag );
+	  kbd.F8 : vt.fg( ord(vt.blk) + brightflag );
           { f9 toggles the brightness bit. }
-          crt.ksF9 : crt.textattr := crt.textattr xor 8;
-        else
-          { KLUDGE! these are option-f1 through option-f7 on my   }
-          { old mac - at least in terminal.app. I think my config }
-          { may be screwy. I will probably just switch over to an }
-          { SDL term later, and then I can just delete this junk. }
-          if key in [ #64 .. #71 ] then crt.textattr := ord( key ) - 64
+	  kbd.F9 : begin
+		     brightflag := brightflag xor 8;
+		     vt.fg( vt.textattr xor 8 );
+		   end
         end;
         { black text is dark gray, OR black on light gray, depending on bit 8 }
-        if crt.gettextcolor = crt.black
-        then crt.textbackground( crt.lightgray )
-        else crt.textbackground( crt.black );
+	if lo(vt.textattr) = ord( vt.blk )
+	  then vt.bg( ord( vt.blk ) + 8 )
+          else vt.bg( ord( vt.blk ))
       end;
     
-    crt.chESC  : gdone := true;
-    crt.chCR   : begin
+    ascii.ESC  : gdone := true;
+    ascii.CR   : begin
                    gx := 1;
-                   inc( gy );                   
+                   inc( gy );
                  end;
-    crt.chBkSp : begin
+    ascii.BS   : begin
                    dec( gx );
-                   crt.gotoxy( gx, gy );
-                   crt.writechar( ' ' );
-                   gBuf[ (( gy - 1 ) * 64 ) + ( gx - 1 ) ] := 32; 
+                   vt.gotoxy( gx, gy );
+		   write(' ');
+                   gBuf[ (( gy - 1 ) * 64 ) + ( gx - 1 ) ] := 32;
                  end;
   else
     begin
-      gBuf[ (( gy - 1 ) * 64 ) + ( gx - 1 ) ] := ord( key ); 
-      crt.writechar( key );
+      gBuf[ (( gy - 1 ) * 64 ) + ( gx - 1 ) ] := ord( key );
+      write( key );
       inc( gx );
     end;
   end;
   
   { debug display of keypress / color: }
-  crt.gotoxy( 67, 1 );
+  vt.gotoxy( 67, 1 );
   write( '[    ]');
-  crt.gotoxy( 68, 1 );
+  vt.gotoxy( 68, 1 );
   write( ord( key ));
   
   gx := min( kw, max( gx, 0 ));
@@ -99,11 +98,11 @@ begin
   begin
     b := gBuf[ ( lineno * kw ) + i ];
     if b < 32 then begin
-      crt.textattr := symcolor;
+      vt.fg( symcolor );
       write( ' ' );
     end
     else begin
-      crt.textattr := txtcolor;
+      vt.fg( txtcolor );
       write( chr( b ) );
     end;
   end;
@@ -112,7 +111,6 @@ end;
 
 procedure load_data;
 begin
-  log.level := log.lvl_debug;
   gDrive.init( 'blocks.sd' );
   if gDrive.block_count = 0 then gDrive.grow( 1 );
   gDrive.load( 0, gBuf );
@@ -127,29 +125,30 @@ procedure init_view;
 var y : byte;
 begin
 
-  crt.textattr := $17;
-  crt.clrscr;
+  vt.fg( $17 );
+  vt.clrscr;
   
   for y := 0 to 15 do
     begin
-      crt.gotoxy( 1, y+1 );
+      vt.gotoxy( 1, y+1 );
       if y = 0 then write_line( y, $70, $60 )
       else write_line( y, $07, $40 );
-      crt.textattr := $13;
+      vt.fg( $13 );
       write( '|' );
-      crt.clreol;
+      vt.clreol;
     end;
-  crt.textattr := $07;
+  vt.fg( $07 );
   gx := 1; gy := 2;
 end;
 
 
 begin
+  log.level := log.lvl_debug;
   load_data;
   init_view;
   repeat
-     crt.gotoxy( gx, gy );
-     if crt.keypressed then handle_key;
+     vt.gotoxy( gx, gy );
+     if kbd.keypressed then handle_key;
   until gdone;
   save_data;
 end.
