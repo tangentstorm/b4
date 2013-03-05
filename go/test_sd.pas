@@ -13,9 +13,11 @@ begin
 	    'drive should be empty' );
 
   { load }
-  drive.grow( 1 );
-  chk.equal( drive.byte_count, 1024,
-	    'file should be 1K after grow' );
+  drive.grow( 2 );
+  chk.equal( drive.block_count, 2,
+	    'file should be 2 blocks after grow(2)' );
+  chk.equal( drive.byte_count, 2048,
+	    'file should be 2K after grow(2)' );
 
   drive.done;
   report;

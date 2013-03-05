@@ -7,7 +7,7 @@
 }
 unit sd;
 
-interface uses log;
+interface uses log, fs, sysutils;
 
 type
   TBlock = array [ 0..1023 ] of byte;
