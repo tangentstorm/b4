@@ -7,6 +7,7 @@ import tornado.httpserver
 import tornado.ioloop
 import re
 
+kBlockSize = 1024
 rexVolume = '[a-zA-Z0-9-]'
 
 ## the block device ############################################
@@ -17,7 +18,6 @@ class BlockDevice(object):
     to 65536 1-kilobyte data blocks. The files are stored in *.dat files,
     in a directory corresponding to the volume label.
     """
-    kSize = 1024
     root  = 'vol' # ex: ./vol/name/89AB.dat
 
     def __init__(self, volume):
@@ -36,75 +36,97 @@ class BlockDevice(object):
     ## public interface ########################################
 
     def fetch(self, n):
+        """Fetch data for block n, or None if block is empty."""
         path = self._path(n)
         if os.path.exists(path):
-            return open(path, 'r').read(kSize)
+            return open(path, 'r').read(kBlockSize)
         else: return None
 
     def store(self, n, data):
+        """Store data for block n, adjusted to block size"""
         with _open(n, 'wb') as block:
             # trim if too big, pad if too small:
-            block.write(bytes(data[:kSize]))
-            block.write(bytes('\0' * (kSize-block.tell())))
+            block.write(bytes(data[:kBlockSize]))
+            block.write(bytes('\0' * (kBlockSize-block.tell())))
 
-    def blank(self):
-        return bytes('\0' * self.kSize)
+    def erase(self, n):
+        """Permanently delete the data stored in block n."""
+        path = self._path(n)
+        if os.path.exists(path):
+            os.unlink(path)
 
+## general wsgi interface ######################################
 
+def _head(mimetype, length=None):
+    """Helper routine to build a WSGI/HTTP header"""
+    result = [('Content-type', mimetype)]
+    if length: result.append(('Content-Length', length))
+    return result
 
-## wsgi interface ##############################################
-
-kOctet = 'application/octet-stream'
-
-def _head(mimetype):
-    return [('Content-type', kOctet)]
-
-def error(env, start, status=404, msg='Not Found'):
-    start('%i %s' % (status, msg), head('text/html'))
+def generic(start, status, msg):
+    """Helper routine to generate a generic html response page"""
+    start('%i %s' % (status, msg), _head('text/html'))
     return ('<html><title>%i %s</title> <h1>%i %s</h1></html>'
             % (status, msg, status, msg))
 
+def notfound(env, start, device, blockn):
+    """WSGI app to show a 404 error"""
+    return generic(start, 404, 'Not Found')
+
+_cached = None
 def homepage(env, start):
+    """WSGI app to show the home page"""
+    global _cached
     start('200 OK' , header('text/html'))
-    return open('blockbox.html').read()
+    if not _cached: cached = open('blockbox.html').read()
+    return _cached
 
-def get_block(env, start):
-    start('200 OK', header(kOctet))
-    return device.get(blockn)
+## wsgi interface for block device #############################
 
-def put_block(env, start):
-    start('202 OK', header(kOctet))
-    return device.get(blockn)
+def get_block(env, start, device, blockn):
+    """Handler for HTTP GET"""
+    data = device.get(blockn)
+    if not data: return generic(start, 204, 'No Content')
+    else:
+        start('200 OK', _head('application/octet-stream', kBlockSize))
+        return data
 
-def del_block(env, start):
-    pass
+def put_block(env, start, device, blockn):
+    """Handler for HTTP PUT"""
+    data = device.put(blockn, env['wsgi.input'].read())
+    return generic(start, 205, 'Reset Content')
 
+def del_block(env, start, device, blockn):
+    """Handler for HTTP DELETE"""
+    start('200 OK', _head('application/octet-stream', kBlockSize))
 
-dispatch = {
+kDispatch = {
     'GET' : get_block,
     'PUT' : put_block,
     'DELETE': del_block }
     
 def blockapi(env, start):
+    """WSGI app to serve the block device on the web"""
     volume, hexstr = env['PATH_INFO'].split('/')
     blockn = int(hexstr, 16)
     device = BlockDevice(volume)
-    try: return dispatch[env['HTTP_METHOD']](env, start)
+    try: return kDispatch[
+            env['HTTP_METHOD']](env, start, device, blockn)
     except KeyError:
-        return error(env, start, 405, 'Not Allowed')
+        return generic(start, 405, 'Not Allowed')
 
 
 ## web server ##################################################
 
 def main(host, port):
-
+    """Serve the web interface on the specified host and port."""
     app = tornado.web.Application([
         (r'/$', tornado.wsgi.WSGIContainer(homepage)),
         # (r'/v/?$', tornado.wsgi.WSGIContainer(volumes)),
         # (r'/v/%s/?$' % rexVolume, tornado.wsgi.WSGIContainer(volume)),
         (r'/v/%s/[a-f0-9]{4}$' % rexVolume, tornado.wsgi.WSGIContainer(blockapi)),
         (r'.*', tornado.web.FallbackHandler, {
-            'fallback': tornado.wsgi.WSGIContainer(error) }),
+            'fallback': tornado.wsgi.WSGIContainer(notfound) }),
     ], debug=False)
 
     server = tornado.httpserver.HTTPServer(app)
