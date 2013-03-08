@@ -1,0 +1,89 @@
+<head>
+<title>tangentcode</title>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<style type="text/css">
+body { max-width:800px }
+textarea { display: block; }
+#output { position: relative; width:100%; height: 320px }
+#gfx, #htm { width: 50%; height:100%; margin:0; padding:0; border:0; position:absolute; }
+#gfx { background: #666; }
+#htm { left: 50%; background: #999; }
+
+.tile { position: absolute; background: white; border: solid black 1px; margin: 1px;
+  width:12px; height:12px; padding:1px; 
+  text-align: right; font-size:12px; font-family:monospace; }
+</style>
+</head>
+<body>
+
+<fieldgroup>
+  <label>app:</label>
+  <button onclick="appsave()">appsave</button>
+  <button onclick="appload()">appload</button>
+  <button onclick="jsreset()">jsreset</button>
+</fieldgroup>
+
+<h1>tangentcode</h1>
+<div id="output">
+  <canvas id="gfx" width="300"></canvas>
+  <div id="htm"></div>
+</div>
+
+<fieldgroup>
+  <label>editor</label>
+  <textarea id="scr" rows="16" cols="64">
+// You can edit this page in your browser's DOM inspector,
+// and use the buttons above to save the entire page.
+// The buttons below save this text box.
+ctx.clear(); ctx.strokeStyle = "#ffffff" 
+ctx.fillRect( 10, 10, ctx.w - 20, ctx.h-20 );
+ctx.strokeRect( 10, 10, ctx.w - 20, ctx.h-20 );
+
+cells = $d3.select('#htm').selectAll('span').data(range(256))
+cells.enter().append("span");
+(cells .text(function(x) { return ' '+x.toString(16); })
+  .attr('class', 'tile')
+  .style('left',
+    function(i) { return 20*Math.floor(i/16) + 'px'; })
+  .style('top',
+    function(i) { return 20*Math.floor(i%16) + 'px'; }));
+</textarea>
+  <button onclick="localStorage.edit=document.getElementById('scr').value">save</button>
+  <button onclick="document.getElementById('scr').value=localStorage.edit">load</button>
+  <button onclick="eval(document.getElementById('scr').value)">eval</button>
+</fieldgroup>
+
+
+
+<script type="text/javascript" id="app">
+function resetglobals() {
+  $jq = jQuery; 
+  $d3 = d3;
+  ctx = $jq("#gfx")[0].getContext("2d");
+  ctx.clear = function() { ctx.canvas.width = ctx.canvas.width; }
+  ctx.w = ctx.canvas.width;
+  ctx.h = ctx.canvas.height;
+}
+resetglobals();
+
+function appsave() { localStorage.app = document.documentElement.innerHTML; }
+function appload() { document.documentElement.innerHTML = localStorage.app; }
+function jsreset() { 
+  var app = document.querySelector("#app");
+  var body = document.querySelector("body");
+  var dup = document.createElement('script'); 
+  dup.type = app.type; dup.text = app.text; dup.id="app"
+  body.removeChild(app); body.appendChild(dup);
+}
+
+function range(n) {
+  var res = [];
+  for (var i = 0; i < n; i++) res.push(i); 
+  return res;
+}
+
+console.log("reloaded!")
+</script>
+</body>
+</html>

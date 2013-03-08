@@ -69,7 +69,7 @@ def generic(start, status, msg):
     return ('<html><title>%i %s</title> <h1>%i %s</h1></html>'
             % (status, msg, status, msg))
 
-def notfound(env, start, device, blockn):
+def notfound(env, start):
     """WSGI app to show a 404 error"""
     return generic(start, 404, 'Not Found')
 
@@ -77,15 +77,15 @@ _cached = None
 def homepage(env, start):
     """WSGI app to show the home page"""
     global _cached
-    start('200 OK' , header('text/html'))
-    if not _cached: cached = open('blockbox.html').read()
+    start('200 OK' , _head('text/html'))
+    if not _cached: _cached = open('blockbox.html').read()
     return _cached
 
 ## wsgi interface for block device #############################
 
 def get_block(env, start, device, blockn):
     """Handler for HTTP GET"""
-    data = device.get(blockn)
+    data = device.fetch(blockn)
     if not data: return generic(start, 204, 'No Content')
     else:
         start('200 OK', _head('application/octet-stream', kBlockSize))
@@ -93,12 +93,13 @@ def get_block(env, start, device, blockn):
 
 def put_block(env, start, device, blockn):
     """Handler for HTTP PUT"""
-    data = device.put(blockn, env['wsgi.input'].read())
+    data = device.store(blockn, env['wsgi.input'].read())
     return generic(start, 205, 'Reset Content')
 
 def del_block(env, start, device, blockn):
     """Handler for HTTP DELETE"""
-    start('200 OK', _head('application/octet-stream', kBlockSize))
+    device.erase(blockn)
+    return generic(start, 205, 'Reset Content')
 
 kDispatch = {
     'GET' : get_block,
@@ -118,15 +119,30 @@ def blockapi(env, start):
 
 ## web server ##################################################
 
+# The code above is compatible with any wsgi server.
+# Everything below here is tornado-specific.
+#
+# I chose tornado as my server engine because it appears to
+# have a decent websocket implementation, and I plan to add
+# some collaboration features that make use of this soon.
+
+def serve(pattern, app):
+    """
+    This is just a builder/macro to let us use tornado.web.Appplication
+    for URL dispatch. It's just wrapping up each wsgi app (function)
+    in the object structure tornado needs.
+    """
+    return (pattern, tornado.web.FallbackHandler,
+            dict(fallback=tornado.wsgi.WSGIContainer(app)))
+
 def main(host, port):
     """Serve the web interface on the specified host and port."""
     app = tornado.web.Application([
-        (r'/$', tornado.wsgi.WSGIContainer(homepage)),
-        # (r'/v/?$', tornado.wsgi.WSGIContainer(volumes)),
-        # (r'/v/%s/?$' % rexVolume, tornado.wsgi.WSGIContainer(volume)),
-        (r'/v/%s/[a-f0-9]{4}$' % rexVolume, tornado.wsgi.WSGIContainer(blockapi)),
-        (r'.*', tornado.web.FallbackHandler, {
-            'fallback': tornado.wsgi.WSGIContainer(notfound) }),
+        serve(r'/$', homepage),
+        serve(r'/v/%s/[a-f0-9]{4}$' % rexVolume, blockapi),
+        # serve(r'/v/?$', volumes),
+        # serve(r'/v/%s/?$' % rexVolume, volume),
+        serve(r'.*', notfound),
     ], debug=False)
 
     server = tornado.httpserver.HTTPServer(app)
