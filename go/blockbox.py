@@ -5,10 +5,10 @@ import tornado.web
 import tornado.wsgi
 import tornado.httpserver
 import tornado.ioloop
-import re
+import re, os
 
 kBlockSize = 1024
-rexVolume = '[a-zA-Z0-9-]'
+rexVolume = '[a-zA-Z0-9-]+'
 
 ## the block device ############################################
 
@@ -30,24 +30,24 @@ class BlockDevice(object):
         """
         return os.path.join(self.root, self.volume, '%04X.dat' % n)
 
-    def _open(self, n, mode):
-        return open(self._path(n), mode)
-
     ## public interface ########################################
 
     def fetch(self, n):
         """Fetch data for block n, or None if block is empty."""
         path = self._path(n)
         if os.path.exists(path):
-            return open(path, 'r').read(kBlockSize)
-        else: return None
+            with open(path, 'rb') as block:
+                return bytes(block.read(kBlockSize))
 
     def store(self, n, data):
         """Store data for block n, adjusted to block size"""
-        with _open(n, 'wb') as block:
+        path = self._path(n)
+        dirs = os.path.dirname(path)
+        if not os.path.exists(dirs): os.makedirs(dirs)
+        with open(path, 'wb') as block:
             # trim if too big, pad if too small:
             block.write(bytes(data[:kBlockSize]))
-            block.write(bytes('\0' * (kBlockSize-block.tell())))
+            block.write(bytes('\0' * (kBlockSize - block.tell())))
 
     def erase(self, n):
         """Permanently delete the data stored in block n."""
@@ -60,7 +60,7 @@ class BlockDevice(object):
 def _head(mimetype, length=None):
     """Helper routine to build a WSGI/HTTP header"""
     result = [('Content-type', mimetype)]
-    if length: result.append(('Content-Length', length))
+    if length: result.append(('Content-Length', str(length)))
     return result
 
 def generic(start, status, msg):
@@ -86,9 +86,10 @@ def homepage(env, start):
 def get_block(env, start, device, blockn):
     """Handler for HTTP GET"""
     data = device.fetch(blockn)
-    if not data: return generic(start, 204, 'No Content')
+    if data is None: return generic(start, 204, 'No Content')
     else:
         start('200 OK', _head('application/octet-stream', kBlockSize))
+        # in 2.7, bytes==str and tornado will freak out, so:
         return data
 
 def put_block(env, start, device, blockn):
@@ -108,11 +109,11 @@ kDispatch = {
     
 def blockapi(env, start):
     """WSGI app to serve the block device on the web"""
-    volume, hexstr = env['PATH_INFO'].split('/')
+    _, _, volume, hexstr = env['PATH_INFO'].split('/')
     blockn = int(hexstr, 16)
     device = BlockDevice(volume)
     try: return kDispatch[
-            env['HTTP_METHOD']](env, start, device, blockn)
+            env['REQUEST_METHOD']](env, start, device, blockn) 
     except KeyError:
         return generic(start, 405, 'Not Allowed')
 
