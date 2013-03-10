@@ -1,12 +1,20 @@
 unit empty;
 interface
 
+const
+  tokLen = 15;
 type
+  tokstr = string[toklen];
   address  = 0..65535;
   cardinal = address;
   integer  = int32;
+  thunk    = procedure;
 
+  {-- main public inteface --}
+  procedure createop( const iden : tokstr; code : thunk );
   procedure mainloop;
+  
+  {-- these might wind up hidden... --}
   procedure pushdat( x:integer );
   procedure pushret( x:integer );
   procedure pass;
@@ -23,13 +31,13 @@ type
   
 
 const
-  tokLen = 15; 
   prim	 = 0;
   quit	 : integer = -1;
+
 type
-  TWord = record
-    prev : address;
-    word : string[ tokLen ];
+  TWord	 = record
+    // prev : address;
+    word : tokstr;
     code : address;
     data : cardinal
   end;
@@ -45,7 +53,7 @@ var
 
 var
   ram : array[ address  ] of integer;
-  ops : array[ 0 .. 255 ] of procedure;
+  ops : array[ 0 .. 255 ] of thunk;
 
   sp : integer  = 0;
   rp : integer  = 1024;
@@ -59,8 +67,8 @@ var
 
   // for now, we're just using a simple array for the dictionary
   words  : array[ 0 .. 1023 ] of TWord;
-  last   : cardinal = 0;
-
+  numwds : cardinal = 0;
+  numops : cardinal = 0;
 
 {-- delegates -------------------------------------------------}
 
@@ -69,8 +77,8 @@ var
   getnext,      { copy next token from 'src' to 'token' }
   respond,
   welcome
-  : procedure;
-  
+  : thunk;
+
   number : function : boolean;
 
 implementation
@@ -135,7 +143,7 @@ end;
 function lookup : boolean;
   var found: boolean = false;
 begin
-  which := last; found := false;
+  which := numwds; found := false;
   while (which > 0) and not found do begin
     dec(which);
     found := words[which].word = token;
@@ -153,7 +161,8 @@ begin
   welcome;
   repeat
     getnext;
-    if lookup then execute else if not number() then notfound;
+    if lookup then interpret
+    else if number() then notfound;
     respond
   until done;
 end;
@@ -200,6 +209,21 @@ begin
   writeln(brand, ' ', verMaj, '.', verMin);
 end;
 
+
+{-- dictionary-handlers ---------------------------------------}
+
+procedure createop( const iden : tokstr; code : thunk );
+begin
+  ops[numops] := code;
+  with words[numwds] do begin
+    // prev := ... ;
+    word := iden;
+    code := prim;
+    data := numops;
+  end;
+  inc(numwds); inc(numops);
+end;
+
 var i : integer;
 begin
   refill  := @default_refill;
@@ -207,6 +231,6 @@ begin
   respond := @default_respond;
   welcome := @default_welcome;
   number  := @default_number;
-  for i := length(ops)-1 downto 0 do ops[i] := @pass;
-  for i := length(ram)-1 downto 0 do ram[i] := 0;
+  for i := high(ops) downto low(ops) do ops[i] := @pass;
+  for i := high(ram) downto low(ram) do ram[i] := 0;
 end.
