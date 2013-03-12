@@ -32,6 +32,7 @@
         function insert( key : TKey ): cardinal;
         function full : boolean;
         procedure split;
+        procedure rebalance;
         function firstkey : TKey;
       end;
   
@@ -71,7 +72,7 @@
     if leaf then
       begin
         childvals[insert( key )] := val;
-        if full then split
+        rebalance;
       end
     else locate( key ).put( key, val )
   end;
@@ -100,6 +101,14 @@
     childkeys[ i ] := key;
     childvals[ i ] := nil;
     result := i
+  end;
+#+end_src
+*** DONE TNode.rebalance
+#+name: imp
+#+begin_src pascal
+  procedure TNode.rebalance;
+  begin
+    if full then split
   end;
 #+end_src
 
