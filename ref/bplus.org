@@ -1,0 +1,82 @@
+#+title: b+ trees
+#+author: michal j wallace
+
+* [0/2] overview
+** TODO what is a b+ tree?
+** TODO what problem does a b+ tree overcome?
+* [1/1] Algorithms (roughly following the [[http://en.wikipedia.org/wiki/B%2B_tree][wikipedia: B+ Trees]])
+** DONE locate key's place in the tree
+
+This search routine always succeeds, since it finds the location where the key /should/ be in the tree, whether it's /actually/ there or not.
+
+#+name: tpbnode.locate
+#+begin_src pascal
+  function TBpNode.locate( key : TKey ) : TBpNode;
+    var i : integer = 0;
+  begin
+    if self.isleaf then result := self
+    else begin
+      while (key >= values[ i ]) and (i < childcount) do inc( i );
+      result := children[ i ].locate( key );
+    end
+  end;
+#+end_src
+
+** [1/2] insertion
+*** DONE insert the new item in the correct node
+#+begin_src pascal
+  procedure TBpTree.insert( key : TKey; val : TVal );
+    var target : TBpNode;
+  begin
+    target := root.locate( key );
+    target.insert( key, val );
+    if target.isfull then target.split;
+  end;
+#+end_src
+
+*** TODO 
+#+begin_src pascal
+  procedure TBpNode.insert( key : TKey; val : TVal );
+   var b : byte;
+  begin
+    for b := 0 to size-2 do
+      if key  val
+      
+  end;
+#+end_src
+
+
+*** TODO if necessary, split the node
+#+begin_src pascal
+  procedure TBpNode.split;
+    
+  begin
+    
+  end;
+#+end_src
+
+#+begin_src pascal
+  procedure TBpNode.addChild( kid : TBpNode );
+  begin
+    
+  end;
+#+end_src
+
+
+** [0/0] deletion
+#+begin_src pascal
+  procedure TBpNode.delete( key : TKey );
+    
+  begin
+    
+  end;
+#+end_src
+
+** TODO bulk-loading
+#+begin_src pascal
+  constructor TBpNode.bulk( pairs : TKeyValPair );
+    
+  begin
+    
+  end;
+#+end_src
