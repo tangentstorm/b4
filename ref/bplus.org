@@ -4,10 +4,10 @@
 * [0/2] overview
 ** TODO what is a b+ tree?
 ** TODO what problem does a b+ tree overcome?
-* INTERFACE
+* Interface
 #+name: interface
 #+begin_src pascal
-
+  
   { B+ Trees for pascal }
   {$mode objfpc}
   unit bp;
@@ -25,22 +25,27 @@
         //function has( key : Tkey ): boolean;
       private
         leaf : boolean;
+        _parent : TNode;
         childkeys : array of TKey;
         childvals  : array of pointer;
         function locate( key : TKey ): TNode;
         function insert( key : TKey ): cardinal;
         function full : boolean;
         procedure split;
+        function firstkey : TKey;
       end;
-
+  
 #+end_src
 
-* [1/1] Algorithms (roughly following [[http://en.wikipedia.org/wiki/B%2B_tree][wikipedia: B+ Trees]])
-** DONE locate key's place in the tree
-This search routine always succeeds, since it finds the location where the key /should/ be in the tree, whether it's /actually/ there or not.
-*** TNode.locate
+* [2/4] Algorithms (roughly following [[http://en.wikipedia.org/wiki/B%2B_tree][wikipedia: B+ Trees]])
+** DONE [1/1] location
+*** DONE TNode.locate
 #+name: imp
 #+begin_src pascal
+
+  { This search routine always succeeds, since it finds the location 
+    where the key /should/ be in the tree, whether it's /actually/
+    there or not. }
   function TNode.locate( key : TKey ) : TNode;
     var i : integer = 0;
   begin
@@ -49,14 +54,15 @@ This search routine always succeeds, since it finds the location where the key /
       { find first child key less the new key }
       while (key >= childkeys[ i ])
         and (i < length(childkeys))
-      do inc( i );
+        do inc( i );
       { have the child do what we just did }
-      result := TNode(childvals[ i ]).locate( key );
+        result := TNode(childvals[ i ]).locate( key );
     end
   end;
+
 #+end_src
 
-** [3/4] insertion
+** DONE [6/6] insertion
 *** DONE TNode.put
 #+name: imp
 #+begin_src pascal
@@ -106,13 +112,48 @@ This search routine always succeeds, since it finds the location where the key /
   end;
 #+end_src
 
-*** TODO TNode.split
+*** DONE TNode.split
 #+name: imp
 #+begin_src pascal
   procedure TNode.split;
+    var newnode: TNode;
+    <<copyhalf>>
   begin
+    newnode := TNode.create;
+    copyhalf;
+    _parent.put( newnode.firstkey, newnode );
   end;
 #+end_src
+*** DONE <<copyhalf>>
+#+name: copyhalf
+#+begin_src pascal
+  procedure copyhalf; 
+    var i, half : integer;
+  begin
+    half := length(childkeys) div 2;
+    for i := half to high(childkeys) do
+    begin
+      newnode.childkeys[i-half] := childkeys[i];
+      newnode.childvals[i-half] := childvals[i];
+      childkeys[i] := empty;
+      childvals[i] := nil;
+    end
+  end;
+#+end_src
+
+*** DONE firstkey
+#+name: imp
+#+begin_src pascal
+  { The 0th key is always -maxint, so that we can have the same }
+  { number of keys and values. This way there's no special case }
+  { logic. This just lets us avoid hard coding the "[1]". }
+  function TNode.firstkey : TKey;
+  begin
+    result := childkeys[1]
+  end;
+#+end_src
+
+
 
 ** TODO deletion
 #+name: imp--
@@ -123,7 +164,7 @@ This search routine always succeeds, since it finds the location where the key /
 #+end_src
 
 ** TODO bulk-loading
-######## #+name: imp
+#+name: imp----
 #+begin_src pascal
   constructor TNode.bulk( pairs : TKeyValPair );
   begin
