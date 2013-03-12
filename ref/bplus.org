@@ -4,79 +4,139 @@
 * [0/2] overview
 ** TODO what is a b+ tree?
 ** TODO what problem does a b+ tree overcome?
-* [1/1] Algorithms (roughly following the [[http://en.wikipedia.org/wiki/B%2B_tree][wikipedia: B+ Trees]])
-** DONE locate key's place in the tree
-
-This search routine always succeeds, since it finds the location where the key /should/ be in the tree, whether it's /actually/ there or not.
-
-#+name: tpbnode.locate
+* INTERFACE
+#+name: interface
 #+begin_src pascal
-  function TBpNode.locate( key : TKey ) : TBpNode;
+
+  { B+ Trees for pascal }
+  {$mode objfpc}
+  unit bp;
+  interface
+    const empty = -maxint;
+    type
+      TKey = integer;
+      TVal = pointer;
+      TNode = class
+        //constructor create;
+        //constructor create( up : TNode );
+        procedure put( key : TKey; val : TVal );
+        //procedure del( key : TKey );
+        //function get( key : TKey ): TVal;
+        //function has( key : Tkey ): boolean;
+      private
+        leaf : boolean;
+        childkeys : array of TKey;
+        childvals  : array of pointer;
+        function locate( key : TKey ): TNode;
+        function insert( key : TKey ): cardinal;
+        function full : boolean;
+        procedure split;
+      end;
+
+#+end_src
+
+* [1/1] Algorithms (roughly following [[http://en.wikipedia.org/wiki/B%2B_tree][wikipedia: B+ Trees]])
+** DONE locate key's place in the tree
+This search routine always succeeds, since it finds the location where the key /should/ be in the tree, whether it's /actually/ there or not.
+*** TNode.locate
+#+name: imp
+#+begin_src pascal
+  function TNode.locate( key : TKey ) : TNode;
     var i : integer = 0;
   begin
-    if self.isleaf then result := self
+    if leaf then result := self
     else begin
-      while (key >= values[ i ]) and (i < childcount) do inc( i );
-      result := children[ i ].locate( key );
+      { find first child key less the new key }
+      while (key >= childkeys[ i ])
+        and (i < length(childkeys))
+      do inc( i );
+      { have the child do what we just did }
+      result := TNode(childvals[ i ]).locate( key );
     end
   end;
 #+end_src
 
-** [1/2] insertion
-*** DONE insert the new item in the correct node
+** [3/4] insertion
+*** DONE TNode.put
+#+name: imp
 #+begin_src pascal
-  procedure TBpTree.insert( key : TKey; val : TVal );
-    var target : TBpNode;
+  procedure TNode.put( key : TKey; val : TVal );
   begin
-    target := root.locate( key );
-    target.insert( key, val );
-    if target.isfull then target.split;
+    if leaf then
+      begin
+        childvals[insert( key )] := val;
+        if full then split
+      end
+    else locate( key ).put( key, val )
   end;
 #+end_src
 
-*** TODO 
+*** DONE TNode.insert
+#+name: imp
 #+begin_src pascal
-  procedure TBpNode.insert( key : TKey; val : TVal );
-   var b : byte;
+  function TNode.insert( key : TKey ) : cardinal;
+   var i : integer;
   begin
-    for b := 0 to size-2 do
-      if key  val
-      
+    i := length(childvals);
+    { find the first empty slot by scanning backward from the end: }
+    while (i > 0) and (childkeys[i-1] = empty) do dec( i );
+
+    { Make room for the key, keeping the sequence ordered. }
+    { We needn't check for i>0 because childkeys[0] is always -maxint }
+    while (childkeys[i-1] > key) do
+      begin
+        childvals[i] := childvals[i-1];
+        childkeys[i] := childkeys[i-1];
+        dec( i );
+      end;
+
+    { finally, fill the hole we just made, and return its location }
+    childkeys[ i ] := key;
+    childvals[ i ] := nil;
+    result := i
   end;
 #+end_src
 
-
-*** TODO if necessary, split the node
+*** DONE TNode.full
+#+name: imp
 #+begin_src pascal
-  procedure TBpNode.split;
-    
+  function TNode.full : boolean;
   begin
-    
+    result := childkeys[high(childkeys)] <> empty;
   end;
 #+end_src
 
+*** TODO TNode.split
+#+name: imp
 #+begin_src pascal
-  procedure TBpNode.addChild( kid : TBpNode );
+  procedure TNode.split;
   begin
-    
   end;
 #+end_src
 
-
-** [0/0] deletion
+** TODO deletion
+#+name: imp--
 #+begin_src pascal
-  procedure TBpNode.delete( key : TKey );
-    
+  procedure TNode.del( key : TKey );
   begin
-    
   end;
 #+end_src
 
 ** TODO bulk-loading
+######## #+name: imp
 #+begin_src pascal
-  constructor TBpNode.bulk( pairs : TKeyValPair );
-    
+  constructor TNode.bulk( pairs : TKeyValPair );
   begin
-    
   end;
+#+end_src
+
+* OUTPUT: bp.pas
+#+begin_src pascal :tangle "~/b/go/bp.pas" :padline yes :noweb tangle
+
+  { NOTE : this file is generated from ../ref/bplus.org. edit that instead!! }
+
+  <<interface>>
+  implementation
+    <<imp>>
+  end.
 #+end_src

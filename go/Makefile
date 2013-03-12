@@ -13,6 +13,10 @@ test_bed: bed test_sd.pas
 b4: b4.pas vm.pas
 	$(FPC) b4.pas
 
+bp: ../ref/bplus.org
+	 ../tangle.el ../ref/bplus.org
+	fpc bp.pas
+
 hx: hx.pas
 	$(FPC) hx.pas
 
@@ -24,3 +28,4 @@ test:
 
 test_code: b4 test_*.pas
 	gpc --automake test_b4.pas -o test_b4
+
