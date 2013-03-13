@@ -56,6 +56,31 @@ cells.enter().append("span");
 
 
 
+var block = 0;
+
+BlockDevice.prototype.nextblock = function( ) {
+    this.load(Math.min(65535, this.block + 1));
+}
+
+BlockDevice.prototype.nextblock = function( ) {
+    this.load(Math.max(0, this.block - 1));
+}
+
+BlockDevice.prototype.load = function(n) {
+    d3.xhr(blockdev.blockURL()).send('get', null, function(err, xhr) {
+        if (err) alert('error loading.')
+        else if (xhr.status === 204) this.vm.putblock(n, this.xhr.responseText)
+        else this.vm.newblock(n)
+    });
+}
+
+BlockDevice.prototype.blockURL = function() {
+    return [ '', 'vol', this.appname,
+           ( '0000' + this.blockn.toString(16)).slice(-4))
+           ].join('/')
+}
+
+
 <script type="text/javascript" id="app">
 function resetglobals() {
   $jq = jQuery; 
