@@ -4,53 +4,123 @@
 * [0/2] overview
 ** TODO what is a b+ tree?
 ** TODO what problem does a b+ tree overcome?
-* Interface
+* Object Model and Public Interface
+** unit =bp=;
 #+name: interface
 #+begin_src pascal
-  
   { B+ Trees for pascal }
   {$mode objfpc}
   unit bp;
   interface
+
     const empty = -maxint;
+
     type
       TKey = integer;
-      TVal = pointer;
-      TNode = class
-        //constructor create;
-        //constructor create( up : TNode );
-        procedure put( key : TKey; val : TVal );
-        //procedure del( key : TKey );
-        //function get( key : TKey ): TVal;
-        //function has( key : Tkey ): boolean;
-      private
-        leaf : boolean;
-        _parent : TNode;
-        childkeys : array of TKey;
-        childvals  : array of pointer;
-        function locate( key : TKey ): TNode;
-        function insert( key : TKey ): cardinal;
-        function full : boolean;
-        procedure split;
-        procedure rebalance;
-        function firstkey : TKey;
+      TVal = TObject;
+      IBPlus = interface
+        <<IBPlusMethods>>
       end;
-  
+      <<TNode>>
+      <<TIter>>
+      <<TTree>>
+
 #+end_src
 
-* [2/4] Algorithms (roughly following [[http://en.wikipedia.org/wiki/B%2B_tree][wikipedia: B+ Trees]])
+** Public =IBPlus= interface
+
+#+name: IBPlusMethods
+#+begin_src pascal
+  procedure put( key : TKey; val : TVal );
+  //procedure del( key : TKey );
+  //function get( key : TKey ): TVal;
+  //function has( key : Tkey ): boolean;
+#+end_src
+
+** type =TNode=
+#+name: TNode
+#+begin_src pascal
+
+  TNode = class ( TInterfacedObject, IBPlus )
+   public
+    constructor Create( size : integer = 32 );
+    <<IBPlusMethods>>
+   private
+    isleaf      : boolean;
+    _parent   : TNode;
+    childkeys : array of TKey;
+    childvals : array of pointer;
+    function locate( key : TKey ): TNode;
+    function inskey( key : TKey ): cardinal;
+    function full : boolean;
+    procedure split;
+    procedure rebalance;
+    function firstkey : TKey;
+    function isroot : boolean;
+    procedure addchild( key : TKey; kid : TNode );
+  end;
+
+#+end_src
+
+** type =TTree=
+#+name: TTree
+#+begin_src pascal
+  TTree = class
+   public
+    constructor Create;
+    <<IBPlusMethods>>
+    function GetEnumerator: TIter;
+   private
+    root : TNode;
+  end;
+#+end_src
+
+** type =TIter=
+#+name: TIter
+#+begin_src pascal
+  TTree = class;
+  TIter = class
+  private
+    this : TObject;
+    tree : TTree;
+  public
+    constructor Create( aTree : TTree );
+    function GetCurrent : TVal;
+    function MoveNext : Boolean;
+    procedure Reset;
+    property Current : TObject read this;
+  end;
+#+end_src
+
+* Implementation (roughly following [[http://en.wikipedia.org/wiki/B%2B_tree][wikipedia: B+ Trees]])
+** TODO TNode.Create
+#+name: imp
+#+begin_src pascal
+  constructor TNode.Create( size : integer = 32 );
+    var i : integer;
+  begin
+    isleaf := false;
+    SetLength( childkeys, size );
+    SetLength( childvals, size );
+    for i := 0 to size-1 do
+    begin
+      childkeys[i] := empty;
+      childvals[i] := nil;
+    end;
+  end;
+#+end_src
 ** DONE [1/1] location
 *** DONE TNode.locate
 #+name: imp
 #+begin_src pascal
 
-  { This search routine always succeeds, since it finds the location 
+  { This search routine always succeeds, since it finds the location
     where the key /should/ be in the tree, whether it's /actually/
     there or not. }
   function TNode.locate( key : TKey ) : TNode;
     var i : integer = 0;
   begin
-    if leaf then result := self
+    if isleaf then result := self
     else begin
       { find first child key less the new key }
       while (key >= childkeys[ i ])
@@ -63,25 +133,26 @@
 
 #+end_src
 
-** DONE [6/6] insertion
+** DONE [9/9] insertion
 *** DONE TNode.put
 #+name: imp
 #+begin_src pascal
   procedure TNode.put( key : TKey; val : TVal );
   begin
-    if leaf then
+    if isleaf then
       begin
-        childvals[insert( key )] := val;
+        childvals[inskey( key )] := val;
         rebalance;
       end
     else locate( key ).put( key, val )
   end;
 #+end_src
 
-*** DONE TNode.insert
+*** DONE TNode.inskey
 #+name: imp
 #+begin_src pascal
-  function TNode.insert( key : TKey ) : cardinal;
+  { insert key }
+  function TNode.inskey( key : TKey ) : cardinal;
    var i : integer;
   begin
     i := length(childvals);
@@ -130,13 +201,17 @@
   begin
     newnode := TNode.create;
     copyhalf;
-    _parent.put( newnode.firstkey, newnode );
+    if isroot then begin
+      _parent := TNode.create;
+      _parent.addchild( self.firstkey, self )
+    end;
+    _parent.addchild( newnode.firstkey, newnode )
   end;
 #+end_src
 *** DONE <<copyhalf>>
 #+name: copyhalf
 #+begin_src pascal
-  procedure copyhalf; 
+  procedure copyhalf;
     var i, half : integer;
   begin
     half := length(childkeys) div 2;
@@ -147,6 +222,15 @@
       childkeys[i] := empty;
       childvals[i] := nil;
     end
+  end;
+#+end_src
+
+*** DONE TNode.isroot
+#+name: imp
+#+begin_src pascal
+  function TNode.isroot : boolean;
+  begin
+    result := not assigned(_parent);
   end;
 #+end_src
 
@@ -162,7 +246,13 @@
   end;
 #+end_src
 
-
+*** DONE addchild
+#+name: imp
+#+begin_src pascal
+  procedure TNode.addchild( key : TKey; kid : TNode );
+  begin
+  end;
+#+end_src
 
 ** TODO deletion
 #+name: imp--
@@ -180,13 +270,151 @@
   end;
 #+end_src
 
-* OUTPUT: bp.pas
+** TODO [0/1] The container class (TTree)
+*** TODO [0/0] constructor
+#+name: imp
+#+begin_src pascal
+
+  constructor TTree.Create;
+  begin
+    root := TNode.Create;
+    root.isleaf := true;
+  end;
+#+end_src
+*** put
+#+name: imp
+#+begin_src pascal
+  procedure TTree.put( key : TKey; val : TVal );
+  begin
+    root.put( key, val )
+  end;
+#+end_src
+*** enumerator
+#+name: imp
+#+begin_src pascal
+  function TTree.GetEnumerator : TIter;
+  begin
+    result := TIter.Create( self )
+  end;
+
+#+end_src
+
+** TODO Iterator for the Tree class
+*** constructor
+#+name: imp
+#+begin_src pascal
+  constructor TIter.Create( aTree : TTree );
+  begin
+    self.tree := aTree;
+    self.Reset;
+  end;
+#+end_src
+
+*** getcurrent
+#+name: imp
+#+begin_src pascal
+  function TIter.GetCurrent : TObject;
+  begin
+    result := nil
+  end;
+#+end_src
+
+*** movenext
+#+name: imp
+#+begin_src pascal
+  function TIter.MoveNext : Boolean;
+  begin
+    result := false
+  end;
+#+end_src
+*** reset
+#+name: imp
+#+begin_src pascal
+  procedure TIter.Reset;
+  begin
+
+  end;
+#+end_src
+
+** OUTPUT: =bp.pas=
 #+begin_src pascal :tangle "~/b/go/bp.pas" :padline yes :noweb tangle
-
-  { NOTE : this file is generated from ../ref/bplus.org. edit that instead!! }
-
+  { NOTE : this file is generated from ../ref/bplus.org , so...
+    --->> DON'T EDIT THIS FILE! <<--- }
   <<interface>>
   implementation
     <<imp>>
   end.
 #+end_src
+
+* Usage: An Indexed Triple Store
+** declarations
+#+name: test
+#+begin_src pascal :tangle "~/b/go/bpdemo.pas" :padline yes :noweb tangle
+  {$H+}{$mode objfpc}
+  program bpdemo;
+  uses bp;
+
+    type
+      TTriple = class
+        sub, rel, obj : integer;
+        procedure print;
+        // function reversed : IEnumerator;
+      end;
+
+    procedure TTriple.Print;
+    begin
+      writeln( sub:8, rel:8, obj:8 );
+    end;
+
+    var
+      subs, rels, objs : bp.TTree;
+      trip : TObject;
+      i    : integer;
+  begin
+    <<main>>
+  end.
+#+end_src
+** <<main>>
+*** populate
+#+name:main
+#+begin_src pascal
+    { create three indices for a triplestore }
+    subs := bp.TTree.create;
+    rels := bp.TTree.create;
+    objs := bp.TTree.create;
+
+    { generate and index a bunch of random triples }
+    for i := 1 to 100 do begin
+      trip := TTriple.create;
+      with TTriple(trip) do begin
+        sub := random( 50 );
+        rel := random( 50 );
+        obj := random( 50 );
+        subs.put( sub, trip );
+        rels.put( rel, trip );
+        objs.put( obj, trip );
+      end;
+    end;
+#+end_src
+*** print forward
+#+name: main
+#+begin_src pascal
+      { print them in order by each index }
+      writeln('--subs--');
+      for trip in subs do TTriple(trip).print;
+      writeln('--objs--');
+      for trip in objs do TTriple(trip).print;
+      writeln('--rels--');
+      for trip in rels do TTriple(trip).print;
+#+end_src
+*** TODO print backward
+#+begin_src pascal
+    { and reversed }
+    writeln('--subs desc--');
+    for trip in subs.reversed do TTriple(trip).print;
+    writeln('--objs desc--');
+    for trip in objs.reversed do Triple(trip).print;
+    writeln('--rels desc--');
+    for trip in rels.reversed do TTriple(trip).print;
+#+end_src
+* end .

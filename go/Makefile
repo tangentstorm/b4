@@ -15,7 +15,8 @@ b4: b4.pas vm.pas
 
 bp: ../ref/bplus.org
 	 ../tangle.el ../ref/bplus.org
-	fpc bp.pas
+	$(FPC) -B bpdemo.pas
+	./bpdemo
 
 hx: hx.pas
 	$(FPC) hx.pas
