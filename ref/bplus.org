@@ -406,35 +406,49 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
       writeln( sub:8, rel:8, obj:8 );
     end;
 
-    var
-      subs, rels, objs : bp.TTree;
-      trip : TObject;
-      i    : integer;
-  begin
     <<main>>
   end.
+
 #+end_src
 ** <<main>>
 *** populate
 #+name:main
 #+begin_src pascal
+      var
+        subs, rels, objs : bp.TTree;
+        trip             : TObject;
+        i, j, k, tmp     : integer;
+        nums             : array [0..2, 0..99] of byte;
+    begin
+    
+    randomize;
+    
+    { create three indices for a triplestore }
+    subs := bp.TTree.create;
+    rels := bp.TTree.create;
+    objs := bp.TTree.create;
+      
+    { generate the numbers 0..99 in three columns }
+    for j := 0 to 2 do for i := 0 to 99 do nums[j][i] := i;
 
-  randomize;
-
-  { create three indices for a triplestore }
-  subs := bp.TTree.create;
-  rels := bp.TTree.create;
-  objs := bp.TTree.create;
-
-  { generate and index a bunch of random triples }
-  for i := 1 to 100 do begin
-    trip := TTriple.create(random(kMax),random(kMax),random(kMax));
-    with TTriple(trip) do begin
-      subs.put( sub, trip );
-      rels.put( rel, trip );
-      objs.put( obj, trip );
+    { shuffle the columns independently }
+    for j := 0 to 2 do for i := 0 to 2500 do
+    begin
+      k := random(98);
+      tmp := nums[j][k];
+      nums[j][k] := nums[j][k+1];
+      nums[j][k+1] := tmp;
     end;
-  end;
+
+    { generate and index the random triples }
+    for i := 0 to 99 do begin
+      trip := TTriple.create(nums[0][i], nums[1][i], nums[2][i]);
+      with TTriple(trip) do begin
+        subs.put( sub, trip );
+        rels.put( rel, trip );
+        objs.put( obj, trip );
+      end;
+    end;
 #+end_src
 *** print forward
 #+name: main
