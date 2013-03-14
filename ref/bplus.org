@@ -9,9 +9,9 @@
 #+name: interface
 #+begin_src pascal
   { B+ Trees for pascal }
-  {$mode objfpc}
+  {$mode objfpc}{$h+}
   unit bp;
-  interface
+  interface uses sysutils;
 
     const empty = -maxint;
 
@@ -44,8 +44,9 @@
 
   TNode = class ( TInterfacedObject, IBPlus )
    public
-    constructor Create( size : integer = 32 );
+    constructor Create( size : integer );
     <<IBPlusMethods>>
+    function tostring: string; override;
    private
     isleaf      : boolean;
     _parent   : TNode;
@@ -61,6 +62,7 @@
     function isroot : boolean;
     procedure addchild( key : TKey; kid : TNode );
     function next : TNode;
+    function root : TNode;
   end;
 
 #+end_src
@@ -70,9 +72,10 @@
 #+begin_src pascal
   TTree = class
    public
-    constructor Create;
+    constructor Create( branchfactor : integer = 64 );
     <<IBPlusMethods>>
     function GetEnumerator: TIter;
+    procedure trace;
    private
     root : TNode;
   end;
@@ -96,7 +99,7 @@
 #+end_src
 
 * Implementation (roughly following [[http://en.wikipedia.org/wiki/B%2B_tree][wikipedia: B+ Trees]])
-** TODO [0/0] Node class
+** TODO [4/6] Node class
 *** DONE constructor
 #+name: imp
 #+begin_src pascal
@@ -106,6 +109,8 @@
     isleaf := false;
     _next  := nil;
     _parent := nil;
+    size := 4;
+
     SetLength( childkeys, size );
     SetLength( childvals, size );
     for i := 0 to size-1 do
@@ -205,19 +210,21 @@
     var newnode: TNode;
     <<copyhalf>>
   begin
-    newnode := TNode.create;
+    newnode := TNode.create( length( childkeys ));
+    newnode.isleaf := true;
     newnode._next := _next;
     _next := newnode;
     copyhalf;
     childvals[high(childvals)] := newnode;
     if isroot then begin
-      _parent := TNode.create;
+      _parent := TNode.create( length( childkeys ));
       _parent.isleaf := false;
       _parent.addchild( self.firstkey, self )
     end;
     _parent.addchild( newnode.firstkey, newnode )
   end;
 #+end_src
+
 **** DONE <<copyhalf>>
 #+name: copyhalf
 #+begin_src pascal
@@ -261,16 +268,59 @@
 #+begin_src pascal
   procedure TNode.addchild( key : TKey; kid : TNode );
   begin
+    childvals[inskey( key )] := kid;
+    rebalance;
   end;
 #+end_src
 
-*** TODO iteration
+*** DONE iteration
 #+name: imp
 #+begin_src pascal
   function TNode.next : TNode;
   begin
     result := _next;
   end;
+#+end_src
+
+*** DONE finding the new root of the tree
+#+name: imp
+#+begin_src pascal
+  function TNode.root : TNode;
+  begin
+    if isroot
+      then result := self
+      else result := _parent.root
+  end;
+#+end_src
+
+*** TODO debugging with .trace
+#+name: imp
+#+begin_src pascal
+  procedure TTree.trace;
+  begin
+    writeln(self.root.tostring);
+  end;
+
+  function TNode.ToString : string;
+  var s : string; i : integer;
+  begin
+    setlength(s, 1023);
+    if self.isleaf then i := 0 else i := 1;
+    i := 0;
+    s := '[';
+    repeat
+      if self.childkeys[i] = empty
+        then s := s + ' <: '
+        else s := s + ' ' + IntToStr(self.childkeys[ i ]) + ': ';
+      if assigned(self.childvals[ i ])
+        then s := s + self.childvals[ i ].ToString
+        else s := s + '_';
+      inc(i)
+    until self.childkeys[i] = empty;
+    s := s + ' ]';
+    result := s;
+  end;
+
 #+end_src
 *** TODO deletion
 #+name: imp--
@@ -292,10 +342,9 @@
 *** TODO [0/0] constructor
 #+name: imp
 #+begin_src pascal
-
-  constructor TTree.Create;
+  constructor TTree.Create( branchfactor : integer = 64 );
   begin
-    root := TNode.Create;
+    root := TNode.Create( branchfactor );
     root.isleaf := true;
   end;
 
@@ -305,8 +354,11 @@
 #+begin_src pascal
   procedure TTree.put( key : TKey; val : TVal );
   begin
-    root.put( key, val )
+    root.put( key, val );
+    // find the new root
+    root := root.root; // "for the home team"
   end;
+
 #+end_src
 *** enumerator
 #+name: imp
@@ -339,6 +391,7 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
     // this should walk down to the first (leftmost) leaf node
     self.node := self.tree.root.locate(-maxint)
   end;
+
 #+end_src
 
 *** DONE getcurrent
@@ -381,9 +434,10 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
 ** declarations
 #+name: test
 #+begin_src pascal :tangle "~/b/go/bpdemo.pas" :padline yes :noweb tangle
-  {$H+}{$mode objfpc}
+  {$mode objfpc}
+  {$H+}
   program bpdemo;
-  uses bp;
+  uses bp, sysutils;
 
     const kMax = 99;
     type
@@ -391,6 +445,7 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
         sub, rel, obj : integer;
         constructor Create( SubId, RelId, ObjId : integer );
         procedure Print;
+        function tostring: string; override;
         // function reversed : IEnumerator;
       end;
 
@@ -401,9 +456,21 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
       obj := objid;
     end;
 
-    procedure TTriple.Print;
+
+    var building : boolean = true;
+    function TTriple.ToString : string;
     begin
-      writeln( sub:8, rel:8, obj:8 );
+      if building
+        then result := '.'
+        else result := '(' + IntToStr( sub ) +
+                       ', ' + IntToStr( rel ) +
+                       ', ' + IntToStr( obj ) +
+                       ')';
+    end;
+
+    procedure TTriple.print;
+    begin
+      writeln( self.tostring )
     end;
 
     <<main>>
@@ -414,52 +481,62 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
 *** populate
 #+name:main
 #+begin_src pascal
-      var
-        subs, rels, objs : bp.TTree;
-        trip             : TObject;
-        i, j, k, tmp     : integer;
-        nums             : array [0..2, 0..99] of byte;
-    begin
-    
-    randomize;
-    
-    { create three indices for a triplestore }
-    subs := bp.TTree.create;
-    rels := bp.TTree.create;
-    objs := bp.TTree.create;
-      
-    { generate the numbers 0..99 in three columns }
-    for j := 0 to 2 do for i := 0 to 99 do nums[j][i] := i;
-
-    { shuffle the columns independently }
-    for j := 0 to 2 do for i := 0 to 2500 do
-    begin
-      k := random(98);
-      tmp := nums[j][k];
-      nums[j][k] := nums[j][k+1];
-      nums[j][k+1] := tmp;
+    var
+      subs, rels, objs : bp.TTree;
+      trip             : TObject;
+      i, j, k, tmp     : integer;
+      nums             : array [0..2, 0..99] of byte;
+  begin
+  
+  randomize;
+  
+  { create three indices for a triplestore }
+  subs := bp.TTree.create(4); // just to make the trace easier to read
+  rels := bp.TTree.create;
+  objs := bp.TTree.create;
+  
+  { generate the numbers 0..99 in three columns }
+  for j := 0 to 2 do for i := 0 to 99 do nums[j][i] := i;
+  
+  { shuffle the columns independently }
+  for j := 0 to 2 do for i := 0 to 2500 do
+  begin
+    k := random(99);
+    tmp := nums[j][k];
+    nums[j][k] := nums[j][k+1];
+    nums[j][k+1] := tmp;
+  end;
+  
+  { initial index: }
+  writeln('initial index:');
+  subs.trace;
+  
+  { generate and index the random triples }
+  for i := 0 to 99 do begin
+    trip := TTriple.create(nums[0][i], nums[1][i], nums[2][i]);
+    with TTriple(trip) do begin
+      subs.put( sub, trip );
+      rels.put( rel, trip );
+      objs.put( obj, trip );
+  
+      { for debugging, show one of the indices being built step by step }
+      writeln;
+      writeln('adding key:', sub:2 ); //, '-> ', rel:2, ', ',  obj:2 );
+      subs.trace;
     end;
-
-    { generate and index the random triples }
-    for i := 0 to 99 do begin
-      trip := TTriple.create(nums[0][i], nums[1][i], nums[2][i]);
-      with TTriple(trip) do begin
-        subs.put( sub, trip );
-        rels.put( rel, trip );
-        objs.put( obj, trip );
-      end;
-    end;
-#+end_src
+  end;
+  #+end_src
 *** print forward
 #+name: main
 #+begin_src pascal
-      { print them in order by each index }
-      writeln('--subs--');
-      for trip in subs do TTriple(trip).print;
-      writeln('--rels--');
-      for trip in rels do TTriple(trip).print;
-      writeln('--objs--');
-      for trip in objs do TTriple(trip).print;
+   building := false;
+  { print them in order by each index }
+  writeln('--subs--');
+  for trip in subs do TTriple(trip).print;
+  writeln('--rels--');
+  for trip in rels do TTriple(trip).print;
+  writeln('--objs--');
+  for trip in objs do TTriple(trip).print;
 #+end_src
 *** TODO print backward
 #+begin_src pascal
