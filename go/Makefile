@@ -15,6 +15,7 @@ b4: b4.pas vm.pas
 
 bp: ../ref/bplus.org
 	 ../tangle.el ../ref/bplus.org
+	chmod -w bpdemo.pas bp.pas
 	$(FPC) -B bpdemo.pas
 	./bpdemo
 
