@@ -9,11 +9,12 @@
 #+name: interface
 #+begin_src pascal
   { B+ Trees for pascal }
-  {$mode objfpc}{$h+}
+  {$i xpc.inc}
+  {$H+}
   unit bp;
-  interface uses sysutils;
+  interface uses xpc, sysutils;
 
-    const empty = -maxint;
+    const empty = maxint;
 
     type
       TKey   = integer;
@@ -44,15 +45,16 @@
 
   TNode = class ( TInterfacedObject, IBPlus )
    public
-    constructor Create( size : integer );
+    constructor CreateLeaf( size : integer );
+    constructor CreateInner( size : integer );
     <<IBPlusMethods>>
     function tostring: string; override;
    private
     isleaf      : boolean;
     _parent   : TNode;
     _next     : TNode;
-    childkeys : array of TKey;
-    childvals : array of TObject;
+    keys : array of TKey;
+    vals : array of TObject;
     function locate( key : TKey ): TNode;
     function inskey( key : TKey ): cardinal;
     function full : boolean;
@@ -62,7 +64,9 @@
     function isroot : boolean;
     procedure addchild( key : TKey; kid : TNode );
     function next : TNode;
-    function root : TNode;
+    function findslot( key : TKey ): word;
+    function findroot : TNode;
+    function isinner : boolean;
   end;
 
 #+end_src
@@ -75,7 +79,7 @@
     constructor Create( branchfactor : integer = 64 );
     <<IBPlusMethods>>
     function GetEnumerator: TIter;
-    procedure trace;
+    function tostring: string; override;
    private
     root : TNode;
   end;
@@ -99,47 +103,80 @@
 #+end_src
 
 * Implementation (roughly following [[http://en.wikipedia.org/wiki/B%2B_tree][wikipedia: B+ Trees]])
-** TODO [4/6] Node class
+** TODO [6/8] Node class
 *** DONE constructor
 #+name: imp
 #+begin_src pascal
-  constructor TNode.Create( size : integer = 32 );
+  constructor TNode.CreateLeaf( size : integer );
     var i : integer;
   begin
-    isleaf := false;
+    isleaf := true;
     _next  := nil;
     _parent := nil;
-    size := 4;
-
-    SetLength( childkeys, size );
-    SetLength( childvals, size );
-    for i := 0 to size-1 do
+    SetLength( keys, size + 1 );
+    SetLength( vals, size + 1 ); // extra link
+    for i := 0 to size do
     begin
-      childkeys[i] := empty;
-      childvals[i] := nil;
+      keys[i] := empty;
+      vals[i] := nil;
     end;
   end;
+
+  constructor TNode.CreateInner( size : integer );
+  begin
+    self.CreateLeaf(size);
+    self.isleaf := false;
+  end;
+
 #+end_src
+
+
+
 *** DONE [1/1] location
 **** DONE TNode.locate
 #+name: imp
 #+begin_src pascal
 
+  { Find first child key less the new key. It is important that
+    both =locate= and =inskey= use the same algorithm for locating
+    the key, or the linked list at the bottom of the tree will break.
+
+    Further, we will make sure that we walk left to right (lowest
+    key to highest) because in inner nodes, the links always point to
+    the first child.
+
+    Example:
+
+        tree: [ 5:[ 5 _ _ _ ] 8:[ 8 12 _ _ ] 50:[ 50 _ _ _ ] _ ]
+        goal: find slot for 24
+
+    Here, 24 is both "after 8" or "before 50". It's important to check
+    both numbers, and then choose the /leftmost/ side of the range.
+    (If we had chosen to use the highest value for the child keys instead
+    of the lowest, then of course we would choose the rightmost child.) }
+
+  function TNode.FindSlot( key : TKey ) : word;
+  begin
+    result := 0;
+    if key >= keys[ 0 ] then
+      repeat
+        inc(result)
+      until (result = high(keys)) or (key < keys[ result ])
+  end;
+
   { This search routine always succeeds, since it finds the location
     where the key /should/ be in the tree, whether it's /actually/
     there or not. }
   function TNode.locate( key : TKey ) : TNode;
-    var i : integer = 0;
+  var slot : integer;
   begin
-    if isleaf then result := self
-    else begin
-      { find first child key less the new key }
-      while (key >= childkeys[ i ])
-        and (i < length(childkeys))
-        do inc( i );
-      { have the child do what we just did }
-        result := TNode(childvals[ i ]).locate( key );
-    end
+    if isleaf
+      then result := self
+      else begin
+        slot := findslot(key);
+        if slot > 0 then dec( slot ); // keys[slot] = empty then dec( slot );
+        result := (vals[slot] as TNode).locate( key );
+      end
   end;
 
 #+end_src
@@ -152,7 +189,7 @@
   begin
     if isleaf then
       begin
-        childvals[inskey( key )] := val;
+        vals[inskey( key )] := val;
         rebalance;
       end
     else locate( key ).put( key, val )
@@ -162,29 +199,33 @@
 **** DONE TNode.inskey
 #+name: imp
 #+begin_src pascal
-  { insert key }
-  function TNode.inskey( key : TKey ) : cardinal;
-   var i : integer;
-  begin
-    i := length(childvals);
-    { find the first empty slot by scanning backward from the end: }
-    while (i > 0) and (childkeys[i-1] = empty) do dec( i );
+    { insert key }
+    function TNode.inskey( key : TKey ) : cardinal;
+     var i, slot : integer;
+    begin
+      slot := findslot( key );
 
-    { Make room for the key, keeping the sequence ordered. }
-    { We needn't check for i>0 because childkeys[0] is always -maxint }
-    while (childkeys[i-1] > key) do
+      // if first value is about to change, update the parent key:
+      if (slot = 0) and not isroot then
       begin
-        childvals[i] := childvals[i-1];
-        childkeys[i] := childkeys[i-1];
-        dec( i );
+        i := 0;
+        while _parent.keys[i] <> keys[0] do inc(i);
+        _parent.keys[i] := key;
       end;
 
-    { finally, fill the hole we just made, and return its location }
-    childkeys[ i ] := key;
-    childvals[ i ] := nil;
-    result := i
-  end;
+      for i := high(keys) downto slot+1 do
+      begin
+        vals[i] := vals[i-1];
+        keys[i] := keys[i-1];
+      end;
+
+      { finally, fill the hole we just made, and return its location }
+      keys[ slot ] := key;
+      vals[ slot ] := nil;
+      result := slot
+    end;
 #+end_src
+
 **** DONE TNode.rebalance
 #+name: imp
 #+begin_src pascal
@@ -199,7 +240,7 @@
 #+begin_src pascal
   function TNode.full : boolean;
   begin
-    result := childkeys[high(childkeys)] <> empty;
+    result := keys[high(keys)] <> empty;
   end;
 #+end_src
 
@@ -210,15 +251,16 @@
     var newnode: TNode;
     <<copyhalf>>
   begin
-    newnode := TNode.create( length( childkeys ));
-    newnode.isleaf := true;
-    newnode._next := _next;
-    _next := newnode;
+    if isleaf then
+      begin
+        newnode := TNode.CreateLeaf( length(keys ));
+        newnode._next := _next;
+        _next := newnode;
+      end
+    else newnode := TNode.CreateInner( length(keys ));
     copyhalf;
-    childvals[high(childvals)] := newnode;
     if isroot then begin
-      _parent := TNode.create( length( childkeys ));
-      _parent.isleaf := false;
+      _parent := TNode.CreateInner( length( keys ));
       _parent.addchild( self.firstkey, self )
     end;
     _parent.addchild( newnode.firstkey, newnode )
@@ -231,14 +273,16 @@
   procedure copyhalf;
     var i, half : integer;
   begin
-    half := length(childkeys) div 2;
-    for i := half to high(childkeys) do
+    half := length(keys) div 2;
+    for i := half to high(keys) do
     begin
-      newnode.childkeys[i-half] := childkeys[i];
-      newnode.childvals[i-half] := childvals[i];
-      childkeys[i] := empty;
-      childvals[i] := nil;
-    end
+      newnode.keys[i-half] := keys[i];
+      newnode.vals[i-half] := vals[i];
+      if (newnode.isinner) and (vals[i] <> nil) then
+        (vals[i] as TNode)._parent := newnode;
+      keys[i] := empty;
+      vals[i] := nil;
+    end;
   end;
 #+end_src
 
@@ -251,15 +295,20 @@
   end;
 #+end_src
 
+**** DONE TNode.isinner
+#+name: imp
+#+begin_src pascal
+  function TNode.isinner : boolean;
+  begin
+    result := not isleaf
+  end;
+#+end_src
 **** DONE firstkey
 #+name: imp
 #+begin_src pascal
-  { The 0th key is always -maxint, so that we can have the same }
-  { number of keys and values. This way there's no special case }
-  { logic. This just lets us avoid hard coding the "[1]". }
   function TNode.firstkey : TKey;
   begin
-    result := childkeys[1]
+    result := keys[0]
   end;
 #+end_src
 
@@ -268,7 +317,9 @@
 #+begin_src pascal
   procedure TNode.addchild( key : TKey; kid : TNode );
   begin
-    childvals[inskey( key )] := kid;
+    assert( not isleaf );
+    vals[inskey( key )] := kid;
+    kid._parent := self;
     rebalance;
   end;
 #+end_src
@@ -285,39 +336,48 @@
 *** DONE finding the new root of the tree
 #+name: imp
 #+begin_src pascal
-  function TNode.root : TNode;
+  function TNode.findroot : TNode;
   begin
     if isroot
       then result := self
-      else result := _parent.root
+      else result := _parent.findroot
   end;
 #+end_src
 
-*** TODO debugging with .trace
+*** DONE debugging with .tostring
 #+name: imp
 #+begin_src pascal
-  procedure TTree.trace;
+  function TTree.tostring: string;
   begin
-    writeln(self.root.tostring);
+    result := self.root.tostring;
   end;
 
+  var gIndent : string = '';
   function TNode.ToString : string;
-  var s : string; i : integer;
+    var s : string; i : integer;
   begin
-    setlength(s, 1023);
-    if self.isleaf then i := 0 else i := 1;
-    i := 0;
-    s := '[';
-    repeat
-      if self.childkeys[i] = empty
-        then s := s + ' <: '
-        else s := s + ' ' + IntToStr(self.childkeys[ i ]) + ': ';
-      if assigned(self.childvals[ i ])
-        then s := s + self.childvals[ i ].ToString
-        else s := s + '_';
-      inc(i)
-    until self.childkeys[i] = empty;
-    s := s + ' ]';
+
+    s := '';
+
+    // draw the keys
+    if isleaf then s += '['  else s += '{';
+
+    for i := low(keys) to high(keys) do
+      if (i = 0) and (keys[i] = empty) then s := s + ' < '
+      else if (self.keys[i] = empty) then s := s + ' - '
+      else s := s + ' ' + IntToStr(self.keys[ i ]) + ' ';
+
+    if isleaf and assigned(_next) then
+      s := s + ' -> ' + IntToStr(_next.firstkey);
+
+    if isleaf then s += ' ]' else s += ' }';
+
+    // draw the values
+    gIndent += '  ';
+    for i := low(keys) to high(keys) do
+      if assigned(self.vals[ i ]) then
+         s := s + lineending + gIndent + self.vals[ i ].ToString;
+    setlength(gIndent, length(gIndent)-2);
     result := s;
   end;
 
@@ -344,8 +404,7 @@
 #+begin_src pascal
   constructor TTree.Create( branchfactor : integer = 64 );
   begin
-    root := TNode.Create( branchfactor );
-    root.isleaf := true;
+    root := TNode.CreateLeaf( branchfactor );
   end;
 
 #+end_src
@@ -356,7 +415,7 @@
   begin
     root.put( key, val );
     // find the new root
-    root := root.root; // "for the home team"
+    root := root.findroot; // "for the home team"
   end;
 
 #+end_src
@@ -389,7 +448,8 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
   procedure TIter.Reset;
   begin
     // this should walk down to the first (leftmost) leaf node
-    self.node := self.tree.root.locate(-maxint)
+    node := self.tree.root.locate(-maxint);
+    step := -1;
   end;
 
 #+end_src
@@ -399,7 +459,7 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
 #+begin_src pascal
   function TIter.GetCurrent : TObject;
   begin
-    result := node.childvals[step];
+    result := node.vals[step];
   end;
 #+end_src
 
@@ -411,9 +471,11 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
     result := false;
     if assigned(node) then begin
       inc(step);
-      if (node.childkeys[step] = empty) then begin
-        step := 0;
+      if (step > high(node.keys))
+      or (node.keys[step] = empty)
+      then begin
         node := node.next;
+        step := 0;
       end;
       result := assigned(node);
     end
@@ -434,12 +496,11 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
 ** declarations
 #+name: test
 #+begin_src pascal :tangle "~/b/go/bpdemo.pas" :padline yes :noweb tangle
-  {$mode objfpc}
-  {$H+}
+  {$i xpc.inc}
   program bpdemo;
-  uses bp, sysutils;
+  uses bp, strutils, sysutils;
 
-    const kMax = 99;
+    const kMax = 255; // 65535;  { change if you want to test speed }
     type
       TTriple = class
         sub, rel, obj : integer;
@@ -460,12 +521,10 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
     var building : boolean = true;
     function TTriple.ToString : string;
     begin
-      if building
-        then result := '.'
-        else result := '(' + IntToStr( sub ) +
-                       ', ' + IntToStr( rel ) +
-                       ', ' + IntToStr( obj ) +
-                       ')';
+      result := '('  + PadLeft(IntToStr( sub ), 4) +
+                ', ' + PadLeft(IntToStr( rel ), 4) +
+                ', ' + PadLeft(IntToStr( obj ), 4) +
+                ')';
     end;
 
     procedure TTriple.print;
@@ -484,45 +543,46 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
     var
       subs, rels, objs : bp.TTree;
       trip             : TObject;
-      i, j, k, tmp     : integer;
-      nums             : array [0..2, 0..99] of byte;
+      i, j, k, tmp     : cardinal;
+      nums             : array [0..2, 0..kMax] of word;
   begin
-  
+
   randomize;
-  
+
   { create three indices for a triplestore }
-  subs := bp.TTree.create(4); // just to make the trace easier to read
+  subs := bp.TTree.create(16); // just to make the trace interesting
   rels := bp.TTree.create;
   objs := bp.TTree.create;
-  
-  { generate the numbers 0..99 in three columns }
-  for j := 0 to 2 do for i := 0 to 99 do nums[j][i] := i;
-  
+
+  { generate the numbers 0..kMax in three columns }
+  for j := 0 to 2 do for i := 0 to kMax do nums[j][i] := i;
+
   { shuffle the columns independently }
-  for j := 0 to 2 do for i := 0 to 2500 do
+  for j := 0 to 2 do for i := 0 to kMax * 4 do
   begin
-    k := random(99);
+    k := random(kMax);
     tmp := nums[j][k];
     nums[j][k] := nums[j][k+1];
     nums[j][k+1] := tmp;
   end;
-  
+
   { initial index: }
   writeln('initial index:');
-  subs.trace;
-  
+  writeln(subs.tostring);
+
   { generate and index the random triples }
-  for i := 0 to 99 do begin
+  for i := 0 to kMax do begin
     trip := TTriple.create(nums[0][i], nums[1][i], nums[2][i]);
     with TTriple(trip) do begin
-      subs.put( sub, trip );
-      rels.put( rel, trip );
-      objs.put( obj, trip );
-  
       { for debugging, show one of the indices being built step by step }
       writeln;
       writeln('adding key:', sub:2 ); //, '-> ', rel:2, ', ',  obj:2 );
-      subs.trace;
+
+      subs.put( sub, trip );
+      rels.put( rel, trip );
+      objs.put( obj, trip );
+
+      writeln(subs.tostring);
     end;
   end;
   #+end_src
