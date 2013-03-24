@@ -1,0 +1,78 @@
+#+title: lesson plan
+
+* fundamentals of execution
+** store
+** instructions
+
+* fundamentals of imperative programming
+** sequence
+# concatenation  : if you think about it, 'cat' is a programming language that only has sequences
+# introduce optional ';' token
+
+** state
+# for example, color in ansi escape codes (or simply escaping!)
+
+** selection
+if ...
+  then ...
+  else ... end
+
+** iteration
+while  ... do ... end
+repeat ... until ... ;
+
+** lit, goto, ifsi, ifno, push | call, exit  -> fundamental control flow operations
+:PROPERTIES:
+:TS: <2013-03-20 01:55AM>
+:ID: uxi9kfi012g0
+:END:
+The lit opcode is required so we can push items onto the stack.
+
+** recursion and function application
+:PROPERTIES:
+:TS: <2013-03-20 01:52AM>
+:ID: q4j0cai012g0
+:END:
+# an alternate way of thinking about iteration
+# show how true/false can be used as functions
+# t|f retro 'if' combinator
+# -0+
+
+** the four are interdependent
+without control flow, state is just data
+sequence is very powerful, but without iteration and selection, only very simple behaviors can be created (calculator-like)
+
+
+** stacks
+
+* fundamentals of language recognition
+:PROPERTIES:
+:TS: <2013-03-20 02:28AM>
+:ID: jcsglzj012g0
+:END:
+** patterns follow the same four concepts:
+*** tokenization
+**** sequence
+**** selection
+**** iteration
+*** parsing requires mutation
+to support recursive grammars instead of lexers
+*** explain state machines vs stack machines {mutable state}
+:PROPERTIES:
+:TS: <2013-03-20 02:38AM>
+:ID: li7f1fk012g0
+:END:
+A state machine is a kind of mutable state, but it can only contain a single value.
+Stack machines allow jumping "backward".
+
+* fundamentals of interpretation and compilation
+:PROPERTIES:
+:TS: <2013-03-20 02:36AM>
+:ID: iwv6zck012g0
+:END:
+** both involve a combination of parsing and execution
+** for compilation, the execution involves emitting additional code to execute later
+** you need a way to tell the computer what to do when you match certain things.
+** we will use a sax-like system, with event notification
+** also an option to automatically build an AST from cons cells
+

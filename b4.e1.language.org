@@ -1,0 +1,350 @@
+#+title: languages
+
+* b4 : simple forth-like bootstrap language
+:PROPERTIES:
+:TS: <2013-03-20 02:57AM>
+:ID: v5ykmal012g0
+:END:
+** dictionary lookup
+*** string comparison for variable-length words
+:PROPERTIES:
+:TS: <2013-03-20 06:10AM>
+:ID: iir2k9u012g0
+:END:
+**** DONE pascal version of string-comparison
+:PROPERTIES:
+:TS: <2013-03-20 04:27AM>
+:ID: y5jfjhp012g0
+:END:
+
+The idea is to always null-pad the end of the string to the processor's word-boundary (or vm's word-boundary, anyway)
+
+#+begin_src pascal
+  
+  function cmp_int( i0, i1 : cell ) : cell;
+  begin
+    result := abs( i1 - i0 )
+  end;
+  
+  function cmp_str( a0, a1 : cell ) : cell;
+    var c0, c1 : cell; mismatch, eos : boolean;
+  begin
+    { if the pointers are the same, then the strings have to be equal }
+    if a0 = a1 then result := 0
+    else begin
+      { else we compare cell-by-cell }
+      mismatch := false; eos := false;
+      while not (mismatch or eos) do
+      begin
+        inc( a0 ); get( a0, c0 );
+        inc( a1 ); get( a1, c1 );
+        mismatch := ( c0 <> c1 );
+        { By convention, all our strings are padded
+          with nulls to the word boundary, so check
+          for null character at end of string. It
+          doesn't matter which one we check, since
+          the loop exits anyway if they differ. }
+        eos := (c0 mod $100) = 0
+      end;
+      if mismatch then result := cmp_int( c0, c1 )
+      else result := 0
+    end
+  end;
+
+#+end_src
+**** TODO vm-native string comparison algorithm
+
+: nand ( n n -> n )
+  and not .
+
+: continued? ( cell -> n )
+  :"True unless the the last byte of the cell is zero."
+  8 not ; nand .
+
+# comparison operators
+: <=> ;
+
+: get2 ( a b -> a^ b^ )  :"resolve two variables"
+  @ swap @ swap ;
+
+# string-based comparison operators
+: cmp ( s0 s1 -> n )
+  :"Returns -1, 0, 1 for gt, eq, lt for strings, respectively"
+  2 params c0 c1
+  if c0 = c1 then true
+  else
+    dup2 get2
+  end
+  2 variables i0
+  s1 continued?
+
+* implementing data structures
+:PROPERTIES:
+:TS: <2013-03-20 06:36AM>
+:ID: b4514gv012g0
+:END:
+** DONE pointers and arrays -> these are fundamental
+:PROPERTIES:
+:TS: <2013-03-20 06:36AM>
+:ID: 3l9fdgv012g0
+:END:
+** TODO records
+:PROPERTIES:
+:TS: <2013-03-20 06:36AM>
+:ID: mre4ogv012g0
+:END:
+Records are easy if we think of them as fixed-sized arrays with named offsets.
+We could also think of them as arrays of cells.
+
+** TODO objects
+:PROPERTIES:
+:TS: <2013-03-20 06:37AM>
+:ID: 6txgpiv012g0
+:END:
+
+** TODO linked lists
+:PROPERTIES:
+:TS: <2013-03-20 06:36AM>
+:ID: x1ra0hv012g0
+:END:
+
+** TODO dynamic arrays
+:PROPERTIES:
+:TS: <2013-03-20 06:39AM>
+:ID: o1hh4lv012g0
+:END:
+Probably easiest to just use the B+ Tree for this, since I already have it.
+
+* li : tiny lisp interpreter
+:PROPERTIES:
+:TS: <2013-03-20 06:50AM>
+:ID: 8jb2p3w012g0
+:END:
+: car @ ;
+: cdr 1+ @ ;
+
+* grin : grammar interpreter
+:PROPERTIES:
+:TS: <2013-03-20 06:49AM>
+:ID: z1ybu1w012g0
+:END:
+** lexing
+:PROPERTIES:
+:TS: <2013-03-20 08:51AM>
+:ID: i28jlo1112g0
+:END:
+*** TODO interface for parsers
+:PROPERTIES:
+:TS: <2013-03-20 09:36AM>
+:ID: hkck2s3112g0
+:END:
+**** This parser interprets the grammar at runtime.
+:PROPERTIES:
+:TS: <2013-03-20 01:17PM>
+:ID: cm81b0e112g0
+:END:
+**** The primitives interact with a single character/symbol.
+:PROPERTIES:
+:TS: <2013-03-20 01:33PM>
+:ID: 1n22670022g0
+:END:
+**** A few words to handle the parse order.
+:PROPERTIES:
+:TS: <2013-03-20 01:53PM>
+:ID: 5fdjj31022g0
+:END:
+
+*** [0/4] Implement the generic interpreter
+:PROPERTIES:
+:TS: <2013-03-20 01:54PM>
+:ID: hs6cu51022g0
+:END:
+**** TODO next ( - char )
+:PROPERTIES:
+:TS: <2013-03-20 01:55PM>
+:ID: 7uz0r71022g0
+:END:
+**** TODO back ( - )
+:PROPERTIES:
+:TS: <2013-03-20 01:54PM>
+:ID: zob0851022g0
+:END:
+**** TODO mark ( - )
+:PROPERTIES:
+:TS: <2013-03-20 01:54PM>
+:ID: djf2m51022g0
+:END:
+**** TODO keep ( - )
+:PROPERTIES:
+:TS: <2013-03-20 01:54PM>
+:ID: zfy0451022g0
+:END:
+
+*** [0/0] Implement callbacks/triggers
+:PROPERTIES:
+:TS: <2013-03-20 02:00PM>
+:ID: 2t5kpf1022g0
+:END:
+
+*** TODO matching literals ( sym, any, lit )
+:PROPERTIES:
+:TS: <2013-03-20 08:12AM>
+:ID: pyok9wz012g0
+:END:
+**** DONE sym (character/token match)
+:PROPERTIES:
+:TS: <2013-03-20 09:17AM>
+:ID: 0reexw2112g0
+:END:
+This is trival in retro, since it just uses =.
+**** TODO any (character ranges)
+:PROPERTIES:
+:TS: <2013-03-20 09:25AM>
+:ID: ikvi1a3112g0
+:END:
+I think probably a =/mod= - based match
+
+#+begin_src retro
+ : any ( set - flag )
+   contains ;
+#+end_src
+
+**** DONE nul
+:PROPERTIES:
+:TS: <2013-03-20 09:37AM>
+:ID: 9pk04u3112g0
+:END:
+
+*** TODO selection combinator ( alt, nul, opt )
+:PROPERTIES:
+:TS: <2013-03-20 08:00AM>
+:ID: g1b2ncz012g0
+:END:
+*** TODO iteration combinator ( rep )
+:PROPERTIES:
+:TS: <2013-03-20 08:01AM>
+:ID: pfkffdz012g0
+:END:
+*** TODO sequencing combinator ( seq )
+:PROPERTIES:
+:TS: <2013-03-20 07:59AM>
+:ID: ssu2raz012g0
+:END:
+** parsing
+:PROPERTIES:
+:TS: <2013-03-20 08:51AM>
+:ID: 4vpi4p1112g0
+:END:
+*** TODO named rule support ( sub )
+:PROPERTIES:
+:TS: <2013-03-20 08:15AM>
+:ID: ee6cv10112g0
+:END:
+
+*** TODO backtracking or state-based?
+:PROPERTIES:
+:TS: <2013-03-20 08:02AM>
+:ID: tw189gz012g0
+:END:
+*** TODO first and follow sets
+:PROPERTIES:
+:TS: <2013-03-20 08:06AM>
+:ID: nol7xmz012g0
+:END:
+*** TODO scanner / parser separation
+:PROPERTIES:
+:TS: <2013-03-20 08:03AM>
+:ID: 2iig1iz012g0
+:END:
+*** TODO building an AST
+:PROPERTIES:
+:TS: <2013-03-20 08:00AM>
+:ID: 1eijfcz012g0
+:END:
+** transforming
+:PROPERTIES:
+:TS: <2013-03-20 08:51AM>
+:ID: 6jeetp1112g0
+:END:
+*** TODO suppressing
+:PROPERTIES:
+:TS: <2013-03-20 08:52AM>
+:ID: a7l6oq1112g0
+:END:
+*** TODO tree transforms
+:PROPERTIES:
+:TS: <2013-03-20 07:59AM>
+:ID: 5dwgabz012g0
+:END:
+
+
+* rp : a pascal-like implementation for the retro-vm
+:PROPERTIES:
+:TS: <2013-03-20 06:31AM>
+:ID: i6t5i7v012g0
+:END:
+** TODO callables (for the dictionary)
+:PROPERTIES:
+:TS: <2013-03-20 06:32AM>
+:ID: rjagt9v012g0
+:END:
+*** implementing callables
+:PROPERTIES:
+:TS: <2013-03-20 06:11AM>
+:ID: rjq8abu012g0
+:END:
+
+#+begin_src pascal
+  type
+    PCallable = ^TCallable;
+    TCallable = record
+                  typeDesc : Pointer
+                end;
+#+end_src
+
+*** TEXT . Types of callable.
+:PROPERTIES:
+:TS: <2013-03-20 06:19AM>
+:ID: 6bwipnu012g0
+:END:
+- normal procedure pointer
+- instance method
+- nested procedures
+- closures
+- generators
+- generalized callable objects, as in python?
+- properties
+
+
+
+
+
+
+
+
+
+
+
+
+* grin.rx
+:PROPERTIES:
+:TS: <2013-03-20 02:09PM>
+:ID: dr09hu1022g0
+:END:
+
+#+begin_src retro
+: true -1 ;
+: nul true ;
+: sym lit,, ; immediate
+: lit ;
+: opt ;
+: rep ;
+: alt ;
+: seq ;
+: sub ;
+
+
+: grammar ` ;
+: end ` without ;
+
+#+end_src
