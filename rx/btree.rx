@@ -7,22 +7,28 @@
 : sgn dup 0; drop 0 > [ 1 ] [ -1 ] if ; "( n-n ) signum function." :doc
 : cmp - sgn ; "( ab-n ) comparison. a<b:-1 a=b:0  a>b:1 " :doc
 
-( nil )
-hex 7FFFFFFF 1+ constant nil decimal
+hex 80000000 constant nil
+"This 32-bit signed int is a 'negative zero'. Useful for 'missing' or 'NaN' values." :doc
+decimal
+
+4 variable: fanout  "max number of children per internal node" :doc
+1 variable: depth   "current depth of the tree" :doc
+0 variable: root    "address of root node of the tree" :doc
+: .cmp cmp ; "( ab-c ) revectorable method, in case you want string keys" :doc
 
 
-chain: btree'
+  ( -- nodes ------------------------------------------------- )
 
-  4 variable: .fanout  "max number of children per internal node" :doc
-  1 variable: .depth   "current depth of the tree" :doc
-  0 variable: .root    "address of root node of the tree" :doc
-  : .cmp cmp ; "( ab-c ) revectorable method, in case you want string keys" :doc
+  : nodesize fanout @ 2 * 1+ ; 
+  "( -n ) x*keys, + x+1*addrs, where x=fanout" :doc
+  : node+ nodesize allot    nil over ! ; "( -a ) create a new node" :doc
 
-  : node+ fanout 2 * 2 + allot ( # used + n keys + n+1 addrs, where n=fanout )
-    0 over fanout + !          ( set count to 0 )
-  ; "( -a ) create a new node" :doc
+  : count fanout @ + ;
+  
+  0 [ dup putn 1+ dup 4 = ] until
 
-  : new node+ dup root ! ; "( -a ) construct a new tree" :doc
+  ( -- trees ------------------------------------------------- )
+  : new node+ dup !root ; "( -a ) construct a new tree" :doc
 
   : pos? ( TODO )
   ; "( k-aof ) find addr/offset where key belongs, flag = already there" :doc
@@ -39,31 +45,14 @@ chain: btree'
   : get?
   ; "( k - v? f ) try to fetch value v for key k. flag indicates success" :doc
 
----reveal---
+
   : -> ensure
-  ; "( k-a ) find/create address of value slot for key, setting up for @/! " :doc
-}}
-;chain
+  ; "( k-a ) find/create value slot for key." :doc
 
 
-doc{
-======
-btree'
-======
-
---------
-Overview
---------
-Provides an implementation of B+ Trees for retro.
-
---------
-Example:
---------
-
-}doc
-
-with btree'
+( -- example usage --- )
+( with btree' )
 100 -> 0 !
 200 -> 2 !
 300 -> 3 !
-without
+( without )
