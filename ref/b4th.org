@@ -1,33 +1,103 @@
 #+title: b4th
 
-
-* bootstrap plan
-PROPERTIES:
-:TS: <2013-02-16 08:50AM>
-:ID: ndpdhyu0v0g0
-:END:
-
-boot $okmsg $^heap
-
-( compiler macros )
-.r { .h      } ( repeat )
-.u { .jump,, } ( until )
-
-
-| boot    |   |   | ( put boot code here )          | falls through to main |
-| main    | ? | ? | DRP prompt find process main    | tail call recursion   |
-| prompt  |   | $ | NOP NOP $okmsg wr:s RET         | revectorable          |
-| wr:s    | $ |   | NOP NOP .r DUP 0 EQ .u DRP RET  |                       |
-| accept  | n | $ | NOP NOP 32 accept               |                       |
-| find    |   |   |                                 |                       |
-| process | ? | ? |                                 |                       |
-
-* TODO create a simple game in pascal. translate to assembly. (mastermind?)
+* TODO [1/6] b4th : a bootstrapped forth-like environment
 :PROPERTIES:
-:TS: <2013-02-16 07:23AM>
-:ID: e6v3wwq0v0g0
+:TS: <2013-02-26 10:49AM>
+:ID: cp73or9181g0
+:END:
+** TODO license and header
+:PROPERTIES:
+:TS: <2013-02-26 10:51AM>
+:ID: l01epu9181g0
+:END:
+#+begin_src b4th
+# b4th : a bootstrapped forth-like environment
+# --------------------------------------------------------------
+# <<isc-license>>
+# --------------------------------------------------------------
+#+end_src
+
+** DONE layout of the image
+:PROPERTIES:
+:TS: <2013-02-25 10:10PM>
+:ID: ihahkx7181g0
+:END:
+#+begin_src b4a :tangle "~/b/b4a/b4th.b4a" :padline yes :noweb tangle
+<<b4:header>
+JMP: --begin-- # jump over the data block
+<<data>>
+<<bios>>
+:--begin--
+<<boot>>
+<<main>>
+#+end_src
+
+** TODO SECT data - the data block
+:PROPERTIES:
+:TS: <2013-02-26 10:17AM>
+:ID: zt36m98181g0
+:END:
+*** DONE Overview of the data block.
+:PROPERTIES:
+:TS: <2013-02-26 10:44AM>
+:ID: 0ys5ji9181g0
 :END:
 
+#+name: @data
+#+begin_src b4a
+# -- DATA ------------------------------------------------------
+<<data:end>
+#+end_src
+
+We will use the first 256-cell block (1KB) to hold global variables and system buffers.
+
+Since the VM treats any number that is not an opcode as a call to a routine, this means the first 256 numbers can be used as opcodes. The default implementation requires only 30 opcodes, which leaves users plenty of room to add new opcodes if they want to experiment.
+
+*** TODO End data block.
+:PROPERTIES:
+:TS: <2013-02-26 10:44AM>
+:ID: dzshri9181g0
+:END:
+
+Now, tell the assembler to pad the rest of the 256-cell block with zeros.
+
+#+name: data:end
+#+begin_src b4a
+ # <- http://en.wikipedia.org/wiki/End_Transmission_Block_character
+#+end_src
+
+** TODO SECT bios - basic input/output system
+:PROPERTIES:
+:TS: <2013-02-26 10:37AM>
+:ID: am5dc69181g0
+:END:
+#+name: bios
+#+begin_src b4a
+# -- BIOS ------------------------------------------------------
+:bios
+#+end_src
+
+** TODO SECT boot - the boot process
+:PROPERTIES:
+:TS: <2013-02-26 10:18AM>
+:ID: 4v4j6b8181g0
+:END:
+#+name: boot
+#+begin_src b4a
+# -- BOOT --( boot process )------------------------------------
+#+end_src
+
+** TODO SECT main - main loop
+:PROPERTIES:
+:TS: <2013-02-26 10:36AM>
+:ID: wqoew49181g0
+:END:
+#name: main
+#+begin_src b4a
+# -- MAIN --( the main loop of the system )---------------------
+:mainloop
+JMP: mainloop
+#+end_src
 
 * TODO describe the stack machine's algorithm
 :PROPERTIES:
@@ -44,8 +114,6 @@ boot $okmsg $^heap
 :TS: <2013-02-16 07:00AM>
 :ID: l8z7nvp0v0g0
 :END:
-
-
 * NOTE . create an assembler via stepwise refinement
 :PROPERTIES:
 :TS: <2013-02-16 07:21AM>
@@ -61,8 +129,6 @@ boot $okmsg $^heap
 :TS: <2013-02-16 07:20AM>
 :ID: qcue5tq0v0g0
 :END:
-
-
 * NOTE . block usage policy
 :PROPERTIES:
 :TS: <2013-02-16 06:20AM>
@@ -122,8 +188,6 @@ In fact, I could just stipulate that up front: the first 16KB are reserved for t
 :TS: <2013-02-16 06:35AM>
 :ID: bjuexoo0v0g0
 :END:
-
-
 
 * TODO build a forth
 :PROPERTIES:
@@ -213,10 +277,39 @@ An async version might check a specific port for a signal.
 :END:
 
 
+* --- unfiled ---
+:PROPERTIES:
+:TS: <2013-02-26 08:23PM>
+:ID: 0623cql091g0
+:END:
+** JUNK bootstrap plan
+PROPERTIES:
+:TS: <2013-02-16 08:50AM>
+:ID: ndpdhyu0v0g0
+:END:
+
+boot $okmsg $^heap
+
+( compiler macros )
+.r { .h      } ( repeat )
+.u { .jump,, } ( until )
 
 
-* APPENDIX required word set from 1983
-**  Nucleus layer
+| boot    |   |   | ( put boot code here )          | falls through to main |
+| main    | ? | ? | DRP prompt find process main    | tail call recursion   |
+| prompt  |   | $ | NOP NOP $okmsg wr:s RET         | revectorable          |
+| wr:s    | $ |   | NOP NOP .r DUP 0 EQ .u DRP RET  |                       |
+| accept  | n | $ | NOP NOP 32 accept               |                       |
+| find    |   |   |                                 |                       |
+| process | ? | ? |                                 |                       |
+
+** IDEA create a simple game in pascal. translate to assembly. (mastermind?)
+:PROPERTIES:
+:TS: <2013-02-16 07:23AM>
+:ID: e6v3wwq0v0g0
+:END:
+** APPENDIX required word set from 1983
+*** Nucleus layer
 
 !  *  */  */MOD  +  +!  -  /  /MOD  0<  0=  0>  1+  1-  2+
 2-  2/  <  =  >  >R  ?DUP  @  ABS  AND  C!  C@  CMOVE
@@ -224,19 +317,19 @@ CMOVE>  COUNT  D+  D<  DEPTH  DNEGATE  DROP  DUP  EXECUTE
 EXIT  FILL  I  J  MAX  MIN  MOD  NEGATE  NOT  OR  OVER  PICK
 R>  R@  ROLL  ROT  SWAP  U<  UM*  UM/MOD  XOR
 
-** Device layer
+*** Device layer
 
 BLOCK  BUFFER  CR  EMIT  EXPECT  FLUSH  KEY  SAVE-BUFFERS
 SPACE  SPACES  TYPE  UPDATE
 
-** Interpreter layer
+*** Interpreter layer
 
 #  #>  #S  #TIB  '  (  -TRAILING  .  .(  <#  >BODY  >IN
 ABORT  BASE  BLK  CONVERT  DECIMAL  DEFINITIONS  FIND
 FORGET  FORTH  FORTH-83  HERE  HOLD  LOAD  PAD  QUIT  SIGN
 SPAN  TIB  U.  WORD
 
-** Compiler layer
+*** Compiler layer
 
 +LOOP  ,  ."  :  ;  ABORT"  ALLOT  BEGIN  COMPILE  CONSTANT
 CREATE  DO  DOES>  ELSE  IF  IMMEDIATE  LEAVE  LITERAL  LOOP
