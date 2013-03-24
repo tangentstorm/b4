@@ -1,0 +1,87 @@
+ #+title: rct: retro color terminal
+
+* The RCT API
+:PROPERTIES:
+:TS: <2013-03-24 12:48AM>
+:ID: lvsex5t062g0
+:END:
+** TODO text window management
+ClrEol :: Clear from cursor position till end of line.
+ClrScr :: Clear current window.
+DelLine :: Delete line at cursor position.
+InsLine :: Insert an empty line at cursor position
+Window :: Create new window on screen.
+
+** TODO cursor control
+cursorbig :: Show big cursor
+cursoroff :: Hide cursor
+cursoron :: Display cursor
+GotoXY :: Set cursor position on screen.
+WhereX :: Return X (horizontal) cursor position
+WhereY :: Return Y (vertical) cursor position
+/WindMax/
+/WindMaxX/
+/WindMaxY/
+/WindMin/
+/WindMinX/
+/WindMxnY/
+
+** TODO keyboard input
+KeyPressed :: Check if there is a keypress in the keybuffer
+ReadKey :: Read key from keybuffer
+/CheckBreak/
+/CheckEOF/
+
+** TODO sound
+Sound :: Sound system speaker
+NoSound :: Stop system speaker
+
+** TODO time
+Delay :: Delay program execution.
+
+** TODO color
+HighVideo :: Switch to highlighted text mode
+LowVideo :: Switch to low intensity colors.
+NormVideo :: Return to normal (startup) modus
+TextBackground :: Set text background
+TextColor :: Set text color
+TextMode :: Set screen mode.
+/TextAttr/
+
+** TODO canvas graphics (graph module)
+
+** TODO mouse
+
+** TODO gamepad
+
+** TODO misc
+AssignCrt :: Assign file to CRT.
+
+
+* Implementation Plan
+ :PROPERTIES:
+ :TS: <2013-03-24 12:48AM>
+ :ID: q77bl5t062g0
+ :END:
+** Start with =putpixel= (or a modern, OpenGL-powered substitute)
+:PROPERTIES:
+:TS: <2013-03-24 12:49AM>
+:ID: o875q7t062g0
+:END:
+** Show how to draw bitmapped fonts.
+:PROPERTIES:
+:TS: <2013-03-24 12:52AM>
+:ID: sa3dkct062g0
+:END:
+** Display bitmapped fonts on a spritesheet.
+:PROPERTIES:
+:TS: <2013-03-24 12:52AM>
+:ID: kxphidt062g0
+:END:
+
+** The text buffer is very much like an image itself.
+:PROPERTIES:
+:TS: <2013-03-24 12:55AM>
+:ID: bdge3it062g0
+:END:
+Instead of ARGB we have FBPC -> foreground, background, (unicode) page, character.
