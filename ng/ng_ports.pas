@@ -39,8 +39,8 @@ unit ng.ports; implementation
   { keyboard handler }
   function vm.handle_keyboard( msg : int32 ) : int32;
   begin
-    vdpRenderDisplay(vdp);
-    result := ord (vdpPollKeyboard(vdp));
+    vdp.RenderDisplay;
+    result := ord(vdp.PollKeyboard);
   end;
 
   { input file handler }
@@ -85,14 +85,16 @@ unit ng.ports; implementation
 
     procedure cursorBackspace; inline;
     begin
-      attr[1] := 0; vdpWriteAttrMap(vdp, adr, attr);
-      vdpWriteCharMap(vdp, adr, 0);
+      attr[1] := 0;
+      vdp.WriteAttrMap(adr, attr);
+      vdp.WriteCharMap(adr, 0);
       if (cx < cScnCol-1) and (cx > 0) then cx := cx - 1;
     end;
 
     procedure cursorReturn; inline;
     begin
-      attr[1] := 0; vdpWriteAttrMap(vdp, adr, attr);
+      attr[1] := 0;
+      vdp.WriteAttrMap(adr, attr);
       cy := cy + 1; cx := 0;
       if cy > cScnRow-1 then begin
          clear; cy := 0; cx := 0; end;
@@ -108,12 +110,15 @@ unit ng.ports; implementation
                                 ^M: ; end;
                         end;
       adr := cy * cScnCol + cx;
-      attr[1] := vdp.rBR; vdpWriteAttrMap(vdp, adr, attr);
-      if x > 31 then begin attr[1] := 0; vdpWriteAttrMap(vdp, adr, attr);
-                           vdpWriteCharMap(vdp, adr, x); end;
+      attr[1] := vdp.rBR; vdp.WriteAttrMap(adr, attr);
+      if x > 31 then begin
+	attr[1] := 0;
+	vdp.WriteAttrMap(adr, attr);
+	vdp.WriteCharMap(adr, x);
+      end;
       if x > 31 then cursorRight;
       if count = refresh then begin
-         count := 0; vdpRenderDisplay(vdp); end;
+	count := 0; vdp.RenderDisplay; end;
     end;
     count := count + 1;
     result := 0;
@@ -232,38 +237,38 @@ unit ng.ports; implementation
 	}
        9:  begin
              data.pop2 (x, y);
-             attr := vdpReadAttrMap(vdp, cScnXRes * y + x);
+	     attr := vdp.ReadAttrMap(cScnXRes * y + x);
              data.push (attr[0]);
              data.push (attr[1]);
            end;
        10: begin
-             data.pop2 (x, y);
-             data.pop2 (h, w);
+             data.pop2(x, y);
+             data.pop2(h, w);
              attr[0] := h; attr[1] := w;
-             vdpWriteAttrMap(vdp, cScnXRes * y + x, attr);
+	     vdp.WriteAttrMap(cScnXRes * y + x, attr);
            end;
        11: begin
-             data.pop2 (x, y);
-             data.push (vdpReadCharMap(vdp, cScnXRes * y + x));
+             data.pop2(x, y);
+	     data.push(vdp.ReadCharMap(cScnXRes * y + x));
            end;
        12: begin
-             data.push (vdpReadBrReg(vdp));
+	     data.push(vdp.ReadBrReg);
            end;
        13: begin
-             data.pop1 (h);
-             vdpWriteBrReg(vdp, h);
+             data.pop1(h);
+	     vdp.WriteBrReg(h);
            end;
        14: begin
-             data.push (vdpReadFgReg(vdp));
+	     data.push(vdp.ReadFgReg);
            end;
        15: begin
-             data.pop1 (h);
-             vdpWriteFgReg(vdp, h);
+             data.pop1(h);
+	     vdp.WriteFgReg(h);
            end;
-       16: vdpRenderDisplay(vdp);
+       16: vdp.RenderDisplay;
        18: begin
              data.pop3 (x, y, h);
-             vdpPlotPixel(vdp, y * cScnXRes + x, h);
+	     vdp.PlotPixel(y * cScnXRes + x, h);
            end;
       else
 	result := -1;

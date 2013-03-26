@@ -1,3 +1,4 @@
+{$mode objfpc}
 unit romVDP;
 
 {This is a simple soft-core of a text-display processor. It features a
@@ -60,7 +61,7 @@ type
 
   tVDPAttrData = array [0..1] of byte;
 
-  tVDP = record
+  TVDP = object
     rFG: longword;
     rBG: longword;
     rBR: longword;
@@ -72,53 +73,30 @@ type
     pBitmap: pSDL_SURFACE;
 
     fError: boolean;
+
+    function Open: boolean;
+    procedure Close;
+    function ReadBrReg: longword;
+    procedure WriteBrReg(Value: longword);
+    function ReadVStartReg: longword;
+    procedure WriteVStartReg(Value: longword);
+    function ReadHStartReg: longword;
+    procedure WriteHStartReg(Value: longword);
+    function ReadFgReg: longword;
+    procedure WriteFgReg(Value: longword);
+    function ReadBgReg: longword;
+    procedure WriteBgReg(Value: longword);
+    function ReadAttrMap(adr: longword): tVDPAttrData;
+    procedure WriteAttrMap(adr: longword; Value: tVDPAttrData);
+    function ReadCharMap(adr: longword): byte;
+    procedure WriteCharMap(adr: longword; Value: byte);
+    procedure PlotPixel(adr: longword; Value: byte);
+    procedure RenderChar(adr: longword; Value: byte);
+    procedure RenderDisplay;
+    procedure Display;
+    function PollKeyboard: char;
   end;
-
-procedure vdpInit;
-function vdpOpen(var self: tVDP): boolean;
-procedure vdpClose(self: tVDP);
-
-function vdpReadBrReg
-  (var self: tVDP): longword;
-procedure vdpWriteBrReg
-  (var self: tVDP; Value: longword);
-function vdpReadVStartReg
-  (var self: tVDP): longword;
-procedure vdpWriteVStartReg
-  (var self: tVDP; Value: longword);
-function vdpReadHStartReg
-  (var self: tVDP): longword;
-procedure vdpWriteHStartReg
-  (var self: tVDP; Value: longword);
-function vdpReadFgReg
-  (var self: tVDP): longword;
-procedure vdpWriteFgReg
-  (var self: tVDP; Value: longword);
-function vdpReadBgReg
-  (var self: tVDP): longword;
-procedure vdpWriteBgReg
-  (var self: tVDP; Value: longword);
-function vdpReadAttrMap
-  (var self: tVDP; adr: longword): tVDPAttrData;
-procedure vdpWriteAttrMap
-  (var self: tVDP; adr: longword; Value: tVDPAttrData);
-function vdpReadCharMap
-  (var self: tVDP; adr: longword): byte;
-procedure vdpWriteCharMap
-  (var self: tVDP; adr: longword; Value: byte);
-procedure vdpPlotPixel
-  (var self: tVDP; adr: longword; Value: byte);
-
-procedure vdpRenderChar
-  (var self: tVDP; adr: longword; Value: byte);
-procedure vdpRenderDisplay
-  (self: tVDP);
-
-procedure vdpDisplay
-  (self: tVDP);
-
-function vdpPollKeyboard
-  (self: tVDP): char;
+  procedure vdpInit;
 
 implementation
 
@@ -129,17 +107,12 @@ var
   cScnColPal: array [0..255] of array [0..2] of byte;
   cScnOfsTab: array [0..cScnChrSize] of longword;
 
-procedure plotPixel(self: tVDP; adr: longword; Value: byte); inline;
+procedure TVDP.PlotPixel(adr: longword; Value: byte); inline;
 begin
   pBitmap := self.pBitmap;
   rBitmap := self.rVStart * cScnXRes + self.rHStart +
     pBitmap^.pixels + adr;
   rBitmap^ := Value;
-end;
-
-procedure vdpPlotPixel(var self: tVDP; adr: longword; Value: byte); inline;
-begin
-  plotPixel(self, adr, Value);
 end;
 
 procedure vdpInit;
@@ -175,15 +148,15 @@ begin
   end;
 end;
 
-function vdpOpen(var self: tVDP): boolean;
+function TVDP.Open: boolean;
 var
   i: longword;
 begin
   self.pBitmap := SDL_SETVIDEOMODE(cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
   if self.pBitmap = nil then
-    vdpOpen := False
+    result := False
   else
-    vdpOpen := True;
+    result := True;
 
   self.rFG := 200;
   self.rBG := 32;
@@ -199,87 +172,74 @@ begin
   self.rVStart := 18;
 end;
 
-procedure vdpClose(self: tVDP);
+procedure TVDP.Close;
 begin
   SDL_FREESURFACE(self.pBitmap);
   SDL_QUIT;
 end;
 
-function vdpReadBrReg
-  (var self: tVDP): longword; inline;
+function TVDP.ReadBrReg: longword; inline;
 begin
-  vdpReadBrReg := self.rBR;
+  result := self.rBR;
 end;
 
-procedure vdpWriteBrReg
-  (var self: tVDP; Value: longword); inline;
+procedure TVDP.WriteBrReg(value : longword); inline;
 begin
   self.rBR := Value;
 end;
 
-function vdpReadVStartReg
-  (var self: tVDP): longword; inline;
+function TVDP.ReadVStartReg: longword; inline;
 begin
-  vdpReadVStartReg := self.rVStart;
+  result := self.rVStart;
 end;
 
-procedure vdpWriteVStartReg
-  (var self: tVDP; Value: longword); inline;
+procedure TVDP.WriteVStartReg(value : longword); inline;
 begin
   self.rVStart := Value;
 end;
 
-function vdpReadHStartReg
-  (var self: tVDP): longword; inline;
+function TVDP.ReadHStartReg: longword; inline;
 begin
-  vdpReadHStartReg := self.rHStart;
+  result := self.rHStart;
 end;
 
-procedure vdpWriteHStartReg
-  (var self: tVDP; Value: longword); inline;
+procedure TVDP.WriteHStartReg(value : longword); inline;
 begin
   self.rHStart := Value;
 end;
 
-function vdpReadFgReg
-  (var self: tVDP): longword; inline;
+function TVDP.ReadFgReg: longword; inline;
 begin
-  vdpReadFgReg := self.rFG;
+  result := self.rFG;
 end;
 
-procedure vdpWriteFgReg
-  (var self: tVDP; Value: longword); inline;
+procedure TVDP.WriteFgReg(value : longword); inline;
 begin
   self.rFG := Value;
 end;
 
-function vdpReadBgReg
-  (var self: tVDP): longword; inline;
+function TVDP.ReadBgReg: longword; inline;
 begin
-  vdpReadBgReg := self.rBG;
+  result := self.rBG;
 end;
 
-procedure vdpWriteBgReg
-  (var self: tVDP; Value: longword); inline;
+procedure TVDP.WriteBgReg(value : longword); inline;
 begin
   self.rBG := Value;
 end;
 
-function vdpReadAttrMap(var self: tVDP; adr: longword): tVDPAttrData;
-var
-  ret: tVDPAttrData;
+function TVDP.ReadAttrMap(adr: longword): tVDPAttrData;
 begin
   if adr > cScnAtrSize then
     self.fError := True
   else
   begin
-    ret[0] := self.aAttrMap[adr];
-    ret[1] := self.aAttrMap[adr + 1];
-    vdpReadAttrMap := ret;
+    result[0] := self.aAttrMap[adr];
+    result[1] := self.aAttrMap[adr + 1];
   end;
 end;
 
-procedure vdpWriteAttrMap(var self: tVDP; adr: longword; Value: tVDPAttrData);
+procedure TVDP.WriteAttrMap(adr: longword; Value: tVDPAttrData);
 begin
   adr := adr * 2;
   if adr > cScnAtrSize then
@@ -291,16 +251,16 @@ begin
   end;
 end;
 
-function vdpReadCharMap(var self: tVDP; adr: longword): byte;
+function TVDP.ReadCharMap(adr: longword): byte;
 begin
   self.fError := False;
   if adr < cScnChrSize then
-    vdpReadCharMap := self.aCharMap[adr]
+    result := self.aCharMap[adr]
   else
     self.fError := True;
 end;
 
-procedure vdpWriteCharMap(var self: tVDP; adr: longword; Value: byte);
+procedure TVDP.WriteCharMap(adr: longword; Value: byte);
 begin
   self.fError := False;
   if adr < cScnChrSize then
@@ -309,7 +269,7 @@ begin
     self.fError := True;
 end;
 
-procedure vdpRenderChar(var self: tVDP; adr: longword; Value: byte);
+procedure TVDP.RenderChar(adr: longword; Value: byte);
 var
   attr: tVDPAttrData;
   chr: taChar;
@@ -319,7 +279,7 @@ var
 begin
   if adr < cScnChrSize then
   begin
-    attr := vdpReadAttrMap(self, adr * 2);
+    attr := self.ReadAttrMap(adr * 2);
     chr := romFontReadChar(self.aCharMap[adr]);
     if attr[0] = 0 then
       fg := self.rFG
@@ -336,9 +296,9 @@ begin
       for j := 0 to cChrXRes - 1 do
       begin
         if ((chr[i] shr 7) and 1) = 1 then
-          plotPixel(self, ofs, fg)
+	  self.plotPixel(ofs, fg)
         else
-          plotPixel(self, ofs, bg);
+	  self.plotPixel(ofs, bg);
         ofs := ofs + 1;
         chr[i] := chr[i] shl 1;
       end;
@@ -349,21 +309,21 @@ begin
     self.fError := True;
 end;
 
-procedure vdpRenderDisplay(self: tVDP);
+procedure TVDP.RenderDisplay;
 var
   i: longword;
 begin
   for i := 0 to cScnChrSize do
-    vdpRenderChar(self, i, self.aCharMap[i]);
+    self.RenderChar(i, self.aCharMap[i]);
   SDL_FLIP(self.pBitmap);
 end;
 
-procedure vdpDisplay(self: tVDP); inline;
+procedure TVDP.Display; inline;
 begin
   SDL_FLIP(self.pBitmap);
 end;
 
-function vdpPollKeyboard(self: tVDP): char;
+function TVDP.PollKeyboard: char;
 var
   done: boolean;
   evt: pSDL_Event;
@@ -383,7 +343,7 @@ begin
           begin
             ch := chr(key);
             done := True;
-            vdpPollKeyboard := ch;
+            result := ch;
           end;
         end;
         SDL_QUITEV: halt;
