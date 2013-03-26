@@ -1,4 +1,4 @@
-UNIT romVDP;
+unit romVDP;
 
 {This is a simple soft-core of a text-display processor. It features a
  resolution of 99 columns x 40 rows and 256 colours. There exist three
@@ -30,315 +30,366 @@ UNIT romVDP;
  The aternative way is to handle all maps as seperate memory areas.
  The choice is by you !}
 
-INTERFACE USES romFont,SDL;
+interface
 
-CONST cScnXRes    = 800;
-      cScnYRes    = 600;
-      cScnCRes    = 8;
-      cChrXRes    = 8;
-      cChrYRes    = 14;
-      cScnCol     = 100-1;
-      cScnRow     = 40;
-      cScnHLine   = $2BC0;
-      cScnAtrMap  = $FA0;
-      cScnFntDta  = $2EE0;
-      cScnChrSize = $FA0-$28;
-      cScnAtrSize = $1F40;
-      cScnFntSize = $E00;
+uses romFont, SDL;
 
-TYPE  tKeymap = ARRAY [0..9] OF ARRAY [0..1] OF CHAR;
+const
+  cScnXRes = 800;
+  cScnYRes = 600;
+  cScnCRes = 8;
+  cChrXRes = 8;
+  cChrYRes = 14;
+  cScnCol = 100 - 1;
+  cScnRow = 40;
+  cScnHLine = $2BC0;
+  cScnAtrMap = $FA0;
+  cScnFntDta = $2EE0;
+  cScnChrSize = $FA0 - $28;
+  cScnAtrSize = $1F40;
+  cScnFntSize = $E00;
 
-      tVDPData = RECORD
-                   fontData   : taChar;
-                   chrMapData : BYTE;
-                   atrMapData : ARRAY [0..1] OF BYTE;
-                 END;
+type
+  tKeymap = array [0..9] of array [0..1] of char;
 
-      tVDPAttrData = ARRAY [0..1] OF BYTE;
+  tVDPData = record
+    fontData: taChar;
+    chrMapData: byte;
+    atrMapData: array [0..1] of byte;
+  end;
 
-      tVDP = RECORD
-              rFG     : LONGWORD;
-              rBG     : LONGWORD;
-              rBR     : LONGWORD;
-              rHStart : LONGWORD;
-              rVStart : LONGWORD;
-              
-              aCharMap : ARRAY [0..cScnChrSize] OF BYTE;
-              aAttrMap : ARRAY [0..cScnAtrSize] OF BYTE;
-              pBitmap  : pSDL_SURFACE;
-              
-              fError : BOOLEAN;
-            END;
+  tVDPAttrData = array [0..1] of byte;
 
-PROCEDURE vdpInit;         
-FUNCTION  vdpOpen  (VAR handle : tVDP) : BOOLEAN;
-PROCEDURE vdpClose (handle : tVDP);
+  tVDP = record
+    rFG: longword;
+    rBG: longword;
+    rBR: longword;
+    rHStart: longword;
+    rVStart: longword;
 
-FUNCTION  vdpReadBrReg
-  (VAR handle : tVDP) : LONGWORD;
-PROCEDURE vdpWriteBrReg
-  (VAR handle : tVDP; value : LONGWORD);
-FUNCTION  vdpReadVStartReg
-  (VAR handle : tVDP) : LONGWORD;
-PROCEDURE vdpWriteVStartReg
-  (VAR handle : tVDP; value : LONGWORD);
-FUNCTION  vdpReadHStartReg
-  (VAR handle : tVDP) : LONGWORD;
-PROCEDURE vdpWriteHStartReg
-  (VAR handle : tVDP; value : LONGWORD);
-FUNCTION  vdpReadFgReg
-  (VAR handle : tVDP) : LONGWORD;
-PROCEDURE vdpWriteFgReg
-  (VAR handle : tVDP; value : LONGWORD);
-FUNCTION  vdpReadBgReg
-  (VAR handle : tVDP) : LONGWORD;
-PROCEDURE vdpWriteBgReg
-  (VAR handle : tVDP; value : LONGWORD);
-FUNCTION  vdpReadAttrMap
-  (VAR handle : tVDP; adr : LONGWORD) : tVDPAttrData;
-PROCEDURE vdpWriteAttrMap
-  (VAR handle : tVDP; adr : LONGWORD; value : tVDPAttrData);
-FUNCTION  vdpReadCharMap
-  (VAR handle : tVDP; adr : LONGWORD) : BYTE;
-PROCEDURE vdpWriteCharMap
-  (VAR handle : tVDP; adr : LONGWORD; value : BYTE);
-PROCEDURE vdpPlotPixel
-  (VAR handle : tVDP; adr : LONGWORD; value : BYTE);
+    aCharMap: array [0..cScnChrSize] of byte;
+    aAttrMap: array [0..cScnAtrSize] of byte;
+    pBitmap: pSDL_SURFACE;
 
-PROCEDURE vdpRenderChar
-  (VAR handle : tVDP; adr : LONGWORD; value : BYTE);
-PROCEDURE vdpRenderDisplay
-  (handle : tVDP);
-  
-PROCEDURE vdpDisplay
-  (handle : tVDP);
+    fError: boolean;
+  end;
 
-FUNCTION vdpPollKeyboard
-  (handle : tVDP) : CHAR;
-  
-IMPLEMENTATION
+procedure vdpInit;
+function vdpOpen(var handle: tVDP): boolean;
+procedure vdpClose(handle: tVDP);
 
-VAR pBitmap : pSDL_SURFACE;
-    rBitmap : ^LONGWORD;
-        
-    cScnColPal : ARRAY [0..255] OF ARRAY [0..2] OF BYTE;
-    cScnOfsTab : ARRAY [0..cScnChrSize] OF LONGWORD;
-              
-PROCEDURE plotPixel
-(handle : tVDP; adr : LONGWORD; value : BYTE); INLINE;
-BEGIN
-  pBitmap  := handle.pBitmap;
-  rBitmap  := handle.rVStart  * cScnXRes + handle.rHStart + 
-              pBitmap^.pixels + adr;
-  rBitmap^ := value;
-END;
+function vdpReadBrReg
+  (var handle: tVDP): longword;
+procedure vdpWriteBrReg
+  (var handle: tVDP; Value: longword);
+function vdpReadVStartReg
+  (var handle: tVDP): longword;
+procedure vdpWriteVStartReg
+  (var handle: tVDP; Value: longword);
+function vdpReadHStartReg
+  (var handle: tVDP): longword;
+procedure vdpWriteHStartReg
+  (var handle: tVDP; Value: longword);
+function vdpReadFgReg
+  (var handle: tVDP): longword;
+procedure vdpWriteFgReg
+  (var handle: tVDP; Value: longword);
+function vdpReadBgReg
+  (var handle: tVDP): longword;
+procedure vdpWriteBgReg
+  (var handle: tVDP; Value: longword);
+function vdpReadAttrMap
+  (var handle: tVDP; adr: longword): tVDPAttrData;
+procedure vdpWriteAttrMap
+  (var handle: tVDP; adr: longword; Value: tVDPAttrData);
+function vdpReadCharMap
+  (var handle: tVDP; adr: longword): byte;
+procedure vdpWriteCharMap
+  (var handle: tVDP; adr: longword; Value: byte);
+procedure vdpPlotPixel
+  (var handle: tVDP; adr: longword; Value: byte);
 
-PROCEDURE vdpPlotPixel
-(VAR handle : tVDP; adr : LONGWORD; value : BYTE); INLINE;
-BEGIN
-  plotPixel (handle, adr, value);
-END;
+procedure vdpRenderChar
+  (var handle: tVDP; adr: longword; Value: byte);
+procedure vdpRenderDisplay
+  (handle: tVDP);
 
-PROCEDURE vdpInit;
-  VAR i,j,n,m : LONGWORD;
-BEGIN
+procedure vdpDisplay
+  (handle: tVDP);
+
+function vdpPollKeyboard
+  (handle: tVDP): char;
+
+implementation
+
+var
+  pBitmap: pSDL_SURFACE;
+  rBitmap: ^longword;
+
+  cScnColPal: array [0..255] of array [0..2] of byte;
+  cScnOfsTab: array [0..cScnChrSize] of longword;
+
+procedure plotPixel(handle: tVDP; adr: longword; Value: byte); inline;
+begin
+  pBitmap := handle.pBitmap;
+  rBitmap := handle.rVStart * cScnXRes + handle.rHStart +
+    pBitmap^.pixels + adr;
+  rBitmap^ := Value;
+end;
+
+procedure vdpPlotPixel(var handle: tVDP; adr: longword; Value: byte); inline;
+begin
+  plotPixel(handle, adr, Value);
+end;
+
+procedure vdpInit;
+var
+  i, j, n, m: longword;
+begin
   SDL_INIT(SDL_INIT_VIDEO);
   SDL_EnableUnicode(1);
   SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 
   {transformation table bitmap address -> character offset}
-  
-  m := 0; n := 0;
-  FOR i := 1 TO cScnRow DO BEGIN
-    FOR j := 1 TO cScnCol DO BEGIN cScnOfsTab[m] := n;
-      n := n + 8; m := m + 1; END;
-    n := i * cScnHLine; END;
-  
+
+  m := 0;
+  n := 0;
+  for i := 1 to cScnRow do
+  begin
+    for j := 1 to cScnCol do
+    begin
+      cScnOfsTab[m] := n;
+      n := n + 8;
+      m := m + 1;
+    end;
+    n := i * cScnHLine;
+  end;
+
   {init linear grayscale palette}
-  
-  FOR i := 0 TO 255 DO BEGIN
-    cScnColPal[i][0] := i; cScnColPal[i][1] := i;
-    cScnColPal[i][2] := i; END;
-END;
 
-FUNCTION vdpOpen
-(VAR handle : tVDP) : BOOLEAN;
-  VAR i : LONGWORD;
-BEGIN
-  handle.pBitmap := SDL_SETVIDEOMODE (cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
-  IF handle.pBitmap = NIL THEN vdpOpen := FALSE ELSE vdpOpen := TRUE;
+  for i := 0 to 255 do
+  begin
+    cScnColPal[i][0] := i;
+    cScnColPal[i][1] := i;
+    cScnColPal[i][2] := i;
+  end;
+end;
 
-  handle.rFG := 200; handle.rBG := 32; handle.rBR := 128;
-  handle.fError := FALSE;
-  
-  FOR i := 0 TO cScnChrSize DO handle.aCharMap[i] := 0;
-  FOR i := 0 TO cScnAtrSize DO handle.aAttrMap[i] := 0;
-  
-  handle.rHStart := 4; handle.rVStart := 18;  
-END;
+function vdpOpen(var handle: tVDP): boolean;
+var
+  i: longword;
+begin
+  handle.pBitmap := SDL_SETVIDEOMODE(cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
+  if handle.pBitmap = nil then
+    vdpOpen := False
+  else
+    vdpOpen := True;
 
-PROCEDURE vdpClose
-(handle : tVDP);
-BEGIN
-  SDL_FREESURFACE (handle.pBitmap);
+  handle.rFG := 200;
+  handle.rBG := 32;
+  handle.rBR := 128;
+  handle.fError := False;
+
+  for i := 0 to cScnChrSize do
+    handle.aCharMap[i] := 0;
+  for i := 0 to cScnAtrSize do
+    handle.aAttrMap[i] := 0;
+
+  handle.rHStart := 4;
+  handle.rVStart := 18;
+end;
+
+procedure vdpClose(handle: tVDP);
+begin
+  SDL_FREESURFACE(handle.pBitmap);
   SDL_QUIT;
-END;
+end;
 
-FUNCTION  vdpReadBrReg
-  (VAR handle : tVDP) : LONGWORD; INLINE;
-BEGIN
+function vdpReadBrReg
+  (var handle: tVDP): longword; inline;
+begin
   vdpReadBrReg := handle.rBR;
-END;
+end;
 
-PROCEDURE vdpWriteBrReg
-  (VAR handle : tVDP; value : LONGWORD); INLINE;
-BEGIN
-  handle.rBR := value;
-END;
+procedure vdpWriteBrReg
+  (var handle: tVDP; Value: longword); inline;
+begin
+  handle.rBR := Value;
+end;
 
-FUNCTION  vdpReadVStartReg
-  (VAR handle : tVDP) : LONGWORD; INLINE;
-BEGIN
+function vdpReadVStartReg
+  (var handle: tVDP): longword; inline;
+begin
   vdpReadVStartReg := handle.rVStart;
-END;
+end;
 
-PROCEDURE vdpWriteVStartReg
-  (VAR handle : tVDP; value : LONGWORD); INLINE;
-BEGIN
-  handle.rVStart := value;
-END;
+procedure vdpWriteVStartReg
+  (var handle: tVDP; Value: longword); inline;
+begin
+  handle.rVStart := Value;
+end;
 
-FUNCTION  vdpReadHStartReg
-  (VAR handle : tVDP) : LONGWORD; INLINE;
-BEGIN
+function vdpReadHStartReg
+  (var handle: tVDP): longword; inline;
+begin
   vdpReadHStartReg := handle.rHStart;
-END;
+end;
 
-PROCEDURE vdpWriteHStartReg
-  (VAR handle : tVDP; value : LONGWORD); INLINE;
-BEGIN
-  handle.rHStart := value;
-END;
+procedure vdpWriteHStartReg
+  (var handle: tVDP; Value: longword); inline;
+begin
+  handle.rHStart := Value;
+end;
 
-FUNCTION  vdpReadFgReg
-  (VAR handle : tVDP) : LONGWORD; INLINE;
-BEGIN
+function vdpReadFgReg
+  (var handle: tVDP): longword; inline;
+begin
   vdpReadFgReg := handle.rFG;
-END;
+end;
 
-PROCEDURE vdpWriteFgReg
-  (VAR handle : tVDP; value : LONGWORD); INLINE;
-BEGIN
-  handle.rFG := value;
-END;
+procedure vdpWriteFgReg
+  (var handle: tVDP; Value: longword); inline;
+begin
+  handle.rFG := Value;
+end;
 
-FUNCTION  vdpReadBgReg
-  (VAR handle : tVDP) : LONGWORD; INLINE;
-BEGIN
+function vdpReadBgReg
+  (var handle: tVDP): longword; inline;
+begin
   vdpReadBgReg := handle.rBG;
-END;
+end;
 
-PROCEDURE vdpWriteBgReg
-  (VAR handle : tVDP; value : LONGWORD); INLINE;
-BEGIN
-  handle.rBG := value;
-END;
+procedure vdpWriteBgReg
+  (var handle: tVDP; Value: longword); inline;
+begin
+  handle.rBG := Value;
+end;
 
-FUNCTION vdpReadAttrMap
-(VAR handle : tVDP; adr : LONGWORD) : tVDPAttrData;
-  VAR ret : tVDPAttrData;
-BEGIN
-  IF adr > cScnAtrSize THEN handle.fError := TRUE ELSE BEGIN
-     ret[0] := handle.aAttrMap[adr]; ret[1] := handle.aAttrMap[adr+1];
-     vdpReadAttrMap := ret;
-  END;
-END;
+function vdpReadAttrMap(var handle: tVDP; adr: longword): tVDPAttrData;
+var
+  ret: tVDPAttrData;
+begin
+  if adr > cScnAtrSize then
+    handle.fError := True
+  else
+  begin
+    ret[0] := handle.aAttrMap[adr];
+    ret[1] := handle.aAttrMap[adr + 1];
+    vdpReadAttrMap := ret;
+  end;
+end;
 
-PROCEDURE vdpWriteAttrMap
-(VAR handle : tVDP; adr : LONGWORD; value : tVDPAttrData);
-BEGIN
+procedure vdpWriteAttrMap(var handle: tVDP; adr: longword; Value: tVDPAttrData);
+begin
   adr := adr * 2;
-  IF adr > cScnAtrSize THEN handle.fError := TRUE ELSE BEGIN
-     handle.aAttrMap[adr] := value[0]; handle.aAttrMap[adr+1] := value[1];
-  END;
-END;
+  if adr > cScnAtrSize then
+    handle.fError := True
+  else
+  begin
+    handle.aAttrMap[adr] := Value[0];
+    handle.aAttrMap[adr + 1] := Value[1];
+  end;
+end;
 
-FUNCTION vdpReadCharMap
-(VAR handle : tVDP; adr : LONGWORD) : BYTE;
-BEGIN
-  handle.fError := FALSE;
-  IF adr < cScnChrSize THEN vdpReadCharMap := handle.aCharMap[adr] ELSE
-     handle.fError := TRUE;
-END;
+function vdpReadCharMap(var handle: tVDP; adr: longword): byte;
+begin
+  handle.fError := False;
+  if adr < cScnChrSize then
+    vdpReadCharMap := handle.aCharMap[adr]
+  else
+    handle.fError := True;
+end;
 
-PROCEDURE vdpWriteCharMap
-(VAR handle : tVDP; adr : LONGWORD; value : BYTE);
-BEGIN
-  handle.fError := FALSE;
-  IF adr < cScnChrSize THEN handle.aCharMap[adr] := value ELSE
-    handle.fError := TRUE;
-END;
+procedure vdpWriteCharMap(var handle: tVDP; adr: longword; Value: byte);
+begin
+  handle.fError := False;
+  if adr < cScnChrSize then
+    handle.aCharMap[adr] := Value
+  else
+    handle.fError := True;
+end;
 
-PROCEDURE vdpRenderChar
-(VAR handle : tVDP; adr : LONGWORD; value : BYTE);
-  VAR attr  : tVDPAttrData;
-      chr   : taChar;
-      ofs   : LONGWORD;
-      i,j   : LONGWORD;
-      fg,bg : LONGWORD;
-BEGIN
-  IF adr < cScnChrSize THEN BEGIN
-    attr := vdpReadAttrMap  (handle, adr * 2);
-    chr  := romFontReadChar (handle.aCharMap[adr]);
-    IF attr[0] = 0 THEN fg := handle.rFG ELSE fg := attr[0];
-    IF attr[1] = 0 THEN bg := handle.rBG ELSE bg := attr[1];
+procedure vdpRenderChar(var handle: tVDP; adr: longword; Value: byte);
+var
+  attr: tVDPAttrData;
+  chr: taChar;
+  ofs: longword;
+  i, j: longword;
+  fg, bg: longword;
+begin
+  if adr < cScnChrSize then
+  begin
+    attr := vdpReadAttrMap(handle, adr * 2);
+    chr := romFontReadChar(handle.aCharMap[adr]);
+    if attr[0] = 0 then
+      fg := handle.rFG
+    else
+      fg := attr[0];
+    if attr[1] = 0 then
+      bg := handle.rBG
+    else
+      bg := attr[1];
     ofs := cScnOfsTab[adr];
-    
-    FOR i := 0 TO cChrYRes-1 DO BEGIN
-      FOR j := 0 TO cChrXRes-1 DO BEGIN 
-        IF ((chr[i] SHR 7) AND 1) = 1 THEN plotPixel (handle, ofs, fg)
-                                      ELSE plotPixel (handle, ofs, bg);
+
+    for i := 0 to cChrYRes - 1 do
+    begin
+      for j := 0 to cChrXRes - 1 do
+      begin
+        if ((chr[i] shr 7) and 1) = 1 then
+          plotPixel(handle, ofs, fg)
+        else
+          plotPixel(handle, ofs, bg);
         ofs := ofs + 1;
-        chr[i] := chr[i] SHL 1;
-      END;
+        chr[i] := chr[i] shl 1;
+      end;
       ofs := (ofs + cScnXRes) - cChrXRes;
-    END;
-  END ELSE handle.fError := TRUE;
-END;
+    end;
+  end
+  else
+    handle.fError := True;
+end;
 
-PROCEDURE vdpRenderDisplay
-(handle : tVDP);
-  VAR i : LONGWORD;
-BEGIN
-  FOR i := 0 TO cScnChrSize DO vdpRenderChar (handle, i, handle.aCharMap[i]);
-  SDL_FLIP (handle.pBitmap);
-END;
-  
-PROCEDURE vdpDisplay
-(handle : tVDP); INLINE;
-BEGIN
-  SDL_FLIP (handle.pBitmap);
-END;
+procedure vdpRenderDisplay(handle: tVDP);
+var
+  i: longword;
+begin
+  for i := 0 to cScnChrSize do
+    vdpRenderChar(handle, i, handle.aCharMap[i]);
+  SDL_FLIP(handle.pBitmap);
+end;
 
-FUNCTION vdpPollKeyboard
-(handle : tVDP) : CHAR;
-  VAR done : BOOLEAN;
-      evt  : pSDL_Event;
-      key  : TSDLKey;
-      ch   : char;
-BEGIN
-  done := false;
-  NEW( evt );
+procedure vdpDisplay(handle: tVDP); inline;
+begin
+  SDL_FLIP(handle.pBitmap);
+end;
 
-  REPEAT IF SDL_PollEvent(evt) = 1 THEN
-    CASE evt^.type_ OF
-      SDL_KEYDOWN  : BEGIN key := evt^.key.keysym.unicode;
-                           IF key IN [ 1 .. 255 ] THEN BEGIN ch := chr(key);
-                              done := true; vdpPollKeyboard := ch; END;
-                     END;
-      SDL_QUITEV   : halt; END;
-  UNTIL done;
-END;
+function vdpPollKeyboard(handle: tVDP): char;
+var
+  done: boolean;
+  evt: pSDL_Event;
+  key: TSDLKey;
+  ch: char;
+begin
+  done := False;
+  NEW(evt);
 
-BEGIN
-END.
+  repeat
+    if SDL_PollEvent(evt) = 1 then
+      case evt^.type_ of
+        SDL_KEYDOWN:
+        begin
+          key := evt^.key.keysym.unicode;
+          if key in [1 .. 255] then
+          begin
+            ch := chr(key);
+            done := True;
+            vdpPollKeyboard := ch;
+          end;
+        end;
+        SDL_QUITEV: halt;
+      end;
+  until done;
+end;
+
+begin
+end.
