@@ -39,8 +39,8 @@ unit ng.ports; implementation
   { keyboard handler }
   function vm.handle_keyboard( msg : int32 ) : int32;
   begin
-    vdpRenderDisplay (tScreen);
-    result := ord (vdpPollKeyboard (tScreen));
+    vdpRenderDisplay(vdp);
+    result := ord (vdpPollKeyboard(vdp));
   end;
 
   { input file handler }
@@ -61,8 +61,8 @@ unit ng.ports; implementation
   procedure vm.clear;
     var i : longword;
   begin
-    for i := 0 to cScnChrSize do tScreen.aCharMap[i] := 0;
-    for i := 0 to cScnAtrSize do tScreen.aAttrMap[i] := 0;
+    for i := 0 to cScnChrSize do vdp.aCharMap[i] := 0;
+    for i := 0 to cScnAtrSize do vdp.aAttrMap[i] := 0;
     cx := 0; cy := 0;
   end;
 
@@ -85,14 +85,14 @@ unit ng.ports; implementation
 
     procedure cursorBackspace; inline;
     begin
-      attr[1] := 0; vdpWriteAttrMap (tScreen, adr, attr);
-      vdpWriteCharMap (tScreen, adr, 0);
+      attr[1] := 0; vdpWriteAttrMap(vdp, adr, attr);
+      vdpWriteCharMap(vdp, adr, 0);
       if (cx < cScnCol-1) and (cx > 0) then cx := cx - 1;
     end;
 
     procedure cursorReturn; inline;
     begin
-      attr[1] := 0; vdpWriteAttrMap (tScreen, adr, attr);
+      attr[1] := 0; vdpWriteAttrMap(vdp, adr, attr);
       cy := cy + 1; cx := 0;
       if cy > cScnRow-1 then begin
          clear; cy := 0; cx := 0; end;
@@ -108,12 +108,12 @@ unit ng.ports; implementation
                                 ^M: ; end;
                         end;
       adr := cy * cScnCol + cx;
-      attr[1] := tScreen.rBR; vdpWriteAttrMap (tScreen, adr, attr);
-      if x > 31 then begin attr[1] := 0; vdpWriteAttrMap (tScreen, adr, attr);
-                           vdpWriteCharMap (tScreen, adr, x); end;
+      attr[1] := vdp.rBR; vdpWriteAttrMap(vdp, adr, attr);
+      if x > 31 then begin attr[1] := 0; vdpWriteAttrMap(vdp, adr, attr);
+                           vdpWriteCharMap(vdp, adr, x); end;
       if x > 31 then cursorRight;
       if count = refresh then begin
-         count := 0; vdpRenderDisplay (tScreen); end;
+         count := 0; vdpRenderDisplay(vdp); end;
     end;
     count := count + 1;
     result := 0;
@@ -232,7 +232,7 @@ unit ng.ports; implementation
 	}
        9:  begin
              data.pop2 (x, y);
-             attr := vdpReadAttrMap (tScreen, cScnXRes * y + x);
+             attr := vdpReadAttrMap(vdp, cScnXRes * y + x);
              data.push (attr[0]);
              data.push (attr[1]);
            end;
@@ -240,30 +240,30 @@ unit ng.ports; implementation
              data.pop2 (x, y);
              data.pop2 (h, w);
              attr[0] := h; attr[1] := w;
-             vdpWriteAttrMap (tScreen, cScnXRes * y + x, attr);
+             vdpWriteAttrMap(vdp, cScnXRes * y + x, attr);
            end;
        11: begin
              data.pop2 (x, y);
-             data.push (vdpReadCharMap (tScreen, cScnXRes * y + x));
+             data.push (vdpReadCharMap(vdp, cScnXRes * y + x));
            end;
        12: begin
-             data.push (vdpReadBrReg (tScreen));
+             data.push (vdpReadBrReg(vdp));
            end;
        13: begin
              data.pop1 (h);
-             vdpWriteBrReg (tScreen, h);
+             vdpWriteBrReg(vdp, h);
            end;
        14: begin
-             data.push (vdpReadFgReg (tScreen));
+             data.push (vdpReadFgReg(vdp));
            end;
        15: begin
              data.pop1 (h);
-             vdpWriteFgReg (tScreen, h);
+             vdpWriteFgReg(vdp, h);
            end;
-       16: vdpRenderDisplay (tScreen);
+       16: vdpRenderDisplay(vdp);
        18: begin
              data.pop3 (x, y, h);
-             vdpPlotPixel (tScreen, y * cScnXRes + x, h);
+             vdpPlotPixel(vdp, y * cScnXRes + x, h);
            end;
       else
 	result := -1;

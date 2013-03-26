@@ -35,7 +35,7 @@ interface uses romVDP, xpc, stacks, kvm, kbd, posix, sysutils;
       {terminal emulation}
       cx,cy      : longword;
       count      : longword;
-      tScreen    : tVDP;
+      vdp        : TVDP;
       refresh    : longword;
 
       constructor init( imagepath : string; debug : boolean; pad: int32 );
@@ -121,7 +121,7 @@ implementation
 
     {VDP initialisation (textmode: 100x40, 256 colours)}
     vdpInit;
-    vdpOpen (tScreen);
+    vdpOpen(vdp);
     refresh := cScnRow * 160;
   end; { vm.init }
 
