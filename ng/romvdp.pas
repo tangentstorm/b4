@@ -1,5 +1,7 @@
 {$mode objfpc}
 unit romVDP;
+interface
+uses romFont, SDL, SysUtils;
 
 {This is a simple soft-core of a text-display processor. It features a
  resolution of 99 columns x 40 rows and 256 colours. There exist three
@@ -31,10 +33,6 @@ unit romVDP;
  The aternative way is to handle all maps as seperate memory areas.
  The choice is by you !}
 
-interface
-
-uses romFont, SDL;
-
 const
   cScnXRes = 800;
   cScnYRes = 600;
@@ -61,7 +59,7 @@ type
 
   tVDPAttrData = array [0..1] of byte;
 
-  TVDP = object
+  TVDP = class
     rFG: Int32;
     rBG: Int32;
     rBR: Int32;
@@ -74,8 +72,9 @@ type
 
     fError: boolean;
 
-    function Open: boolean;
-    procedure Close;
+    constructor Create;
+    destructor Destroy; override;
+
     function ReadAttrMap(adr: Int32): tVDPAttrData;
     procedure WriteAttrMap(adr: Int32; Value: tVDPAttrData);
     function ReadCharMap(adr: Int32): byte;
@@ -138,15 +137,12 @@ begin
   end;
 end;
 
-function TVDP.Open: boolean;
+constructor TVDP.Create;
 var
   i: Int32;
 begin
   self.pBitmap := SDL_SETVIDEOMODE(cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
-  if self.pBitmap = nil then
-    result := False
-  else
-    result := True;
+  if self.pBitmap = nil then raise Exception.Create('Failed to create SDL bitmap');
 
   self.rFG := 200;
   self.rBG := 32;
@@ -162,7 +158,7 @@ begin
   self.rVStart := 18;
 end;
 
-procedure TVDP.Close;
+destructor TVDP.Destroy;
 begin
   SDL_FREESURFACE(self.pBitmap);
   SDL_QUIT;
