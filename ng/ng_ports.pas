@@ -251,20 +251,10 @@ unit ng.ports; implementation
              data.pop2(x, y);
 	     data.push(vdp.ReadCharMap(cScnXRes * y + x));
            end;
-       12: begin
-	     data.push(vdp.ReadBrReg);
-           end;
-       13: begin
-             data.pop1(h);
-	     vdp.WriteBrReg(h);
-           end;
-       14: begin
-	     data.push(vdp.ReadFgReg);
-           end;
-       15: begin
-             data.pop1(h);
-	     vdp.WriteFgReg(h);
-           end;
+       12: data.push(vdp.rBR);
+       13: data.pop1(vdp.rBR);
+       14: data.push(vdp.rFG);
+       15: data.pop1(vdp.rFG);
        16: vdp.RenderDisplay;
        18: begin
              data.pop3 (x, y, h);

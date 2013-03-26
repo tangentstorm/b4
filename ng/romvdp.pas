@@ -62,11 +62,11 @@ type
   tVDPAttrData = array [0..1] of byte;
 
   TVDP = object
-    rFG: longword;
-    rBG: longword;
-    rBR: longword;
-    rHStart: longword;
-    rVStart: longword;
+    rFG: Int32;
+    rBG: Int32;
+    rBR: Int32;
+    rHStart: Int32;
+    rVStart: Int32;
 
     aCharMap: array [0..cScnChrSize] of byte;
     aAttrMap: array [0..cScnAtrSize] of byte;
@@ -76,22 +76,12 @@ type
 
     function Open: boolean;
     procedure Close;
-    function ReadBrReg: longword;
-    procedure WriteBrReg(Value: longword);
-    function ReadVStartReg: longword;
-    procedure WriteVStartReg(Value: longword);
-    function ReadHStartReg: longword;
-    procedure WriteHStartReg(Value: longword);
-    function ReadFgReg: longword;
-    procedure WriteFgReg(Value: longword);
-    function ReadBgReg: longword;
-    procedure WriteBgReg(Value: longword);
-    function ReadAttrMap(adr: longword): tVDPAttrData;
-    procedure WriteAttrMap(adr: longword; Value: tVDPAttrData);
-    function ReadCharMap(adr: longword): byte;
-    procedure WriteCharMap(adr: longword; Value: byte);
-    procedure PlotPixel(adr: longword; Value: byte);
-    procedure RenderChar(adr: longword; Value: byte);
+    function ReadAttrMap(adr: Int32): tVDPAttrData;
+    procedure WriteAttrMap(adr: Int32; Value: tVDPAttrData);
+    function ReadCharMap(adr: Int32): byte;
+    procedure WriteCharMap(adr: Int32; Value: byte);
+    procedure PlotPixel(adr: Int32; Value: byte);
+    procedure RenderChar(adr: Int32; Value: byte);
     procedure RenderDisplay;
     procedure Display;
     function PollKeyboard: char;
@@ -102,12 +92,12 @@ implementation
 
 var
   pBitmap: pSDL_SURFACE;
-  rBitmap: ^longword;
+  rBitmap: ^Int32;
 
   cScnColPal: array [0..255] of array [0..2] of byte;
-  cScnOfsTab: array [0..cScnChrSize] of longword;
+  cScnOfsTab: array [0..cScnChrSize] of Int32;
 
-procedure TVDP.PlotPixel(adr: longword; Value: byte); inline;
+procedure TVDP.PlotPixel(adr: Int32; Value: byte); inline;
 begin
   pBitmap := self.pBitmap;
   rBitmap := self.rVStart * cScnXRes + self.rHStart +
@@ -117,7 +107,7 @@ end;
 
 procedure vdpInit;
 var
-  i, j, n, m: longword;
+  i, j, n, m: Int32;
 begin
   SDL_INIT(SDL_INIT_VIDEO);
   SDL_EnableUnicode(1);
@@ -150,7 +140,7 @@ end;
 
 function TVDP.Open: boolean;
 var
-  i: longword;
+  i: Int32;
 begin
   self.pBitmap := SDL_SETVIDEOMODE(cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
   if self.pBitmap = nil then
@@ -178,57 +168,7 @@ begin
   SDL_QUIT;
 end;
 
-function TVDP.ReadBrReg: longword; inline;
-begin
-  result := self.rBR;
-end;
-
-procedure TVDP.WriteBrReg(value : longword); inline;
-begin
-  self.rBR := Value;
-end;
-
-function TVDP.ReadVStartReg: longword; inline;
-begin
-  result := self.rVStart;
-end;
-
-procedure TVDP.WriteVStartReg(value : longword); inline;
-begin
-  self.rVStart := Value;
-end;
-
-function TVDP.ReadHStartReg: longword; inline;
-begin
-  result := self.rHStart;
-end;
-
-procedure TVDP.WriteHStartReg(value : longword); inline;
-begin
-  self.rHStart := Value;
-end;
-
-function TVDP.ReadFgReg: longword; inline;
-begin
-  result := self.rFG;
-end;
-
-procedure TVDP.WriteFgReg(value : longword); inline;
-begin
-  self.rFG := Value;
-end;
-
-function TVDP.ReadBgReg: longword; inline;
-begin
-  result := self.rBG;
-end;
-
-procedure TVDP.WriteBgReg(value : longword); inline;
-begin
-  self.rBG := Value;
-end;
-
-function TVDP.ReadAttrMap(adr: longword): tVDPAttrData;
+function TVDP.ReadAttrMap(adr: Int32): tVDPAttrData;
 begin
   if adr > cScnAtrSize then
     self.fError := True
@@ -239,7 +179,7 @@ begin
   end;
 end;
 
-procedure TVDP.WriteAttrMap(adr: longword; Value: tVDPAttrData);
+procedure TVDP.WriteAttrMap(adr: Int32; Value: tVDPAttrData);
 begin
   adr := adr * 2;
   if adr > cScnAtrSize then
@@ -251,7 +191,7 @@ begin
   end;
 end;
 
-function TVDP.ReadCharMap(adr: longword): byte;
+function TVDP.ReadCharMap(adr: Int32): byte;
 begin
   self.fError := False;
   if adr < cScnChrSize then
@@ -260,7 +200,7 @@ begin
     self.fError := True;
 end;
 
-procedure TVDP.WriteCharMap(adr: longword; Value: byte);
+procedure TVDP.WriteCharMap(adr: Int32; Value: byte);
 begin
   self.fError := False;
   if adr < cScnChrSize then
@@ -269,13 +209,13 @@ begin
     self.fError := True;
 end;
 
-procedure TVDP.RenderChar(adr: longword; Value: byte);
+procedure TVDP.RenderChar(adr: Int32; Value: byte);
 var
   attr: tVDPAttrData;
   chr: taChar;
-  ofs: longword;
-  i, j: longword;
-  fg, bg: longword;
+  ofs: Int32;
+  i, j: Int32;
+  fg, bg: Int32;
 begin
   if adr < cScnChrSize then
   begin
@@ -311,7 +251,7 @@ end;
 
 procedure TVDP.RenderDisplay;
 var
-  i: longword;
+  i: Int32;
 begin
   for i := 0 to cScnChrSize do
     self.RenderChar(i, self.aCharMap[i]);
