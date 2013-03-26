@@ -75,50 +75,50 @@ type
   end;
 
 procedure vdpInit;
-function vdpOpen(var handle: tVDP): boolean;
-procedure vdpClose(handle: tVDP);
+function vdpOpen(var self: tVDP): boolean;
+procedure vdpClose(self: tVDP);
 
 function vdpReadBrReg
-  (var handle: tVDP): longword;
+  (var self: tVDP): longword;
 procedure vdpWriteBrReg
-  (var handle: tVDP; Value: longword);
+  (var self: tVDP; Value: longword);
 function vdpReadVStartReg
-  (var handle: tVDP): longword;
+  (var self: tVDP): longword;
 procedure vdpWriteVStartReg
-  (var handle: tVDP; Value: longword);
+  (var self: tVDP; Value: longword);
 function vdpReadHStartReg
-  (var handle: tVDP): longword;
+  (var self: tVDP): longword;
 procedure vdpWriteHStartReg
-  (var handle: tVDP; Value: longword);
+  (var self: tVDP; Value: longword);
 function vdpReadFgReg
-  (var handle: tVDP): longword;
+  (var self: tVDP): longword;
 procedure vdpWriteFgReg
-  (var handle: tVDP; Value: longword);
+  (var self: tVDP; Value: longword);
 function vdpReadBgReg
-  (var handle: tVDP): longword;
+  (var self: tVDP): longword;
 procedure vdpWriteBgReg
-  (var handle: tVDP; Value: longword);
+  (var self: tVDP; Value: longword);
 function vdpReadAttrMap
-  (var handle: tVDP; adr: longword): tVDPAttrData;
+  (var self: tVDP; adr: longword): tVDPAttrData;
 procedure vdpWriteAttrMap
-  (var handle: tVDP; adr: longword; Value: tVDPAttrData);
+  (var self: tVDP; adr: longword; Value: tVDPAttrData);
 function vdpReadCharMap
-  (var handle: tVDP; adr: longword): byte;
+  (var self: tVDP; adr: longword): byte;
 procedure vdpWriteCharMap
-  (var handle: tVDP; adr: longword; Value: byte);
+  (var self: tVDP; adr: longword; Value: byte);
 procedure vdpPlotPixel
-  (var handle: tVDP; adr: longword; Value: byte);
+  (var self: tVDP; adr: longword; Value: byte);
 
 procedure vdpRenderChar
-  (var handle: tVDP; adr: longword; Value: byte);
+  (var self: tVDP; adr: longword; Value: byte);
 procedure vdpRenderDisplay
-  (handle: tVDP);
+  (self: tVDP);
 
 procedure vdpDisplay
-  (handle: tVDP);
+  (self: tVDP);
 
 function vdpPollKeyboard
-  (handle: tVDP): char;
+  (self: tVDP): char;
 
 implementation
 
@@ -129,17 +129,17 @@ var
   cScnColPal: array [0..255] of array [0..2] of byte;
   cScnOfsTab: array [0..cScnChrSize] of longword;
 
-procedure plotPixel(handle: tVDP; adr: longword; Value: byte); inline;
+procedure plotPixel(self: tVDP; adr: longword; Value: byte); inline;
 begin
-  pBitmap := handle.pBitmap;
-  rBitmap := handle.rVStart * cScnXRes + handle.rHStart +
+  pBitmap := self.pBitmap;
+  rBitmap := self.rVStart * cScnXRes + self.rHStart +
     pBitmap^.pixels + adr;
   rBitmap^ := Value;
 end;
 
-procedure vdpPlotPixel(var handle: tVDP; adr: longword; Value: byte); inline;
+procedure vdpPlotPixel(var self: tVDP; adr: longword; Value: byte); inline;
 begin
-  plotPixel(handle, adr, Value);
+  plotPixel(self, adr, Value);
 end;
 
 procedure vdpInit;
@@ -175,141 +175,141 @@ begin
   end;
 end;
 
-function vdpOpen(var handle: tVDP): boolean;
+function vdpOpen(var self: tVDP): boolean;
 var
   i: longword;
 begin
-  handle.pBitmap := SDL_SETVIDEOMODE(cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
-  if handle.pBitmap = nil then
+  self.pBitmap := SDL_SETVIDEOMODE(cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
+  if self.pBitmap = nil then
     vdpOpen := False
   else
     vdpOpen := True;
 
-  handle.rFG := 200;
-  handle.rBG := 32;
-  handle.rBR := 128;
-  handle.fError := False;
+  self.rFG := 200;
+  self.rBG := 32;
+  self.rBR := 128;
+  self.fError := False;
 
   for i := 0 to cScnChrSize do
-    handle.aCharMap[i] := 0;
+    self.aCharMap[i] := 0;
   for i := 0 to cScnAtrSize do
-    handle.aAttrMap[i] := 0;
+    self.aAttrMap[i] := 0;
 
-  handle.rHStart := 4;
-  handle.rVStart := 18;
+  self.rHStart := 4;
+  self.rVStart := 18;
 end;
 
-procedure vdpClose(handle: tVDP);
+procedure vdpClose(self: tVDP);
 begin
-  SDL_FREESURFACE(handle.pBitmap);
+  SDL_FREESURFACE(self.pBitmap);
   SDL_QUIT;
 end;
 
 function vdpReadBrReg
-  (var handle: tVDP): longword; inline;
+  (var self: tVDP): longword; inline;
 begin
-  vdpReadBrReg := handle.rBR;
+  vdpReadBrReg := self.rBR;
 end;
 
 procedure vdpWriteBrReg
-  (var handle: tVDP; Value: longword); inline;
+  (var self: tVDP; Value: longword); inline;
 begin
-  handle.rBR := Value;
+  self.rBR := Value;
 end;
 
 function vdpReadVStartReg
-  (var handle: tVDP): longword; inline;
+  (var self: tVDP): longword; inline;
 begin
-  vdpReadVStartReg := handle.rVStart;
+  vdpReadVStartReg := self.rVStart;
 end;
 
 procedure vdpWriteVStartReg
-  (var handle: tVDP; Value: longword); inline;
+  (var self: tVDP; Value: longword); inline;
 begin
-  handle.rVStart := Value;
+  self.rVStart := Value;
 end;
 
 function vdpReadHStartReg
-  (var handle: tVDP): longword; inline;
+  (var self: tVDP): longword; inline;
 begin
-  vdpReadHStartReg := handle.rHStart;
+  vdpReadHStartReg := self.rHStart;
 end;
 
 procedure vdpWriteHStartReg
-  (var handle: tVDP; Value: longword); inline;
+  (var self: tVDP; Value: longword); inline;
 begin
-  handle.rHStart := Value;
+  self.rHStart := Value;
 end;
 
 function vdpReadFgReg
-  (var handle: tVDP): longword; inline;
+  (var self: tVDP): longword; inline;
 begin
-  vdpReadFgReg := handle.rFG;
+  vdpReadFgReg := self.rFG;
 end;
 
 procedure vdpWriteFgReg
-  (var handle: tVDP; Value: longword); inline;
+  (var self: tVDP; Value: longword); inline;
 begin
-  handle.rFG := Value;
+  self.rFG := Value;
 end;
 
 function vdpReadBgReg
-  (var handle: tVDP): longword; inline;
+  (var self: tVDP): longword; inline;
 begin
-  vdpReadBgReg := handle.rBG;
+  vdpReadBgReg := self.rBG;
 end;
 
 procedure vdpWriteBgReg
-  (var handle: tVDP; Value: longword); inline;
+  (var self: tVDP; Value: longword); inline;
 begin
-  handle.rBG := Value;
+  self.rBG := Value;
 end;
 
-function vdpReadAttrMap(var handle: tVDP; adr: longword): tVDPAttrData;
+function vdpReadAttrMap(var self: tVDP; adr: longword): tVDPAttrData;
 var
   ret: tVDPAttrData;
 begin
   if adr > cScnAtrSize then
-    handle.fError := True
+    self.fError := True
   else
   begin
-    ret[0] := handle.aAttrMap[adr];
-    ret[1] := handle.aAttrMap[adr + 1];
+    ret[0] := self.aAttrMap[adr];
+    ret[1] := self.aAttrMap[adr + 1];
     vdpReadAttrMap := ret;
   end;
 end;
 
-procedure vdpWriteAttrMap(var handle: tVDP; adr: longword; Value: tVDPAttrData);
+procedure vdpWriteAttrMap(var self: tVDP; adr: longword; Value: tVDPAttrData);
 begin
   adr := adr * 2;
   if adr > cScnAtrSize then
-    handle.fError := True
+    self.fError := True
   else
   begin
-    handle.aAttrMap[adr] := Value[0];
-    handle.aAttrMap[adr + 1] := Value[1];
+    self.aAttrMap[adr] := Value[0];
+    self.aAttrMap[adr + 1] := Value[1];
   end;
 end;
 
-function vdpReadCharMap(var handle: tVDP; adr: longword): byte;
+function vdpReadCharMap(var self: tVDP; adr: longword): byte;
 begin
-  handle.fError := False;
+  self.fError := False;
   if adr < cScnChrSize then
-    vdpReadCharMap := handle.aCharMap[adr]
+    vdpReadCharMap := self.aCharMap[adr]
   else
-    handle.fError := True;
+    self.fError := True;
 end;
 
-procedure vdpWriteCharMap(var handle: tVDP; adr: longword; Value: byte);
+procedure vdpWriteCharMap(var self: tVDP; adr: longword; Value: byte);
 begin
-  handle.fError := False;
+  self.fError := False;
   if adr < cScnChrSize then
-    handle.aCharMap[adr] := Value
+    self.aCharMap[adr] := Value
   else
-    handle.fError := True;
+    self.fError := True;
 end;
 
-procedure vdpRenderChar(var handle: tVDP; adr: longword; Value: byte);
+procedure vdpRenderChar(var self: tVDP; adr: longword; Value: byte);
 var
   attr: tVDPAttrData;
   chr: taChar;
@@ -319,14 +319,14 @@ var
 begin
   if adr < cScnChrSize then
   begin
-    attr := vdpReadAttrMap(handle, adr * 2);
-    chr := romFontReadChar(handle.aCharMap[adr]);
+    attr := vdpReadAttrMap(self, adr * 2);
+    chr := romFontReadChar(self.aCharMap[adr]);
     if attr[0] = 0 then
-      fg := handle.rFG
+      fg := self.rFG
     else
       fg := attr[0];
     if attr[1] = 0 then
-      bg := handle.rBG
+      bg := self.rBG
     else
       bg := attr[1];
     ofs := cScnOfsTab[adr];
@@ -336,9 +336,9 @@ begin
       for j := 0 to cChrXRes - 1 do
       begin
         if ((chr[i] shr 7) and 1) = 1 then
-          plotPixel(handle, ofs, fg)
+          plotPixel(self, ofs, fg)
         else
-          plotPixel(handle, ofs, bg);
+          plotPixel(self, ofs, bg);
         ofs := ofs + 1;
         chr[i] := chr[i] shl 1;
       end;
@@ -346,24 +346,24 @@ begin
     end;
   end
   else
-    handle.fError := True;
+    self.fError := True;
 end;
 
-procedure vdpRenderDisplay(handle: tVDP);
+procedure vdpRenderDisplay(self: tVDP);
 var
   i: longword;
 begin
   for i := 0 to cScnChrSize do
-    vdpRenderChar(handle, i, handle.aCharMap[i]);
-  SDL_FLIP(handle.pBitmap);
+    vdpRenderChar(self, i, self.aCharMap[i]);
+  SDL_FLIP(self.pBitmap);
 end;
 
-procedure vdpDisplay(handle: tVDP); inline;
+procedure vdpDisplay(self: tVDP); inline;
 begin
-  SDL_FLIP(handle.pBitmap);
+  SDL_FLIP(self.pBitmap);
 end;
 
-function vdpPollKeyboard(handle: tVDP): char;
+function vdpPollKeyboard(self: tVDP): char;
 var
   done: boolean;
   evt: pSDL_Event;
