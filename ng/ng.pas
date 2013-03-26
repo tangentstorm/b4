@@ -1,6 +1,6 @@
 {$i xpc.inc }
 unit ng;
-interface uses xpc, stacks, kvm, kbd, posix, sysutils;
+interface uses romVDP, xpc, stacks, kvm, kbd, posix, sysutils;
 
   type
     pvm	   = ^vm;
@@ -31,6 +31,12 @@ interface uses xpc, stacks, kvm, kbd, posix, sysutils;
       imgpath    : string;
       debugmode  : boolean;
       padsize    : int32;
+
+      {terminal emulation}
+      cx,cy      : longword;
+      count      : longword;
+      tScreen    : tVDP;
+      refresh    : longword;
 
       constructor init( imagepath : string; debug : boolean; pad: int32 );
 
@@ -71,6 +77,7 @@ interface uses xpc, stacks, kvm, kbd, posix, sysutils;
       procedure init_optable;
 
   { port handlers, defined in ng.ports.pas }
+      procedure clear;
       function handle_syncport( msg : int32 ) : int32;
       function handle_keyboard( msg : int32 ) : int32;
       function handle_input( msg : int32 ) : int32;
@@ -111,6 +118,11 @@ implementation
     assign( self.imgfile, imagepath );
     self.load;
     self.debugmode := debug;
+
+    {VDP initialisation (textmode: 100x40, 256 colours)}
+    vdpInit;
+    vdpOpen (tScreen);
+    refresh := cScnRow * 160;
   end; { vm.init }
 
 
@@ -124,7 +136,7 @@ implementation
     {$i+}
     if ioresult = 0 then begin
       size := filesize( self.imgfile );
-      // log.debug([ 'image size = ', size, ' cellss' ]);
+      // log.debug([ 'image size = ', size, ' cells' ]);
       setlength( self.ram, size );
       // log.debug([ 'ram = array [', low( self.ram ),
       //             '..', high( self.ram ), ']' ]);
