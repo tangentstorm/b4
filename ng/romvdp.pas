@@ -49,14 +49,6 @@ const
   cScnFntSize = $E00;
 
 type
-  tKeymap = array [0..9] of array [0..1] of char;
-
-  tVDPData = record
-    fontData: taChar;
-    chrMapData: byte;
-    atrMapData: array [0..1] of byte;
-  end;
-
   tVDPAttrData = array [0..1] of byte;
 
   TVDP = class
@@ -90,13 +82,10 @@ type
 implementation
 
 var
-  pBitmap: pSDL_SURFACE;
-  rBitmap: ^Int32;
-
-  cScnColPal: array [0..255] of array [0..2] of byte;
   cScnOfsTab: array [0..cScnChrSize] of Int32;
 
 procedure TVDP.PlotPixel(adr: Int32; Value: byte); inline;
+  var rBitmap: ^Int32;
 begin
   pBitmap := self.pBitmap;
   rBitmap := self.rVStart * cScnXRes + self.rHStart +
@@ -127,14 +116,6 @@ begin
     n := i * cScnHLine;
   end;
 
-  {init linear grayscale palette}
-
-  for i := 0 to 255 do
-  begin
-    cScnColPal[i][0] := i;
-    cScnColPal[i][1] := i;
-    cScnColPal[i][2] := i;
-  end;
 end;
 
 constructor TVDP.Create;
