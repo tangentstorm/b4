@@ -1,6 +1,6 @@
 {$i xpc.inc }
 unit ng;
-interface uses romVDP, xpc, stacks, kvm, kbd, posix, sysutils;
+interface uses retroterm, romvdp, xpc, stacks, kvm, kbd, posix, sysutils;
 
   type
     pvm	   = ^vm;
@@ -16,7 +16,7 @@ interface uses romVDP, xpc, stacks, kvm, kbd, posix, sysutils;
 
 { interface > types }
 
-    vm	   = object
+    vm = object
       data, addr : specialize stack< int32 >;
       ram, ports : array of int32;
       devices	 : array of device;
@@ -31,12 +31,8 @@ interface uses romVDP, xpc, stacks, kvm, kbd, posix, sysutils;
       imgpath    : string;
       debugmode  : boolean;
       padsize    : int32;
-
-      {terminal emulation}
-      cx,cy      : longword;
-      count      : longword;
-      vdp        : TVDP;
-      refresh    : longword;
+      rt  : TRetroTerm;
+      vdp : TVDP;
 
       constructor init( imagepath : string; debug : boolean; pad: int32 );
 
@@ -121,8 +117,8 @@ implementation
 
     {VDP initialisation (textmode: 100x40, 256 colours)}
     vdpInit;
-    vdp := TVDP.Create;
-    refresh := vdp.termW * 160;
+    rt := TRetroTerm.Create;
+    vdp := rt.vdp;
   end; { vm.init }
 
 

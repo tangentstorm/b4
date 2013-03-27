@@ -59,69 +59,13 @@ unit ng.ports; implementation
   { -- port 2 : simple text output ---------------------------- }
 
   procedure vm.clear;
-    var i : longword;
   begin
-    for i := 0 to cScnChrSize do vdp.aCharMap[i] := 0;
-    for i := 0 to cScnAtrSize do vdp.aAttrMap[i] := 0;
-    cx := 0; cy := 0;
+    rt.clear;
   end;
 
   function vm.handle_write (msg : int32): int32;
-    var x:    int32;
-        adr:  longword;
-        attr: tVDPAttrData;
-
-    procedure cursorRight; inline;
-    begin
-      if cx < vdp.termW then cx := cx + 1
-      else if cy < vdp.termH then begin cy := cy + 1; cx := 0; end
-      else begin clear; cy := 0; cx := 0; end;
-    end;
-
-    procedure cursorLeft; inline;
-    begin
-      if cx < vdp.termW then cx := cx-1;
-    end;
-
-    procedure cursorBackspace; inline;
-    begin
-      attr[1] := 0;
-      vdp.WriteAttrMap(adr, attr);
-      vdp.WriteCharMap(adr, 0);
-      if (cx < vdp.termW) and (cx > 0) then cx := cx - 1;
-    end;
-
-    procedure cursorReturn; inline;
-    begin
-      attr[1] := 0;
-      vdp.WriteAttrMap(adr, attr);
-      cy := cy + 1; cx := 0;
-      if cy >= vdp.termH then begin
-         clear; cy := 0; cx := 0;
-      end;
-    end;
-
   begin
-    if msg = 1 then begin
-      x := self.data.pop;
-      if x < 0 then clear else
-         if x < 32 then begin case chr (x) of
-                                ^H: cursorBackspace;
-                                ^J: cursorReturn;
-                                ^M: ; end;
-                        end;
-      adr := cy * vdp.termW + cx;
-      attr[1] := vdp.rBR; vdp.WriteAttrMap(adr, attr);
-      if x > 31 then begin
-	attr[1] := 0;
-	vdp.WriteAttrMap(adr, attr);
-	vdp.WriteCharMap(adr, x);
-      end;
-      if x > 31 then cursorRight;
-      if count = refresh then begin
-	count := 0; vdp.RenderDisplay; end;
-    end;
-    count := count + 1;
+    if msg = 1 then rt.emit(self.data.pop);
     result := 0;
   end;
 
