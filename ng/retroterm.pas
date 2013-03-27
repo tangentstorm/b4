@@ -36,11 +36,8 @@ implementation
   end;
 
   procedure TRetroTerm.clear; inline;
-    var i : longword;
   begin
-    for i := 0 to cScnChrSize do vdp.aCharMap[i] := 0;
-    for i := 0 to cScnAtrSize do vdp.aAttrMap[i] := 0;
-    cx := 0; cy := 0;
+    vdp.Clear; cx := 0; cy := 0;
   end;
 
   procedure TRetroTerm.resetadr; inline;

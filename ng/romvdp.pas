@@ -42,12 +42,21 @@ const
   cScnHLine = $2BC0;
   cScnAtrMap = $FA0;
   cScnFntDta = $2EE0;
-  cScnChrSize = $FA0 - $28;
-  cScnAtrSize = $1F40;
-  cScnFntSize = $E00;
+
+  kScnChrSize = $FA0 - $28;
+  kScnAtrSize = $1F40;
+  kScnFntSize = $E00;
 
 type
   tVDPAttrData = array [0..1] of byte;
+
+  TCharCell = record
+    fg : byte;
+    bg : byte;
+  case boolean of
+    true  : (ch : widechar);
+    false : (val : word);
+  end;
 
   TVDP = class
     rFG: Int32;
@@ -58,9 +67,9 @@ type
     termW : Int32;
     termH : Int32;
 
-    offsets : array [0..cScnChrSize] of Int32;
-    aCharMap: array [0..cScnChrSize] of byte;
-    aAttrMap: array [0..cScnAtrSize] of byte;
+    length  : integer;
+    buffer  : array of TCharCell;
+    offsets : array of Int32;
     pBitmap: pSDL_SURFACE;
 
     fError: boolean;
@@ -68,6 +77,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
+    procedure Clear;
     function ReadAttrMap(adr: Int32): tVDPAttrData;
     procedure WriteAttrMap(adr: Int32; Value: tVDPAttrData);
     function ReadCharMap(adr: Int32): byte;
@@ -103,6 +113,7 @@ begin
   SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 end;
 
+
 { transformation table bitmap address -> character offset.
   This just caches the offsets of the upper left corner of
   each character, so the arithmetic doesn't have to be
@@ -111,6 +122,7 @@ end;
 procedure CacheOffsets(self : TVDP);
   var i, j, n, m: Int32;
 begin
+  SetLength(self.offsets, self.length);
   m := 0;
   n := 0;
   for i := 1 to kTermH do
@@ -127,8 +139,6 @@ end;
 
 
 constructor TVDP.Create;
-var
-  i: Int32;
 begin
   self.termW := kTermW;
   self.termH := kTermH;
@@ -140,11 +150,8 @@ begin
   self.rBR := 128;
   self.fError := False;
 
-  for i := 0 to cScnChrSize do
-    self.aCharMap[i] := 0;
-  for i := 0 to cScnAtrSize do
-    self.aAttrMap[i] := 0;
-
+  self.length := termW * termH;
+  self.clear;
   self.rHStart := 4;
   self.rVStart := 18;
 
@@ -157,34 +164,40 @@ begin
   SDL_QUIT;
 end;
 
+procedure TVDP.Clear;
+begin
+  SetLength(self.buffer, length);
+  FillDWord(self.buffer[0], length, 0);
+end;
+
 function TVDP.ReadAttrMap(adr: Int32): tVDPAttrData;
 begin
-  if adr > cScnAtrSize then
+  if adr > length then
     self.fError := True
   else
   begin
-    result[0] := self.aAttrMap[adr];
-    result[1] := self.aAttrMap[adr + 1];
+    result[0] := buffer[adr].bg;
+    result[1] := buffer[adr].fg;
   end;
 end;
 
 procedure TVDP.WriteAttrMap(adr: Int32; Value: tVDPAttrData);
 begin
   adr := adr * 2;
-  if adr > cScnAtrSize then
+  if adr > length then
     self.fError := True
-  else
+  else with self.buffer[adr] do
   begin
-    self.aAttrMap[adr] := Value[0];
-    self.aAttrMap[adr + 1] := Value[1];
-  end;
+    bg := value[0];
+    fg := value[1];
+  end
 end;
 
 function TVDP.ReadCharMap(adr: Int32): byte;
 begin
   self.fError := False;
-  if adr < cScnChrSize then
-    result := self.aCharMap[adr]
+  if adr < length then
+    result := self.buffer[adr].val
   else
     self.fError := True;
 end;
@@ -192,8 +205,8 @@ end;
 procedure TVDP.WriteCharMap(adr: Int32; Value: byte);
 begin
   self.fError := False;
-  if adr < cScnChrSize then
-    self.aCharMap[adr] := Value
+  if adr < length then
+    self.buffer[adr].ch := chr(value)
   else
     self.fError := True;
 end;
@@ -206,10 +219,10 @@ var
   i, j: Int32;
   fg, bg: Int32;
 begin
-  if adr < cScnChrSize then
+  if adr < length then
   begin
     attr := self.ReadAttrMap(adr * 2);
-    chr := romFontReadChar(self.aCharMap[adr]);
+    chr := romFontReadChar(self.buffer[adr].val);
     if attr[0] = 0 then
       fg := self.rFG
     else
@@ -242,8 +255,8 @@ procedure TVDP.RenderDisplay;
 var
   i: Int32;
 begin
-  for i := 0 to cScnChrSize do
-    self.RenderChar(i, self.aCharMap[i]);
+  for i := 0 to pred(length) do
+    self.RenderChar(i, lo(buffer[i].val));
   SDL_FLIP(self.pBitmap);
 end;
 
