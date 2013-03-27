@@ -58,6 +58,7 @@ type
     termW : Int32;
     termH : Int32;
 
+    offsets : array [0..cScnChrSize] of Int32;
     aCharMap: array [0..cScnChrSize] of byte;
     aAttrMap: array [0..cScnAtrSize] of byte;
     pBitmap: pSDL_SURFACE;
@@ -86,9 +87,6 @@ const
   kTermW = 99;
   kTermH = 40;
 
-var
-  cScnOfsTab: array [0..cScnChrSize] of Int32;
-
 procedure TVDP.PlotPixel(adr: Int32; Value: byte); inline;
   var rBitmap: ^Int32;
 begin
@@ -99,29 +97,34 @@ begin
 end;
 
 procedure vdpInit;
-var
-  i, j, n, m: Int32;
 begin
   SDL_INIT(SDL_INIT_VIDEO);
   SDL_EnableUnicode(1);
   SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
+end;
 
-  {transformation table bitmap address -> character offset}
-
+{ transformation table bitmap address -> character offset.
+  This just caches the offsets of the upper left corner of
+  each character, so the arithmetic doesn't have to be
+  done repeatedly for each character when drawing the
+  screen. }
+procedure CacheOffsets(self : TVDP);
+  var i, j, n, m: Int32;
+begin
   m := 0;
   n := 0;
   for i := 1 to kTermH do
   begin
     for j := 1 to kTermW do
     begin
-      cScnOfsTab[m] := n;
+      self.offsets[m] := n;
       n := n + 8;
       m := m + 1;
     end;
     n := i * cScnHLine;
   end;
-
 end;
+
 
 constructor TVDP.Create;
 var
@@ -144,6 +147,8 @@ begin
 
   self.rHStart := 4;
   self.rVStart := 18;
+
+  cacheoffsets(self);
 end;
 
 destructor TVDP.Destroy;
@@ -213,7 +218,7 @@ begin
       bg := self.rBG
     else
       bg := attr[1];
-    ofs := cScnOfsTab[adr];
+    ofs := offsets[adr];
 
     for i := 0 to cChrYRes - 1 do
     begin
