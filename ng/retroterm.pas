@@ -5,23 +5,29 @@ interface uses romVDP;
 
   type
     TRetroTerm = class
-      cx, cy  : Int32;
-      count   : Int32; {  what does this do? }
-      refresh : Int32;
-      vdp     : TVDP;
-      attr: tVDPAttrData;
-      constructor Create;
-      procedure Clear;
+    private
+      _cx, _cy  : Int32;
+      adr	: longword;
+      procedure resetadr;
+      procedure set_cx(x:int32);
+      procedure set_cy(y:int32);
       procedure Fw;
       procedure Bw;
       procedure Bs;
       procedure Cr;
-      procedure emit( x	:  int32 );
+    public
+      vdp       : TVDP;
+      count     : Int32; {  what does this do? }
+      refresh   : Int32;
+      attr: tVDPAttrData;
+      constructor Create;
+      procedure Clear;
+      procedure Emit( x	:  int32 );
+      property cx:int32 read _cx write set_cx;
+      property cy:int32 read _cy write set_cy;
     end;
 
 implementation
-  var
-    adr	: longword;
 
   constructor TRetroTerm.Create;
   begin
@@ -35,6 +41,21 @@ implementation
     for i := 0 to cScnChrSize do vdp.aCharMap[i] := 0;
     for i := 0 to cScnAtrSize do vdp.aAttrMap[i] := 0;
     cx := 0; cy := 0;
+  end;
+
+  procedure TRetroTerm.resetadr; inline;
+  begin
+    adr := cy * vdp.termW + cx;
+  end;
+
+  procedure TRetroTerm.set_cx(x:int32); inline;
+  begin
+    _cx := x; resetadr;
+  end;
+
+  procedure TRetroTerm.set_cy(y:int32);
+  begin
+    _cy := y; resetadr;
   end;
 
   procedure TRetroTerm.fw; inline;
@@ -75,7 +96,6 @@ implementation
 	^J : cr;
 	^M : cr;
       end;
-    adr := cy * vdp.termW + cx;
     attr[1] := vdp.rBR; vdp.WriteAttrMap(adr, attr);
     if x > 31 then begin
       attr[1] := 0;
