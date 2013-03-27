@@ -1,7 +1,7 @@
 {$mode objfpc}
 unit romVDP;
 interface
-uses romFont, SDL, SysUtils;
+uses grids, romFont, SDL, SysUtils;
 
 {This is a simple soft-core of a text-display processor. It features a
  resolution of 99 columns x 40 rows and 256 colours. There exist three
@@ -58,6 +58,16 @@ type
     false : (val : word);
   end;
 
+  TCharGrid = class (specialize TGrid<TCharCell>)
+    procedure Clear;
+    function GetAttr( const i : cardinal ) : TVDPAttrData;
+    procedure SetAttr( const i : cardinal; const value : tVDPAttrData );
+    function GetChar( const i : cardinal ) : WideChar;
+    procedure SetChar( const i : cardinal; const value : WideChar );
+    property attr[ i : cardinal ] : TVDPAttrData read GetAttr write SetAttr;
+    property char[ i : cardinal ] : WideChar read GetChar write SetChar;
+  end;
+
   TVDP = class
     rFG: Int32;
     rBG: Int32;
@@ -68,7 +78,7 @@ type
     termH : Int32;
 
     length  : integer;
-    buffer  : array of TCharCell;
+    buffer  : TCharGrid;
     offsets : array of Int32;
     pBitmap: pSDL_SURFACE;
 
@@ -113,12 +123,13 @@ begin
   SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 end;
 
-
+
 { transformation table bitmap address -> character offset.
   This just caches the offsets of the upper left corner of
   each character, so the arithmetic doesn't have to be
   done repeatedly for each character when drawing the
   screen. }
+
 procedure CacheOffsets(self : TVDP);
   var i, j, n, m: Int32;
 begin
@@ -149,13 +160,14 @@ begin
   self.rBG := 32;
   self.rBR := 128;
   self.fError := False;
+  
+  self.buffer := TCharGrid.Create( termW, termH );
+  self.length := self.buffer.size;
+  CacheOffsets(self);
 
-  self.length := termW * termH;
-  self.clear;
+  self.Clear;
   self.rHStart := 4;
   self.rVStart := 18;
-
-  cacheoffsets(self);
 end;
 
 destructor TVDP.Destroy;
@@ -164,51 +176,67 @@ begin
   SDL_QUIT;
 end;
 
-procedure TVDP.Clear;
+procedure TVDP.Clear; inline;
 begin
-  SetLength(self.buffer, length);
-  FillDWord(self.buffer[0], length, 0);
+  self.buffer.Clear;
 end;
 
-function TVDP.ReadAttrMap(adr: Int32): tVDPAttrData;
+procedure TCharGrid.Clear;
 begin
-  if adr > length then
-    self.fError := True
-  else
-  begin
-    result[0] := buffer[adr].bg;
-    result[1] := buffer[adr].fg;
-  end;
+  FillDWord(self.data[0], self.size, 0);
+end;
+
+function TCharGrid.GetAttr( const i : cardinal ) : TVDPAttrData;
+begin
+  result[0] := data[i].bg;
+  result[1] := data[i].fg;
 end;
 
-procedure TVDP.WriteAttrMap(adr: Int32; Value: tVDPAttrData);
+procedure TCharGrid.SetAttr( const i : cardinal; const value : tVDPAttrData );
 begin
-  adr := adr * 2;
-  if adr > length then
-    self.fError := True
-  else with self.buffer[adr] do
+  with data[i] do
   begin
     bg := value[0];
     fg := value[1];
   end
 end;
 
+function TCharGrid.GetChar( const i : cardinal ) : WideChar;
+begin
+   result := data[i].ch;
+end;
+
+procedure TCharGrid.SetChar( const i : cardinal; const value : WideChar );
+begin
+  self.data[i].ch := value;
+end;
+
+
+function TVDP.ReadAttrMap(adr: Int32): tVDPAttrData;
+begin
+  self.fError := False;
+  if adr >= length then self.fError := True
+  else result := self.buffer.attr[ adr ]
+end;
+
+procedure TVDP.WriteAttrMap(adr: Int32; Value: tVDPAttrData);
+begin
+  if adr >= length then self.fError := True
+  else self.buffer.attr[ adr ] := value;
+end;
+
 function TVDP.ReadCharMap(adr: Int32): byte;
 begin
   self.fError := False;
-  if adr < length then
-    result := self.buffer[adr].val
-  else
-    self.fError := True;
+  if adr >= length then self.fError := True
+  else result := ord(self.buffer.char[adr]);
 end;
 
 procedure TVDP.WriteCharMap(adr: Int32; Value: byte);
 begin
   self.fError := False;
-  if adr < length then
-    self.buffer[adr].ch := chr(value)
-  else
-    self.fError := True;
+  if adr >= length then self.fError := True
+  else self.buffer.char[adr] := chr(value)
 end;
 
 procedure TVDP.RenderChar(adr: Int32; Value: byte);
@@ -221,8 +249,8 @@ var
 begin
   if adr < length then
   begin
-    attr := self.ReadAttrMap(adr * 2);
-    chr := romFontReadChar(self.buffer[adr].val);
+    attr := self.buffer.attr[adr];
+    chr := romFontReadChar(self.buffer.at[adr].val);
     if attr[0] = 0 then
       fg := self.rFG
     else
@@ -232,7 +260,6 @@ begin
     else
       bg := attr[1];
     ofs := offsets[adr];
-
     for i := 0 to cChrYRes - 1 do
     begin
       for j := 0 to cChrXRes - 1 do
@@ -256,7 +283,7 @@ var
   i: Int32;
 begin
   for i := 0 to pred(length) do
-    self.RenderChar(i, lo(buffer[i].val));
+    self.RenderChar(i, lo(buffer.at[i].val));
   SDL_FLIP(self.pBitmap);
 end;
 
