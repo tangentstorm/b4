@@ -32,7 +32,7 @@ uses romFont, SDL, SysUtils;
  handling values though the abstract tVDPData type cost performance.
  The aternative way is to handle all maps as seperate memory areas.
  The choice is by you !}
-
+
 const
   cScnXRes = 800;
   cScnYRes = 600;
@@ -47,7 +47,7 @@ const
   cScnChrSize = $FA0 - $28;
   cScnAtrSize = $1F40;
   cScnFntSize = $E00;
-
+
 type
   tVDPAttrData = array [0..1] of byte;
 
@@ -71,6 +71,7 @@ type
     procedure WriteAttrMap(adr: Int32; Value: tVDPAttrData);
     function ReadCharMap(adr: Int32): byte;
     procedure WriteCharMap(adr: Int32; Value: byte);
+
     procedure PlotPixel(adr: Int32; Value: byte);
     procedure RenderChar(adr: Int32; Value: byte);
     procedure RenderDisplay;
@@ -78,7 +79,7 @@ type
     function PollKeyboard: char;
   end;
   procedure vdpInit;
-
+
 implementation
 
 var
@@ -117,7 +118,7 @@ begin
   end;
 
 end;
-
+
 constructor TVDP.Create;
 var
   i: Int32;
@@ -144,7 +145,7 @@ begin
   SDL_FREESURFACE(self.pBitmap);
   SDL_QUIT;
 end;
-
+
 function TVDP.ReadAttrMap(adr: Int32): tVDPAttrData;
 begin
   if adr > cScnAtrSize then
@@ -185,7 +186,7 @@ begin
   else
     self.fError := True;
 end;
-
+
 procedure TVDP.RenderChar(adr: Int32; Value: byte);
 var
   attr: tVDPAttrData;
@@ -225,7 +226,7 @@ begin
   else
     self.fError := True;
 end;
-
+
 procedure TVDP.RenderDisplay;
 var
   i: Int32;
