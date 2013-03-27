@@ -39,8 +39,6 @@ const
   cScnCRes = 8;
   cChrXRes = 8;
   cChrYRes = 14;
-  cScnCol = 100 - 1;
-  cScnRow = 40;
   cScnHLine = $2BC0;
   cScnAtrMap = $FA0;
   cScnFntDta = $2EE0;
@@ -57,6 +55,8 @@ type
     rBR: Int32;
     rHStart: Int32;
     rVStart: Int32;
+    termW : Int32;
+    termH : Int32;
 
     aCharMap: array [0..cScnChrSize] of byte;
     aAttrMap: array [0..cScnAtrSize] of byte;
@@ -82,6 +82,10 @@ type
 
 implementation
 
+const
+  kTermW = 99;
+  kTermH = 40;
+
 var
   cScnOfsTab: array [0..cScnChrSize] of Int32;
 
@@ -106,9 +110,9 @@ begin
 
   m := 0;
   n := 0;
-  for i := 1 to cScnRow do
+  for i := 1 to kTermH do
   begin
-    for j := 1 to cScnCol do
+    for j := 1 to kTermW do
     begin
       cScnOfsTab[m] := n;
       n := n + 8;
@@ -123,6 +127,8 @@ constructor TVDP.Create;
 var
   i: Int32;
 begin
+  self.termW := kTermW;
+  self.termH := kTermH;
   self.pBitmap := SDL_SETVIDEOMODE(cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
   if self.pBitmap = nil then raise Exception.Create('Failed to create SDL bitmap');
 

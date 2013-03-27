@@ -122,7 +122,7 @@ implementation
     {VDP initialisation (textmode: 100x40, 256 colours)}
     vdpInit;
     vdp := TVDP.Create;
-    refresh := cScnRow * 160;
+    refresh := vdp.termW * 160;
   end; { vm.init }
 
 

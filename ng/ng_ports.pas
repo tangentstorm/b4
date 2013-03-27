@@ -73,14 +73,14 @@ unit ng.ports; implementation
 
     procedure cursorRight; inline;
     begin
-      if cx < cScnCol-1 then cx := cx + 1
-                        else if cy < cScnRow-1 then begin cy := cy + 1; cx := 0;   end
-                                               else begin clear; cy := 0; cx := 0; end;
+      if cx < vdp.termW then cx := cx + 1
+      else if cy < vdp.termH then begin cy := cy + 1; cx := 0; end
+      else begin clear; cy := 0; cx := 0; end;
     end;
 
     procedure cursorLeft; inline;
     begin
-      if cx < cScnCol-1 then cx := cx-1;
+      if cx < vdp.termW then cx := cx-1;
     end;
 
     procedure cursorBackspace; inline;
@@ -88,7 +88,7 @@ unit ng.ports; implementation
       attr[1] := 0;
       vdp.WriteAttrMap(adr, attr);
       vdp.WriteCharMap(adr, 0);
-      if (cx < cScnCol-1) and (cx > 0) then cx := cx - 1;
+      if (cx < vdp.termW) and (cx > 0) then cx := cx - 1;
     end;
 
     procedure cursorReturn; inline;
@@ -96,8 +96,9 @@ unit ng.ports; implementation
       attr[1] := 0;
       vdp.WriteAttrMap(adr, attr);
       cy := cy + 1; cx := 0;
-      if cy > cScnRow-1 then begin
-         clear; cy := 0; cx := 0; end;
+      if cy >= vdp.termH then begin
+         clear; cy := 0; cx := 0;
+      end;
     end;
 
   begin
@@ -109,7 +110,7 @@ unit ng.ports; implementation
                                 ^J: cursorReturn;
                                 ^M: ; end;
                         end;
-      adr := cy * cScnCol + cx;
+      adr := cy * vdp.termW + cx;
       attr[1] := vdp.rBR; vdp.WriteAttrMap(adr, attr);
       if x > 31 then begin
 	attr[1] := 0;
