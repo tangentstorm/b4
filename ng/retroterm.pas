@@ -1,7 +1,7 @@
 { retroterm: retro extended terminal }
 {$mode objfpc}
 unit retroterm;
-interface uses romVDP;
+interface uses romVDP, rt_sdl;
 
   type
     TRetroTerm = class
@@ -31,7 +31,7 @@ implementation
 
   constructor TRetroTerm.Create;
   begin
-    vdp := TVDP.Create;
+    vdp := {rt_*.}CreateVDP;
     self.refresh := vdp.termW * 160;
   end;
 

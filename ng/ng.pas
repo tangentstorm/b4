@@ -116,7 +116,6 @@ implementation
     self.debugmode := debug;
 
     {VDP initialisation (textmode: 100x40, 256 colours)}
-    vdpInit;
     rt := TRetroTerm.Create;
     vdp := rt.vdp;
   end; { vm.init }

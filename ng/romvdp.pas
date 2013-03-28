@@ -1,7 +1,7 @@
 {$mode objfpc}
 unit romVDP;
 interface
-uses grids, romFont, SDL, SysUtils;
+uses grids, romFont, SysUtils;
 
 {This is a simple soft-core of a text-display processor. It features a
  resolution of 99 columns x 40 rows and 256 colours. There exist three
@@ -92,23 +92,17 @@ type
     procedure RenderDisplay;
   end;
 
-  { This is the SDL-Specific Class }
-  TVDP = class(TScreen)
-    pBitmap: pSDL_SURFACE;
-    constructor Create;
-
+  TConsole = class (TScreen)
+    function PollKeyboard : char; virtual; abstract;
+  end;
+  
+  TVDP = class (TConsole)
     function ReadAttrMap(adr: Int32): tVDPAttrData;
     procedure WriteAttrMap(adr: Int32; Value: tVDPAttrData);
     function ReadCharMap(adr: Int32): byte;
     procedure WriteCharMap(adr: Int32; Value: byte);
-
-    { sdl specific }
-    function PollKeyboard: char;
-    procedure PlotPixel(adr: Int32; Value: byte); override;
-    procedure Display; override;
-    destructor Destroy; override;
   end;
-  procedure vdpInit;
+
 
 implementation
 
@@ -116,21 +110,6 @@ const
   kTermW = 99;
   kTermH = 40;
 
-procedure TVDP.PlotPixel(adr: Int32; Value: byte); inline;
-  var rBitmap: ^Int32;
-begin
-  pBitmap := self.pBitmap;
-  rBitmap := self.rVStart * cScnXRes + self.rHStart +
-    pBitmap^.pixels + adr;
-  rBitmap^ := Value;
-end;
-
-procedure vdpInit;
-begin
-  SDL_INIT(SDL_INIT_VIDEO);
-  SDL_EnableUnicode(1);
-  SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
-end;
 
 
 { transformation table bitmap address -> character offset.
@@ -177,18 +156,6 @@ begin
   self.rVStart := 18;
 end;
 
-constructor TVDP.Create;
-begin
-  inherited Create;
-  self.pBitmap := SDL_SETVIDEOMODE(cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
-  if self.pBitmap = nil then raise Exception.Create('Failed to create SDL bitmap');
-end;
-
-destructor TVDP.Destroy;
-begin
-  SDL_FREESURFACE(self.pBitmap);
-  SDL_QUIT;
-end;
 
 procedure TScreen.Clear; inline;
 begin
@@ -299,39 +266,6 @@ begin
   for i := 0 to pred(length) do
     self.RenderChar(i, lo(buffer.at[i].val));
   self.Display;
-end;
-
-procedure TVDP.Display; inline;
-begin
-  SDL_FLIP(self.pBitmap);
-end;
-
-function TVDP.PollKeyboard: char;
-var
-  done: boolean;
-  evt: pSDL_Event;
-  key: TSDLKey;
-  ch: char;
-begin
-  done := False;
-  NEW(evt);
-
-  repeat
-    if SDL_PollEvent(evt) = 1 then
-      case evt^.type_ of
-        SDL_KEYDOWN:
-        begin
-          key := evt^.key.keysym.unicode;
-          if key in [1 .. 255] then
-          begin
-            ch := chr(key);
-            done := True;
-            result := ch;
-          end;
-        end;
-        SDL_QUITEV: halt;
-      end;
-  until done;
 end;
 
 begin
