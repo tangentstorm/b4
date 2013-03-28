@@ -68,7 +68,7 @@ type
     property char[ i : cardinal ] : WideChar read GetChar write SetChar;
   end;
 
-  TVDP = class
+  TScreen = class
     rFG: Int32;
     rBG: Int32;
     rBR: Int32;
@@ -76,28 +76,37 @@ type
     rVStart: Int32;
     termW : Int32;
     termH : Int32;
-
-    length  : integer;
     buffer  : TCharGrid;
-    offsets : array of Int32;
-    pBitmap: pSDL_SURFACE;
-
     fError: boolean;
-
+    length  : integer;
+    offsets : array of Int32;
     constructor Create;
-    destructor Destroy; override;
-
     procedure Clear;
+
+    { abstract drawing interface }
+    procedure PlotPixel(adr: Int32; Value: byte); virtual; abstract;
+    procedure Display; virtual; abstract;
+
+    { character-generator specific }
+    procedure RenderChar(adr: Int32; Value: byte);
+    procedure RenderDisplay;
+  end;
+
+  { This is the SDL-Specific Class }
+  TVDP = class(TScreen)
+    pBitmap: pSDL_SURFACE;
+    constructor Create;
+
     function ReadAttrMap(adr: Int32): tVDPAttrData;
     procedure WriteAttrMap(adr: Int32; Value: tVDPAttrData);
     function ReadCharMap(adr: Int32): byte;
     procedure WriteCharMap(adr: Int32; Value: byte);
 
-    procedure PlotPixel(adr: Int32; Value: byte);
-    procedure RenderChar(adr: Int32; Value: byte);
-    procedure RenderDisplay;
-    procedure Display;
+    { sdl specific }
     function PollKeyboard: char;
+    procedure PlotPixel(adr: Int32; Value: byte); override;
+    procedure Display; override;
+    destructor Destroy; override;
   end;
   procedure vdpInit;
 
@@ -129,8 +138,7 @@ end;
   each character, so the arithmetic doesn't have to be
   done repeatedly for each character when drawing the
   screen. }
-
-procedure CacheOffsets(self : TVDP);
+procedure CacheOffsets(self : TScreen);
   var i, j, n, m: Int32;
 begin
   SetLength(self.offsets, self.length);
@@ -149,18 +157,17 @@ begin
 end;
 
 
-constructor TVDP.Create;
+
+constructor TScreen.Create;
 begin
   self.termW := kTermW;
   self.termH := kTermH;
-  self.pBitmap := SDL_SETVIDEOMODE(cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
-  if self.pBitmap = nil then raise Exception.Create('Failed to create SDL bitmap');
 
   self.rFG := 200;
   self.rBG := 32;
   self.rBR := 128;
   self.fError := False;
-  
+
   self.buffer := TCharGrid.Create( termW, termH );
   self.length := self.buffer.size;
   CacheOffsets(self);
@@ -170,13 +177,20 @@ begin
   self.rVStart := 18;
 end;
 
+constructor TVDP.Create;
+begin
+  inherited Create;
+  self.pBitmap := SDL_SETVIDEOMODE(cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
+  if self.pBitmap = nil then raise Exception.Create('Failed to create SDL bitmap');
+end;
+
 destructor TVDP.Destroy;
 begin
   SDL_FREESURFACE(self.pBitmap);
   SDL_QUIT;
 end;
 
-procedure TVDP.Clear; inline;
+procedure TScreen.Clear; inline;
 begin
   self.buffer.Clear;
 end;
@@ -239,7 +253,7 @@ begin
   else self.buffer.char[adr] := chr(value)
 end;
 
-procedure TVDP.RenderChar(adr: Int32; Value: byte);
+procedure TScreen.RenderChar(adr: Int32; Value: byte);
 var
   attr: tVDPAttrData;
   chr: taChar;
@@ -278,13 +292,13 @@ begin
     self.fError := True;
 end;
 
-procedure TVDP.RenderDisplay;
+procedure TScreen.RenderDisplay;
 var
   i: Int32;
 begin
   for i := 0 to pred(length) do
     self.RenderChar(i, lo(buffer.at[i].val));
-  SDL_FLIP(self.pBitmap);
+  self.Display;
 end;
 
 procedure TVDP.Display; inline;
