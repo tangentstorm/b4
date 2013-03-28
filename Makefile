@@ -21,12 +21,13 @@ targets:
 	@echo '--------------------------'
 	@echo 'make build -> build ./gen/retro'
 	@echo 'make retro -> build and run ./gen/retro'
+	@echo '  Also: make retro args="..."'
 	@echo 'make test  -> run all tests'
 	@echo
 	@echo for grammar engine, cd ./pre
 
 retro : build
-	cd $(GEN); ./retro -e
+	cd $(GEN); ./retro $(args)
 
 build : init  ng/*.pas
 	@$(FPC) ng/retro.pas
