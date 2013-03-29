@@ -134,7 +134,8 @@ program retrogl;
     bounce off the walls. }
   procedure OnUpdate( dt : double );
   begin
-    for i := low( sprites ) to high( sprites ) do
+    if key_Down(K_ESCAPE) then zgl_exit
+    else for i := low( sprites ) to high( sprites ) do
       with sprites[i] do
       begin
 	x := x + dx;
