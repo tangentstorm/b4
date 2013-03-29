@@ -19,10 +19,10 @@ PYTHON    = python
 targets:
 	@echo 'available targets:'
 	@echo '--------------------------'
-	@echo 'make build -> build ./gen/retro'
-	@echo 'make retro -> build and run ./gen/retro'
-	@echo '  Also: make retro args="..."'
-	@echo 'make test  -> run all tests'
+	@echo 'make build   -> build ./gen/retro'
+	@echo 'make retrovm -> build and run ./gen/retrovm'
+	@echo 'make retrogl -> build and run ./gen/retrogl'
+	@echo 'make test    -> run all tests'
 	@echo
 	@echo for grammar engine, cd ./pre
 
@@ -30,7 +30,12 @@ retro : build
 	cd $(GEN); ./retro $(args)
 
 build : init  ng/*.pas
-	@$(FPC) ng/retro.pas
+	@$(FPC) -Mdelphi ng/retro.pas
+
+retrogl : buildgl
+	cd $(GEN); ./retrogl $(args)
+buildgl : init  ng/*.pas
+	@$(FPC) -Mdelphi -dGL ng/retro.pas -oretrogl
 
 init    :
 	@mkdir -p $(GEN)

@@ -1,9 +1,14 @@
 program retro;
-uses romVDP, xpc, ng, sysutils;
-
+uses
+  xpc, sysutils,
+  {$IFDEF GL}
+  rxgl in 'ng/rxgl_sdl.pas',
+  {$ENDIF}
+  ng;
+  
   var
     inputs : array of string;
-    vm	   : ng.vm;
+    vm	   : ng.TRetroVM;
 
 { helper routines for main loop }
 
@@ -72,11 +77,15 @@ begin
 { main code , continued }
 
   if not init_failed then begin
-    {$i-} vm.init( imgpath, debug, padsize ); {$i+}
+    {$i-} vm := TRetroVM.Create( imgpath, debug, padsize ); {$i+}
     if ioresult <> 0 then die( 'couldn''t open image file: ' + imgpath )
     else begin
       for p in inputs do vm.include( p );
-      vm.loop;
+      {$IFDEF GL}
+      rxgl.Main(vm);
+      {$ELSE}
+      vm.Loop;
+      {$ENDIF}
       if dump_after then vm.dump
     end
   end

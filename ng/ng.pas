@@ -1,9 +1,8 @@
 {$i xpc.inc }
 unit ng;
-interface uses retroterm, romvdp, xpc, stacks, kvm, kbd, posix, sysutils;
+interface uses xpc, stacks, kvm, kbd, posix, sysutils;
 
   type
-    pvm	   = ^vm;
     token  = string[ 6 ];
     thunk  = procedure of object;
     device = function( msg : int32 ) : int32 of object;
@@ -16,7 +15,7 @@ interface uses retroterm, romvdp, xpc, stacks, kvm, kbd, posix, sysutils;
 
 { interface > types }
 
-    vm = object
+    vm = class
       data, addr : specialize stack< int32 >;
       ram, ports : array of int32;
       devices	 : array of device;
@@ -31,10 +30,8 @@ interface uses retroterm, romvdp, xpc, stacks, kvm, kbd, posix, sysutils;
       imgpath    : string;
       debugmode  : boolean;
       padsize    : int32;
-      rt  : TRetroTerm;
-      vdp : TVDP;
 
-      constructor init( imagepath : string; debug : boolean; pad: int32 );
+      constructor create( imagepath : string; debug : boolean; pad: int32 );
 
       { single-step instructions }
       procedure tick;
@@ -91,6 +88,7 @@ interface uses retroterm, romvdp, xpc, stacks, kvm, kbd, posix, sysutils;
       function rx_getstring( start : int32 ) : string;
 
     end;
+    TRetroVM = vm;
 
 implementation
 
@@ -101,7 +99,7 @@ implementation
   {$i ng_ports.pas }
   {$i ng_debug.pas }
 
-  constructor vm.init( imagepath : string; debug : boolean; pad : int32 );
+  constructor vm.Create( imagepath : string; debug : boolean; pad : int32 );
   begin
     self.padsize := pad;
     self.init_optable;
@@ -114,10 +112,6 @@ implementation
     assign( self.imgfile, imagepath );
     self.load;
     self.debugmode := debug;
-
-    {VDP initialisation (textmode: 100x40, 256 colours)}
-    rt := TRetroTerm.Create;
-    vdp := rt.vdp;
   end; { vm.init }
 
 

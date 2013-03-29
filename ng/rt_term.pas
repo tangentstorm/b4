@@ -1,7 +1,7 @@
 { retroterm: retro extended terminal }
 {$mode objfpc}
-unit retroterm;
-interface uses romVDP, rt_sdl;
+unit rt_term;
+interface uses romVDP;
 
   type
     TRetroTerm = class
@@ -20,7 +20,7 @@ interface uses romVDP, rt_sdl;
       count     : Int32; {  what does this do? }
       refresh   : Int32;
       attr: tVDPAttrData;
-      constructor Create;
+      constructor Create( aVDP : TVDP );
       procedure Clear;
       procedure Emit( x	:  int32 );
       property cx:int32 read _cx write set_cx;
@@ -29,9 +29,9 @@ interface uses romVDP, rt_sdl;
 
 implementation
 
-  constructor TRetroTerm.Create;
+  constructor TRetroTerm.Create( aVDP : TVDP );
   begin
-    vdp := {rt_*.}CreateVDP;
+    vdp := aVDP;
     self.refresh := vdp.termW * 160;
   end;
 
