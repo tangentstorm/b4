@@ -7,6 +7,19 @@ EXE	  = $(GEN)
 RETROPATH = lib/retro
 NGAROTEST = $(RETROPATH)/test/ngaro/ngarotest.py
 
+# extra libraries for zengl [ not in git yet :/ ]
+AGG       = lib/aggpas/Source
+ZGL       = lib/zengl
+
+# TODO: figure out how to not hard-code this path :/
+#       (probably means fpc.cfg)
+PLATFORM  = x86_64-linux
+ZENGLAGG  = -Fu$(AGG) -Fu$(ZGL)/src \
+	-Fu$(ZGL)/lib/ogg/$(PLATFORM) \
+	-Fu$(ZGL)/lib/theora/$(PLATFORM) \
+	-Fu$(ZGL)/lib/zip/$(PLATFORM)  \
+	-Fu$(ZGL)/lib/zlib/$(PLATFORM)
+
 # ROOT should be path back to this directory from GEN
 ROOT      = ../
 
@@ -35,7 +48,7 @@ build : init  ng/*.pas
 retrogl : buildgl
 	cd $(GEN); ./retrogl $(args)
 buildgl : init  ng/*.pas
-	@$(FPC) -Mdelphi -dGL ng/retro.pas -oretrogl
+	@$(FPC) -Mdelphi -dGL $(ZENGLAGG) ng/retrogl.pas -oretrogl
 
 init    :
 	@mkdir -p $(GEN)
@@ -58,4 +71,3 @@ test.core : init
 
 test.clean : init
 	cd $(GEN); rm -f *.img
-

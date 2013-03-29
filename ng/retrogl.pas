@@ -1,40 +1,4 @@
-{ zenglagg : a demonstration of using zengl and aggpas together
-  ---------------------------------------------------------------------
-  Compiled with fpc 2.7.1 (linux-x64) for kubuntu 12 using :
-  
-      zengl 0.3.8:
-          http://zengl.org/download.html
-  
-      my fork of modernized aggpas:
-         https://github.com/tangentstorm/aggpasmod/tree/2ff7cc4ba7c81e37803d15f4f9a7a58b078ab127
-  
-      (Same as http://sourceforge.net/projects/aggpasmod/
-       but I patched the platform-specific stuff for linux.)
-
-  ---------------------------------------------------------------------
-  Copyright (c) 2013 Michal j. Wallace
-  
-  Permission is hereby granted, free of charge, to any person
-  obtaining a copy of this software and associated documentation files
-  (the "Software"), to deal in the Software without restriction,
-  including without limitation the rights to use, copy, modify, merge,
-  publish, distribute, sublicense, and/or sell copies of the Software,
-  and to permit persons to whom the Software is furnished to do so,
-  subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be
-  included in all copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-  BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-  ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
-  --------------------------------------------------------------------- }
-program zenglagg;
+program retrogl;
   uses
     aggbasics,
     agg2d,
@@ -43,6 +7,7 @@ program zenglagg;
     zgl_window,
     zgl_screen,
     zgl_textures,
+    zgl_keyboard,
     zgl_sprite_2d ;
 
 
@@ -113,9 +78,12 @@ program zenglagg;
   end; { DrawSomething }
 
 
-  procedure Create;
+  procedure OnCreate;
   begin
-
+    
+    key_beginReadText({initial buffer value :=} '',
+		      {arbitrary buffer limit := } 16 );
+    
     desk_w := zgl_get(desktop_width);
     desk_h := zgl_get(desktop_height);
 
@@ -164,7 +132,7 @@ program zenglagg;
   { This routine gets called on every tick, after Update. }
   { All it's doing is moving the sprites and making them
     bounce off the walls. }
-  procedure Update( dt : double );
+  procedure OnUpdate( dt : double );
   begin
     for i := low( sprites ) to high( sprites ) do
       with sprites[i] do
@@ -178,7 +146,7 @@ program zenglagg;
 
 
   { This routine gets called on every tick, after Update. }
-  procedure Render;
+  procedure OnRender;
   begin
     { zgl_sprite_2d.asprite2d_draw is for "animated" sprites,
       where a single draw the image as a sprite. We pick the
@@ -189,15 +157,19 @@ program zenglagg;
       asprite2d_Draw(texture, sprites[i].x, sprites[i].y,
 		     sprite_w, sprite_h, {angle:=} 0, {frame:=}i mod 3 );
 
-  end; { Render }
+  end;
 
+  procedure OnKeyChar( Symbol : UTF8String );
+  begin
+    writeln( '  KeyChar: ', Symbol );
+  end;
 
 begin
-  wnd_SetCaption('zenglagg');
-  scr_SetOptions(zgl_get(desktop_width), zgl_get(desktop_height),
-		 refresh_default, {fullscreen=}true, {vsync=}true);
-  zgl_reg(sys_load,   @Create);
-  zgl_reg(sys_update, @Update);
-  zgl_reg(sys_draw,   @Render);
+  wnd_SetCaption('retrogl');
+  scr_SetOptions(800, 600, refresh_default, {fullscreen=}false, {vsync=}true);
+  zgl_reg( SYS_LOAD,   @OnCreate);
+  zgl_reg( SYS_UPDATE, @OnUpdate);
+  zgl_reg( SYS_DRAW,   @OnRender);
+  zgl_reg( INPUT_KEY_CHAR, @OnKeyChar );
   zgl_init;
 end.
