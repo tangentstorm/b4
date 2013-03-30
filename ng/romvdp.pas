@@ -2,36 +2,6 @@
 unit romVDP;
 interface
 uses grids, romFont, SysUtils;
-
-{This is a simple soft-core of a text-display processor. It features a
- resolution of 99 columns x 40 rows and 256 colours. There exist three
- memory areas, the character, attribute and font-data map:
-
-   character map (4000 byte)
-   attribute map (8000 byte)
-   font data     (3584 byte)
-
- A character is composed of 14 scan-lines of 8 pixel (8x14) whereby the
- colour information for each character is stored in two bytes of the
- attribute map start from offset zero:
-
-  character map 0000: 65       'A'
-  attribute map 0000: 128      foreground
-                0001: 32       background colour
-
- Colour 0 is specially handled. This colour value is replaced with two
- internal colour registers for global fore and background colours so
- clearing the attribute map to zero enabled a mode where the fore and
- background colour is selected by these two internal registers for the
- whole screen!
-
- All three areas can either be mapped into an unified address space or
- handled seperatly. If the first option is choosen, the character map
- should begin at address 0, followed by the attribute map at FA0 and
- the font data at 2EE0. Beware the address mapping in combination with
- handling values though the abstract tVDPData type cost performance.
- The aternative way is to handle all maps as seperate memory areas.
- The choice is by you !}
 
 const
   cScnXRes = 800;
