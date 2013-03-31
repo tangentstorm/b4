@@ -37,6 +37,7 @@ interface uses xpc, stacks, kvm, kbd, posix, sysutils;
       procedure tick;
       procedure runop( op:int32 );
       procedure runio;
+      function waiting : boolean;
 
       { main loop(s) }
       procedure loop;
@@ -89,6 +90,12 @@ interface uses xpc, stacks, kvm, kbd, posix, sysutils;
 
     end;
     TRetroVM = vm;
+    ENotFinished = class (Exception);
+
+  const
+    rxWAITING = 0;
+    rxACTIVE  = 1;
+
 
 implementation
 
@@ -112,6 +119,7 @@ implementation
     assign( self.imgfile, imagepath );
     self.load;
     self.debugmode := debug;
+    self.ports[0] := rxACTIVE;
   end; { vm.init }
 
 
@@ -211,18 +219,22 @@ implementation
   |                                                        |
   }
   procedure vm.runio; { triggered by the oWAIT op }
-    var p: int32;
+    var p: int32 = 1;
   begin
-    if ports[ 0 ] = 0 then begin
-      ports[ 0 ] := 1;
-      for p := 0 to length( ports )-1 do begin
-	if ports[ p ] <> 0 then begin
-	  ports[ p ] := devices[ p ]( ports[ p ]);
-	end;
+    { find the first message }
+    while (p < length( ports )) and (ports[p] = 0) do inc(p);
+    if p < length( ports ) then
+      try
+        ports[ p ] := devices[ p ]( ports[ p ]);
+        ports[ 0 ] := rxACTIVE;
+      except
+        on ENotFinished do ports[ 0 ] := rxWAITING
+        else writeln('protocol error on port:', p);
       end;
-    end;
-  end; { vm.runio }
-
+    { end; // if }
+      {TODO: incorporate a result/error flag for asynchronous requests. }
+      {TODO: design a mechanism for sending non-stack data. }
+  end;
 
 { the top level routine }
 

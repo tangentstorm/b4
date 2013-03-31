@@ -7,12 +7,18 @@ unit ng.ports; implementation
 
   { -- port 0 ------------------------------------------------- }
 
+  function vm.waiting : boolean; inline;
+  begin
+    result := self.ports[ 0 ] = rxWAITING;
+  end;
+
   function vm.handle_syncport( msg :  int32 ): int32;
   begin
-    { Nothing to do: port 0 isn't connected to a device.
-      It's just used to signal that one side or the other
-      has data to transfer. }
-    result := 0;
+    { This is never actually called,
+      because runio only looks at ports > 0 }
+    Result := msg;
+    WriteLn( 'vm error:', msg );
+    Halt( msg );
   end;
 
   { -- port 1 ------------------------------------------------- }
@@ -191,7 +197,8 @@ unit ng.ports; implementation
   begin
     setlength( self.devices, portcount );
     setlength( self.ports, portcount );
-    for i := 0 to portcount - 1 do begin
+    ports[ 0 ] := rxACTIVE;
+    for i := 1 to portcount - 1 do begin
       ports[ i ] := 0;
     end;
     self.devices[0] := @self.handle_syncport;
