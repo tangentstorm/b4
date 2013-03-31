@@ -48,7 +48,7 @@ build : init  ng/*.pas
 retrogl : buildgl
 	cd $(GEN); ./retrogl $(args)
 buildgl : init  ng/*.pas
-	@$(FPC) -Mdelphi -dGL $(ZENGLAGG) ng/retrogl.pas -oretrogl
+	@$(FPC) -Mdelphi -dGL $(ZENGLAGG) ng/retro.pas -oretrogl
 
 init    :
 	@mkdir -p $(GEN)

@@ -1,25 +1,19 @@
 {$mode objfpc}
 unit rxgl_sdl;
-interface uses ng, SDL, romvdp, sysutils, rt_term;
+interface uses ng, SDL, sysutils, rt_term;
 
   procedure Main( rxvm : ng.TRetroVM );
 
 implementation
 
 type
-  TSDLVDP = class (romvdp.TVDP)
+  TSDLVDP = class (rt_term.TRxConsole)
     pBitmap : pSDL_SURFACE;
-    vm      : ng.TRetroVM;
-    rt      : rt_term.TRetroTerm;
     constructor Create;
     destructor Destroy; override;
     function PollKeyboard: char; override;
     procedure PlotPixel(adr: Int32; Value: byte); override;
     procedure Display; override;
-
-    procedure Attach( retrovm : ng.TRetroVM );
-    function handle_keyboard( msg : int32 ) : int32;
-    function handle_write (msg : int32 ) : int32;
   end;
 
 constructor TSDLVDP.Create;
@@ -82,17 +76,6 @@ begin
   until done;
 end;
 
-function TSDLVDP.handle_keyboard( msg : int32 ) : int32;
-begin
-  self.RenderDisplay;
-  result := ord(self.PollKeyboard);
-end;
-  
-function TSDLVDP.handle_write (msg : int32): int32;
-begin
-  if msg = 1 then rt.emit(vm.data.pop);
-  result := 0;
-end;
 
 { TODO: Mat2 Provided these routines for administering the terminal,
   but they were attached to the canvas device, and as far as I can
@@ -136,14 +119,6 @@ begin
 end;
 }
 
-procedure TSDLVDP.Attach( retrovm : ng.TretroVM );
-begin
-  self.rt := TRetroTerm.Create( self );
-  self.vm := retrovm;
-  self.vm.devices[1] := @self.handle_keyboard;
-  self.vm.devices[2] := @self.handle_write;
-end;
-  
 procedure Main( rxvm : ng.TRetroVM );
   var vdp : TSDLVDP;
 begin
