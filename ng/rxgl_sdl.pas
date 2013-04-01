@@ -4,8 +4,6 @@ interface uses ng, SDL, sysutils, rt_term;
 
   procedure Main( rxvm : ng.TRetroVM );
 
-implementation
-
 type
   TSDLVDP = class (rt_term.TRxConsole)
     pBitmap : pSDL_SURFACE;
@@ -15,6 +13,8 @@ type
     procedure PlotPixel(adr: Int32; Value: byte); override;
     procedure Display; override;
   end;
+
+implementation
 
 constructor TSDLVDP.Create;
 begin
