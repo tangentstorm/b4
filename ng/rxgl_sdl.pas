@@ -1,6 +1,6 @@
-{$mode objfpc}
+{$i xpc.inc}
 unit rxgl_sdl;
-interface uses ng, SDL, sysutils, rt_term;
+interface uses xpc, ng, SDL, sysutils, rt_term;
 
   procedure Main( rxvm : ng.TRetroVM );
 

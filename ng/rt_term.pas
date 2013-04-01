@@ -1,7 +1,7 @@
 { retroterm: retro extended terminal }
-{$mode objfpc}
+{$i xpc.inc}
 unit rt_term;
-interface uses grids, romFont, SysUtils, ng;
+interface uses xpc, grids, romFont, SysUtils, ng;
 
 
 const
@@ -321,8 +321,10 @@ begin
 	  self.plotPixel(ofs, fg)
         else
 	  self.plotPixel(ofs, bg);
-        ofs := ofs + 1;
+	ofs := ofs + 1;
+	{$RANGECHECKS OFF}
         chr[i] := chr[i] shl 1;
+	{$RANGECHECKS ON}
       end;
       ofs := (ofs + cScnXRes) - cChrXRes;
     end;

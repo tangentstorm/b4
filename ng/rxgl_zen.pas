@@ -1,6 +1,6 @@
-{$mode objfpc}
+{$i xpc.inc}
 unit rxgl_zen;
-interface uses ng, sysutils, rt_term, rxgl_sdl,
+interface uses xpc, ng, sysutils, rt_term, rxgl_sdl,
   zgl_main,
   zgl_types,
   zgl_window,
