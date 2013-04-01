@@ -2,7 +2,7 @@ program retro;
 uses
   xpc, sysutils,
   {$IFDEF GL}
-  rxgl in 'ng/rxgl_sdl.pas',
+  rxgl in 'ng/rxgl_zen.pas',
   {$ENDIF}
   ng;
   
