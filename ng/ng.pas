@@ -36,8 +36,12 @@ interface uses xpc, stacks, kvm, kbd, posix, sysutils;
       { single-step instructions }
       procedure tick;
       procedure runop( op:int32 );
+
+      { input/output }
       procedure runio;
       function waiting : boolean;
+      // maybe later: (for now, the retry mechanism in oIN seems to work fine.)
+      // procedure send( msg : Int32 );
 
       { main loop(s) }
       procedure loop;
@@ -196,45 +200,48 @@ implementation
     else optbl[ op ].go;
   end;
 
-{ run io }
-  {
-  | Ngaro machines connect via ports.                      |
-  | A port is just a normal cell that's writable from both |
-  | inside and outside the machine, much like a usb port.  |
-  |                                                        |
-  | The protocol is:                                       |
-  |                                                        |
-  | - write whatever you want to the ports                 |
-  | - set ports[ 0 ] to 0                                  |
-  | - invoke the 'wait' instruction                        |
-  |                                                        |
-  | - the vm pauses until a device sets port[ 0 ] to 1     |
-  |                                                        |
-  | Note: only one device will trigger on each WAIT, and   |
-  | (at least in this vm and the js one) they will always  |
-  | be executed in order of ascending port numbers.        |
-  |                                                        |
-  | A device will only be triggered when you write a       |
-  | non-zero values to its port.                           |
-  |                                                        |
-  }
-  procedure vm.runio; { triggered by the oWAIT op }
-    var p: int32 = 1;
-  begin
-    { find the first message }
-    while (p < length( ports )) and (ports[p] = 0) do inc(p);
-    if p < length( ports ) then
-      try
-        ports[ p ] := devices[ p ]( ports[ p ]);
-        ports[ 0 ] := rxACTIVE;
-      except
-        on ENotFinished do ports[ 0 ] := rxWAITING
-        else writeln('protocol error on port:', p);
-      end;
-    { end; // if }
-      {TODO: incorporate a result/error flag for asynchronous requests. }
-      {TODO: design a mechanism for sending non-stack data. }
-  end;
+{ IO System
+  -------------------------------------------------------------
+
+  The VM communicates with the outside world through a group of
+  virtual ports. These are simply slots in an array, associated with a
+  particular callback function of type:
+
+  function callback( msg : Int32 ) : Int32;
+
+  - from the VM, use the OUT instruction to send data to a port.
+  - [ NOTE: this part is going away ]
+       * set ports[ 0 ] to 0, again via the OUT opcode
+       * invoke the 'wait' opcode, which triggers =runio=, below.
+
+  A device will only be triggered when you write a non-zero values
+  to its port. Only one device will trigger on each WAIT, and they
+  will always be executed in order of ascending port number.
+
+  NOTE:Because only one is port is called per step, the WAIT
+  opcode isn't necessary, and should be removed.
+
+  <I am only keeping it for the time being because I haven't fully
+  tested retro without it.>
+  ------------------------------------------------------------- }
+procedure vm.runio; { triggered by the oWAIT op }
+var p: int32 = 1;
+begin
+  { find the first message }
+  while (p < length( ports )) and (ports[p] = 0) do inc(p);
+  if p < length( ports ) then
+    try
+      ports[ p ] := devices[ p ]( ports[ p ]);
+      ports[ 0 ] := rxACTIVE;
+    except
+      on ENotFinished do ports[ 0 ] := rxWAITING
+      else writeln('protocol error on port:', p);
+    end;
+  { end; // if }
+  {TODO: use something besides exceptions for asynchronous
+     requests: probably port 0. }
+  {TODO: design a mechanism for sending non-stack data. }
+end;
 
 { the top level routine }
 
