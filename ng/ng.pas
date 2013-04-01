@@ -34,7 +34,7 @@ interface uses xpc, stacks, kvm, kbd, posix, sysutils;
       constructor create( imagepath : string; debug : boolean; pad: int32 );
 
       { single-step instructions }
-      procedure tick;
+      procedure step;
       procedure runop( op:int32 );
 
       { input/output }
@@ -166,7 +166,7 @@ implementation
 
 { step by step run of the vm }
 
-  procedure vm.tick;
+  procedure vm.step;
   begin
     if self.debugmode then show_debugger( '' );
     if ( ip >= low( ram )) and ( ip <= high( ram )) then
@@ -183,7 +183,7 @@ implementation
     rewrite( log );
     repeat
       writeln( log, ip, ^_, ram[ ip ], ^_, data.dumps, ^_, addr.dumps );
-      tick
+      step
     until ip >= length( ram );
   end; { vm.trace }
 
@@ -247,7 +247,7 @@ end;
 
 procedure vm.loop;
 begin
-  repeat tick until done;
+  repeat step until done;
 end; { vm.loop }
 
 

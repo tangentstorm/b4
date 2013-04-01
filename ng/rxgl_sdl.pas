@@ -132,7 +132,7 @@ procedure Main( rxvm : ng.TRetroVM );
 begin
   vdp := TSDLVDP.Create;
   vdp.Attach( rxvm );
-  while not rxvm.done do rxvm.tick;
+  while not rxvm.done do rxvm.step;
   vdp.Destroy;
 end;
 

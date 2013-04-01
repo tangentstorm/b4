@@ -38,7 +38,7 @@ procedure OnStep;
   const opsPerStep = 65535; { arbitrary number }
 begin
   repeat
-    inc(i); vm.tick {todo: raname to step }
+    inc(i); vm.step
   until (i = opsPerStep) or vm.done;
   if vm.done then zgl_exit
 end;
