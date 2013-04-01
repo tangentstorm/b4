@@ -45,15 +45,9 @@ unit ng.ops; implementation
 
   procedure vm.oIN; { p-n }
   begin
-    {NOTE: This breaks slightly from the ngaro standard,
-      but achieves the same result. In this VM, it is the
-      "IN" operation that waits. }
-    if waiting then dec( ip ) { retry next tick }
-    else begin
-      t := data.pop;
-      data.push( ports[ t ] );
-      ports[ t ] := 0;
-    end
+    t := data.pop;
+    data.push( ports[ t ] );
+    ports[ t ] := 0;
   end;
   procedure vm.oOUT ; { np- } begin TN; ports[ t ] := n; end;
   procedure vm.oWAIT; { - } begin runio; end;

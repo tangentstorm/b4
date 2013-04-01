@@ -234,10 +234,13 @@ begin
       ports[ p ] := devices[ p ]( ports[ p ]);
       ports[ 0 ] := rxACTIVE;
     except
-      on ENotFinished do ports[ 0 ] := rxWAITING
-      else writeln('protocol error on port:', p);
+      on ENotFinished do ports[ 0 ] := rxWAITING;
+    else
+      writeln('protocol error on port: ', 1);
+      raise
     end;
-  { end; // if }
+  { waiting could be set directly or triggered by the try..except }
+  if waiting then dec(ip);
   {TODO: use something besides exceptions for asynchronous
      requests: probably port 0. }
   {TODO: design a mechanism for sending non-stack data. }
