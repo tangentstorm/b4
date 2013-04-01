@@ -7,7 +7,7 @@ interface uses grids, romFont, SysUtils, ng;
 const
   cScnXRes = 800;
   cScnYRes = 600;
-  cScnCRes = 8;
+  cScnCRes = 32;
   cChrXRes = 8;
   cChrYRes = 14;
   cScnHLine = $2BC0;
