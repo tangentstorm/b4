@@ -15,6 +15,10 @@ interface uses xpc, ng, sysutils, rt_term, rxgl_sdl,
 
   procedure Main( rxvm : ng.TRetroVM );
 
+  type
+    TZenGLVDP = class (TSDLVDP)
+    end;
+
 implementation
 
 const
@@ -63,7 +67,7 @@ end;
 
 procedure Main( rxvm : ng.TRetroVM );
 begin
-  vt := TSDLVDP.Create;
+  vt := TZenGLVDP.Create;
   vm := rxvm;
   zgl_init;
 end;
