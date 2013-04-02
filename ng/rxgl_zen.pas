@@ -51,6 +51,11 @@ begin
 		 {angle:} 0, {alpha:} $ff, FX2D_FLIPY );
 end;
 
+procedure OnTick; { for the fps timer }
+begin
+  wnd_SetCaption( 'retrogl : ' + u_IntToStr( zgl_Get( RENDER_FPS )) + ' FPS');
+end;
+
 procedure OnExit;
 begin
   vt.Destroy;
@@ -71,5 +76,6 @@ initialization
   zgl_reg( SYS_DRAW,   @OnDraw);
 //  zgl_reg( INPUT_KEY_CHAR, @OnChar );
   zgl_reg( SYS_EXIT,   @OnExit);
+  timer_add( @OnTick, 1000 );
   scr_SetOptions( 800, 600, REFRESH_MAXIMUM, {fullscreen=}false, {vsync=}true );
 end.
