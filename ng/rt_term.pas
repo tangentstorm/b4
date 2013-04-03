@@ -1,7 +1,7 @@
 { retroterm: retro extended terminal }
 {$i xpc.inc}
 unit rt_term;
-interface uses xpc, grids, romFont, SysUtils, ng;
+interface uses xpc, grids, romFont, SysUtils, ng, ascii;
 
 
 const
@@ -63,12 +63,22 @@ type
     procedure RenderDisplay;
   end;
 
-  TConsole = class (TScreen)
-    function PollKeyboard : char; virtual; abstract;
+  TKeyboard = class
+    buffer : UnicodeString;
+    constructor Create;
+    procedure SendKey( ch : WideChar );
+    function KeyPressed : Boolean;
+    function ReadKey : WideChar;
   end;
-  
+
+  TConsole = class (TScreen)
+    keyboard : TKeyboard;
+    constructor Create;
+  end;
+
   TRxConsole = class( TConsole )
     vm      : ng.TRetroVM;
+
     procedure Attach( retrovm : ng.TRetroVM ); virtual;
     function handle_keyboard( msg : int32 ) : int32;
     function handle_write (msg : int32 ) : int32;
@@ -103,6 +113,12 @@ implementation
 const
   kTermW = 99;
   kTermH = 40;
+
+  constructor TConsole.Create;
+  begin
+    inherited Create;
+    self.keyboard := TKeyboard.Create;
+  end;
 
   constructor TRxConsole.Create;
   begin
@@ -343,6 +359,34 @@ begin
 end;
 
 
+{ keyboard buffer }
+
+constructor TKeyboard.Create;
+begin
+  buffer := '';
+end;
+
+procedure TKeyboard.SendKey( ch : WideChar );
+begin
+  buffer += ch;
+end;
+
+function TKeyboard.KeyPressed : boolean; inline;
+begin
+  result := Length(buffer) > 0;
+end;
+
+function TKeyboard.ReadKey : WideChar;
+begin
+  if KeyPressed then
+    begin
+      result := buffer[1];
+      Delete(buffer, 1, 1)
+    end
+  else result := ascii.SYN; { synchronous idle }
+end;
+
+
 { vm integration }
 
 procedure TRxConsole.Attach( retrovm : ng.TretroVM );
@@ -355,15 +399,19 @@ end;
 function TRxConsole.handle_keyboard( msg : int32 ) : int32;
 begin
   self.RenderDisplay;
-  result := ord(self.PollKeyboard);
+  if self.keyboard.KeyPressed then
+    begin
+      result := ord(self.keyboard.ReadKey)
+    end
+  else raise ENotFinished.Create('ReadKey');
 end;
-  
+
 function TRxConsole.handle_write (msg : int32): int32;
 begin
   if msg = 1 then Emit(vm.data.pop);
   result := 0;
 end;
 
-  
+
 begin
 end.

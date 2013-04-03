@@ -9,7 +9,6 @@ type
     pBitmap : pSDL_SURFACE;
     constructor Create;
     destructor Destroy; override;
-    function PollKeyboard: char; override;
     procedure PlotPixel(adr: Int32; Value: byte); override;
     procedure Display; override;
   end;
@@ -56,32 +55,23 @@ begin
   SDL_FLIP(self.pBitmap);
 end;
 
-function TSDLVDP.PollKeyboard: char;
+procedure step_sdl(vdp : TSDLVDP); inline;
 var
-  done: boolean;
-  evt: pSDL_Event;
-  key: TSDLKey;
-  ch: char;
+  evt : pSDL_Event;
+  key : TSDLKey;
+  ch  : widechar;
 begin
-  done := False;
-  NEW(evt);
-
-  repeat
-    if SDL_PollEvent(evt) = 1 then
-      case evt^.type_ of
-        SDL_KEYDOWN:
-        begin
-          key := evt^.key.keysym.unicode;
-          if key in [1 .. 255] then
-          begin
-            ch := chr(key);
-            done := True;
-            result := ch;
-          end;
-        end;
-        SDL_QUITEV: halt;
-      end;
-  until done;
+  New(evt);
+  if SDL_PollEvent(evt) = 1 then
+    case evt^.type_ of
+      SDL_KEYDOWN :
+	begin
+	  key := evt^.key.keysym.unicode;
+	  vdp.keyboard.SendKey(widechar(key));
+	end;
+      SDL_QUITEV : Halt;
+    end; { case }
+  Dispose(evt)
 end;
 
 
@@ -132,7 +122,9 @@ procedure Main( rxvm : ng.TRetroVM );
 begin
   vdp := TSDLVDP.Create;
   vdp.Attach( rxvm );
-  while not rxvm.done do rxvm.step;
+  repeat
+    rxvm.step; step_sdl(vdp)
+  until rxvm.done;
   vdp.Destroy;
 end;
 
