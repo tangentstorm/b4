@@ -2,22 +2,16 @@
 {$i xpc.inc}
 unit rt_term;
 interface uses xpc, grids, romFont, SysUtils, ng, ascii;
-
 
 const
-  cScnXRes = 800;
-  cScnYRes = 600;
-  cScnCRes = 32;
-  cChrXRes = 8;
-  cChrYRes = 14;
-  cScnHLine = $2BC0;
-  cScnAtrMap = $FA0;
-  cScnFntDta = $2EE0;
+  canvas_w = 800;
+  canvas_h = 600;
+  bitdepth = 32;
+  glyph_w = 8;
+  glyph_h = 14;
 
-  kScnChrSize = $FA0 - $28;
-  kScnAtrSize = $1F40;
-  kScnFntSize = $E00;
-
+  cScnHLine = $2BC0;
+  
 type
   tVDPAttrData = array [0..1] of byte;
 
@@ -329,9 +323,9 @@ begin
     else
       bg := attr[1];
     ofs := offsets[adr];
-    for i := 0 to cChrYRes - 1 do
+    for i := 0 to glyph_h - 1 do
     begin
-      for j := 0 to cChrXRes - 1 do
+      for j := 0 to glyph_w - 1 do
       begin
         if ((chr[i] shr 7) and 1) = 1 then
 	  self.plotPixel(ofs, fg)
@@ -342,7 +336,7 @@ begin
         chr[i] := chr[i] shl 1;
 	{$RANGECHECKS ON}
       end;
-      ofs := (ofs + cScnXRes) - cChrXRes;
+      ofs := (ofs + canvas_w) - glyph_w;
     end;
   end
   else

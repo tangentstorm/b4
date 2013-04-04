@@ -22,10 +22,6 @@ interface uses xpc, ng, sysutils, rt_term, rxgl_sdl,
 
 implementation
 
-const
-  canvas_w = cScnXRes;
-  canvas_h = cScnYRes;
-
 var
   vm : ng.TRetroVM;
   vt : TSDLVDP;

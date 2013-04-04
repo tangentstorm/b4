@@ -23,7 +23,7 @@ begin
   SDL_EnableUnicode(1);
   SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 
-  self.pBitmap := SDL_SETVIDEOMODE(cScnXRes, cScnYRes, cScnCRes, SDL_HWSURFACE);
+  self.pBitmap := SDL_SETVIDEOMODE(canvas_w, canvas_h, bitdepth, SDL_HWSURFACE);
   if self.pBitmap = nil then
     raise Exception.Create('Failed to create SDL bitmap');
 end;
@@ -41,7 +41,7 @@ procedure TSDLVDP.PlotPixel(adr: Int32; Value: byte); inline;
 	    end;
   var rBitmap: ^TRGBA;
 begin
-  rBitmap := pBitmap^.pixels + 4 * (self.rVStart * cScnXRes + self.rHStart + adr);
+  rBitmap := pBitmap^.pixels + 4 * (self.rVStart * canvas_w + self.rHStart + adr);
   with rBitmap^ do
   begin
     r := Value;
@@ -89,7 +89,7 @@ begin
     1	  : begin end;
     9	  : begin
 	  data.pop2 (x, y);
-	  attr := vdp.ReadAttrMap(cScnXRes * y + x);
+	  attr := vdp.ReadAttrMap(canvas_w * y + x);
 	  data.push (attr[0]);
 	  data.push (attr[1]);
 	end;
@@ -97,11 +97,11 @@ begin
 	   data.pop2(x, y);
 	   data.pop2(h, w);
 	   attr[0] := h; attr[1] := w;
-	   vdp.WriteAttrMap(cScnXRes * y + x, attr);
+	   vdp.WriteAttrMap(canvas_w * y + x, attr);
 	 end;
        11 : begin
 	     data.pop2(x, y);
-	     data.push(vdp.ReadCharMap(cScnXRes * y + x));
+	     data.push(vdp.ReadCharMap(canvas_w * y + x));
 	   end;
     12	  : data.push(vdp.rBR);
     13	  : data.pop1(vdp.rBR);
@@ -110,7 +110,7 @@ begin
     16	  : vdp.RenderDisplay;
     18	  : begin
 	  data.pop3 (x, y, h);
-	  vdp.PlotPixel(y * cScnXRes + x, h);
+	  vdp.PlotPixel(y * canvas_w + x, h);
 	end;
     else
       result := -1;
