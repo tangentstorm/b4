@@ -13,6 +13,11 @@ const
   cScnHLine = $2BC0;
   
 type
+
+  TRGBA = record
+    r, g, b, a : byte
+  end;
+
   tVDPAttrData = array [0..1] of byte;
 
   TCharCell = record

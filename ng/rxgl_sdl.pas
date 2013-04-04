@@ -35,10 +35,6 @@ begin
 end;
 
 procedure TSDLVDP.PlotPixel(adr: Int32; Value: byte); inline;
-  type
-    TRGBA = record
-	      r,g,b,a : byte
-	    end;
   var rBitmap: ^TRGBA;
 begin
   rBitmap := pBitmap^.pixels + 4 * (self.rVStart * canvas_w + self.rHStart + adr);
