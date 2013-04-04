@@ -17,6 +17,7 @@ interface uses xpc, ng, sysutils, rt_term, rxgl_sdl,
 
   type
     TZenGLVDP = class (TSDLVDP)
+      procedure Display; override;
     end;
 
 implementation
@@ -30,29 +31,41 @@ var
   vt : TSDLVDP;
   texture : zglPTexture;
 
+
+procedure TZenGLVDP.Display;
+begin
+  inherited Display;
+  tex_setData( texture, vt.pBitmap^.pixels, 0, 0, canvas_w, canvas_h);
+end;
+
 procedure OnLoad;
 begin
   vt.Attach( vm );
   texture := tex_CreateZero( canvas_w, canvas_h );
   tex_SetFrameSize(texture, canvas_w, canvas_w);
+  { Set up keyboard reporting. }
+  key_beginReadText({initial buffer:}'', {buffer size:} 32);
 end;
 
 procedure OnStep;
   var i : integer = 0;
   const opsPerStep = 65535; { arbitrary number }
 begin
-  repeat
-    inc(i); vm.step
-  until (i = opsPerStep) or vm.done;
+  repeat vm.step until vm.waiting or vm.done;
+  step_sdl(vt);
   if vm.done then zgl_exit
 end;
 
 procedure OnDraw;
 begin
-  tex_setData( texture, vt.pBitmap^.pixels, 0, 0, canvas_w, canvas_h);
   { SDL images are upside down from what ZenGL expects, hence FX2D_FLIPY. }
   ssprite2d_Draw( texture, 0, 0, canvas_w, canvas_h,
 		 {angle:} 0, {alpha:} $ff, FX2D_FLIPY );
+end;
+
+procedure OnChar( Symbol : UTF8String );
+begin
+  vt.keyboard.SendKey(Symbol[1]); {TODO : decode utf8. }
 end;
 
 procedure OnTick; { for the fps timer }
@@ -78,7 +91,7 @@ initialization
   zgl_reg( SYS_LOAD,   @OnLoad);
   zgl_reg( SYS_UPDATE, @OnStep);
   zgl_reg( SYS_DRAW,   @OnDraw);
-//  zgl_reg( INPUT_KEY_CHAR, @OnChar );
+  zgl_reg( INPUT_KEY_CHAR, @OnChar );
   zgl_reg( SYS_EXIT,   @OnExit);
   timer_add( @OnTick, 1000 );
   scr_SetOptions( 800, 600, REFRESH_MAXIMUM, {fullscreen=}false, {vsync=}true );
