@@ -2,16 +2,17 @@
 unit rxgl_sdl;
 interface uses xpc, ng, SDL, sysutils, rt_term;
 
-  procedure Main( rxvm : ng.TRetroVM );
+  type
+    TSDLVDP = class (rt_term.TRxConsole)
+      pBitmap : pSDL_SURFACE;
+      constructor Create;
+      destructor Destroy; override;
+      procedure PlotPixel(adr: Int32; Value: byte); override;
+      procedure Display; override;
+    end;
 
-type
-  TSDLVDP = class (rt_term.TRxConsole)
-    pBitmap : pSDL_SURFACE;
-    constructor Create;
-    destructor Destroy; override;
-    procedure PlotPixel(adr: Int32; Value: byte); override;
-    procedure Display; override;
-  end;
+  procedure Main( rxvm : ng.TRetroVM );
+  procedure step_sdl(vdp : TSDLVDP);
 
 implementation
 
