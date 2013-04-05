@@ -11,12 +11,8 @@ const
   glyph_h = 14;
 
   cScnHLine = $2BC0;
-  
-type
 
-  TRGBA = record
-    r, g, b, a : byte
-  end;
+type
 
   tVDPAttrData = array [0..1] of byte;
 
@@ -38,6 +34,11 @@ type
     property char[ i : cardinal ] : WideChar read GetChar write SetChar;
   end;
 
+
+  TRGBA = record
+    r, g, b, a : byte
+  end;
+
   TScreen = class
     rFG: Int32;
     rBG: Int32;
@@ -58,12 +59,13 @@ type
     procedure Display; virtual; abstract;
 
     { character-generator specific }
-    procedure RenderChar(adr: Int32; Value: byte);
+    procedure RenderChar(adr: Int32; Value: byte); virtual;
     procedure RenderDisplay;
   end;
 
   TKeyboard = class
     buffer : UnicodeString;
+    needKey : boolean;
     constructor Create;
     procedure SendKey( ch : WideChar );
     function KeyPressed : Boolean;
@@ -363,11 +365,13 @@ end;
 constructor TKeyboard.Create;
 begin
   buffer := '';
+  needKey := false;
 end;
 
 procedure TKeyboard.SendKey( ch : WideChar );
 begin
   buffer += ch;
+  needKey := false;
 end;
 
 function TKeyboard.KeyPressed : boolean; inline;
@@ -382,7 +386,10 @@ begin
       result := buffer[1];
       Delete(buffer, 1, 1)
     end
-  else result := ascii.SYN; { synchronous idle }
+  else begin
+    needKey := true;
+    result := ascii.SYN; { synchronous idle }
+  end;
 end;
 
 
@@ -397,12 +404,12 @@ end;
 
 function TRxConsole.handle_keyboard( msg : int32 ) : int32;
 begin
-  self.RenderDisplay;
-  if self.keyboard.KeyPressed then
-    begin
-      result := ord(self.keyboard.ReadKey)
-    end
-  else raise ENotFinished.Create('ReadKey');
+  { ensure a refresh of the screen when it's time to input text,
+    but only if we're just waiting. }
+  if keyboard.needKey then pass else self.RenderDisplay;
+  result := ord(keyboard.ReadKey);
+  if keyboard.needKey then
+    raise ENotFinished.Create('ReadKey');
 end;
 
 function TRxConsole.handle_write (msg : int32): int32;
