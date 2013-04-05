@@ -1,6 +1,7 @@
 {$i xpc.inc}
 unit rxgl_zen;
-interface uses xpc, ng, sysutils, rt_term, rxgl_sdl,
+interface uses xpc, ng, sysutils, rt_term,
+  math,
   zgl_main,
   zgl_types,
   zgl_window,
@@ -8,15 +9,20 @@ interface uses xpc, ng, sysutils, rt_term, rxgl_sdl,
   zgl_textures,
   zgl_keyboard,
   zgl_sprite_2d,
+  zgl_render_target,
+  zgl_primitives_2d,
   zgl_fx,
   zgl_timers,
   zgl_utils;
 
-
   procedure Main( rxvm : ng.TRetroVM );
 
   type
-    TZenGLVDP = class (TSDLVDP)
+    TZenGLVDP = class (rt_term.TRxConsole)
+      target : zglPRenderTarget;
+      constructor Create;
+      destructor Destroy; override;
+      procedure PlotPixel( offset : Int32; value: byte ); override;
       procedure Display; override;
     end;
 
@@ -24,39 +30,58 @@ implementation
 
 var
   vm : ng.TRetroVM;
-  vt : TSDLVDP;
-  texture : zglPTexture;
+  vt : TZenGLVDP;
 
+constructor TZenGLVDP.Create;
+begin
+  inherited Create;
+  self.target := rtarget_Add( tex_CreateZero( canvas_w, canvas_h ), RT_DEFAULT );
+end;
+
+destructor TZenGLVDP.Destroy;
+begin
+  inherited Destroy;
+end;
+
+procedure TZenGLVDP.PlotPixel( offset : Int32; value : byte );
+  var x, y : int32;
+begin
+  DivMod( offset, canvas_w, y, x );
+  pr2d_Pixel( x, y, (value shl 16) + (value shl 8) + value, $FF );
+end;
 
 procedure TZenGLVDP.Display;
 begin
-  inherited Display;
-  tex_setData( texture, vt.pBitmap^.pixels, 0, 0, canvas_w, canvas_h);
 end;
 
 procedure OnLoad;
 begin
+  vt := TZenGLVDP.Create;
   vt.Attach( vm );
-  texture := tex_CreateZero( canvas_w, canvas_h );
-  tex_SetFrameSize(texture, canvas_w, canvas_w);
+  vt.Clear;
   { Set up keyboard reporting. }
   key_beginReadText({initial buffer:}'', {buffer size:} 32);
 end;
 
 procedure OnStep;
-  var i : integer = 0;
-  const opsPerStep = 65535; { arbitrary number }
+  var i : cardinal = 1;
+  const opsPerStep = 1 shl 19; { arbitrary number }
 begin
-  repeat vm.step until vm.waiting or vm.done;
-  step_sdl(vt);
+  rtarget_Set( vt.target );
   if vm.done then zgl_exit
+  else if vt.keyboard.needKey then pass
+  else
+    repeat inc(i); vm.step
+    until (i = opsPerStep) or vm.done or vt.keyboard.needKey;
+  rtarget_Set( nil );
 end;
 
 procedure OnDraw;
+  const x = 4; y = 20;
 begin
-  { SDL images are upside down from what ZenGL expects, hence FX2D_FLIPY. }
-  ssprite2d_Draw( texture, 0, 0, canvas_w, canvas_h,
-		 {angle:} 0, {alpha:} $ff, FX2D_FLIPY );
+//  divmod( cScnHLine, canvas_w, y, x );
+  ssprite2d_Draw( vt.target^.surface, x, y, canvas_w, canvas_h,
+		 {angle:} 0, {alpha:} $ff );
 end;
 
 procedure OnChar( Symbol : UTF8String );
@@ -76,7 +101,6 @@ end;
 
 procedure Main( rxvm : ng.TRetroVM );
 begin
-  vt := TZenGLVDP.Create;
   vm := rxvm;
   zgl_init;
 end;
