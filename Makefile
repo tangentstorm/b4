@@ -45,10 +45,15 @@ retro : build
 build : init  ng/*.pas
 	@$(FPC) -Mdelphi ng/retro.pas
 
-retrogl : buildgl
+rxsdl :
+	@$(FPC) -Mdelphi -dGL -dSDL $(ZENGLAGG) ng/retro.pas -oretrogl
 	cd $(GEN); ./retrogl $(args)
-buildgl : init  ng/*.pas
-	@$(FPC) -Mdelphi -dGL $(ZENGLAGG) ng/retro.pas -oretrogl
+
+rxzen :
+	@$(FPC) -Mdelphi -dGL -dZEN $(ZENGLAGG) ng/retro.pas -oretrogl
+	cd $(GEN); ./retrogl $(args)
+
+retrogl : rxzen
 
 init    :
 	@mkdir -p $(GEN)

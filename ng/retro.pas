@@ -2,11 +2,14 @@ program retro;
 uses
   xpc, sysutils,
   {$IFDEF GL}
-  rxgl in 'ng/rxgl_zen.pas',
-//  rxgl in 'ng/rxgl_sdl.pas',
+    {$IFDEF SDL}
+       rxgl in 'ng/rxgl_sdl.pas',
+    {$ELSE}
+       rxgl in 'ng/rxgl_zen.pas',
+    {$ENDIF}
   {$ENDIF}
   ng;
-  
+
   var
     inputs : array of string;
     vm	   : ng.TRetroVM;
@@ -14,7 +17,7 @@ uses
 { helper routines for main loop }
 
   var init_failed : boolean = false;
-    
+
   { helper routine for startup errors }
   procedure die( msg : string );
   begin
