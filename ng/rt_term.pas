@@ -4,12 +4,13 @@ unit rt_term;
 interface uses xpc, grids, romFont, SysUtils, ng, ascii;
 
 const
-  canvas_w = 800;
-  canvas_h = 600;
-  bitdepth = 32;
-  glyph_w = 8;
-  glyph_h = 14;
+  canvas_w  = 800;
+  canvas_h  = 600;
+  bitdepth  = 32;
+  glyph_w   = 8;
+  glyph_h   = 14;
 
+  console_w = canvas_w div glyph_w;
   cScnHLine = $2BC0;
 
 type
@@ -17,8 +18,8 @@ type
   tVDPAttrData = array [0..1] of byte;
 
   TCharCell = record
-    fg : byte;
     bg : byte;
+    fg : byte;
   case boolean of
     true  : (ch : widechar);
     false : (val : word);
@@ -78,8 +79,8 @@ type
   end;
 
   TRxConsole = class( TConsole )
+  protected
     vm      : ng.TRetroVM;
-
     procedure Attach( retrovm : ng.TRetroVM ); virtual;
     function handle_keyboard( msg : int32 ) : int32;
     function handle_write (msg : int32 ) : int32;
@@ -88,26 +89,27 @@ type
     procedure WriteAttrMap(adr: Int32; Value: tVDPAttrData);
     function ReadCharMap(adr: Int32): byte;
     procedure WriteCharMap(adr: Int32; Value: byte);
-    private
-      _cx, _cy  : Int32;
-      adr	: longword;
-      procedure resetadr;
-      procedure set_cx(x:int32);
-      procedure set_cy(y:int32);
-      procedure Fw;
-      procedure Bw;
-      procedure Bs;
-      procedure Cr;
-    public
-      count     : Int32; {  what does this do? }
-      refresh   : Int32;
-      attr: tVDPAttrData;
-      constructor Create;
-      procedure Clear;
-      procedure Emit( x	:  int32 );
-      property cx:int32 read _cx write set_cx;
-      property cy:int32 read _cy write set_cy;
-    end;
+    procedure DrawGlyphTable;
+  private
+    _cx, _cy  : Int32;
+    adr	: longword;
+    procedure resetadr;
+    procedure set_cx(x:int32);
+    procedure set_cy(y:int32);
+    procedure Fw;
+    procedure Bw;
+    procedure Bs;
+    procedure Cr;
+  public
+    count     : Int32; {  what does this do? }
+    refresh   : Int32;
+    attr: tVDPAttrData;
+    constructor Create;
+    procedure Clear;
+    procedure Emit( x	:  int32 );
+    property cx:int32 read _cx write set_cx;
+    property cy:int32 read _cy write set_cy;
+  end;
 
 implementation
 
@@ -127,9 +129,23 @@ const
     self.refresh := self.termW * 160;
   end;
 
+  procedure TRxConsole.DrawGlyphTable;
+    var x, y : byte; cc:TCharCell;
+    const xo = console_w - $11; yo = 0; // offsets
+  begin
+    for y := $0 to $F do for x := $0 to $F do
+    begin
+      cc := self.buffer[x+xo, y+yo];
+      cc.ch := chr( y * $10 + x );
+      cc.bg := 1;
+      self.buffer[x+xo, y+yo] := cc;
+    end
+  end;
+
   procedure TRxConsole.clear; inline;
   begin
     inherited Clear; cx := 0; cy := 0;
+    DrawGlyphTable; { temp code for debugging }
   end;
 
   procedure TRxConsole.resetadr; inline;
@@ -255,11 +271,12 @@ procedure TCharGrid.Clear;
 begin
   FillDWord(self.data[0], self.size, 0);
 end;
+
 
-function TCharGrid.GetAttr( const i : cardinal ) : TVDPAttrData;
+function TCharGrid.GetAttr( const i: cardinal ) : TVDPAttrData;
 begin
-  result[0] := data[i].bg;
-  result[1] := data[i].fg;
+  result[0] := data[i].fg;
+  result[1] := data[i].bg;
 end;
 
 procedure TCharGrid.SetAttr( const i : cardinal; const value : tVDPAttrData );
@@ -404,7 +421,7 @@ end;
 
 function TRxConsole.handle_keyboard( msg : int32 ) : int32;
 begin
-  { ensure a refresh of the screen when it's time to input text,
+  { ensure a refresh of the screen wehn it's time to input text,
     but only if we're just waiting. }
   if keyboard.needKey then pass else self.RenderDisplay;
   result := ord(keyboard.ReadKey);
