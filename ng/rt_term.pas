@@ -110,7 +110,7 @@ type
     procedure DrawGlyphTable;
   private
     _cx, _cy  : Int32;
-    adr	: longword;
+    _adr      : longword;
     procedure resetadr;
     procedure set_cx(x:int32);
     procedure set_cy(y:int32);
@@ -163,12 +163,13 @@ const
   procedure TRxConsole.clear; inline;
   begin
     inherited Clear; cx := 0; cy := 0;
+    RenderDisplay; { actually wipe the screen }
     DrawGlyphTable; { temp code for debugging }
   end;
 
   procedure TRxConsole.resetadr; inline;
   begin
-    adr := cy * termW + cx;
+    _adr := cy * termW + cx;
   end;
 
   procedure TRxConsole.set_cx(x:int32); inline;
@@ -196,15 +197,15 @@ const
   procedure TRxConsole.bs; inline;
   begin
     attr[1] := 0;
-    WriteAttrMap(adr, attr);
-    WriteCharMap(adr, 0);
+    WriteAttrMap(_adr, attr);
+    WriteCharMap(_adr, 0);
     if (cx < termW) and (cx > 0) then cx := cx - 1;
   end;
 
   procedure TRxConsole.cr; inline;
   begin
     attr[1] := 0;
-    WriteAttrMap(adr, attr);
+    WriteAttrMap(_adr, attr);
     cy := cy + 1; cx := 0;
     if cy >= termH then begin
       clear; cy := 0; cx := 0;
@@ -219,18 +220,14 @@ const
 	^J : cr;
 	^M : cr;
       end;
-    attr[1] := rBR; WriteAttrMap(adr, attr);
+    attr[1] := rBR; WriteAttrMap(_adr, attr);
     if x > 31 then begin
       attr[1] := 0;
-      WriteAttrMap(adr, attr);
-      WriteCharMap(adr, x);
-    end;
-    if x > 31 then fw;
-
-    count := count + 1;
-    if count = refresh then begin
-      count := 0; RenderDisplay;
-    end;
+      WriteAttrMap(_adr, attr);
+      WriteCharMap(_adr, x);
+      RenderChar(_adr, lo(buffer.at[_adr].val));
+      fw;
+    end
   end;
 
 { transformation table bitmap address -> character offset.
@@ -497,7 +494,7 @@ function TRxConsole.handle_keyboard( msg : int32 ) : int32;
 begin
   { ensure a refresh of the screen wehn it's time to input text,
     but only if we're just waiting. }
-  if keyboard.needKey then pass else self.RenderDisplay;
+  if keyboard.needKey then pass else self.Display;
   result := ord(keyboard.ReadKey);
   if keyboard.needKey then
     raise ENotFinished.Create('ReadKey');

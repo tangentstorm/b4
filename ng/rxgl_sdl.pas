@@ -40,7 +40,7 @@ end;
 
 procedure TSDLVDP.CreateCanvas;
 begin
-  self.canvas := TRxCanvas.Create( canvas_w, canvas_h, @(pBitmap^.pixels) );
+  self.canvas := TRxCanvas.Create( canvas_w, canvas_h, pBitmap^.pixels );
 end;
 
 procedure TSDLVDP.PlotPixel(adr: Int32; Value: byte); inline;
