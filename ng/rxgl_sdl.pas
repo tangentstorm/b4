@@ -7,6 +7,7 @@ interface uses xpc, ng, SDL, sysutils, rt_term;
       pBitmap : pSDL_SURFACE;
       constructor Create;
       destructor Destroy; override;
+      procedure CreateCanvas; override;
       procedure PlotPixel(adr: Int32; Value: byte); override;
       procedure Display; override;
     end;
@@ -19,6 +20,7 @@ implementation
 constructor TSDLVDP.Create;
 begin
   inherited Create;
+
   SDL_INIT(SDL_INIT_VIDEO);
   SDL_EnableUnicode(1);
   SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
@@ -26,12 +28,19 @@ begin
   self.pBitmap := SDL_SETVIDEOMODE(canvas_w, canvas_h, bitdepth, SDL_HWSURFACE);
   if self.pBitmap = nil then
     raise Exception.Create('Failed to create SDL bitmap');
+
+  self.CreateCanvas;
 end;
 
 destructor TSDLVDP.Destroy;
 begin
   SDL_FREESURFACE(self.pBitmap);
   SDL_QUIT;
+end;
+
+procedure TSDLVDP.CreateCanvas;
+begin
+  self.canvas := TRxCanvas.Create( canvas_w, canvas_h, @(pBitmap^.pixels) );
 end;
 
 procedure TSDLVDP.PlotPixel(adr: Int32; Value: byte); inline;
@@ -113,7 +122,7 @@ begin
   end
 end;
 }
-
+  
 procedure Main( rxvm : ng.TRetroVM );
   var vdp : TSDLVDP;
 begin

@@ -1,7 +1,7 @@
 { retroterm: retro extended terminal }
 {$i xpc.inc}
 unit rt_term;
-interface uses xpc, grids, romFont, SysUtils, ng, ascii;
+interface uses xpc, grids, romFont, SysUtils, ng, ascii, agg2d;
 
 const
   canvas_w  = 800;
@@ -40,6 +40,20 @@ type
     r, g, b, a : byte
   end;
 
+  TRxCanvas = class( specialize TGrid<TRGBA> )
+    agg   : TAgg2D;
+    color : TRGBA;
+    constructor Create( width, height : Int32; bitmap : Pointer );
+    procedure SetColor( rgb : Int32 );
+    procedure PutPixel( x, y : Int32 );
+    procedure rect( x, y, width, height : Int32 );
+    procedure FillRect( x, y, width, height : Int32 );
+    procedure VLine( x, y, height : Int32 );
+    procedure HLine( x, y, width : Int32 );
+    procedure Circle( x, y, radius : Int32 );
+    procedure FillCircle( x, y, radius : Int32 );
+  end;
+
   TScreen = class
     rFG: Int32;
     rBG: Int32;
@@ -52,10 +66,13 @@ type
     fError: boolean;
     length  : integer;
     offsets : array of Int32;
+    canvas : TRxCanvas;
+
     constructor Create;
     procedure Clear;
 
     { abstract drawing interface }
+    procedure CreateCanvas; virtual; abstract;
     procedure PlotPixel(adr: Int32; Value: byte); virtual; abstract;
     procedure Display; virtual; abstract;
 
@@ -63,7 +80,7 @@ type
     procedure RenderChar(adr: Int32; Value: byte); virtual;
     procedure RenderDisplay;
   end;
-
+
   TKeyboard = class
     buffer : UnicodeString;
     needKey : boolean;
@@ -77,13 +94,14 @@ type
     keyboard : TKeyboard;
     constructor Create;
   end;
-
+
   TRxConsole = class( TConsole )
   protected
     vm      : ng.TRetroVM;
     procedure Attach( retrovm : ng.TRetroVM ); virtual;
     function handle_keyboard( msg : int32 ) : int32;
     function handle_write (msg : int32 ) : int32;
+    function handle_canvas (msg : int32 ) : int32;
 
     function ReadAttrMap(adr: Int32): tVDPAttrData;
     procedure WriteAttrMap(adr: Int32; Value: tVDPAttrData);
@@ -110,7 +128,7 @@ type
     property cx:int32 read _cx write set_cx;
     property cy:int32 read _cy write set_cy;
   end;
-
+
 implementation
 
 const
@@ -141,7 +159,7 @@ const
       self.buffer[x+xo, y+yo] := cc;
     end
   end;
-
+
   procedure TRxConsole.clear; inline;
   begin
     inherited Clear; cx := 0; cy := 0;
@@ -162,7 +180,7 @@ const
   begin
     _cy := y; resetadr;
   end;
-
+
   procedure TRxConsole.fw; inline;
   begin
     if cx < termW then cx := cx + 1
@@ -192,7 +210,7 @@ const
       clear; cy := 0; cx := 0;
     end;
   end;
-
+
   procedure TRxConsole.emit( x : int32 );
   begin
     if x < 0 then clear else
@@ -214,8 +232,6 @@ const
       count := 0; RenderDisplay;
     end;
   end;
-
-
 
 { transformation table bitmap address -> character offset.
   This just caches the offsets of the upper left corner of
@@ -253,7 +269,7 @@ begin
   self.fError := False;
 
   self.buffer := TCharGrid.Create( termW, termH );
-  self.length := self.buffer.size;
+  self.length := self.buffer.count;
   CacheOffsets(self);
 
   self.Clear;
@@ -269,19 +285,19 @@ end;
 
 procedure TCharGrid.Clear;
 begin
-  FillDWord(self.data[0], self.size, 0);
+  FillDWord(self._data[0], self.ramSize div 4, 0);
 end;
 
 
 function TCharGrid.GetAttr( const i: cardinal ) : TVDPAttrData;
 begin
-  result[0] := data[i].fg;
-  result[1] := data[i].bg;
+  result[0] := _data[i].fg;
+  result[1] := _data[i].bg;
 end;
 
 procedure TCharGrid.SetAttr( const i : cardinal; const value : tVDPAttrData );
 begin
-  with data[i] do
+  with _data[i] do
   begin
     bg := value[0];
     fg := value[1];
@@ -290,12 +306,12 @@ end;
 
 function TCharGrid.GetChar( const i : cardinal ) : WideChar;
 begin
-   result := data[i].ch;
+   result := _data[i].ch;
 end;
 
 procedure TCharGrid.SetChar( const i : cardinal; const value : WideChar );
 begin
-  self.data[i].ch := value;
+  _data[i].ch := value;
 end;
 
 
@@ -408,6 +424,63 @@ begin
     result := ascii.SYN; { synchronous idle }
   end;
 end;
+
+{ canvas device }
+
+constructor TRxCanvas.Create( width, height : int32; bitmap : Pointer );
+begin
+  if bitmap = nil then raise EObjectCheck.Create( 'bitmap pointer is nil' );
+  inherited CreateAt( width, height, 0, bitmap );
+  writeln( 'TRxCavanvas.Create( ', width, ', ', height, ', <$', HexStr( bitmap ), '>)' );
+  agg := TAgg2d.Create( bitmap, width, height, {stride=}width * 4, agg2d.pfRGBA );
+  SetColor( $ffffff );
+  agg.SetFillColor( $ff, $ff, $ff, $ff );
+  agg.SetLineColor( $ff, $ff, $ff, $ff );
+end;
+
+procedure TRxCanvas.SetColor( rgb : int32 );
+begin
+  color := TRGBA( Int32( rgb shl 8 + $ff ));
+end;
+
+procedure TRxCanvas.PutPixel( x, y : int32 );
+begin
+  self[ x, y ] := color;
+end;
+
+procedure TRxCanvas.rect( x, y, width, height : int32 );
+begin
+  agg.NoFill;
+  agg.Rectangle( x, y, x + width, y + height );
+end;
+
+procedure TRxCanvas.FillRect( x, y, width, height : int32 );
+begin
+  agg.SetFillColor( color.r, color.g, color.b, color.a );
+  agg.Rectangle( x, y, x + width, y + height );
+end;
+
+procedure TRxCanvas.VLine( x, y, height : int32 );
+begin
+  agg.Line( x, y, x, y + height );
+end;
+
+procedure TRxCanvas.HLine( x, y, width : int32 );
+begin
+  agg.Line( x, y, x + width, y );
+end;
+
+procedure TRxCanvas.Circle( x, y, radius : int32 );
+begin
+  agg.NoFill;
+  agg.Ellipse( x, y, radius, radius );
+end;
+
+procedure TRxCanvas.FillCircle( x, y, radius : int32 );
+begin
+  agg.SetFillColor( color.r, color.g, color.b, color.a );
+  agg.Ellipse( x, y, radius, radius );
+end;
 
 
 { vm integration }
@@ -417,6 +490,7 @@ begin
   self.vm := retrovm;
   self.vm.devices[1] := @self.handle_keyboard;
   self.vm.devices[2] := @self.handle_write;
+  self.vm.devices[6] := @self.handle_canvas;
 end;
 
 function TRxConsole.handle_keyboard( msg : int32 ) : int32;
@@ -429,12 +503,59 @@ begin
     raise ENotFinished.Create('ReadKey');
 end;
 
-function TRxConsole.handle_write (msg : int32): int32;
+function TRxConsole.handle_write( msg : int32 ) : int32;
 begin
   if msg = 1 then Emit(vm.data.pop);
   result := 0;
 end;
 
+function TRxConsole.handle_canvas( msg : int32 ) : int32;
+  var x, y, w, h : int32;
+begin
+  case msg of
+    1 : canvas.SetColor( vm.data.pop );
+    2 : begin
+	  vm.data.pop2( x, y );
+	  canvas.PutPixel( x, y );
+	end;
+    3 : begin
+	  vm.data.pop2( h, w ); vm.data.pop2( x, y );
+	  canvas.rect( x, y, w, h )
+	end;
+    4 : begin
+	  vm.data.pop2( h, w );
+	  vm.data.pop2( x, y );
+          Writeln('canvas.FillRect(', x, ', ', y, ', ', w, ', ', h, ')');
+	  canvas.FillRect( x, y, w, h )
+	end;
+    5 : begin
+	  vm.data.pop1( h );
+	  vm.data.pop2( x, y );
+	  canvas.VLine( x, y, h );
+          Writeln('canvas.VLine(', x, ', ', y, ', ', h, ')');
+	end;
+    6 : begin
+	  vm.data.pop1( w );
+	  vm.data.pop2( y, x );
+          Writeln('canvas.HLine(', x, ', ', y, ', ', w, ')');
+	  canvas.HLine( x, y, w )
+	end;
+    7 : begin
+	  vm.data.pop1( w );
+	  vm.data.pop2( y, x );
+          Writeln('canvas.Circle(', x, ', ', y, ', ', w div 2, ')');
+	  canvas.Circle( x, y, w div 2 )
+	end;
+    8 : begin
+	  vm.data.pop1( w );
+	  vm.data.pop2( x, y );
+          Writeln('canvas.FillCircle(', x, ', ', y, ', ', w div 2, ')');
+	  canvas.FillCircle( x, y, w div 2 )
+	end;
+  end;
+  self.Display;
+  result := 0;
+end;
 
 begin
 end.
