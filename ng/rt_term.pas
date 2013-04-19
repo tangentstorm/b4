@@ -40,11 +40,14 @@ type
     r, g, b, a : byte
   end;
 
-  TRxCanvas = class( specialize TGrid<TRGBA> )
-    agg   : TAgg2D;
-    color : TRGBA;
+  TPalette = array[ byte ] of TRGBA;
+
+  TRxCanvas = class( specialize TGrid<UInt32> )
+    agg     : TAgg2D;
+    color   : TRGBA;
+    palette : TPalette;
     constructor Create( width, height : Int32; bitmap : Pointer );
-    procedure SetColor( rgb : Int32 );
+    procedure SetColor( c : Int32 );
     procedure PutPixel( x, y : Int32 );
     procedure rect( x, y, width, height : Int32 );
     procedure FillRect( x, y, width, height : Int32 );
@@ -134,6 +137,8 @@ implementation
 const
   kTermW = 99;
   kTermH = 40;
+var
+  kXTPal : TPalette; { xterm color palette }
 
   constructor TConsole.Create;
   begin
@@ -429,20 +434,24 @@ begin
   if bitmap = nil then raise EObjectCheck.Create( 'bitmap pointer is nil' );
   inherited CreateAt( width, height, 0, bitmap );
   writeln( 'TRxCavanvas.Create( ', width, ', ', height, ', <$', HexStr( bitmap ), '>)' );
+  writeln( self[ 10, 20 ] );
   agg := TAgg2d.Create( bitmap, width, height, {stride=}width * 4, agg2d.pfRGBA );
-  SetColor( $ffffff );
-  agg.SetFillColor( $ff, $ff, $ff, $ff );
-  agg.SetLineColor( $ff, $ff, $ff, $ff );
+  palette := kXtPal;
+  SetColor( $0F ); // ansi white
 end;
 
-procedure TRxCanvas.SetColor( rgb : int32 );
+procedure TRxCanvas.SetColor( c : int32 );
 begin
-  color := TRGBA( Int32( rgb shl 8 + $ff ));
+  if c < 256 then color := palette[ c ]
+  else color := TRGBA( Int32( c shl 8 + $ff ));
+  WriteLn( 'r:', color.r, ' g:', color.g, ' b:', color.b, ' a:', color.a );
+  agg.SetLineColor( color.r, color.g, color.b, color.a );
+  agg.SetFillColor( color.r, color.g, color.b, color.a );
 end;
 
 procedure TRxCanvas.PutPixel( x, y : int32 );
 begin
-  self[ x, y ] := color;
+  self[ x, y ] := UInt32( self.color );
 end;
 
 procedure TRxCanvas.rect( x, y, width, height : int32 );
@@ -453,7 +462,6 @@ end;
 
 procedure TRxCanvas.FillRect( x, y, width, height : int32 );
 begin
-  agg.SetFillColor( color.r, color.g, color.b, color.a );
   agg.Rectangle( x, y, x + width, y + height );
 end;
 
@@ -475,7 +483,6 @@ end;
 
 procedure TRxCanvas.FillCircle( x, y, radius : int32 );
 begin
-  agg.SetFillColor( color.r, color.g, color.b, color.a );
   agg.Ellipse( x, y, radius, radius );
 end;
 
@@ -512,22 +519,24 @@ begin
   case msg of
     1 : canvas.SetColor( vm.data.pop );
     2 : begin
-	  vm.data.pop2( x, y );
+	  vm.data.pop2( y, x );
 	  canvas.PutPixel( x, y );
 	end;
     3 : begin
-	  vm.data.pop2( h, w ); vm.data.pop2( x, y );
-	  canvas.rect( x, y, w, h )
+	  vm.data.pop2( h, w );
+	  vm.data.pop2( y, x );
+	  Writeln('canvas.Rect(', x, ', ', y, ', ', w, ', ', h, ')');
+	  canvas.Rect( x, y, w, h )
 	end;
     4 : begin
 	  vm.data.pop2( h, w );
-	  vm.data.pop2( x, y );
+	  vm.data.pop2( y, x );
           Writeln('canvas.FillRect(', x, ', ', y, ', ', w, ', ', h, ')');
 	  canvas.FillRect( x, y, w, h )
 	end;
     5 : begin
 	  vm.data.pop1( h );
-	  vm.data.pop2( x, y );
+	  vm.data.pop2( y, x );
 	  canvas.VLine( x, y, h );
           Writeln('canvas.VLine(', x, ', ', y, ', ', h, ')');
 	end;
@@ -545,7 +554,7 @@ begin
 	end;
     8 : begin
 	  vm.data.pop1( w );
-	  vm.data.pop2( x, y );
+	  vm.data.pop2( y, x );
           Writeln('canvas.FillCircle(', x, ', ', y, ', ', w div 2, ')');
 	  canvas.FillCircle( x, y, w div 2 )
 	end;
@@ -554,5 +563,61 @@ begin
   result := 0;
 end;
 
+procedure setup_xterm_colors( var xtc : TPalette );
+  const
+    ansi : array[ 0 .. 15 ] of UInt32
+	   =( $ff000000, // black
+	      $ff0000aa, // red
+	      $ff00aa00, // green
+	      $ff00aaaa, // dark yellow ( note : not vga brown! )
+	      $ffaa0000, // blue
+	      $ffaa00aa, // magenta
+	      $ffaaaa00, // cyan
+	      $ffaaaaaa, // gray
+	      $ff555555, // dark gray
+	      $ff5555ff, // light red
+	      $ff55ff55, // light green
+	      $ff55ffff, // yellow
+	      $ffff5555, // light blue
+	      $ffff55ff, // light magenta
+	      $ffffff55, // light cyan
+	      $ffffffff  // white
+	      );
+    ramp : array[ 0 .. 5 ] of UInt32
+	   = ( $00, $5f, $87, $AF, $D7, $FF );
+  var i, r, g, b, c : byte;
 begin
+
+  // 0..15 are the ansi colors:
+  for i := 0 to 15 do xtc[ i ] := TRGBA( ansi[ i ]);
+
+  // 16..231 are a color cube (6^3 = 216 colors)
+  i := 16;
+  for r := $0 to $5 do
+    for g := $0 to $5 do
+      for b := $0 to $5 do
+      begin
+	xtc[ i ] := TRGBA( UInt32(
+		       ramp[ r ] shl 24
+		     + ramp[ g ] shl 16
+		     + ramp[ b ] shl 8
+		     + $ff ));
+	inc( i );
+      end;
+
+  // 232 .. 255 are a grayscale ramp
+  for c in [ $00, $12, $1C, $26, $30, $3A, $44, $4E,
+             $58, $62, $6C, $76, $80, $8A, $94, $9E,
+	     $A8, $B2, $BC, $C6, $D0, $DA, $E4, $EE ] do
+  begin
+    xtc[ i ] := TRGBA( UInt32( c shl 24 + c shl 16 + c shl 8 + $ff ));
+    if i < $ff then inc( i ); // skip very last increment to avoid range error
+  end
+end;
+
+  var i : byte;
+initialization
+  setup_xterm_colors( kXtPal );
+  for i in byte do with kXtPal[ i ] do
+    WriteLn( hex(i, 2), ' = rgba: $', hex(r,2), hex(g,2), hex(b,2), hex(a,2));
 end.
