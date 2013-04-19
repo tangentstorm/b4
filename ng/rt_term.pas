@@ -93,8 +93,15 @@ type
     function ReadKey : WideChar;
   end;
 
+  TMouse = class
+    x, y    : cardinal;
+    buttons : set32;
+    constructor Create;
+  end;
+
   TConsole = class (TScreen)
     keyboard : TKeyboard;
+    mouse    : TMouse;
     constructor Create;
   end;
 
@@ -103,6 +110,7 @@ type
     vm      : ng.TRetroVM;
     procedure Attach( retrovm : ng.TRetroVM ); virtual;
     function handle_keyboard( msg : int32 ) : int32;
+    function handle_mouse (msg : int32 ) : int32;
     function handle_write (msg : int32 ) : int32;
     function handle_canvas (msg : int32 ) : int32;
 
@@ -144,6 +152,7 @@ var
   begin
     inherited Create;
     self.keyboard := TKeyboard.Create;
+    self.mouse := TMouse.Create;
   end;
 
   constructor TRxConsole.Create;
@@ -395,6 +404,14 @@ begin
 end;
 
 
+{ mouse }
+constructor TMouse.Create;
+begin
+  x := 0;
+  y := 0;
+  buttons := [];
+end;
+
 { keyboard buffer }
 
 constructor TKeyboard.Create;
@@ -495,6 +512,7 @@ begin
   self.vm.devices[1] := @self.handle_keyboard;
   self.vm.devices[2] := @self.handle_write;
   self.vm.devices[6] := @self.handle_canvas;
+  self.vm.devices[7] := @self.handle_mouse;
 end;
 
 function TRxConsole.handle_keyboard( msg : int32 ) : int32;
@@ -510,6 +528,19 @@ end;
 function TRxConsole.handle_write( msg : int32 ) : int32;
 begin
   if msg = 1 then Emit(vm.data.pop);
+  result := 0;
+end;
+
+{ Mouse pushes to the data stack rather than using the normal protocol }
+function TRxConsole.handle_mouse( msg : int32 ) : int32;
+begin
+  case msg of
+    1 : begin
+          vm.data.push( mouse.x ); vm.data.push( mouse.y );
+          writeln( '(', mouse.x, ', ', mouse.y, ' )' );
+        end;
+    2 : begin vm.data.push( int32( mouse.buttons )) end;
+  end;
   result := 0;
 end;
 
