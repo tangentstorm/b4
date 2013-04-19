@@ -75,6 +75,13 @@ begin
 	  key := evt^.key.keysym.unicode;
 	  vdp.keyboard.SendKey(widechar(key));
 	end;
+      SDL_MOUSEMOTION :
+	begin
+	  vdp.mouse.x := evt^.motion.x;
+	  vdp.mouse.y := evt^.motion.y;
+	end;
+      SDL_MOUSEBUTTONDOWN : vdp.mouse.buttons += [ evt^.button.button ];
+      SDL_MOUSEBUTTONUp : vdp.mouse.buttons -= [ evt^.button.button ];
       SDL_QUITEV : Halt;
     end; { case }
   Dispose(evt)
