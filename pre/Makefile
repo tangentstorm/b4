@@ -11,6 +11,9 @@ pre: pre.pas pre_gen.pas
 grin: grin.pas pre
 	$(FPC) grin
 
+templang: templang.pas
+	$(FPC) -B templang.pas
+
 pre_gen.pas : pre.pas pre_gen.py
 	$(PYTHON) pre_gen.py
 
