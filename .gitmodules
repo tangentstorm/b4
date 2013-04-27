@@ -8,3 +8,9 @@
 	path = lib/linenoise
 	url = https://github.com/tangentstorm/linenoise.git
 
+[submodule "lib/aggpas"]
+	path = lib/aggpas
+	url = git@github.com:tangentstorm/aggpasmod.git
+[submodule "lib/zengl"]
+	path = lib/zengl
+	url = git@github.com:goldsmile/zengl.git
