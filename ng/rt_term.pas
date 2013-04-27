@@ -1,8 +1,21 @@
 { retroterm: retro extended terminal }
 {$i xpc.inc}
 unit rt_term;
-interface uses xpc, grids, romFont, SysUtils, ng, ascii, agg2d;
-
+
+{ There's a stupid compiler issue preventing modernized aggpas from compiling.
+   Possibly only affects 64 bit versions, but that's all I have to test with.
+
+   http://bugs.freepascal.org/view.php?id=21044
+}
+{$IF (FPC_VERSION > 2) OR (FPC_VERSION=2) AND (FPC_RELEASE>6)}
+  {$DEFINE WITH_AGG}
+{$ELSE}
+   {$WARNING ## Disabling AggPas/Canvas Device (Requires fpc > 2.6.2 ) ### }
+{$ENDIF}
+
+interface uses xpc, grids, romFont, SysUtils, ng, ascii
+  {$IFDEF WITH_AGG}agg2d{$ENDIF};
+
 const
   canvas_w  = 800;
   canvas_h  = 600;
@@ -41,7 +54,7 @@ type
   end;
 
   TPalette = array[ byte ] of TRGBA;
-
+{$IFDEF WITH_AGG}
   TRxCanvas = class( specialize TGrid<UInt32> )
     agg     : TAgg2D;
     color   : TRGBA;
@@ -56,6 +69,7 @@ type
     procedure Circle( x, y, radius : Int32 );
     procedure FillCircle( x, y, radius : Int32 );
   end;
+{$ENDIF}
 
   TScreen = class
     rFG: Int32;
@@ -69,7 +83,9 @@ type
     fError: boolean;
     length  : integer;
     offsets : array of Int32;
+    {$IFDEF WITH_AGG}
     canvas : TRxCanvas;
+    {$ENDIF}
 
     constructor Create;
     procedure Clear;
@@ -112,7 +128,9 @@ type
     function handle_keyboard( msg : int32 ) : int32;
     function handle_mouse (msg : int32 ) : int32;
     function handle_write (msg : int32 ) : int32;
+    {$IFDEF WITH_AGG}
     function handle_canvas (msg : int32 ) : int32;
+    {$ENDIF}
 
     function ReadAttrMap(adr: Int32): tVDPAttrData;
     procedure WriteAttrMap(adr: Int32; Value: tVDPAttrData);
@@ -445,7 +463,7 @@ begin
 end;
 
 { canvas device }
-
+{$IFDEF WITH_AGG}
 constructor TRxCanvas.Create( width, height : int32; bitmap : Pointer );
 begin
   if bitmap = nil then raise EObjectCheck.Create( 'bitmap pointer is nil' );
@@ -502,7 +520,7 @@ procedure TRxCanvas.FillCircle( x, y, radius : int32 );
 begin
   agg.Ellipse( x, y, radius, radius );
 end;
-
+{$ENDIF}
 
 { vm integration }
 
@@ -511,7 +529,9 @@ begin
   self.vm := retrovm;
   self.vm.devices[1] := @self.handle_keyboard;
   self.vm.devices[2] := @self.handle_write;
+  {$IFDEF WITH_AGG}
   self.vm.devices[6] := @self.handle_canvas;
+  {$ENDIF}
   self.vm.devices[7] := @self.handle_mouse;
 end;
 
@@ -544,6 +564,7 @@ begin
   result := 0;
 end;
 
+{$IFDEF WITH_AGG}
 function TRxConsole.handle_canvas( msg : int32 ) : int32;
   var x, y, w, h : int32;
 begin
@@ -593,6 +614,7 @@ begin
   self.Display;
   result := 0;
 end;
+{$ENDIF}
 
 procedure setup_xterm_colors( var xtc : TPalette );
   const

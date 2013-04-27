@@ -7,7 +7,9 @@ interface uses xpc, ng, SDL, sysutils, rt_term;
       pBitmap : pSDL_SURFACE;
       constructor Create;
       destructor Destroy; override;
+      {$IFDEF WITH_AGG}
       procedure CreateCanvas; override;
+      {$ENDIF}
       procedure PlotPixel(adr: Int32; Value: byte); override;
       procedure Display; override;
     end;
@@ -38,10 +40,12 @@ begin
   SDL_QUIT;
 end;
 
+{$IFDEF WITH_AGG}
 procedure TSDLVDP.CreateCanvas;
 begin
   self.canvas := TRxCanvas.Create( canvas_w, canvas_h, pBitmap^.pixels );
 end;
+{$ENDIF}
 
 procedure TSDLVDP.PlotPixel(adr: Int32; Value: byte); inline;
   var rBitmap: ^TRGBA;
