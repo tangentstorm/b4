@@ -542,6 +542,8 @@ begin
   if keyboard.needKey then pass else self.Display;
   result := ord(keyboard.ReadKey);
   if keyboard.needKey then
+    { !!! Lazarus Users : ignore this kind of Exception. It's
+      not an error but a normal part of TRetroVM's IO system. :) }
     raise ENotFinished.Create('ReadKey');
 end;
 

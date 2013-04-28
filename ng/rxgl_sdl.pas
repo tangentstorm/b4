@@ -30,8 +30,9 @@ begin
   self.pBitmap := SDL_SETVIDEOMODE(canvas_w, canvas_h, bitdepth, SDL_HWSURFACE);
   if self.pBitmap = nil then
     raise Exception.Create('Failed to create SDL bitmap');
-
+  {$IFDEF WITH_AGG}
   self.CreateCanvas;
+  {$ENDIF}
 end;
 
 destructor TSDLVDP.Destroy;
