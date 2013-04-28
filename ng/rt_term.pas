@@ -88,10 +88,12 @@ type
     {$ENDIF}
 
     constructor Create;
-    procedure Clear;
+    procedure Clear; virtual;
 
     { abstract drawing interface }
+    {$IFDEF WITH_AGG}
     procedure CreateCanvas; virtual; abstract;
+    {$ENDIF}
     procedure PlotPixel(adr: Int32; Value: byte); virtual; abstract;
     procedure Display; virtual; abstract;
 
@@ -152,7 +154,7 @@ type
     refresh   : Int32;
     attr: tVDPAttrData;
     constructor Create;
-    procedure Clear;
+    procedure Clear; override;
     procedure Emit( x	:  int32 );
     property cx:int32 read _cx write set_cx;
     property cy:int32 read _cy write set_cy;
@@ -542,8 +544,6 @@ begin
   if keyboard.needKey then pass else self.Display;
   result := ord(keyboard.ReadKey);
   if keyboard.needKey then
-    { !!! Lazarus Users : ignore this kind of Exception. It's
-      not an error but a normal part of TRetroVM's IO system. :) }
     raise ENotFinished.Create('ReadKey');
 end;
 

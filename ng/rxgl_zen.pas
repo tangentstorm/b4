@@ -58,7 +58,6 @@ procedure OnLoad;
 begin
   vt := TZenGLVDP.Create;
   vt.Attach( vm );
-  vt.Clear;
   { Set up keyboard reporting. }
   key_beginReadText({initial buffer:}'', {buffer size:} 32);
 end;
