@@ -1,0 +1,25 @@
+; this is a (rudimentary) grammar/template for a pascal-like language
+; in the hypothetical grammar syntax. it describes not only the 
+; syntax, but the structure of the AST, and the layout to use
+; when pretty-printing (by example).
+
+; -- tokens ---------------------------------------------------
+
+% page : ^L [ pageNum ++ hide ] .
+% line : ^J [ lineNum ++ hide ] .
+% ws   : ( #0 .. ^I | ^K | ^M .. ' ' )+ [ hide ] .
+
+; -- grammar rules ---------------------------------------------
+
+@ Program name:Iden fvars:Iden* mods:Iden* < Block >
+: 'program' name ( '(' fvars/',' ')' )? ';'
+  ( 'uses' mods )?
+  <Block> '.'
+.
+ 
+@ Block < decls:Decl* stmts:Stmt* >
+:   { decls }
+  'begin'
+    { stmts/';' }
+  'end'
+.
