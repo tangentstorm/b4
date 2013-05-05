@@ -1,0 +1,15 @@
+#+title: tangentstorm's github page
+
+These are my some of the notes and semi-literate programs I've been working on.
+
+| language | article            | description                                                          |
+|----------+--------------------+----------------------------------------------------------------------|
+| retro    | [[file:bled.rx.org][bled.rx]]            | dvorak adaptation of retro's editor                                  |
+| pascal   | [[file:bplus.org][bp.pas]]             | b+ tree unit for free pascal                                         |
+| retro    | [[file:mineswpr.org][mineswpr]]           | minesweeper for retro                                                |
+| pascal   | [[file:mr.org][mr]]                 | a tiny database system                                               |
+| js/retro | [[file:one-red-pixel.org][one-red-pixel]]      | log of my first experience with retro's ngaro virtual machine        |
+| -        | [[retro-pascal.org][retro-pascal]]       | notes on implementing a pascal compiler for retro                    |
+| retro    | [[file:retro-trail.org][retro-trail]]        | port of retro's commentary.txt, which explains the bootstrap process |
+| retro    | [[file:top-down-retro.org][topdown-retro]]      | another attempt to understand retro's bootstrap process              |
+| forth    | [[file:winfield-pascal-83.org][winfield-pascal-83]] | transcription of Dr. Alan Winfield's 1983 pascal-in-forth articles.  |
