@@ -1,0 +1,78 @@
+body,html {
+    background : #336;
+    color: #ccc;
+    font-family: verdana;
+    font-size: 100%;
+    margin: 0;
+}
+
+p, h1, h2, h3, h4, pre {
+    padding: 10px;
+}
+
+#table-of-contents {
+    position: fixed;
+    top: 0;
+    right: 10px;
+    background: white;
+    height: 2.5ex;
+    overflow: hidden;
+    padding: 0;
+}
+#table-of-contents:hover {
+    height:auto;
+}
+#table-of-contents h2 {
+    font-size: 100%;
+    background: white;
+    color: black;
+    text-shadow: 0 0 0;
+}
+
+
+pre {
+    background : black;
+    padding: 0.5em;
+    margin: 0;
+    font-family: "envy code r", consolas, monospace;
+    font-size: 12pt;
+}
+
+
+h1, h2, h3, h4, h5, h6 {
+    text-shadow: 2px 2px 4px #000;
+}
+
+h1 { 
+    color: white;
+    background: #000;
+    line-height: 4ex;
+    margin: 0px;
+    font-family: consolas, verdana;
+    font-size: 200%;
+}
+
+h1, pre {
+    border-bottom: solid #3c3c6c 3px;
+}
+
+h2 span { display : none }
+h2 { 
+    margin-top : 0;
+    background: #669;
+    border-bottom: solid #334 2px;
+    font-family: verdana; calibri, tahoma; 
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+table.org-info-js_info-navigation {
+    background: #333;
+}
+
+.org-comment, .org-comment-delimiter { color : #666 }
+.org-constant { color: magenta }
+.org-keyword { color: cyan }
+.org-string { color: lime }
+.org-builtin { color:gold }
+
