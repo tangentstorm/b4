@@ -1,4 +1,5 @@
 #+title: mr : a tiny relational database for minneron
+#+INFOJS_OPT: view:info toc:nil
 
 * overview
 ** GOAL a simple graph database with a strong relational bias.
@@ -39,6 +40,7 @@ Mostly this just seems cleaner to me, but also:
 - Pages can use an entire power-of-2-sized block for data (hopefully making pointer arithmetic slightly more efficient).
 
 - The linked list can be walked and examined without actually loading it, so you can figure out which blocks contain a particular blob without actually loading and walking the pages. [fn:1]
+
 **** These index pages are just sequences of integers.
 These would act as a sort of parallel array to the pages themselves (the pages are contained a virtual "array" in that they're numbered sequentially within the database file). On the first index page, =item[0]= would contain the =.next= link for =page[0]=, and so on.
 
@@ -57,7 +59,6 @@ this just makes it slightly simpler to do arithmetic
 *** correlating data in ram : the relational algebra
 *** the ACID properties
 **** For working in RAM, though, we may just want to append to entries to a temporary table. This should help with [[http://en.wikipedia.org/wiki/ACID][ACID]].
-
 
 * implementation
 ** implementing nodes

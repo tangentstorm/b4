@@ -1,5 +1,6 @@
 #+title: b+ trees
 #+author: michal j wallace
+#+INFOJS_OPT: view:info toc:nil
 
 * [0/2] overview
 ** TODO what is a b+ tree?
@@ -129,7 +130,6 @@
   end;
 
 #+end_src
-
 
 
 *** DONE [1/1] location

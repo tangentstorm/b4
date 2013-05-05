@@ -1,7 +1,7 @@
 #+TITLE: pascal in forth ( excerpts from )
 #+AUTHOR: Allan Winfield
 #+DATE: 1983
-
+#+INFOJS_OPT: view:info toc:nil
 
 * Part 1
 ** Pascal in Forth

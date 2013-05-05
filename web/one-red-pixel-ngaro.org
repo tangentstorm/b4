@@ -1,4 +1,6 @@
 #+TITLE: one red pixel on ngaro vm
+#+INFOJS_OPT: view:info toc:nil
+
 * COMMENT
 These were notes I took as I attempted to get a pixel to display using ngaro.js,
 working entirely in "machine code" -- that is, directly editing the array in

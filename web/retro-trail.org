@@ -1,6 +1,7 @@
 #+TITLE: Building Retro
+#+INFOJS_OPT: view:info toc:nil
 
-/NOTE: This commentary was done for the initial 11.0 release of Retro. Some things in the implementation have changed since then. Even so, this should help with understanding most of the internals./
+/NOTE: This commentary was written by [[http://rx-core.org/dev/corpse][crc]] for the initial 11.0 release of Retro. Some things in the implementation have changed since then. Even so, this should help with understanding most of the internals./
 
 * OUTPUT =meta.rx=
 #+begin_src retro :tangle "~/vrx/image/meta.rx" :padline yes :noweb tangle

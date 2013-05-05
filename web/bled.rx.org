@@ -1,4 +1,5 @@
 #+title: bled : a dvorak-oriented fork of the retro editor
+#+INFOJS_OPT: view:info toc:nil
 
 * keymap
 | Key | Action                               |

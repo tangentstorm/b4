@@ -1,6 +1,7 @@
 #+title: mineswpr : minesweeper for retro
 #+author: michal j wallace
 #+date: 03 feb 2013
+#+INFOJS_OPT: view:info toc:nil
 
 * language tweaks
 ** misc
