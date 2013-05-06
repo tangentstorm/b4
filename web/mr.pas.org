@@ -1,0 +1,54 @@
+
+* block storage
+- tdrive/tblock: =sd.pas= / =sd_fpc.inc= / =test_sd.pas=
+- file:~/go/bed.pas shows the usage
+- arrange in chunks in a list with ll modue
+- need an extra id to hold the blockid
+#+begin_src pascal
+  type
+    TRamBlock = class
+      number : cardinal;
+      block : TBlock;
+    end;
+    TRamChain = specialize li.list<TRamBlock>;
+#+end_src
+
+
+* triple store
+- file:bplus.org already has the basics
+
+* tuple lookup
+Hopefully, rows are pretty small so there isn't really much wasted space. A block size with a lot of different prime factors would probably help things fit.
+
+#+begin_src pascal
+
+  procedure FindBlockForTuple;
+  begin
+    DivMod(rowSize, blockSize, rowsPerBlock, extraSpace);
+    DivMod(rowsPerBlock, rowToFind, result, plusRows);
+    if plusRows > 0 then inc(result);
+    { then just follow the chain for that many blocks }
+  end;
+
+#+end_src
+
+
+* text lookp
+#+begin_src pascal
+procedure FindText( key : TNid );
+  var start, blocks, offs : int32;
+  procedure findTheStartBlock;
+    begin
+      startAddr := bptree.lookup( key );
+      DivMod( startAddr, pageSize, startPage, offset );
+    end;
+  procedure calcNumberOfBlocks;
+    begin
+      firstChunk := pageSize - offset;
+      DivMod( strLen - firstChunk, pageSize, numBlocks, lastChunk );
+    end;
+  begin
+    findTheStartBlock( key );
+    calcNumberOfBlocks;
+  end;
+#+end_src
