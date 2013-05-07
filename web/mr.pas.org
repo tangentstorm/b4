@@ -1,9 +1,29 @@
 
-* block storage
-- tdrive/tblock: =sd.pas= / =sd_fpc.inc= / =test_sd.pas=
-- file:~/go/bed.pas shows the usage
+* IArray Interface
+This is just an interface that describes how array-like structures work. We're going to build a few layers that all implement this same interface.
+#+begin_src pascal
+  type IArray<t> = interface
+    function Count : cardinal;
+    function GetItem( ix : cardinal ) : T;
+    procedure SetItem( ix : cardinal; val : T );
+    property item[ ix : cardinal ] : TBlock; default;
+  end;
+#+end_src
 
-* types and constants
+* Block Array Layers
+Next, we will build up a series of layers, all of which implement =IArray<TBlock>=:
+
+- =TBlockFile= :: raw sequences on disk (file of TBlock). This is optional, because we can also use in-memory databases.
+- =TBlockTree= :: A sparse array of blocks in RAM (using a B+ tree for fast access)
+- =TBlockChain= :: Wraps a linked list of non-contiguous blocks from any =IArray<TBlock>=, and makes it appear contiguous. (The links are stored in their own =TBlockChain=, of course.)
+
+Probably there's nothing block-specific about the first two, so they may wind up being generic.
+
+** TODO TBlockFile
+- tdrive/tblock: =sd.pas= / =sd_fpc.inc= / =test_sd.pas=
+- [[https://github.com/sabren/b4/blob/master/go/bed.pas][bed.pas]] shows the usage
+
+** types and constants
 #+begin_src pascal
   const
     kBlockSize = 1024; // bytes
@@ -17,18 +37,18 @@
     TEdgeID = TTupleID;
 #+end_src
 
-* [1/4] TYPE TRamChain to fetch and store blocks
-** About
+** [1/4] TYPE TRamChain to fetch and store blocks
+*** About
 In storing our database, we have a couple of goals that at first glance might seem to be in conflict:
 
 - We want to keep the database small and tightly packed.
 - We want tables to have room to grow.
 
-Chains resolve the conflict by allowing is to break tables into chunks.
+Chains resolve the conflict by allowing us to break tables into chunks.
 
 =TRamChain= is essentially a linked list of block handles. The individual blocks are only loaded into ram when they are actually used.
 
-** DONE interface and component types
+*** DONE interface and component types
 #+begin_src pascal
   type
     TRamChain  = class
@@ -47,18 +67,18 @@ Chains resolve the conflict by allowing is to break tables into chunks.
       end;
 #+end_src
 
-** TODO constructor
-** TODO GetItem
-** TODO mark changed blocks as dirty
+*** TODO constructor
+*** TODO GetItem
+*** TODO mark changed blocks as dirty
 #+begin_src
 
 #+end_src
 
-* [4/5] TYPE TArrayList for storing data inside a TRamChain
-** About
+** [4/5] TYPE TArrayList for storing data inside a TRamChain
+*** About
 It seems like we ought to have a type that would represent strings in-block.
 Perhaps even something that would represent arbitrary data structures as they were spread out over a linked list. Something like an ArrayList in java.
-** DONE TArrayList interface
+*** DONE TArrayList interface
 #+begin_src pascal
   type
     TAddress : record
@@ -83,8 +103,8 @@ Perhaps even something that would represent arbitrary data structures as they we
     end;
 #+end_src
 
-** TODO TArrayList.Create
-** DONE TArrayList.locate
+*** TODO TArrayList.Create
+*** DONE TArrayList.locate
 This calculates the location of a particular entry within the list and returns a reference.
 #+begin_src pascal
   function TArrayList.locate( ix : cardinal ) : TAddress;
@@ -100,7 +120,7 @@ This calculates the location of a particular entry within the list and returns a
     end;
 #+end_src
 
-** DONE TArrayList.GetItem
+*** DONE TArrayList.GetItem
 #+begin_src pascal
   function GetItem( ix : cardinal ) : T;
     begin
@@ -108,7 +128,7 @@ This calculates the location of a particular entry within the list and returns a
     end;
 #+end_src
 
-** DONE TArrayList.SetItem
+*** DONE TArrayList.SetItem
 #+begin_src pascal
   procedure SetItem( ix : cardinal; val : T );
     begin
@@ -116,28 +136,7 @@ This calculates the location of a particular entry within the list and returns a
     end;
 #+end_src
 
-* The database interface(s)
-#+begin_src pascal
-  type
-    IDataStore = interface
-      function StoreString( const s : string ) : TTupleID;
-      function FetchString( const i : TStringID ) : string;
-      function StoreArray( const s : string ) : TTArrayID;
-      function FetchArray( const i : TTArrayID ) : TArray;
-    end;
-    IRelStore = interface
-      function StoreTuple( const r : TRelation; const t : TTuple ) : TTupleID;
-      function FetchTuple( const r : TRelation; const i : TTupleID ) : TTuple;
-    end;
-    IGraphStore = interface
-      function StoreEdge( const e : TEdge ) : TEID;
-      function FetchEdge( const i : TEID ) : TEdge;
-      function StoreNode( const n : TNode ) : TNID;
-      function FetchNode( const i : TNID ) : TNode;
-    end;
-#+end_src
-
-* TODO block allocation : =NextInChain= / =NextFreeBlock=
+** TODO block allocation : =NextInChain= / =NextFreeBlock=
 #+begin_src pascal
   function NextInChain( block : TBlockID ) : TBlockID;
     begin
@@ -150,15 +149,24 @@ This calculates the location of a particular entry within the list and returns a
       result := 0
     end;
 #+end_src
-
-* TODO auto-increments : =TNextID=
+* The database interface(s)
+** TODO auto-increments : =TNextID=
 #+begin_src delphi
   function TNextID( tableID  );
     begin
       todo
     end;
 #+end_src
-* text storage
+** DataStore Interface (for strings and arrays of numbers)
+#+begin_src pascal
+  type IDataStore = interface
+    function StoreString( const s : string ) : TTupleID;
+    function FetchString( const i : TStringID ) : string;
+    function StoreArray( const s : string ) : TTArrayID;
+    function FetchArray( const i : TTArrayID ) : TArray;
+  end;
+#+end_src
+*** TODO text storage
 #+begin_src delphi
   type
     TTextMeta = record
@@ -173,8 +181,7 @@ This calculates the location of a particular entry within the list and returns a
       MakeTextMeta( txt, meta )
     end;
 #+end_src
-
-* text lookup
+*** TODO text lookup
 #+begin_src pascal
 procedure FindText( key : TNid );
   var start, blocks, offs : int32;
@@ -193,11 +200,18 @@ procedure FindText( key : TNid );
     calcNumberOfBlocks;
   end;
 #+end_src
+*** TODO grab the hash method from di.pas
+** Relational Interface
+#+begin_src pascal
+  type IRelStore = interface
+    function StoreTuple( const r : TRelation; const t : TTuple ) : TTupleID;
+    function FetchTuple( const r : TRelation; const i : TTupleID ) : TTuple;
+  end;
+#+end_src
 
-* triple store : extract a module from ~bp.pas~
+*** tuple store : extract a module from ~bp.pas~
 - file:bplus.org already has the basics
-
-* tuple lookup
+*** tuple lookup
 Hopefully, rows are pretty small so there isn't really much wasted space. A block size with a lot of different prime factors would probably help things fit.
 
 #+begin_src pascal
@@ -210,7 +224,15 @@ Hopefully, rows are pretty small so there isn't really much wasted space. A bloc
   end;
 #+end_src
 
-* TODO grab the hash method from di.pas
+** GraphStore interface for general data.
+#+begin_src pascal
+  type IGraphStore = interface
+    function StoreEdge( const e : TEdge ) : TEID;
+    function FetchEdge( const i : TEID ) : TEdge;
+    function StoreNode( const n : TNode ) : TNID;
+    function FetchNode( const i : TNID ) : TNode;
+  end;
+#+end_src
 * TODO format of the first block (metadata)
 * TODO store/fetch strings
 * TODO store/fetch arrays
