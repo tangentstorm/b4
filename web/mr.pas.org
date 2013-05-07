@@ -4,36 +4,96 @@
 - file:~/go/bed.pas shows the usage
 - arrange in chunks in a list with ll modue
 - need an extra id to hold the blockid
+
+* types and constants
+#+begin_src pascal
+  const
+    kBlockSize = 1024; // bytes
+  type
+    TArray = array of int32;
+    tuple = array of variant;
+    TBlockID = cardinal;
+    TStringID = cardinal;
+    TTupleID = cardinal;
+    TNodeID = cardinal;
+    TEdgeID = cardinal;
+#+end_src
+
+* The database interface(s)
+#+begin_src pascal
+  type
+    IDataStore = interface
+      function StoreString( const s : string ) : TTupleID;
+      function FetchString( const i : TStringID ) : string;
+      function StoreArray( const s : string ) : TTArrayID;
+      function FetchArray( const i : TTArrayID ) : TArray;
+    end;
+    IRelStore = interface
+      function StoreTuple( const r : TRelation; const t : TTuple ) : TTupleID;
+      function FetchTuple( const r : TRelation; const i : TTupleID ) : TTuple;
+    end;
+    IGraphStore = interface
+      function StoreEdge( const e : TEdge ) : TEID;
+      function FetchEdge( const i : TEID ) : TEdge;
+      function StoreNode( const n : TNode ) : TNID;
+      function FetchNode( const i : TNID ) : TNode;
+    end;
+#+end_src
+
+
+* fetching blocks into ram
 #+begin_src pascal
   type
     TRamBlock = class
-      number : cardinal;
+      ID    : TBlockID;
       block : TBlock;
     end;
     TRamChain = specialize li.list<TRamBlock>;
 #+end_src
 
 
-* triple store
-- file:bplus.org already has the basics
-
-* tuple lookup
-Hopefully, rows are pretty small so there isn't really much wasted space. A block size with a lot of different prime factors would probably help things fit.
-
+* block allocation
 #+begin_src pascal
-
-  procedure FindBlockForTuple;
-  begin
-    DivMod(rowSize, blockSize, rowsPerBlock, extraSpace);
-    DivMod(rowsPerBlock, rowToFind, result, plusRows);
-    if plusRows > 0 then inc(result);
-    { then just follow the chain for that many blocks }
-  end;
-
+  function NextInChain( block : TBlockID ) : TBlockID;
+    begin
+      todo;
+      result := 0
+    end;
+  function NextFreeBLock : TBlockID;
+    begin
+      todo;
+      result := 0
+    end;
 #+end_src
 
 
-* text lookp
+* auto-increments
+#+begin_src delphi
+  function TNextID( tableID  );
+    begin
+      todo
+    end;
+#+end_src
+
+* TODO grab the hash method from di.pas
+
+* text storage
+#+begin_src delphi
+  type
+    TTextMeta = record
+      ID     : TNID;
+      prefix : array[ 0 .. 3 ] of char;
+      start  : Int32;
+      hash   : Int32;
+    end;
+  procedure StoreText( txt : string );
+    var meta : TTextMeta;
+    begin
+      MakeTextMeta( txt, meta )
+    end;
+#+end_src
+
+* text lookup
 #+begin_src pascal
 procedure FindText( key : TNid );
   var start, blocks, offs : int32;
@@ -50,5 +110,22 @@ procedure FindText( key : TNid );
   begin
     findTheStartBlock( key );
     calcNumberOfBlocks;
+  end;
+#+end_src
+
+* triple store
+- file:bplus.org already has the basics
+
+
+* tuple lookup
+Hopefully, rows are pretty small so there isn't really much wasted space. A block size with a lot of different prime factors would probably help things fit.
+
+#+begin_src pascal
+  procedure FindBlockForTuple;
+  begin
+    DivMod(rowSize, blockSize, rowsPerBlock, extraSpace);
+    DivMod(rowsPerBlock, rowToFind, result, plusRows);
+    if plusRows > 0 then inc(result);
+    { then just follow the chain for that many blocks }
   end;
 #+end_src
