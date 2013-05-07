@@ -2,8 +2,6 @@
 * block storage
 - tdrive/tblock: =sd.pas= / =sd_fpc.inc= / =test_sd.pas=
 - file:~/go/bed.pas shows the usage
-- arrange in chunks in a list with ll modue
-- need an extra id to hold the blockid
 
 * types and constants
 #+begin_src pascal
@@ -16,7 +14,106 @@
     TStringID = cardinal;
     TTupleID = cardinal;
     TNodeID = cardinal;
-    TEdgeID = cardinal;
+    TEdgeID = TTupleID;
+#+end_src
+
+* [1/4] TYPE TRamChain to fetch and store blocks
+** About
+In storing our database, we have a couple of goals that at first glance might seem to be in conflict:
+
+- We want to keep the database small and tightly packed.
+- We want tables to have room to grow.
+
+Chains resolve the conflict by allowing is to break tables into chunks.
+
+=TRamChain= is essentially a linked list of block handles. The individual blocks are only loaded into ram when they are actually used.
+
+** DONE interface and component types
+#+begin_src pascal
+  type
+    TRamChain  = class
+      private type
+        TRamState  = ( rsStub, rsLoaded, rsChanged );
+        TRamBlock  = record
+          ID    : sd.TBlockID;
+          block : sd.TBlock;
+          state : TRamState;
+        end;
+        TRamBlocks = specialize li.list<TRamBlock>;
+      public
+        constructor Create( );
+        function GetItem( ix : cardinal ) : TBlock;
+        property item[ ix : cardinal ] : TBlock read GetItem default;
+      end;
+#+end_src
+
+** TODO constructor
+** TODO GetItem
+** TODO mark changed blocks as dirty
+#+begin_src
+
+#+end_src
+
+* [4/5] TYPE TArrayList for storing data inside a TRamChain
+** About
+It seems like we ought to have a type that would represent strings in-block.
+Perhaps even something that would represent arbitrary data structures as they were spread out over a linked list. Something like an ArrayList in java.
+** DONE TArrayList interface
+#+begin_src pascal
+  type
+    TAddress : record
+                 blockID : TBlockID;
+                 offset  : cardinal;
+               end;
+    TBlocks : array of integer;
+    generic TArrayList<T> = class
+     private
+      _chain     : TRamChain;
+      _count     : cardinal;  { total number of <T> items }
+      _headCount : cardinal;  { number of <T> in the first block (may start partway in) }
+      _address   : TAddress;  { start address of the list }
+      _perBlock  : cardinal;  { sizeof(T)/sizeof(block) }
+      _blocks    : TBlocks;   { _blocks[0] = _address.blockID }
+      function locate( ix : cardinal ) : TAddress;
+     public
+      function Create( chain : TRamChain );
+      function GetItem( ix : cardinal ) : T;
+      procedure SetItem( ix : cardinal; val : T );
+      property item[ ix : cardinal ] : T read GetItem write SetItem; default;
+    end;
+#+end_src
+
+** TODO TArrayList.Create
+** DONE TArrayList.locate
+This calculates the location of a particular entry within the list and returns a reference.
+#+begin_src pascal
+  function TArrayList.locate( ix : cardinal ) : TAddress;
+    begin
+      if ix >= _count then raise ERangeCheckError.Create('out of bounds');
+      if ix < _headCount then
+        begin
+          result.blockID := _address.blockID;
+          result.offset  := _address.offset + ix * sizeOf(T);
+        end
+      else
+        DivMod( ix - _headCount, _perBlock, result.blockID, result.offset );
+    end;
+#+end_src
+
+** DONE TArrayList.GetItem
+#+begin_src pascal
+  function GetItem( ix : cardinal ) : T;
+    begin
+      move(_chain[self.locate(ix)]^, result, sizeof(T));
+    end;
+#+end_src
+
+** DONE TArrayList.SetItem
+#+begin_src pascal
+  procedure SetItem( ix : cardinal; val : T );
+    begin
+      move(val, _chain[self.locate(ix)]^, sizeof(T));
+    end;
 #+end_src
 
 * The database interface(s)
@@ -40,19 +137,7 @@
     end;
 #+end_src
 
-
-* fetching blocks into ram
-#+begin_src pascal
-  type
-    TRamBlock = class
-      ID    : TBlockID;
-      block : TBlock;
-    end;
-    TRamChain = specialize li.list<TRamBlock>;
-#+end_src
-
-
-* block allocation
+* TODO block allocation : =NextInChain= / =NextFreeBlock=
 #+begin_src pascal
   function NextInChain( block : TBlockID ) : TBlockID;
     begin
@@ -66,17 +151,13 @@
     end;
 #+end_src
 
-
-* auto-increments
+* TODO auto-increments : =TNextID=
 #+begin_src delphi
   function TNextID( tableID  );
     begin
       todo
     end;
 #+end_src
-
-* TODO grab the hash method from di.pas
-
 * text storage
 #+begin_src delphi
   type
@@ -113,9 +194,8 @@ procedure FindText( key : TNid );
   end;
 #+end_src
 
-* triple store
+* triple store : extract a module from ~bp.pas~
 - file:bplus.org already has the basics
-
 
 * tuple lookup
 Hopefully, rows are pretty small so there isn't really much wasted space. A block size with a lot of different prime factors would probably help things fit.
@@ -129,3 +209,11 @@ Hopefully, rows are pretty small so there isn't really much wasted space. A bloc
     { then just follow the chain for that many blocks }
   end;
 #+end_src
+
+* TODO grab the hash method from di.pas
+* TODO format of the first block (metadata)
+* TODO store/fetch strings
+* TODO store/fetch arrays
+* TODO store/fetch tuples
+* TODO store/fetch edges
+* TODO store/fetch nodes
