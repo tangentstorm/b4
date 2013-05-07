@@ -28,6 +28,7 @@ always:
 # clean removes all the generated files
 clean:
 	@rm -f *~ *.gpi *.o *.pyc
+	@rm -f test_sd.b4sd
 	@delp $(BIN)
 	@rm -f $(GEN)/*
 
