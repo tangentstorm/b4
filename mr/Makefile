@@ -3,6 +3,7 @@ GEN = ../gen
 # BIN: where to put the final executables
 BIN = ../gen
 XPL = ../lib/xpl/code
+TANGLE = ../tangle.el
 FPC = fpc -Mobjfpc -FE$(BIN) \
 	-Fu$(GEN) -Fi$(GEN) \
 	-Fu./code -Fi./code \
@@ -32,8 +33,13 @@ clean:
 	@delp $(BIN)
 	@rm -f $(GEN)/*
 
+
+.tangled: ../web/ar.pas.org ../web/mr.pas.org
+	cat ../web/ar.pas.org ../web/mr.pas.org > .tangled
+	$(TANGLE) .tangled
+
 # we use always here, else it'll see the test directory and assume we're done.
-test: always init clean test-runner
+test: always .tangled test-runner
 	@$(BIN)/run-tests $(paramline)
 test-runner: test/*.pas code/*.pas
 	cd test; python gen-tests.py ../$(GEN)

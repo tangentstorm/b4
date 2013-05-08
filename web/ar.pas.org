@@ -1,11 +1,11 @@
 #+title: ar.pas : Array interface
-#+INFOJS_OPT: view:content toc:nil
+#+INFOJS_OPT: view:showall toc:nil
 
 * The IArray Interface
 
 Previously, we looked at the [[https://github.com/tangentstorm/xpl/blob/master/code/sq.pas][sq unit]], in which we defined a generic sequence type, whose interface looked like this:
 
-#+begin_example pascal
+#+begin_src pascal
   type generic ISequence<tKey, tVal> = interface
     function Length : cardinal;
     function GetItem( i : tKey ) : tVal;
@@ -13,7 +13,7 @@ Previously, we looked at the [[https://github.com/tangentstorm/xpl/blob/master/c
     property item[ i : tKey ] : tVal
       read GetItem write SetItem; default;
   end;
-#+end_example
+#+end_src
 
 We further provided an abstract class, =GSeq<tKey,tVal>=, which provides an enumerator for classes implementing =ISequence=. This allows us to loop through the values of a sequence with pascal's =for ... in ... do= syntax.
 
@@ -23,11 +23,11 @@ Arrays in standard pascal can have arbitrary start and end indices (that is, you
 
 However, most of the time, it's sufficient to range from zero to some maximum value, and in fact this is how dynamic arrays work in object pascal, thus we can define an interface that works very much like a dynamic array simply by specializing =ISequence= and using =cardinal= as the key type:
 
-#+name: IArray
+#+name: type:IArray
 #+begin_src pascal
   type
-    generic IArray<T> = interface (specialize ISequence<cardinal, T>)
-      procedure Resize( newLength : cardinal );
+    IArray<T> = interface (ISequence<cardinal, T>)
+      procedure Resize( newlen : cardinal );
       procedure Append( value : T );
     end;
 #+end_src
@@ -38,163 +38,275 @@ The two additional methods we've added indicate that we will concern ourselves h
 
 Object pascal offers dynamic arrays, which are basically the same as static arrays, except they're allocated on the heap. You can resize them with =SetLength=, but since this can copy the entire array each time you resize it, it's not always efficient to grow the array.
 
-Since keys in an array are a contiguous sequence of values, arrays generally store their values in a single contiguous block of RAM. This allows the compiler to use simple pointer arithmetic under the hood to 
+Since keys in an array are a contiguous sequence of values, arrays generally store their values in a single contiguous block of RAM. This allows the compiler to use simple pointer arithmetic under the hood to
 allow very fast access to the data.
 
 Sometimes, though, we prefer something that looks and feels like an array, but uses some other kind of storage system underneath. In this unit, we'll explore several classes that all implement this same interface, but have very different implementations under the hood.
 
 * A simple test suite.
 
+The compiler will check that each of our array classes provides the necessary methods to implement =IArray=, but it can't guarantee that the implementation actually does what we want.
 
-* Implementations
-** TODO GAbstractArray
+Actually, nothing short of a formal proof can guarantee that our software is correct (and then only if we trust both the compiler and our logic), but we can at least provide evidence that it's probably doing the right thing.
+
+To that end, we will run each class through the following test suite, which simply creates and populates an array.
+
+#+name: check_array
 #+begin_src pascal
+  
+  type
+    ICardinalArray = IArray<cardinal>;
+  
+  procedure check_array( a : ICardinalArray );
+    var i : byte;
+    begin
+      { test that we can grow the array with append: }
+      chk.equal( 0, a.length );
+      for i := 0 to 127 do a.append( i * i );
+  
+      { now resize and make sure we can both read the
+        old values and write the new slots }
+      a.resize( 256 );
+      for i := 255 downto 128 do a[ i ] := round(sqrt( a[ 128 - i ]));
+  
+      { do a few spot tests to make sure it worked right. }
+      chk.equal( a[   0 ],     0 );
+      chk.equal( a[  64 ],  4096 );
+      chk.equal( a[ 126 ], 15876 );
+      chk.equal( a[ 127 ], 16129 );
+      chk.equal( a[ 128 ],   127 );
+      chk.equal( a[ 129 ],   126 );
+      chk.equal( a[ 192 ],  4096 );
+      chk.equal( a[ 255 ],     0 );
+    end;
+  
+#+end_src
+
+* Passing the Tests
+** TODO GAbstractArray
+#+name: ar:imp
+#+begin_src pascal
+  
+  constructor GAbstractArray<T>.Create( len : cardinal );
+    begin
+      _length := len;
+    end;
+  
+  procedure GAbstractArray<T>.CheckRange( ix : cardinal );
+    begin
+    end;
+  
+  procedure GAbstractArray<T>.Resize( len : cardinal );
+    begin
+    end;
+  
+  function GAbstractArray<T>.Length : cardinal;
+    begin
+      result := _length;
+    end;
+  
+  procedure GAbstractArray<T>.Append( value : t );
+    begin
+    end;
+  
 #+end_src
 
 ** TODO GDynArray
  #+name: ar:imp
  #+begin_src pascal
-
-   constructor GDynArray.Create;
+   
+   constructor GDynArray<T>.Create( len : cardinal );
      begin
+       inherited Create( len )
+     end;
+   
+   function GDynArray<T>.GetItem( ix : cardinal ) : T;
+     begin
+       result := default(t);
      end;
 
-   destructor GDynArray.Destroy;
+   procedure GDynArray<T>.SetItem( ix : cardinal; val : T );
      begin
      end;
-
+   
+   destructor GDynArray<T>.Destroy;
+     begin
+     end;
+   
  #+end_src
 
-
-* 
 ** TODO GFileArray
 #+name: ar:imp
 #+begin_src pascal
-
-  constructor GFileArray.Create;
+  
+  constructor GFileArray<T>.Create( var f : file );
+    begin
+      inherited Create( 0 )
+    end;
+  
+  function GFileArray<T>.GetItem( ix : cardinal ) : T;
+    begin
+       result := default(t)
+    end;
+  
+  procedure GFileArray<T>.SetItem( ix : cardinal; val : T );
     begin
     end;
-
-  function GFileArray.GetItem( ix : cardinal ) : T;
+  
+  destructor GFileArray<T>.Destroy;
     begin
     end;
-
-  procedure GFileArray.SetItem( ix : cardinal; val : T );
-    begin
-    end;
-
-  destructor GFileArray.Destroy;
-    begin
-    end;
-
+  
 #+end_src
 
 ** TODO GBPlusArray
-
 #+name: ar:imp
 #+begin_src pascal
-
-  constructor GBPlusArray.Create;
+  
+  constructor GBPlusArray<T>.Create( len : cardinal );
+    begin
+      inherited Create( len )
+    end;
+  
+  function GBPlusArray<T>.GetItem( ix : cardinal ) : T;
+    begin
+       result := default(t)
+    end;
+  
+  procedure GBPlusArray<T>.SetItem( ix : cardinal; val : T );
     begin
     end;
-
-  function GBPlusArray.GetItem( ix : cardinal ) : T;
+  
+  destructor GBPlusArray<T>.Destroy;
     begin
     end;
-
-  procedure GBPlusArray.SetItem( ix : cardinal; val : T );
-    begin
-    end;
-
-  destructor GBPlusArray.Destroy;
-    begin
-    end;
-
+  
 #+end_src
 
 ** TODO GEmbeddedArray
 #+name: ar:imp
 #+begin_src pascal
-
-  constructor GEmbeddedArray.Create;
+  
+  constructor GEmbeddedArray<T>.Create( a : IArray<T>; len : cardinal );
+    begin
+      inherited Create( len )
+    end;
+  
+  function GEmbeddedArray<T>.GetItem( ix : cardinal ) : T;
+    begin
+       result := default(t)
+    end;
+  
+  procedure GEmbeddedArray<T>.SetItem( ix : cardinal; val : T );
     begin
     end;
-
-  function GEmbeddedArray.GetItem( ix : cardinal ) : T;
+  
+  destructor GEmbeddedArray<T>.Destroy;
     begin
     end;
-
-  procedure GEmbeddedArray.SetItem( ix : cardinal; val : T );
-    begin
-    end;
-
-  destructor GEmbeddedArray.Destroy;
-    begin
-    end;
-
+  
 #+end_src
 
 
-
-
-* Appendix: Complete interface for UNIT =ar=
+* Appendix: Templates for Generated Files
+** template for UNIT =ar=
 #+begin_src pascal :tangle "~/b/mr/code/ar.pas" :noweb tangle
-  {$i xpc.inc}
+  {$mode delphi}
   unit ar; { Array interface }
-  interface
+  interface uses sq;
+  
+    <<type:IArray>>
   
     type
-      generic IArray<T> = interface
-        <<SizeMethods>>
-        <<AccessMethods>>
-        <<ItemProperty>>
-      end;
-  
-      generic GAbstractArray<T> = class abstract (TInterfacedObject, IArray<T>)
+      GAbstractArray<T> = class ( GSeq<cardinal, T>, IArray<T> )
         protected
-          _count = cardinal;
+          _length : cardinal;
           procedure CheckRange( ix : cardinal );
         public
-          constructor Create( length : cardinal ); virtual;
-          procedure Resize( length : cardinal ); virtual;
+          function Length : cardinal; override;
+          constructor Create( len : cardinal );
+          procedure Resize( len : cardinal ); virtual;
           procedure Append( value : t ); virtual;
-          property Count : cardinal read _count;
         end;
   
-      generic GDynArray<T> = class( GAbstractArray<T> )
+      GDynArray<T> = class( GAbstractArray<T> )
         protected
-          _array = array of T;
+          _array : array of T;
         public
-          <<AccessMethods>>
-          constructor Create( length : cardinal );
-          destructor Destroy;
+          function GetItem( ix : cardinal ) : T; override;
+          procedure SetItem( ix : cardinal; val : T ); override;
+          constructor Create( len : cardinal );
+          destructor Destroy; override;
         end;
   
-      generic GFileArray<T> = class( GAbstractArray<T> )
+      GFileArray<T> = class( GAbstractArray<T> )
         protected
-          _file = file of T;
+          _file : file;
         public
-          <<AccessMethods>>
-          constructor Create( var f : file of T );
-          destructor Destroy;
+          function GetItem( ix : cardinal ) : T; override;
+          procedure SetItem( ix : cardinal; val : T ); override;
+          constructor Create( var f : file );
+          destructor Destroy; override;
         end;
   
-      generic GBPlusArray<T> = class( GAbstractArray<T> )
+      GBPlusArray<T> = class( GAbstractArray<T> )
         public
-          <<AccessMethods>>
-          constructor Create( length : cardinal );
-          destructor Destroy;
+          function GetItem( ix : cardinal ) : T; override;
+          procedure SetItem( ix : cardinal; val : T ); override;
+          constructor Create( len : cardinal );
+          destructor Destroy; override;
         end;
   
-      generic GEmbeddedArray<T> = class( GAbstractArray<T> )
+      GEmbeddedArray<T> = class( GAbstractArray<T> )
         public
-          <<AccessMethods>>
-          constructor Create( a : IArray<T>; length : cardinal );
-          destructor Destroy;
+          function GetItem( ix : cardinal ) : T; override;
+          procedure SetItem( ix : cardinal; val : T ); override;
+          constructor Create( a : IArray<T>; len : cardinal );
+          destructor Destroy; override;
         end;
   
   implementation
     <<ar:imp>>
   end.
   
+#+end_src
+
+** template for test suite
+#+begin_src pascal :tangle "~/b/mr/test/test_ar.pas" :noweb tangle
+  {$mode delphi}
+  {$i test_ar.def}
+  implementation
+  uses ar, fs, sysutils;
+  
+  <<check_array>>
+  type
+    TDynArray      =  class (GDynArray<cardinal>, ICardinalArray);
+    TFileArray     =  GFileArray<cardinal>;
+    TBPlusArray    =  GBPlusArray<cardinal>;
+    TEmbeddedArray =  GEmbeddedArray<cardinal>;
+  
+  procedure test_dinarray;
+    begin
+      check_array( TDynArray.Create( 0 ));
+    end;
+
+  procedure test_filearray;
+    var f : file of cardinal;
+    begin
+      fs.update( f, 'test_ar.b4sd' );
+      check_array( TFileArray.Create( f ));
+    end;
+
+  procedure test_bplusarray;
+    begin
+      check_array( TBPlusArray.Create( 0 ));
+    end;
+
+  procedure test_embeddedarray;
+    begin
+      check_array( TEmbeddedArray.Create( TDynArray.Create( 1024 ), 32 ));
+    end;
+
+  begin
+  end.
 #+end_src
