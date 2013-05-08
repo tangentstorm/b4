@@ -9,7 +9,7 @@ Previously, we looked at the [[https://github.com/tangentstorm/xpl/blob/master/c
   type generic ISequence<tKey, tVal> = interface
     function Length : cardinal;
     function GetItem( i : tKey ) : tVal;
-    procedure SetItem( i : tKey; value : tVal );
+    procedure SetItem( i : tKey; var value : tVal );
     property item[ i : tKey ] : tVal
       read GetItem write SetItem; default;
   end;
@@ -148,7 +148,7 @@ To that end, we will run each class through the following test suite, which simp
       result := _array[ ix ];
     end;
 
-  procedure GDynArray<T>.SetItem( ix : cardinal; val : T );
+  procedure GDynArray<T>.SetItem( ix : cardinal; const val: T );
     begin
       CheckRange( ix );
       _array[ ix ] := val
@@ -161,26 +161,50 @@ To that end, we will run each class through the following test suite, which simp
 
 #+end_src
 
-** TODO GFileArray
+** DONE GFileArray
 #+name: ar:imp
 #+begin_src pascal
 
   constructor GFileArray<T>.Create( var f : file );
     begin
-      inherited Create( 0 )
+      _file := f;
+      inherited Create( filesize( f ) div sizeOf( T ));
+    end;
+
+  procedure GFileArray<T>.Resize( len : cardinal );
+    var n : cardinal; buf : T;
+    begin
+      if len < _length then
+        begin
+          seek( _file, filesize( _file ));
+          truncate( _file );
+        end
+      else if len > _length then
+        begin
+          seek( _file, filesize( _file ));
+          buf := default( T );
+          for n := _length to len do
+            BlockWrite( _file, buf, sizeOf( T ));
+        end;
+      // else do nothing
+      inherited Resize( len );
     end;
 
   function GFileArray<T>.GetItem( ix : cardinal ) : T;
     begin
-       result := default(t)
+      seek( _file, ix * sizeOf( T ));
+      BlockRead( _file, result, sizeof( T ));
     end;
 
-  procedure GFileArray<T>.SetItem( ix : cardinal; val : T );
+  procedure GFileArray<T>.SetItem( ix : cardinal; const val: T );
     begin
+      seek( _file, ix * sizeOf( T ));
+      BlockWrite( _file, val, sizeof( T ));
     end;
 
   destructor GFileArray<T>.Destroy;
     begin
+      Close( _file );
     end;
 
 #+end_src
@@ -199,7 +223,7 @@ To that end, we will run each class through the following test suite, which simp
        result := default(t)
     end;
 
-  procedure GBPlusArray<T>.SetItem( ix : cardinal; val : T );
+  procedure GBPlusArray<T>.SetItem( ix : cardinal; const val: T );
     begin
     end;
 
@@ -223,7 +247,7 @@ To that end, we will run each class through the following test suite, which simp
        result := default(t)
     end;
 
-  procedure GEmbeddedArray<T>.SetItem( ix : cardinal; val : T );
+  procedure GEmbeddedArray<T>.SetItem( ix : cardinal; const val: T );
     begin
     end;
 
@@ -261,7 +285,7 @@ To that end, we will run each class through the following test suite, which simp
         public
           constructor Create( len : cardinal );
           function GetItem( ix : cardinal ) : T; override;
-          procedure SetItem( ix : cardinal; val : T ); override;
+          procedure SetItem( ix : cardinal; const val: T ); override;
           procedure Resize( len : cardinal ); override;
           destructor Destroy; override;
         end;
@@ -271,8 +295,9 @@ To that end, we will run each class through the following test suite, which simp
           _file : file;
         public
           constructor Create( var f : file );
+          procedure Resize( len : cardinal );
           function GetItem( ix : cardinal ) : T; override;
-          procedure SetItem( ix : cardinal; val : T ); override;
+          procedure SetItem( ix : cardinal; const val: T ); override;
           destructor Destroy; override;
         end;
 
@@ -280,7 +305,7 @@ To that end, we will run each class through the following test suite, which simp
         public
           constructor Create( len : cardinal );
           function GetItem( ix : cardinal ) : T; override;
-          procedure SetItem( ix : cardinal; val : T ); override;
+          procedure SetItem( ix : cardinal; const val: T ); override;
           destructor Destroy; override;
         end;
 
@@ -288,7 +313,7 @@ To that end, we will run each class through the following test suite, which simp
         public
           constructor Create( a : IArray<T>; len : cardinal );
           function GetItem( ix : cardinal ) : T; override;
-          procedure SetItem( ix : cardinal; val : T ); override;
+          procedure SetItem( ix : cardinal; const val: T ); override;
           destructor Destroy; override;
         end;
 
