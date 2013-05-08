@@ -32,7 +32,7 @@ However, most of the time, it's sufficient to range from zero to some maximum va
     end;
 #+end_src
 
-Remember, =T= is a type variable, indicating some particular but as-yet unspecified type, as if we'd declared an =array of T=.
+Remember, =T= is a type variable, indicating some particular but as-yet unspecificred type, as if we'd declared an =array of T=.
 
 The two additional methods we've added indicate that we will concern ourselves here with /dynamic/ arrays, which can grow and shrink at runtime, rather than having fixed bounds.
 
@@ -53,22 +53,31 @@ To that end, we will run each class through the following test suite, which simp
 
 #+name: check_array
 #+begin_src pascal
-  
+
   type
     ICardinalArray = IArray<cardinal>;
-  
+
   procedure check_array( a : ICardinalArray );
     var i : byte;
     begin
+
       { test that we can grow the array with append: }
       chk.equal( 0, a.length );
       for i := 0 to 127 do a.append( i * i );
-  
+
+      chk.equal( 128, a.length );
+
       { now resize and make sure we can both read the
         old values and write the new slots }
       a.resize( 256 );
-      for i := 255 downto 128 do a[ i ] := round(sqrt( a[ 128 - i ]));
-  
+      for i := 255 downto 128 do
+        begin
+          { writeln( 'a[', i, '] := a[', 256 - i - 1, '] -> ',
+            a[ 256 - i - 1 ], ' -> ', i, ' ',
+            round(sqrt( a[ 256 - i - 1 ]))); }
+          a[ i ] := round(sqrt( a[ 256 - i - 1 ]));
+        end;
+
       { do a few spot tests to make sure it worked right. }
       chk.equal( a[   0 ],     0 );
       chk.equal( a[  64 ],  4096 );
@@ -76,135 +85,152 @@ To that end, we will run each class through the following test suite, which simp
       chk.equal( a[ 127 ], 16129 );
       chk.equal( a[ 128 ],   127 );
       chk.equal( a[ 129 ],   126 );
-      chk.equal( a[ 192 ],  4096 );
+      chk.equal( a[ 192 ],    63 );
       chk.equal( a[ 255 ],     0 );
     end;
-  
+
 #+end_src
 
 * Passing the Tests
-** TODO GAbstractArray
+** DONE GAbstractArray
 #+name: ar:imp
 #+begin_src pascal
-  
+
   constructor GAbstractArray<T>.Create( len : cardinal );
     begin
       _length := len;
     end;
-  
+
   procedure GAbstractArray<T>.CheckRange( ix : cardinal );
     begin
+      if ix >= _length then
+        raise ERangeError.Create( 'Out of range: ' + IntToStr( ix ));
     end;
-  
+
   procedure GAbstractArray<T>.Resize( len : cardinal );
     begin
+      _length := len;
     end;
-  
+
   function GAbstractArray<T>.Length : cardinal;
     begin
       result := _length;
     end;
-  
+
   procedure GAbstractArray<T>.Append( value : t );
     begin
+      self.Resize( _length + 1 );
+      { -1 because length has now increased by one }
+      self[ _length - 1 ] := value;
     end;
-  
+
 #+end_src
 
-** TODO GDynArray
- #+name: ar:imp
- #+begin_src pascal
-   
-   constructor GDynArray<T>.Create( len : cardinal );
-     begin
-       inherited Create( len )
-     end;
-   
-   function GDynArray<T>.GetItem( ix : cardinal ) : T;
-     begin
-       result := default(t);
-     end;
+** DONE GDynArray
+#+name: ar:imp
+#+begin_src pascal
 
-   procedure GDynArray<T>.SetItem( ix : cardinal; val : T );
-     begin
-     end;
-   
-   destructor GDynArray<T>.Destroy;
-     begin
-     end;
-   
- #+end_src
+  constructor GDynArray<T>.Create( len : cardinal );
+    begin
+      inherited Create( len );
+      SetLength( _array, len );
+    end;
+
+  procedure GDynArray<T>.Resize( len : cardinal );
+    begin
+      inherited Resize( len );
+      SetLength( _array, len );
+    end;
+
+  function GDynArray<T>.GetItem( ix : cardinal ) : T;
+    begin
+      CheckRange( ix );
+      result := _array[ ix ];
+    end;
+
+  procedure GDynArray<T>.SetItem( ix : cardinal; val : T );
+    begin
+      CheckRange( ix );
+      _array[ ix ] := val
+    end;
+
+  destructor GDynArray<T>.Destroy;
+    begin
+      _array := Nil
+    end;
+
+#+end_src
 
 ** TODO GFileArray
 #+name: ar:imp
 #+begin_src pascal
-  
+
   constructor GFileArray<T>.Create( var f : file );
     begin
       inherited Create( 0 )
     end;
-  
+
   function GFileArray<T>.GetItem( ix : cardinal ) : T;
     begin
        result := default(t)
     end;
-  
+
   procedure GFileArray<T>.SetItem( ix : cardinal; val : T );
     begin
     end;
-  
+
   destructor GFileArray<T>.Destroy;
     begin
     end;
-  
+
 #+end_src
 
 ** TODO GBPlusArray
 #+name: ar:imp
 #+begin_src pascal
-  
+
   constructor GBPlusArray<T>.Create( len : cardinal );
     begin
       inherited Create( len )
     end;
-  
+
   function GBPlusArray<T>.GetItem( ix : cardinal ) : T;
     begin
        result := default(t)
     end;
-  
+
   procedure GBPlusArray<T>.SetItem( ix : cardinal; val : T );
     begin
     end;
-  
+
   destructor GBPlusArray<T>.Destroy;
     begin
     end;
-  
+
 #+end_src
 
 ** TODO GEmbeddedArray
 #+name: ar:imp
 #+begin_src pascal
-  
+
   constructor GEmbeddedArray<T>.Create( a : IArray<T>; len : cardinal );
     begin
       inherited Create( len )
     end;
-  
+
   function GEmbeddedArray<T>.GetItem( ix : cardinal ) : T;
     begin
        result := default(t)
     end;
-  
+
   procedure GEmbeddedArray<T>.SetItem( ix : cardinal; val : T );
     begin
     end;
-  
+
   destructor GEmbeddedArray<T>.Destroy;
     begin
     end;
-  
+
 #+end_src
 
 
@@ -213,62 +239,63 @@ To that end, we will run each class through the following test suite, which simp
 #+begin_src pascal :tangle "~/b/mr/code/ar.pas" :noweb tangle
   {$mode delphi}
   unit ar; { Array interface }
-  interface uses sq;
-  
+  interface uses sq, sysutils;
+
     <<type:IArray>>
-  
+
     type
       GAbstractArray<T> = class ( GSeq<cardinal, T>, IArray<T> )
         protected
           _length : cardinal;
           procedure CheckRange( ix : cardinal );
         public
-          function Length : cardinal; override;
           constructor Create( len : cardinal );
+          function Length : cardinal; override;
           procedure Resize( len : cardinal ); virtual;
           procedure Append( value : t ); virtual;
         end;
-  
+
       GDynArray<T> = class( GAbstractArray<T> )
         protected
           _array : array of T;
         public
+          constructor Create( len : cardinal );
           function GetItem( ix : cardinal ) : T; override;
           procedure SetItem( ix : cardinal; val : T ); override;
-          constructor Create( len : cardinal );
+          procedure Resize( len : cardinal ); override;
           destructor Destroy; override;
         end;
-  
+
       GFileArray<T> = class( GAbstractArray<T> )
         protected
           _file : file;
         public
+          constructor Create( var f : file );
           function GetItem( ix : cardinal ) : T; override;
           procedure SetItem( ix : cardinal; val : T ); override;
-          constructor Create( var f : file );
           destructor Destroy; override;
         end;
-  
+
       GBPlusArray<T> = class( GAbstractArray<T> )
         public
+          constructor Create( len : cardinal );
           function GetItem( ix : cardinal ) : T; override;
           procedure SetItem( ix : cardinal; val : T ); override;
-          constructor Create( len : cardinal );
           destructor Destroy; override;
         end;
-  
+
       GEmbeddedArray<T> = class( GAbstractArray<T> )
         public
+          constructor Create( a : IArray<T>; len : cardinal );
           function GetItem( ix : cardinal ) : T; override;
           procedure SetItem( ix : cardinal; val : T ); override;
-          constructor Create( a : IArray<T>; len : cardinal );
           destructor Destroy; override;
         end;
-  
+
   implementation
     <<ar:imp>>
   end.
-  
+
 #+end_src
 
 ** template for test suite
@@ -277,15 +304,15 @@ To that end, we will run each class through the following test suite, which simp
   {$i test_ar.def}
   implementation
   uses ar, fs, sysutils;
-  
+
   <<check_array>>
   type
     TDynArray      =  class (GDynArray<cardinal>, ICardinalArray);
     TFileArray     =  GFileArray<cardinal>;
     TBPlusArray    =  GBPlusArray<cardinal>;
     TEmbeddedArray =  GEmbeddedArray<cardinal>;
-  
-  procedure test_dinarray;
+
+  procedure test_dynarray;
     begin
       check_array( TDynArray.Create( 0 ));
     end;
