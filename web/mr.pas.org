@@ -1,16 +1,7 @@
+#+title: minrel : a small relational graph database
+#+INFOJS_OPT: view:plain toc:nil up:/ home:/
 
-* IArray Interface
-This is just an interface that describes how array-like structures work. We're going to build a few layers that all implement this same interface.
-#+begin_src pascal
-  type IArray<t> = interface
-    function Count : cardinal;
-    function GetItem( ix : cardinal ) : T;
-    procedure SetItem( ix : cardinal; val : T );
-    property item[ ix : cardinal ] : TBlock; default;
-  end;
-#+end_src
-
-* Block Array Layers
+* [0/4] Block Array Layers
 Next, we will build up a series of layers, all of which implement =IArray<TBlock>=:
 
 - =TBlockFile= :: raw sequences on disk (file of TBlock). This is optional, because we can also use in-memory databases.
@@ -18,10 +9,6 @@ Next, we will build up a series of layers, all of which implement =IArray<TBlock
 - =TBlockChain= :: Wraps a linked list of non-contiguous blocks from any =IArray<TBlock>=, and makes it appear contiguous. (The links are stored in their own =TBlockChain=, of course.)
 
 Probably there's nothing block-specific about the first two, so they may wind up being generic.
-
-** TODO TBlockFile
-- tdrive/tblock: =sd.pas= / =sd_fpc.inc= / =test_sd.pas=
-- [[https://github.com/sabren/b4/blob/master/go/bed.pas][bed.pas]] shows the usage
 
 ** types and constants
 #+begin_src pascal
@@ -37,7 +24,31 @@ Probably there's nothing block-specific about the first two, so they may wind up
     TEdgeID = TTupleID;
 #+end_src
 
-** [1/4] TYPE TRamChain to fetch and store blocks
+** TODO TBlockFile
+- tdrive/tblock: =sd.pas= / =sd_fpc.inc= / =test_sd.pas=
+- [[https://github.com/sabren/b4/blob/master/go/bed.pas][bed.pas]] shows the usage
+#+begin_src pascal
+  type TBlockFile = specialize TFileArray<Block>;
+#+end_src
+
+** TODO TBlockTree
+#+begin_src pascal
+
+  constructor TBlockTree.Create;
+    begin
+    end;
+
+  function TBlockTree.GetItem( ix : cardinal ) : TBlock;
+    begin
+    end;
+
+  procedure TBlockTree.SetItem( ix : cardinal; val : T );
+    begin
+    end;
+
+#+end_src
+
+** TODO TBlockChain
 *** About
 In storing our database, we have a couple of goals that at first glance might seem to be in conflict:
 
@@ -46,7 +57,7 @@ In storing our database, we have a couple of goals that at first glance might se
 
 Chains resolve the conflict by allowing us to break tables into chunks.
 
-=TRamChain= is essentially a linked list of block handles. The individual blocks are only loaded into ram when they are actually used.
+=TBlockChain= is essentially a linked list of block handles. The individual blocks are only loaded into ram when they are actually used.
 
 *** DONE interface and component types
 #+begin_src pascal
@@ -67,14 +78,26 @@ Chains resolve the conflict by allowing us to break tables into chunks.
       end;
 #+end_src
 
-*** TODO constructor
-*** TODO GetItem
-*** TODO mark changed blocks as dirty
-#+begin_src
+#+begin_src pascal
+
+  constructor TBlockChain.Create;
+    begin
+    end;
+
+  function TBlockChain.GetItem( ix : cardinal ) : TBlock;
+    begin
+    end;
+
+  procedure TBlockChain.SetItem( ix : cardinal; val : T );
+    begin
+    end;
 
 #+end_src
 
-** [4/5] TYPE TArrayList for storing data inside a TRamChain
+*** TODO mark changed blocks as dirty
+#+begin_src
+#+end_src
+** [4/5] TYPE TArrayList for storing data inside a TBlockChain
 *** About
 It seems like we ought to have a type that would represent strings in-block.
 Perhaps even something that would represent arbitrary data structures as they were spread out over a linked list. Something like an ArrayList in java.
@@ -149,7 +172,7 @@ This calculates the location of a particular entry within the list and returns a
       result := 0
     end;
 #+end_src
-* The database interface(s)
+* [0/1] The database layer
 ** TODO auto-increments : =TNextID=
 #+begin_src delphi
   function TNextID( tableID  );
@@ -183,22 +206,22 @@ This calculates the location of a particular entry within the list and returns a
 #+end_src
 *** TODO text lookup
 #+begin_src pascal
-procedure FindText( key : TNid );
-  var start, blocks, offs : int32;
-  procedure findTheStartBlock;
-    begin
-      startAddr := bptree.lookup( key );
-      DivMod( startAddr, pageSize, startPage, offset );
-    end;
-  procedure calcNumberOfBlocks;
+  procedure bytesToBlocks(bytes : cardinal; out num, extra: cardinal);
     begin
       firstChunk := pageSize - offset;
-      DivMod( strLen - firstChunk, pageSize, numBlocks, lastChunk );
+      DivMod( strLen - firstChunk, pageSize, num, extra );
     end;
-  begin
-    findTheStartBlock( key );
-    calcNumberOfBlocks;
-  end;
+  procedure FindText( key : TNid );
+    var start, blocks, offs : int32;
+    procedure findTheStartBlock;
+      begin
+        startAddr := bptree.lookup( key );
+        DivMod( startAddr, pageSize, startPage, offset );
+      end;
+    begin
+      findTheStartBlock( key );
+      bytesToBlocks( numBlocks, extra );
+    end;
 #+end_src
 *** TODO grab the hash method from di.pas
 ** Relational Interface
@@ -234,8 +257,197 @@ Hopefully, rows are pretty small so there isn't really much wasted space. A bloc
   end;
 #+end_src
 * TODO format of the first block (metadata)
-* TODO store/fetch strings
-* TODO store/fetch arrays
-* TODO store/fetch tuples
-* TODO store/fetch edges
-* TODO store/fetch nodes
+
+
+#+title: ia.pas : IArray interface
+* DONE IArray Interface
+** The Interface
+Arrays are simply sequences of values. Generally arrays store their values in sequential memory slots, allowing for very fast interactions thanks to pointer arithmetic under the hood.
+
+Sometimes, though, we prefer something that looks and feels like an array, but uses some other kind of storage system under the hood.
+
+In particular, we will concern ourselves here with /dynamic/ arrays, which can grow and shrink at runtime, rather than having fixed bounds. To that end, we will provide the following two methods for all of our array types:
+
+#+name: SizeMethods
+#+begin_src pascal
+  function Count : cardinal;
+  procedure Resize( newLength : cardinal );
+  procedure Append( value : T );
+#+end_src
+
+Above, =T= is a type variable, indicating some particular but as-yet unspecified type.
+
+Of course, at the most basic level, arrays let us get and set items of some type at a particular index, so we must provide methods for these as well:
+
+#+name: AccessMethods
+#+begin_src pascal
+  function GetItem( ix : cardinal ) : T;
+  procedure SetItem( ix : cardinal; val : T );
+#+end_src
+
+The four methods define the generic =IArray<T>= interface. The only thing left is to declare a default susbscripted property, =item=, which allows us to use the handy square-bracket syntax for our containers, just like a real array.
+
+#+name: ItemProperty
+#+begin_src pascal
+  property item[ ix : cardinal ] : T
+    read GetItem write SetItem; default;
+#+end_src
+
+Next, we're going to build a few classes that all implement this same interface.
+
+** The Classes
+*** TODO GDynArray
+#+name: ia:imp
+#+begin_src pascal
+
+  constructor GDynArray.Create;
+    begin
+    end;
+
+  destructor GDynArray.Destroy;
+    begin
+    end;
+
+#+end_src
+
+*** TODO GFileArray
+#+begin_src pascal
+
+  constructor GFileArray.Create;
+    begin
+    end;
+
+  function GFileArray.GetItem( ix : cardinal ) : T;
+    begin
+    end;
+
+  procedure GFileArray.SetItem( ix : cardinal; val : T );
+    begin
+    end;
+
+  destructor GFileArray.Destroy;
+    begin
+    end;
+
+#+end_src
+
+*** TODO GBPlusArray
+#+begin_src pascal
+
+  constructor GBPlusArray.Create;
+    begin
+    end;
+
+  function GBPlusArray.GetItem( ix : cardinal ) : T;
+    begin
+    end;
+
+  procedure GBPlusArray.SetItem( ix : cardinal; val : T );
+    begin
+    end;
+
+  destructor GBPlusArray.Destroy;
+    begin
+    end;
+
+#+end_src
+
+*** TODO GEmbeddedArray
+#+begin_src pascal
+
+  constructor GEmbeddedArray.Create;
+    begin
+    end;
+
+  function GEmbeddedArray.GetItem( ix : cardinal ) : T;
+    begin
+    end;
+
+  procedure GEmbeddedArray.SetItem( ix : cardinal; val : T );
+    begin
+    end;
+
+  destructor GEmbeddedArray.Destroy;
+    begin
+    end;
+
+#+end_src
+
+
+
+
+Object pascal offers dynamic arrays, which are basically the same as static arrays, except they're allocated on the heap. You can resize them with =SetLength=, but since this can copy the entire array each time you resize it, it's not always efficient to grow the array.
+
+
+
+* COMMENT generated files
+*** Declarations
+#+name: ia:ifc
+#+begin_src pascal
+
+
+#+end_src
+
+
+** Appendix: Complete interface for UNIT =ia=
+#+begin_src pascal :tangle "~/b/mr/code/ia.pas" :noweb tangle
+    {$i xpc.inc}
+    unit ia; { IArray interface }
+    interface
+
+    type
+
+      generic IArray<T> = interface
+        <<SizeMethods>>
+        <<AccessMethods>>
+        <<ItemProperty>>
+      end;
+
+      generic GAbstractArray<T> = class abstract (TInterfacedObject, IArray<T>)
+        protected
+          _count = cardinal;
+          procedure CheckRange( ix : cardinal );
+        public
+          constructor Create( length : cardinal ); virtual;
+          procedure Resize( length : cardinal ); virtual;
+          procedure Append( value : t ); virtual;
+          property Count : cardinal read _count;
+        end;
+
+      generic GDynArray<T> = class( GAbstractArray<T> )
+        protected
+          _array = array of T;
+        public
+          <<AccessMethods>>
+          constructor Create( length : cardinal );
+          destructor Destroy;
+        end;
+
+      generic GFileArray<T> = class( GAbstractArray<T> )
+        protected
+          _file = file of T;
+        public
+          <<AccessMethods>>
+          constructor Create( var f : file of T );
+          destructor Destroy;
+        end;
+
+      generic GBPlusArray<T> = class( GAbstractArray<T> )
+        public
+          <<AccessMethods>>
+          constructor Create( length : cardinal );
+          destructor Destroy;
+        end;
+
+      generic GEmbeddedArray<T> = class( GAbstractArray<T> )
+        public
+          <<AccessMethods>>
+          constructor Create( a : IArray<T>; length : cardinal );
+          destructor Destroy;
+        end;
+
+    implementation
+      <<ia:imp>>
+    end.
+
+#+end_src
