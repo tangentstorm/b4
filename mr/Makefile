@@ -34,8 +34,8 @@ clean:
 	@rm -f $(GEN)/*
 
 
-.tangled: ../web/ar.pas.org ../web/mr.pas.org
-	cat ../web/ar.pas.org ../web/mr.pas.org > .tangled
+.tangled: ../web/*.pas.org
+	cat ../web/*.pas.org > .tangled
 	$(TANGLE) .tangled
 
 # we use always here, else it'll see the test directory and assume we're done.
