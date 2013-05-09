@@ -91,8 +91,13 @@ To that end, we will run each class through the following test suite, which simp
 
 #+end_src
 
-* Passing the Tests
+* Implementations
 ** DONE GAbstractArray
+
+GAbstractArray is a partial implementation of the interface. It doesn't actually store any data and thus can't be used on its own, but it gives us a place to put common code that we will reuse for all the full implementations.
+
+The first batch of methods deal with routine maintenance on the =_length= field.
+
 #+name: ar:imp
 #+begin_src pascal
 
@@ -116,17 +121,26 @@ To that end, we will run each class through the following test suite, which simp
     begin
       result := _length;
     end;
+#+end_src
 
+We can now previde a generic version of =Append= usable by all the subclasses.
+
+#+name: ar:imp
+#+begin_src pascal
   procedure GAbstractArray<T>.Append( value : t );
     begin
       self.Resize( _length + 1 );
       { -1 because length has now increased by one }
       self[ _length - 1 ] := value;
     end;
-
 #+end_src
 
 ** DONE GDynArray
+
+Our first implementation simply wraps the normal dynamic arrays that Free Pascal already provides. =GDynArray= offers no practical benefit for users /except/ that it conforms to our interface, and thus will work with any other code we write to that interface.
+
+However, it does provide a good baseline sanity check for our tests and a simple reference implementation of the interface.
+
 #+name: ar:imp
 #+begin_src pascal
 
@@ -162,6 +176,13 @@ To that end, we will run each class through the following test suite, which simp
 #+end_src
 
 ** DONE GFileArray
+
+=GFileArray= operates on a disk file: items are loaded to and from =file=. Usually, this corresponds to a binary file on disk somewhere, but files are implemented much like classes in pascal (in that their behavior is defined by a record that contains functon pointers) so other implementations are also possible.
+
+Note that the tight coupling to the disk makes =GFileArray= somewhat slower than other options. This class is designed for use with our database, and in conjunction with =GCachedArray=, defined next.
+
+In most cases, if you need to save an array to disk, it's probably better to write the whole thing to disk at once, and just work with a cached copy in ram.
+
 #+name: ar:imp
 #+begin_src pascal
 
@@ -209,6 +230,7 @@ To that end, we will run each class through the following test suite, which simp
 
 #+end_src
 
+** TODO GCachedArray
 ** TODO GBPlusArray
 #+name: ar:imp
 #+begin_src pascal
@@ -216,11 +238,12 @@ To that end, we will run each class through the following test suite, which simp
   constructor GBPlusArray<T>.Create( len : cardinal );
     begin
       inherited Create( len )
+      bp.TTree.Create;
     end;
 
   function GBPlusArray<T>.GetItem( ix : cardinal ) : T;
     begin
-       result := default(t)
+       result := default( t )
     end;
 
   procedure GBPlusArray<T>.SetItem( ix : cardinal; const val: T );
@@ -263,7 +286,7 @@ To that end, we will run each class through the following test suite, which simp
 #+begin_src pascal :tangle "~/b/mr/code/ar.pas" :noweb tangle
   {$mode delphi}
   unit ar; { Array interface }
-  interface uses sq, sysutils;
+  interface uses sq, sysutils, bp;
 
     <<type:IArray>>
 
@@ -302,6 +325,8 @@ To that end, we will run each class through the following test suite, which simp
         end;
 
       GBPlusArray<T> = class( GAbstractArray<T> )
+        protected
+          _tree : bp.TTree<T>;
         public
           constructor Create( len : cardinal );
           function GetItem( ix : cardinal ) : T; override;
