@@ -3,7 +3,8 @@ body,html {
     color: #ccc;
     font-family: verdana;
     font-size: 100%;
-    margin: 0;
+    max-width: 640px;
+    margin: auto;
 }
 
 a { color: #6699cc }
