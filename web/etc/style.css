@@ -3,19 +3,30 @@ body,html {
     color: #ccc;
     font-family: verdana;
     font-size: 100%;
-    max-width: 640px;
-    margin: auto;
 }
 
-a { color: #6699cc }
-a:visited { color: #9966cc }
-a:hover { background: #181848 }
+body {
+    max-width: 750px;
+    margin: auto;
+    background: #eee;
+    color: #222;
+    border-left: solid #447 1px;
+    border-right: solid #225 2px;
+}
 
-th { background : #001 }
+a { color: #4477aa }
+a:visited { color: #7744aa }
+a:hover { background: #ffffff }
 
-p, h1, h2, h3, h4, pre {
+
+th { background : #001; color: white; }
+
+p, pre,
+h1, h2, h3, h4 {
     padding: 10px;
 }
+table { margin: 10px }
+
 
 #table-of-contents {
     position: fixed;
@@ -38,6 +49,7 @@ p, h1, h2, h3, h4, pre {
 
 
 pre {
+    color : #ccc;
     background : black;
     padding: 0.5em;
     margin: 0;
@@ -47,14 +59,18 @@ pre {
 
 
 h1, h2, h3, h4, h5, h6 {
+    margin: 0px;
     text-shadow: 2px 2px 4px #000;
+    color: white;
+    background: #99c;
+    margin-top : 0;
+    border-bottom: solid #334 2px;
 }
 
-h1 { 
+h1 {
     color: white;
     background: #000;
     line-height: 4ex;
-    margin: 0px;
     font-family: consolas, verdana;
     font-size: 200%;
 }
@@ -64,14 +80,14 @@ h1, pre {
 }
 
 h2 span { display : none }
-h2 { 
-    margin-top : 0;
+h2 {
     background: #669;
     border-bottom: solid #334 2px;
-    font-family: verdana; calibri, tahoma; 
+    font-family: verdana; calibri, tahoma;
     padding-top: 2px;
     padding-bottom: 2px;
 }
+
 
 table.org-info-js_info-navigation {
     background: #333;
@@ -82,4 +98,3 @@ table.org-info-js_info-navigation {
 .org-keyword { color: cyan }
 .org-string { color: lime }
 .org-builtin { color:gold }
-
