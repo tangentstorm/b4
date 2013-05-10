@@ -1,0 +1,207 @@
+#+title: minrel, part 1 : you only need two tables
+
+* Introduction
+
+We're going to write a little relational database here. It's called /minrel/, both because it's a rather minimalistic relational database, and because it's meant to serve as the relational component for a slightly larger project called minneron.
+
+We're going to start with a very naive implementation, and it's going to be pretty slow compared to things like PostGresQL, MySQL and SQLite -- although perhaps not nearly as slow as you might expect.
+
+Once we have it running, we're going to start introducing optimizations, swapping out algorithms, perhaps even dropping down to assembly language, until we have a very fast system, on par with those other databases.
+
+* Relations
+
+In database terminology, a /relation/ is a table-like data structure.
+
+Relations are un-ordered collections of /tuples/, which are ordered collections of values. All the tuples in a relation have the same structure, meaning they all have the same slots in the same order.
+
+Generally, when drawing relations, the tuples are depicted as rows, and the columns are given meaningful labels, called /keys/.
+
+Here's a simple example of a relation that lists a few popular programming-related websites, along with their titles.
+
+| id | URL                                  | title             |
+|----+--------------------------------------+-------------------|
+|  7 | http://reddit.com/r/learnprogramming | learn programming |
+|  4 | http://sourceforge.net/              | SourceForge       |
+|  8 | http://stackoverflow.com/            | Stack Overflow    |
+|  2 | https://github.com/                  | GitHub            |
+| 13 | http://c2.com/cgi/wiki?WikiWikiWeb   | Wiki Wiki Web     |
+|  6 | http://reddit.com/r/programming      | programming       |
+
+Notice that each tuple conforms to the same structure, but the tuples themselves aren't in any particular order.
+
+Also note the /id/ column. It's good practice when designing a database to make sure that there's a set of keys that, together, can uniquely identify a particular tuple within the relation. Preferably, only a single key is required, and we call this the /primary key/.
+
+In this particular case, the URL could serve this purpose, but as we will see, it's generally more convenient to use a number. Generally, we will  restrict ourselves to positive integers.
+
+A relational database can contain any number of relations, and produces new relations dynamically as it responds to queries. For example, if you were to request the id and title values from the above table but only where the ID is less than five, then the result would also be a relation:
+
+| id | title       |
+|----+-------------|
+|  2 | GitHub      |
+|  4 | SourceForge |
+
+The relational model is rigorously defined in the mathematical sense, and provides a number of convenient operations for combining, filtering, and transforming relations in various ways. Most database provide some non-relational utilities as well, such as sorting and stored procedures.
+
+We will explore these features in depth as we go along, but first we're going to look at how we can implement our one-table database in software.
+
+* Implementation
+
+** A simple database for bookmarks.
+
+Let's write a program to implement our one-table relational database for bookmarks, and perform the above query.
+
+The example code in these articles is all written in object pascal, using the cross platform, open source compiler from http://freepascal.org/ (version 2.6.2). Pascal is a fun, easy-to-understand language that's been around a long time, and object pascal is a modern dialact with all kinds of nice features like interfaces and generics.
+
+*Don't worry if you don't know pascal*. I will assume that most people reading this are /not/ already familiar with it (or at least, not with the modern version), and will introduce each new construct as we go along.
+
+** The program skeleton.
+
+We will start with a simple command line program that lets us create, update, and delete records in our database.
+
+Basically, what our program does is this:
+
+- define =TUrlRec=, a ~record~ type to hold our data.
+- define a ~file~ variable to store records of this type.
+- store our bookmarks in the file (using hard coded values for now)
+- show the unfiltered table
+- execute our example query and display the results
+
+Here's the rough outline of of the code:
+
+#+name: urldb0
+#+begin_src pascal
+  program urldb0;
+      
+  <<TUrlRec>>
+  <<routines>>
+
+  var f : file of TUrlRec;
+  begin
+    MakeDatabase( f );
+    WriteLn('All records:');   ShowAllRecords( f );
+    WriteLn('Query results:'); ShowQueryResults( f );
+  end.
+#+end_src
+
+
+** Walkthrough
+
+Let's walk through that code line by line:
+
+#+begin_example pascal
+  program urldb0;
+#+end_example
+
+This line simply gives a name to the program. It's not strictly required, but it's good practice.
+
+#+begin_example pascal
+  <<TUrlRec>>
+  <<routines>>
+#+end_example
+
+These two lines aren't actually pascal source, but rather a placeholder for code we'll write later. (The double angle-bracket syntax is used by the literate programming tool I'm using to edit this code.)
+
+=TUrlRec= is the name we will use for the type that holds our url-related tuple. The "T" doesn't mean "tuple" though. It stands for "type" and it's just part of a naming convention that the object pascal community uses.
+
+#+begin_example pascal
+  var f : file of TUrlRec;
+#+end_example
+
+The word ~var~ tells the pascal compiler that we're going to introduce one or more variables. In this case, the variable is called ~f~ and its type is ~file of TUrlRec~.
+
+Typed files are a feature of pascal that you don't often see in other languages. These are binary files on disk that contain fixed-size records, making them a good match for tabular data. (Probably one reason you don't see typed files in modern languages is the emergence of relational databases.)
+
+#+begin_src pascal
+  begin
+    MakeDatabase( f );
+    ShowHeader('All Records');   ShowAllRecords( f );
+    ShowHeader('Query results'); ShowQueryResults( f );
+  end.
+#+end_src
+
+This is the main code of the program. You can always tell you're looking at the end of a pascal program because the =end= keyword is followed by a period. (Any text that appears in the file after the period is ignored.)
+
+Here, =MakeDatabase=, =ShowHeader=, =ShowAllRecords=, and =ShowQueryResults= are all procedures that we're about to define.
+
+
+** TODO --------------------
+
+/That's all I've got so far. Still working on the code and commentary past this point/.
+
+** procedure =MakeDatabase=
+#+begin_src pascal
+  procedure MakeDatabase( f : file of TUrlRec );
+    var rec : TUrlRec;
+    begin
+      Assign( f, 'urldb0.db' );
+      ReWrite( f );
+    end;
+#+end_src
+
+** procedures =ShowHeader= and =ShowRecord=
+
+We saw that =Write= can be used to write records to a typed file.
+
+There is also a special type of file called =Text=, and for these, pascal provides some syntactic sugar for =Write=, and also for a related procedure called =WriteLn=, which adds a newline at the end.
+
+In particular, these special routines can take a variable number of parameters, know how to format numbers as strings and allow using a special syntax for aligning text (provided you're using a monospaced font).
+
+#+name: routines
+#+begin_src pascal
+  procedure ShowHeader( header : string );
+    var i : cardinal;
+    begin
+      Write( '--| ', header, ' |' );
+      for i := 64 downto (64 - length(header) - length('--| '+ ' |')) do
+        write( '-' );
+      WriteLn;
+    end;
+#+end_src
+
+
+** procedure =ShowRecord=
+
+Here we see a =for= loop.
+
+#+name: routines
+#+begin_src pascal
+  procedure ShowRecord( var rec : TUrlRec );
+    begin
+      WriteLn( rec.id : 3, ' ', rec.url : 36, ' ', rec.title : 24 );
+    end;
+#+end_src
+
+** procedure =ShowAllRecords=
+
+#+begin_src pascal
+  procedure ShowAllRecords( f : file of TUrlRec );
+    var rec : TUrlRec;
+    begin
+      Reset( f );
+      while not eof( f ) do
+        begin
+          ShowRecord( )
+        end
+    end;
+#+end_src
+
+Note that this has to come /after/ =ShowRecord=.
+
+
+** procedure =ShowQueryResults=
+
+#+name: routines
+#+begin_src pascal
+  procedure MakeDatabase( f : file of TUrlRec );
+    var rec : TUrlRec;
+    begin
+      Reset( f );
+      while not eof( f ) do
+        begin
+          read( f, rec );
+          writeln( id : 
+        end;
+    end;
+#+end_src
+
+
