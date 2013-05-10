@@ -45,10 +45,9 @@ The relational model is rigorously defined in the mathematical sense, and provid
 We will explore these features in depth as we go along, but first we're going to look at how we can implement our one-table database in software.
 
 * Implementation
-
 ** A simple database for bookmarks.
 
-Let's write a program to implement our one-table relational database for bookmarks, and perform the above query.
+Let's write a program to implement our one-table relational database for bookmarks, and perform the above query. (Scroll down to the [[Results][Results]] section at the end of this document if you want to see what it does.)
 
 The example code in these articles is all written in object pascal, using the cross platform, open source compiler from http://freepascal.org/ (version 2.6.2). Pascal is a fun, easy-to-understand language that's been around a long time, and object pascal is a modern dialact with all kinds of nice features like interfaces and generics.
 
@@ -70,20 +69,27 @@ Here's the rough outline of of the code:
 
 #+name: urldb0
 #+begin_src pascal :tangle "../gen/urldb0.pas" :noweb tangle
+
   program urldb0;
   uses strutils;
 
-  <<TUrlRec>>
-  type TUrlFile = file of TUrlRec;
-  
+  type
+    TUrlRec  = record
+                 id    : cardinal;
+                 url   : string[ 36 ];
+                 title : string[ 24 ];
+               end;
+    TUrlFile = file of TUrlRec;
+
   <<routines>>
-  
+
   var f : TUrlFile;
   begin
     MakeDatabase( f );
     ShowHeader('All records');   ShowAllRecords( f );
     ShowHeader('Query results'); ShowQueryResults( f );
   end.
+
 #+end_src
 
 ** Walkthrough
@@ -96,53 +102,75 @@ Let's walk through that code line by line:
 
 This line simply gives a name to the program. It's not strictly required, but it's good practice.
 
+
 #+begin_example pascal
-  <<TUrlRec>>
-  <<routines>>
+  uses strutils;
 #+end_example
 
-These two lines aren't actually pascal source, but rather a placeholder for code we'll write later. (The double angle-bracket syntax is used by the literate programming tool I'm using to edit this code.)
+This line imports the ~strutils~ unit, so that we have access to the [[http://www.freepascal.org/docs-html/rtl/strutils/index-3.html][types]] and [[http://www.freepascal.org/docs-html/rtl/strutils/index-5.html][routines]] it provides. Units correspond roughly to modules in python, or to ~static~ classes in java. They are just collections of reusable definitions, and this one in particular deals with strings. We're going to use it to output our results.
+
+#+begin_src pascal
+  type
+#+end_src
+
+This line introduces a ~type~ section, in which we can declare new types.
+
+#+begin_example pascal
+    TUrlRec  = record
+                 id    : cardinal;
+                 url   : string[ 36 ];
+                 title : string[ 24 ];
+               end;
+#+end_example
 
 =TUrlRec= is the name we will use for the type that holds our url-related tuple. The "T" doesn't mean "tuple" though. It stands for "type" and it's just part of a naming convention that the object pascal community uses.
 
+The ~= record~ syntax indicates that =TUrlRec= is a ~record~ type. Records are flat, fixed-size chunks of ram with a particular structure.
+
+The =:= character indicates a relationship between a set of field names (on the left) with a type (on the right). It means /has the type/. So for example, the =id= field has the type =cardinal= (a 32-bit unsigned integer).
+
+The URLs and titles are both of type ~string~. Pascal has a rich variety of string types. The bracket syntax indicates that we are dealing with the type ~ShortString~. The number inside the brackets indicates the maximum length of the string, in bytes. Since records are flat structures, all of these bytes will be allocated. Unused bytes at the end will be padded with null characters, and one extra byte will be reserved at the start of the string to indicate its length.
+
 #+begin_example pascal
-  var f : file of TUrlRec;
+  TUrlFile = file of TUrlRec;
 #+end_example
 
-The word ~var~ tells the pascal compiler that we're going to introduce one or more variables. In this case, the variable is called ~f~ and its type is ~file of TUrlRec~.
+One of the benefits of records is that, because they are fixed size, they are easily loaded and saved to disk. This line defines a new ~file~ type that can store values of type =TUrlFile=.
 
 Typed files are a feature of pascal that you don't often see in other languages. These are binary files on disk that contain fixed-size records, making them a good match for tabular data. (Probably one reason you don't see typed files in modern languages is the emergence of relational databases.)
 
-#+begin_src pascal
+Because we will eventually want to let our database users define new relations (and thus new record types) dynamically, we will eventually leave pascal's records and typed files behind, but for now, they're an excellent way to quickly store a table of data.
+
+#+begin_example pascal
+  <<routines>>
+#+end_example
+
+This line isn't actually pascal source, but rather a placeholder for code we'll write later. The double angle-bracket syntax is used by the literate programming tool I'm using to edit this code.
+
+#+begin_example pascal
+  var f : TUrlFile;
+#+end_example
+
+The word ~var~ tells the pascal compiler that we're going to introduce one or more variables. In this case, the variable is called ~f~ and its type is ~TUrlFile~.
+
+#+begin_example pascal
   begin
     MakeDatabase( f );
     ShowHeader('All Records');   ShowAllRecords( f );
     ShowHeader('Query results'); ShowQueryResults( f );
   end.
-#+end_src
+#+end_example
 
 This is the main code of the program. You can always tell you're looking at the end of a pascal program because the =end= keyword is followed by a period. (Any text that appears in the file after the period is ignored.)
 
 Here, =MakeDatabase=, =ShowHeader=, =ShowAllRecords=, and =ShowQueryResults= are all procedures that we're about to define.
 
-** TODO --------------------
+** Implementation
 
-/That's all I've got so far. Still working on the code and commentary past this point/.
-
-** type =TUrlRec=
-#+name: TUrlRec
-#+begin_src pascal
-  type
-    TUrlRec = record
-                id    : cardinal;
-                url   : string[ 36 ];
-                title : string[ 24 ];
-              end;
-#+end_src
-
-** procedure =MakeDatabase=
+*** procedure =MakeDatabase=
 #+name: routines
 #+begin_src pascal
+
   procedure MakeDatabase( var f : TUrlFile );
     var rec : TUrlRec;
     procedure store( id: cardinal; url: string; title : string );
@@ -162,9 +190,10 @@ Here, =MakeDatabase=, =ShowHeader=, =ShowAllRecords=, and =ShowQueryResults= are
       store(  13 , 'http://c2.com/cgi/wiki?WikiWikiWeb'   , 'Wiki Wiki Web'     );
       store(   6 , 'http://reddit.com/r/programming'      , 'programming'       );
     end;
+
 #+end_src
 
-** procedures =ShowHeader=
+*** procedures =ShowHeader=
 
 We saw that =Write= can be used to write records to a typed file.
 
@@ -174,6 +203,7 @@ In particular, these special routines can take a variable number of parameters, 
 
 #+name: routines
 #+begin_src pascal
+
   procedure ShowHeader( header : string );
     var i : cardinal;
     begin
@@ -184,9 +214,10 @@ In particular, these special routines can take a variable number of parameters, 
       WriteLn;
       WriteLn;
     end;
+
 #+end_src
 
-** procedure =ShowAllRecords=
+*** procedure =ShowAllRecords=
 
 To reopen a file for reaing, we use =Reset=, then loop through and =Read= records from the file until we reach the end of the file (which we test by calling =Eof= before each read).
 
@@ -194,6 +225,7 @@ As we print each record with =WriteLn= you can see the special string justificat
 
 #+name: routines
 #+begin_src pascal
+
   procedure ShowAllRecords( var f : TUrlFile );
     var rec : TUrlRec; i : byte;
     begin
@@ -211,9 +243,10 @@ As we print each record with =WriteLn= you can see the special string justificat
                    PadRight( rec.title, 24 ));
         end
     end;
+
 #+end_src
 
-** procedure =ShowQueryResults=
+*** procedure =ShowQueryResults=
 
 The only differences between =ShowAllRecords= and =ShowQueryResults= are:
 
@@ -222,16 +255,17 @@ The only differences between =ShowAllRecords= and =ShowQueryResults= are:
 
 #+name: routines
 #+begin_src pascal
+
   procedure ShowQueryResults( var f : TUrlFile );
-  var rec : TUrlRec; i : byte;
+    var rec : TUrlRec; i : byte;
     begin
       Reset( f );
-  
+
       Writeln( 'id' : 3, ' ',
               PadRight( 'title', 24 ));
       for i := 1 to 64 do write( '-' );
       writeln;
-  
+
       while not eof( f ) do
         begin
           Read( f, rec );
@@ -240,11 +274,10 @@ The only differences between =ShowAllRecords= and =ShowQueryResults= are:
         end;
       Writeln;
     end;
+
 #+end_src
 
-
-
-* results
+* Results
 
 To compile and run the program, use the following commands:
 
@@ -274,4 +307,8 @@ You should see the following output:
   2 GitHub
 
 #+end_example
+* Summary
 
+In this article, we explored the concept of a relation and implemented a very simple database with a single hard-coded table. We displayed the relation as-is, and then showed how to filter the keys and tuples to produce a new relation (the query results).
+
+In the next lesson, we will add a second relation and explore the relational algebra in a little more detail.
