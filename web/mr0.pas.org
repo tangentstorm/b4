@@ -1,4 +1,4 @@
-#+title: minrel, part 1 : you only need two tables
+#+title: minrel, part 0
 
 * Introduction
 
@@ -54,7 +54,7 @@ The example code in these articles is all written in object pascal, using the cr
 
 *Don't worry if you don't know pascal*. I will assume that most people reading this are /not/ already familiar with it (or at least, not with the modern version), and will introduce each new construct as we go along.
 
-** The program skeleton.
+** program =urldb0=
 
 We will start with a simple command line program that lets us create, update, and delete records in our database.
 
@@ -69,20 +69,22 @@ Basically, what our program does is this:
 Here's the rough outline of of the code:
 
 #+name: urldb0
-#+begin_src pascal
+#+begin_src pascal :tangle "../gen/urldb0.pas" :noweb tangle
   program urldb0;
-      
-  <<TUrlRec>>
-  <<routines>>
+  uses strutils;
 
-  var f : file of TUrlRec;
+  <<TUrlRec>>
+  type TUrlFile = file of TUrlRec;
+  
+  <<routines>>
+  
+  var f : TUrlFile;
   begin
     MakeDatabase( f );
-    WriteLn('All records:');   ShowAllRecords( f );
-    WriteLn('Query results:'); ShowQueryResults( f );
+    ShowHeader('All records');   ShowAllRecords( f );
+    ShowHeader('Query results'); ShowQueryResults( f );
   end.
 #+end_src
-
 
 ** Walkthrough
 
@@ -123,11 +125,9 @@ This is the main code of the program. You can always tell you're looking at the 
 
 Here, =MakeDatabase=, =ShowHeader=, =ShowAllRecords=, and =ShowQueryResults= are all procedures that we're about to define.
 
-
 ** TODO --------------------
 
 /That's all I've got so far. Still working on the code and commentary past this point/.
-
 
 ** type =TUrlRec=
 #+name: TUrlRec
@@ -143,9 +143,9 @@ Here, =MakeDatabase=, =ShowHeader=, =ShowAllRecords=, and =ShowQueryResults= are
 ** procedure =MakeDatabase=
 #+name: routines
 #+begin_src pascal
-  procedure MakeDatabase( f : file of TUrlRec );
+  procedure MakeDatabase( var f : TUrlFile );
     var rec : TUrlRec;
-    procedure store( id: cardinal; url: string[36]; title : string[24] ) : TUrlRec;
+    procedure store( id: cardinal; url: string; title : string );
       begin
         rec.id    := id;
         rec.url   := url;
@@ -164,7 +164,7 @@ Here, =MakeDatabase=, =ShowHeader=, =ShowAllRecords=, and =ShowQueryResults= are
     end;
 #+end_src
 
-** procedures =ShowHeader= and =ShowRecord=
+** procedures =ShowHeader=
 
 We saw that =Write= can be used to write records to a typed file.
 
@@ -177,55 +177,101 @@ In particular, these special routines can take a variable number of parameters, 
   procedure ShowHeader( header : string );
     var i : cardinal;
     begin
-      Write( '--| ', header, ' |' );
-      for i := 64 downto (64 - length(header) - length('--| '+ ' |')) do
-        write( '-' );
+      WriteLn;
+      Write( '##| ', header, ' |' );
+      for i := length(header) + length('##| '+ ' |') to 64 do
+        write( '#' );
+      WriteLn;
       WriteLn;
     end;
 #+end_src
 
-** procedure =ShowRecord=
-
-Here we see a =for= loop.
-
-#+name: routines
-#+begin_src pascal
-  procedure ShowRecord( var rec : TUrlRec );
-    begin
-      WriteLn( rec.id : 3, ' ', rec.url : 36, ' ', rec.title : 24 );
-    end;
-#+end_src
-
 ** procedure =ShowAllRecords=
+
+To reopen a file for reaing, we use =Reset=, then loop through and =Read= records from the file until we reach the end of the file (which we test by calling =Eof= before each read).
+
+As we print each record with =WriteLn= you can see the special string justification syntax using the colon character. For example, =rec.id : 3= tells =WriteLn= to use at least 3 characters to display the numbers in that column.
+
 #+name: routines
 #+begin_src pascal
-  procedure ShowAllRecords( f : file of TUrlRec );
-    var rec : TUrlRec;
+  procedure ShowAllRecords( var f : TUrlFile );
+    var rec : TUrlRec; i : byte;
     begin
       Reset( f );
-      while not eof( f ) do
+      Writeln( 'id' : 3, ' ',
+              PadRight( 'url', 36 ), ' ',
+              PadRight( 'title', 24 ));
+      for i := 1 to 64 do write( '-' );
+      writeln;
+      while not Eof( f ) do
         begin
           Read( f, rec );
-          ShowRecord( rec )
+          WriteLn( rec.id : 3, ' ',
+                   PadRight( rec.url, 36 ), ' ',
+                   PadRight( rec.title, 24 ));
         end
     end;
 #+end_src
-
-Note that this has to come /after/ =ShowRecord=, because it calls it.
 
 ** procedure =ShowQueryResults=
 
+The only differences between =ShowAllRecords= and =ShowQueryResults= are:
+
+- we use an =if ... then= statement to check the record's =.id= field, and only print the record if the id is less than 5
+- we don't print the url
+
 #+name: routines
 #+begin_src pascal
-  procedure ShowAllRecords( f : file of TUrlRec );
-    var rec : TUrlRec;
+  procedure ShowQueryResults( var f : TUrlFile );
+  var rec : TUrlRec; i : byte;
     begin
       Reset( f );
+  
+      Writeln( 'id' : 3, ' ',
+              PadRight( 'title', 24 ));
+      for i := 1 to 64 do write( '-' );
+      writeln;
+  
       while not eof( f ) do
         begin
           Read( f, rec );
-          ShowRecord( rec )
-        end
+          if rec.id < 5 then
+            WriteLn( rec.id : 3, ' ', PadRight( rec.title, 24 ));
+        end;
+      Writeln;
     end;
 #+end_src
+
+
+
+* results
+
+To compile and run the program, use the following commands:
+
+: fpc urldb0.pas
+: ./urldb0
+
+You should see the following output:
+
+#+begin_example text
+
+##| All records |################################################
+
+ id url                                  title
+----------------------------------------------------------------
+  7 http://reddit.com/r/learnprogramming learn programming
+  4 http://sourceforge.net/              SourceForge
+  8 http://stackoverflow.com/            Stack Overflow
+  2 https://github.com/                  GitHub
+ 13 http://c2.com/cgi/wiki?WikiWikiWeb   Wiki Wiki Web
+  6 http://reddit.com/r/programming      programming
+
+##| Query results |##############################################
+
+ id title
+----------------------------------------------------------------
+  4 SourceForge
+  2 GitHub
+
+#+end_example
 
