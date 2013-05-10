@@ -128,13 +128,39 @@ Here, =MakeDatabase=, =ShowHeader=, =ShowAllRecords=, and =ShowQueryResults= are
 
 /That's all I've got so far. Still working on the code and commentary past this point/.
 
+
+** type =TUrlRec=
+#+name: TUrlRec
+#+begin_src pascal
+  type
+    TUrlRec = record
+                id    : cardinal;
+                url   : string[ 36 ];
+                title : string[ 24 ];
+              end;
+#+end_src
+
 ** procedure =MakeDatabase=
+#+name: routines
 #+begin_src pascal
   procedure MakeDatabase( f : file of TUrlRec );
     var rec : TUrlRec;
+    procedure store( id: cardinal; url: string[36]; title : string[24] ) : TUrlRec;
+      begin
+        rec.id    := id;
+        rec.url   := url;
+        rec.title := title;
+        Write( f, rec );
+      end;
     begin
       Assign( f, 'urldb0.db' );
       ReWrite( f );
+      store(   7 , 'http://reddit.com/r/learnprogramming' , 'learn programming' );
+      store(   4 , 'http://sourceforge.net/'              , 'SourceForge'       );
+      store(   8 , 'http://stackoverflow.com/'            , 'Stack Overflow'    );
+      store(   2 , 'https://github.com/'                  , 'GitHub'            );
+      store(  13 , 'http://c2.com/cgi/wiki?WikiWikiWeb'   , 'Wiki Wiki Web'     );
+      store(   6 , 'http://reddit.com/r/programming'      , 'programming'       );
     end;
 #+end_src
 
@@ -158,7 +184,6 @@ In particular, these special routines can take a variable number of parameters, 
     end;
 #+end_src
 
-
 ** procedure =ShowRecord=
 
 Here we see a =for= loop.
@@ -172,7 +197,7 @@ Here we see a =for= loop.
 #+end_src
 
 ** procedure =ShowAllRecords=
-
+#+name: routines
 #+begin_src pascal
   procedure ShowAllRecords( f : file of TUrlRec );
     var rec : TUrlRec;
@@ -180,28 +205,27 @@ Here we see a =for= loop.
       Reset( f );
       while not eof( f ) do
         begin
-          ShowRecord( )
+          Read( f, rec );
+          ShowRecord( rec )
         end
     end;
 #+end_src
 
-Note that this has to come /after/ =ShowRecord=.
-
+Note that this has to come /after/ =ShowRecord=, because it calls it.
 
 ** procedure =ShowQueryResults=
 
 #+name: routines
 #+begin_src pascal
-  procedure MakeDatabase( f : file of TUrlRec );
+  procedure ShowAllRecords( f : file of TUrlRec );
     var rec : TUrlRec;
     begin
       Reset( f );
       while not eof( f ) do
         begin
-          read( f, rec );
-          writeln( id : 
-        end;
+          Read( f, rec );
+          ShowRecord( rec )
+        end
     end;
 #+end_src
-
 
