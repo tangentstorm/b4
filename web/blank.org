@@ -1,0 +1,37 @@
+#+title: relational algebra: joins
+ 
+
+* Introduction
+* Implementation
+** A category table
+
+** program =mr1_joins=
+
+#+name: urldb0
+#+begin_src pascal :tangle "../gen/mr1.pas" :noweb tangle
+
+#+end_src
+
+** Walkthrough
+** Implementation
+
+*** procedure =MakeDatabase=
+#+name: routines
+#+begin_src pascal
+
+#+end_src
+
+* Results
+
+To compile and run the program, use the following commands:
+
+: fpc mr1.pas
+: ./urldb1
+
+You should see the following output:
+
+#+begin_example text
+
+#+end_example
+
+* Summary
