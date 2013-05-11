@@ -1,4 +1,4 @@
-#+title: mr1 : reification
+#+title: mr $01 : reification
 
 * Introduction
 
@@ -13,7 +13,7 @@ This process of replacing code with data is called /reification/, and we will co
 We'll start by examining what the pascal compiler already does when we use the =record= keyword to declare a structured data type.
 
 * The Binary Record Format
-
+** Recap
 In [[file:mr0.pas.org][lesson 0]], we defined the =TUrlRec= type:
 
 #+begin_src pascal
@@ -41,7 +41,6 @@ We then created a =file of TUrlRec=, and populated it with some records:
 #+end_src
 
 Since pascal handled the file for us, we didn't spend much time looking at what it was actually doing. Let address that now, by creating a hex dump of the generated =urldb0.db= file.
-
 
 ** Hex Dump
 
@@ -94,12 +93,50 @@ Examining the hex dump gives some clues to how the data is laid out in ram.
 |        | *\times 6 rows*:  |   408 |
 #+TBLFM: @7$3=@6$3 * 6::@6$3=vsum(@2$3..@5$3)
 
-It might be a little surprising that a string of 36 1-byte characters takes up 37 bytes, but that's because a =ShortString= uses an extra byte at the stort to record the length. The longest =ShortString= is therefore =string[255]=, which contains 256 bytes: enough room for 255 characters, plus the length byte.
+It might be surprising that a string of 36 1-byte characters takes up 37 bytes, but that's because a =ShortString= uses an extra byte at the beginning to store the length. The longest =ShortString= is therefore =string[255]=, which takes up 256 bytes: enough room for 255 characters, plus the extra byte to store the length.
 
-You can see this in action in the hex dump. If you look at the link for the c2 wiki, you'll see how the URL and title fields contain leftover characters 'n' and 'g' from the /r/learnprogramming link. This indicates that the same area in ram was reused each for pass through the loop, and then copied to disk each time. The double-quote character at the start is ascii character number 34 (=$22= in hex). This indicates that the uses 34 of the 36 alloted characters. The extra two characters stick around in ram, but pascal ignores them.
+You can see this in action in the hex dump. If you look at the link for the c2 wiki, you'll see how the URL and title fields contain leftover characters 'n' and 'g' from the /r/learnprogramming link. This indicates that the same area in ram was reused each for pass through the loop, and then copied to disk each time. The double-quote character at the start is ascii character number 34 (=$22= in hex). This indicates that the uses 34 of the 36 alloted characters. The extra two characters stick around in ram (and get copied to the disk), but pascal ignores them.
 
 Why the extra 2 bytes at the end? Basically, it's because free pascal is a multi-platform compiler, and on some platforms, loading data that doesn't fall cleanly on word boundaries can have unpleasant consequences. By default, fpc aligns records to a multiple of 4 bytes[fn:1].
 
+* Escaping the Type System
+
+Since we know our records are 68 bytes long, we can choose to represent them as a simple array of bytes. We could still create a (=file of TUrlBuf=) we'll just use an untyped (=file=) just us
+
+The following program shows an example:
+
+#+begin_src pascal :tangle "../gen/urldb1a.pas" :noweb tangle
+  program urldb1a;
+  const
+    kRecSize = 68;
+    kLenPos  = 4; // position of url length byte (numbering from 0)
+  var
+    f : file;                        // untyped file
+    a : array of byte;               // dynamic array
+    i : byte;                        // loop counter
+  begin
+    SetLength( a, kRecSize );        // allocate 68 bytes for the array
+    Assign( f, 'urldb0.db' );        // same file from last lesson
+    Reset( f, kRecSize );            // untyped files need to know the size
+    while not eof(f) do
+      begin
+        BlockRead( f, a[0], 1 );     // load 1*kRecSize bytes from f into a
+        for i := 1 to a[kLenPos] do
+          write(chr(a[ kLenPos + i ]));
+        writeln;
+      end;
+  end.
+#+end_src
+
+Compiling and running this program produces the following output:
+
+: $ fpc urldb1a.pas && ./urldb1a
+: http://reddit.com/r/learnprogramming
+: http://sourceforge.net/
+: http://stackoverflow.com/
+: https://github.com/
+: http://c2.com/cgi/wiki?WikiWikiWeb
+: http://reddit.com/r/programming
 
 * TODO step : manually assign the fields in order
 id   = nextInteger
@@ -142,9 +179,5 @@ You should see the following output:
 #+end_example
 
 * Summary
-
-
-
-
 * Footnotes
 [fn:1] /fpc aligns fields to a multiple of 4 bytes/: You can change this behavior with the [[http://www.freepascal.org/docs-html/prog/progsu60.html][$PACKRECORDS directive]]. That page actually claims that the default alignment is 2 bytes, but that doesn't appear to be the case. Hopefully [[http://bugs.freepascal.org/view.php?id=24418][#24418]] in the FPC bug tracker will lead to some clarification soon.
