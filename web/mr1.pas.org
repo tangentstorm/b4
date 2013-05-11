@@ -101,7 +101,7 @@ Why the extra 2 bytes at the end? Basically, it's because free pascal is a multi
 
 * Escaping the Type System
 
-Since we know our records are 68 bytes long, we can choose to represent them as a simple array of bytes. We could still create a (=file of TUrlBuf=) we'll just use an untyped (=file=) just us
+Since we know our records are 68 bytes long, we can choose to represent them as a simple array of bytes. We could create another typed file (=file of TUrlBuf=) but there's no real need to do this, so we'll just use an untyped (=file=) instead.
 
 The following program shows an example:
 
@@ -128,7 +128,9 @@ The following program shows an example:
   end.
 #+end_src
 
-Compiling and running this program produces the following output:
+With untyped files, we add an extra parameter to =Reset= that tells pascal how big to make the "chunks" it reads from the file. Then we call =BlockRead= instead of =Read=. This allows us to read an arbitrary number of chunks into ram at a given address. Above, we're reading 1 68-byte chunk, but we could have just as easily read 68 1-byte chunks, or 2 34-byte chunks, etc.
+
+Compiling and running the program produces the following output:
 
 : $ fpc urldb1a.pas && ./urldb1a
 : http://reddit.com/r/learnprogramming
@@ -138,34 +140,35 @@ Compiling and running this program produces the following output:
 : http://c2.com/cgi/wiki?WikiWikiWeb
 : http://reddit.com/r/programming
 
-* TODO step : manually assign the fields in order
+* COMMENT todo list
+** TODO step : manually assign the fields in order
 id   = nextInteger
 col2 = nextString
 col3 = nextInteger
 
-* TODO step : use an array of variants for printing
-* TODO step : replace the record with an array of variants
-* TODO step : reify the type system
+** TODO step : use an array of variants for printing
+** TODO step : replace the record with an array of variants
+** TODO step : reify the type system
 Replace the array of variants an array of bytes.
 Field name, type name
-** TODO Records are fixed width. replace with arrays of bytes.
-** TODO Track the width of the column in bytes.
-** TODO The schema is described with arrays of type variables.
+*** TODO Records are fixed width. replace with arrays of bytes.
+*** TODO Track the width of the column in bytes.
+*** TODO The schema is described with arrays of type variables.
 You could either load the schema directly from the table's file, or you could have some number of schema tables.
-** TODO Define a Database meta-model.
+*** TODO Define a Database meta-model.
 - tables
 - column names
 - types
-* TODO step : replace hand-sequenced parser \rarr array of scanners
-** TODO Use the first row to learn the width of the table.
+** TODO step : replace hand-sequenced parser \rarr array of scanners
+*** TODO Use the first row to learn the width of the table.
 
-** TODO While not Eof, use =SetLength= to generate each new array.
+*** TODO While not Eof, use =SetLength= to generate each new array.
 
-** TODO Create an Array of parsers.
-* TODO Use TClass / RTTI published fields for tool integration.
-* TODO Make the separator character configurable.
-* TODO Load tables of variants without a particular schema.
-* Results
+*** TODO Create an Array of parsers.
+** TODO Use TClass / RTTI published fields for tool integration.
+** TODO Make the separator character configurable.
+** TODO Load tables of variants without a particular schema.
+** Results
 
 To compile and run the program, use the following commands:
 
