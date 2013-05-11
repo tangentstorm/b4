@@ -14,7 +14,7 @@ We'll start by examining what the pascal compiler already does when we use the =
 
 * The Binary Record Format
 
-In [[.pas.org][lesson 0]], we defined the =TUrlRec= type:
+In [[file:mr0.pas.org][lesson 0]], we defined the =TUrlRec= type:
 
 #+begin_src pascal
 type
@@ -86,23 +86,19 @@ Examining the hex dump gives some clues to how the data is laid out in ram.
 | column | type       | bytes |
 |--------+------------+-------|
 | id     | =cardinal=   |     4 |
-| url    | =string[36]= |    38 |
-| title  | =string[24]= |    26 |
+| url    | =string[36]= |    37 |
+| title  | =string[24]= |    25 |
+|        | (padding)  |     2 |
 |--------+------------+-------|
 |        | *total:*     |    68 |
 |        | *\times 6 rows*:  |   408 |
-#+TBLFM: @6$3=@5$3 * 6::@5$3=vsum(@2$3..@4$3)
+#+TBLFM: @7$3=@6$3 * 6::@6$3=vsum(@2$3..@5$3)
 
-It's a little surprising that a string of 36 1-byte characters takes up 38 bytes.
-
-As an old turbo pascal user, I personally expected the =url= field to use up 37 bytes. That's because a =ShortString= uses the first byte to record the length. The longest =ShortString= is therefore =string[255]=, which contains room for 255 characters, plus the length byte.
+It might be a little surprising that a string of 36 1-byte characters takes up 37 bytes, but that's because a =ShortString= uses an extra byte at the stort to record the length. The longest =ShortString= is therefore =string[255]=, which contains 256 bytes: enough room for 255 characters, plus the length byte.
 
 You can see this in action in the hex dump. If you look at the link for the c2 wiki, you'll see how the URL and title fields contain leftover characters 'n' and 'g' from the /r/learnprogramming link. This indicates that the same area in ram was reused each for pass through the loop, and then copied to disk each time. The double-quote character at the start is ascii character number 34 (=$22= in hex). This indicates that the uses 34 of the 36 alloted characters. The extra two characters stick around in ram, but pascal ignores them.
 
-But why does =url= contain /38/ bytes, instead of 37? Basically, it's because free pascal is a multi-platform compiler, and on some platforms, loading data that doesn't fall cleanly on word boundaries can have unpleasant consequences. So by default, fpc alligns all fields to a multiple of 2 bytes. (You can change this behavior with the [[http://www.freepascal.org/docs-html/prog/progsu60.html][$PACKRECORDS directive]].)
-
-
-
+Why the extra 2 bytes at the end? Basically, it's because free pascal is a multi-platform compiler, and on some platforms, loading data that doesn't fall cleanly on word boundaries can have unpleasant consequences. By default, fpc aligns records to a multiple of 4 bytes[fn:1].
 
 
 * TODO step : manually assign the fields in order
@@ -146,3 +142,9 @@ You should see the following output:
 #+end_example
 
 * Summary
+
+
+
+
+* Footnotes
+[fn:1] /fpc aligns fields to a multiple of 4 bytes/: You can change this behavior with the [[http://www.freepascal.org/docs-html/prog/progsu60.html][$PACKRECORDS directive]]. That page actually claims that the default alignment is 2 bytes, but that doesn't appear to be the case. Hopefully [[http://bugs.freepascal.org/view.php?id=24418][#24418]] in the FPC bug tracker will lead to some clarification soon.
