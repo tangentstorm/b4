@@ -1,26 +1,111 @@
-#+title: relational algebra: joins
- 
+#+title: mr1 : reification
 
 * Introduction
-* Implementation
-** A category table
 
-** program =mr1_joins=
+Last time around, we created a tiny database file with a single table, or /relation/, and manually populated it, displayed it, and then filtered it by row and column -- all in plain old pascal.
 
-#+name: urldb0
-#+begin_src pascal :tangle "../gen/mr1.pas" :noweb tangle
+There's nothing inherently wrong with this approach, but it's tedious. One of the main benefits of the relational database model is that it's universal: you use can use one data structure (the relation) for all of your data, so everything works the same way, and you don't have to keep rewriting the same code over and over by hand.
 
-#+end_src
+In order to do this, we're going to have to lift the description of a relation's structure up out of the pascal compiler and into a concrete data structure that we can interact with and inspect at runtime. For example, instead of manually printing and justifying each column name, we will use an array of records that map the keys to string labels, display widths, and specific routines for rendering the data.
 
-** Walkthrough
-** Implementation
+This process of replacing code with data is called /reification/, and we will come back to it again and again as we transfer more and more of our hand-coded logic into the relational database itself.
 
-*** procedure =MakeDatabase=
-#+name: routines
+We'll start by examining what the pascal compiler already does when we use the =record= keyword to declare a structured data type.
+
+* The Binary Record Format
+
+In [[.pas.org][lesson 0]], we defined the =TUrlRec= type:
+
 #+begin_src pascal
-
+type
+  TUrlRec = record
+              id    : cardinal;
+              url   : string[ 36 ];
+              title : string[ 24 ];
+            end;
 #+end_src
 
+We then created a =file of TUrlRec=, and populated it with some records:
+
+#+begin_src pascal
+  begin
+    Assign( f, 'urldb0.db' );
+    ReWrite( f );
+    store(   7 , 'http://reddit.com/r/learnprogramming' , 'learn programming' );
+    store(   4 , 'http://sourceforge.net/'              , 'SourceForge'       );
+    store(   8 , 'http://stackoverflow.com/'            , 'Stack Overflow'    );
+    store(   2 , 'https://github.com/'                  , 'GitHub'            );
+    store(  13 , 'http://c2.com/cgi/wiki?WikiWikiWeb'   , 'Wiki Wiki Web'     );
+    store(   6 , 'http://reddit.com/r/programming'      , 'programming'       );
+  end;
+#+end_src
+
+Since pascal handled the file for us, we didn't spend much time looking at what it was actually doing. Let address that now, by creating a hex dump of the generated =urldb0.db= file.
+
+#+begin_src text
+$ du -h *.db
+4.0K    urldb0.db
+$
+$ hexdump -v -C urldb0.db
+00000000  07 00 00 00 24 68 74 74  70 3a 2f 2f 72 65 64 64  |....$http://redd|
+00000010  69 74 2e 63 6f 6d 2f 72  2f 6c 65 61 72 6e 70 72  |it.com/r/learnpr|
+00000020  6f 67 72 61 6d 6d 69 6e  67 11 6c 65 61 72 6e 20  |ogramming.learn |
+00000030  70 72 6f 67 72 61 6d 6d  69 6e 67 00 00 00 00 00  |programming.....|
+00000040  00 00 00 00 04 00 00 00  17 68 74 74 70 3a 2f 2f  |.........http://|
+00000050  73 6f 75 72 63 65 66 6f  72 67 65 2e 6e 65 74 2f  |sourceforge.net/|
+00000060  72 6e 70 72 6f 67 72 61  6d 6d 69 6e 67 0b 53 6f  |rnprogramming.So|
+00000070  75 72 63 65 46 6f 72 67  65 61 6d 6d 69 6e 67 00  |urceForgeamming.|
+00000080  00 00 00 00 00 00 00 00  08 00 00 00 19 68 74 74  |.............htt|
+00000090  70 3a 2f 2f 73 74 61 63  6b 6f 76 65 72 66 6c 6f  |p://stackoverflo|
+000000a0  77 2e 63 6f 6d 2f 70 72  6f 67 72 61 6d 6d 69 6e  |w.com/programmin|
+000000b0  67 0e 53 74 61 63 6b 20  4f 76 65 72 66 6c 6f 77  |g.Stack Overflow|
+000000c0  69 6e 67 00 00 00 00 00  00 00 00 00 02 00 00 00  |ing.............|
+000000d0  13 68 74 74 70 73 3a 2f  2f 67 69 74 68 75 62 2e  |.https://github.|
+000000e0  63 6f 6d 2f 77 2e 63 6f  6d 2f 70 72 6f 67 72 61  |com/w.com/progra|
+000000f0  6d 6d 69 6e 67 06 47 69  74 48 75 62 4f 76 65 72  |mming.GitHubOver|
+00000100  66 6c 6f 77 69 6e 67 00  00 00 00 00 00 00 00 00  |flowing.........|
+00000110  0d 00 00 00 22 68 74 74  70 3a 2f 2f 63 32 2e 63  |...."http://c2.c|
+00000120  6f 6d 2f 63 67 69 2f 77  69 6b 69 3f 57 69 6b 69  |om/cgi/wiki?Wiki|
+00000130  57 69 6b 69 57 65 62 6e  67 0d 57 69 6b 69 20 57  |WikiWebng.Wiki W|
+00000140  69 6b 69 20 57 65 62 77  69 6e 67 00 00 00 00 00  |iki Webwing.....|
+00000150  00 00 00 00 06 00 00 00  1f 68 74 74 70 3a 2f 2f  |.........http://|
+00000160  72 65 64 64 69 74 2e 63  6f 6d 2f 72 2f 70 72 6f  |reddit.com/r/pro|
+00000170  67 72 61 6d 6d 69 6e 67  57 65 62 6e 67 0b 70 72  |grammingWebng.pr|
+00000180  6f 67 72 61 6d 6d 69 6e  67 65 62 77 69 6e 67 00  |ogrammingebwing.|
+00000190  00 00 00 00 00 00 00 00                           |........|
+00000198
+#+end_src
+
+
+
+
+* TODO step : manually assign the fields in order
+id   = nextInteger
+col2 = nextString
+col3 = nextInteger
+
+* TODO step : use an array of variants for printing
+* TODO step : replace the record with an array of variants
+* TODO step : reify the type system
+Replace the array of variants an array of bytes.
+Field name, type name
+** TODO Records are fixed width. replace with arrays of bytes.
+** TODO Track the width of the column in bytes.
+** TODO The schema is described with arrays of type variables.
+You could either load the schema directly from the table's file, or you could have some number of schema tables.
+** TODO Define a Database meta-model.
+- tables
+- column names
+- types
+* TODO step : replace hand-sequenced parser \rarr array of scanners
+** TODO Use the first row to learn the width of the table.
+
+** TODO While not Eof, use =SetLength= to generate each new array.
+
+** TODO Create an Array of parsers.
+* TODO Use TClass / RTTI published fields for tool integration.
+* TODO Make the separator character configurable.
+* TODO Load tables of variants without a particular schema.
 * Results
 
 To compile and run the program, use the following commands:
