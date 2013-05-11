@@ -1,53 +1,54 @@
 #+title: minrel trail
 
+* lesson 1 : records
+** DONE example: flat bookmarks db
 
-* DONE example: flat bookmarks db
-
-* ABCD
-** user interface
-** implement union (OR)
-** implement intersection (AND)
-** implement filter (given a predicate function)
-** implement outer join
-** implement natural join
-
-** implement inner join
-
-** implement sorting
-
-** implement selection
-
-** implement projection
-** hierarchical queries (transitive closure)
-** read multiple datatypes from untyped files using blockread/blockwrite
-** move from records to arrays and type descriptors
+* lesson 2 : variants
+** reduce hard coded logic by moving from records to arrays and type descriptors
 This basically involves lifting records up into the data model.
-
-** files vs arrays -> unify with IArray interface                    :cloud:
-
-* XYZ
-** type descriptors
+** TODO example: database meta model
+** TODO indexed properties -> variants
+* type descriptors
 table of type with names, sizes
-** write a parser for ascii-delimited data
+* implement a command shell
+* forth like dictionary
+
+* --- later ----
+** the relational algebra  (maybe split this up over time, add to appendix?)
+*** implement union (OR)
+*** implement intersection (AND)
+*** implement filter (given a predicate function)
+*** implement inner join
+*** implement natural join
+*** implement outer join
+*** implement sorting
+*** implement selection
+*** implement projection
+
+** relational extensions
+*** TODO implement left join
+**** 1:*
+**** 1:1
+**** *:1
+*** hierarchical queries (transitive closure)
+
 ** compact file vs room to grow -> page model                        :cloud:
 ** show the conversion to triple store
+** files vs arrays -> unify with IArray interface                    :cloud:
+** read multiple datatypes from untyped files using BlockRead/BlockWrite
+** the virtual machine
 ** "relational methods"                                               :arlo:
 *** This is the old idea from arlo that the query language should exist /atop/ the object model, with all its behaviors and whatnot.
 *** I think a relation could be treated much like a class.
 *** relational methods would produce relations... it would depend on class methods.
 *** views would be a type of relational method
-
-* EFG
-** the virtual machine
-** forth like dictionary
 ** query planning
 *** query optimization
+** parse org-mode tables
+** model a petri net
+** write a parser for ascii-delimited data
+** implement some kindof user interface for tables
+*** implement a spreadsheet-like gui in lazarus
+** csv/tab import
 ** full text search
 
-* HIJK
-** TODO implement left join
-*** 1:*
-*** 1:1
-*** *:1
-** implement a spreadsheet-like gui in lazarus
-** parse org-mode tables
