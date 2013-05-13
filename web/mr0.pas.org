@@ -219,7 +219,7 @@ In particular, these special routines can take a variable number of parameters, 
 
 *** procedure =ShowAllRecords=
 
-To reopen a file for reaing, we use =Reset=, then loop through and =Read= records from the file until we reach the end of the file (which we test by calling =Eof= before each read).
+To reopen a file for reading, we use =Reset=, then loop through and =Read= records from the file until we reach the end of the file (which we test by calling =Eof= before each read).
 
 As we print each record with =WriteLn= you can see the special string justification syntax using the colon character. For example, =rec.id : 3= tells =WriteLn= to use at least 3 characters to display the numbers in that column.
 
