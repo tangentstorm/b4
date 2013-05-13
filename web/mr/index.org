@@ -1,0 +1,13 @@
+#+title: minrel
+
+Minrel is a minimal relational graph database written in (/wait for it.../) object pascal.
+
+This is its story.
+
+* Prologue
+In which we fire up pascal, create a 1-table database, and filter its rows and columns.
+
+* Chapter 1 : Reification
+In which we build a table to describe the structure of our table.
+
+* Chapter 2 : An Empty Command Langauge
