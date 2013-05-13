@@ -1,9 +1,9 @@
 
 program urldb1b;
 uses strutils;
-  
+
   const
-    kRecSize = 68; 
+    kRecSize = 68;
     kLenPos  = 4;  // position of url length byte (numbering from 0)
     kSep     = #9; // tab character
   var
@@ -12,13 +12,13 @@ uses strutils;
     a : array of byte;
 
   type
-    TKeyType = ( ktString, ktCardinal, ktPadding );
+    TKeyType = ( ktPadding, ktCardinal, ktString );
     TKeyDef  = record
 		 keyName : string[31];
 		 keyType : TKeyType;
 		 keySize : cardinal;
 	       end;
-  var
+  const
     keys : array [0..3] of TKeyDef =
 	   (( keyName: 'id';    keyType : ktCardinal; keySize : 4 ),
 	    ( keyName: 'url';   keyType : ktString;   keySize: 37 ),
@@ -67,7 +67,7 @@ uses strutils;
       end;
       writeln;
     end;
-  
+
 begin
   SetLength( a, kRecSize );        // allocate 68 bytes for the array
   Assign( f, 'urldb0.db' );        // same file from last lesson

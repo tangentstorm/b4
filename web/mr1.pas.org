@@ -140,47 +140,140 @@ Compiling and running the program produces the following output:
 : http://c2.com/cgi/wiki?WikiWikiWeb
 : http://reddit.com/r/programming
 
-* COMMENT todo list
-** TODO step : manually assign the fields in order
-id   = nextInteger
-col2 = nextString
-col3 = nextInteger
+* Refactoring : extract procedure =WriteTuple=
 
-** TODO step : use an array of variants for printing
-** TODO step : replace the record with an array of variants
-** TODO step : reify the type system
-Replace the array of variants an array of bytes.
-Field name, type name
-*** TODO Records are fixed width. replace with arrays of bytes.
-*** TODO Track the width of the column in bytes.
-*** TODO The schema is described with arrays of type variables.
-You could either load the schema directly from the table's file, or you could have some number of schema tables.
-*** TODO Define a Database meta-model.
-- tables
-- column names
-- types
-** TODO step : replace hand-sequenced parser \rarr array of scanners
-*** TODO Use the first row to learn the width of the table.
+Let's refactor a bit, and extract a function for the innermost loop:
 
-*** TODO While not Eof, use =SetLength= to generate each new array.
+#+begin_src pascal
+  procedure WriteTuple( a : array of bytes );
+    begin
+      for i := 1 to a[kLenPos] do
+        write(chr(a[ kLenPos + i ]));
+      writeln;
+    end;
+#+end_src
 
-*** TODO Create an Array of parsers.
-** TODO Use TClass / RTTI published fields for tool integration.
-** TODO Make the separator character configurable.
-** TODO Load tables of variants without a particular schema.
+Now our innermost loop becomes:
+
+#+begin_src pascal
+  while not eof(f) do
+    begin
+      BlockRead( f, a[0], 1 );     // load 1*kRecSize bytes from f into a
+      WriteTuple( a );
+    end;
+#+end_src
+
+Now that we've isolated that code, let's generalize it to print arbitrary relations.
+
+* MetaData
+
+If we want to display arbitrary relations with a single procedure, we need to find a way to describe the structure of the tuples.
+
+The table we made earlier with the label, type, and size in bytes for each field was sufficient to let us figure out where to start reading the =url= field, so why not give our program a table like that too?
+
+It's easy. First, we create a =TKeyDef= type:
+
+#+begin_src pascal
+  type
+    TKeyType = ( ktPadding, ktCardinal, ktString );
+    TKeyDef  = record
+                 keyName : string[31];
+                 keyType : TKeyType;
+                 keySize : cardinal;
+               end;
+#+end_src
+
+The syntax for the =TKeyType= type is new. It's called an /enumerated type/, which basically means that we're creating a bunch of identifiers that are associated with the numbers 0, 1, 2, 3... These values aren't numbers themselves (=Write(ktString)= will output 'ktString' rather than '2') but they're /associated/ with numbers: =Write(Ord(ktPadding))= produces '0', just as =Write(Ord(#0))= or =Write(Ord(false))= does, because all of these are the first possible value of their respective type.
+
+We can now translate our table to pascal as literal array of =TKeyDef= records:
+
+#+begin_src pascal
+  const
+    keys : array [0..3] of TKeyDef =
+	   (( keyName: 'id';    keyType : ktCardinal; keySize : 4 ),
+	    ( keyName: 'url';   keyType : ktString;   keySize: 37 ),
+	    ( keyName: 'title'; keyType : ktString;   keySize: 25 ),
+	    ( keyName: '';      keyType : ktPadding;  keySize:  2 ));
+#+end_src
+
+We can rewrite our =WriteTuple= routine, using pascal's [[http://www.freepascal.org/docs-html/ref/refsu50.html][case statement]] to dispatch on the =keyType=. (Normally we'd write =key.keyType=, but adding a [[http://www.freepascal.org/docs-html/ref/refsu56.html][with statement]] to our for loop lets us be a little more concise.)
+
+#+begin_src pascal
+  const  kSep = #9; // tab character
+  
+  procedure WriteTuple( a : array of byte );
+    var
+      offs : byte = 0;                      // current offset into the record
+      key  : TKeyDef;
+    begin
+      for key in keys do with key do begin
+        case keyType of
+          ktCardinal : write(cardinal( a[offs]) : 5);
+          ktString   : begin
+                         for i := 1 to a[offs] do write(chr(a[offs + i]));
+                         for i := i to keySize do write(' '); // padding
+                       end;
+          // otherwise do nothing
+        end;
+        write( kSep );
+        inc(offs, keySize);
+      end;
+      writeln;
+    end;
+#+end_src
+
+* Adding a Header
+
+A nicely formatted header is really just more of the same:
+
+#+begin_src pascal
+  procedure WriteHeader;
+    var key : TKeyDef;
+    begin
+      { write the the field names }
+      for key in keys do with key do begin
+        case keyType of
+          ktCardinal : write( PadLeft( keyname, 5 ));
+          ktString   : write( PadRight( keyname, keySize ));
+        end;
+        write( kSep );
+      end;
+      writeln;
+      { show the separator line }
+      for key in keys do with key do begin
+        case keyType of
+          ktCardinal : write( '-----');
+          ktString   : write( AddChar( '-', '', keySize ));
+        end;
+        write( kSep );
+      end;
+      writeln;
+    end;
+#+end_src
+
+The only new addition is =[[http://www.freepascal.org/docs-html/rtl/strutils/addchar.html][strutils.AddChar( s, c, n ):String]]=, which appends =n= copies of character =c= to string =s=.
+
+
 ** Results
 
-To compile and run the program, use the following commands:
-
-: fpc mr1.pas
-: ./urldb1
-
-You should see the following output:
+Running the program produces the following output:
 
 #+begin_example text
-
+   id   url                                     title
+-----   -------------------------------------   -------------------------
+    7   http://reddit.com/r/learnprogramming    learn programming
+    4   http://sourceforge.net/                 SourceForge
+    8   http://stackoverflow.com/               Stack Overflow
+    2   https://github.com/                     GitHub
+   13   http://c2.com/cgi/wiki?WikiWikiWeb      Wiki Wiki Web
+    6   http://reddit.com/r/programming         programming
 #+end_example
 
-* Summary
+* Summary and Next Steps
+
+In this lesson, we saw how to reify (make concrete) the structure of our relations, by creating a new record type to hold metadata.
+
+We will use this same concept later to make our database self-describing, but first we need a way to create tables, records without relying on hex editors, pre-existing binary files, or hard-coded pascal syntax. Therefore, in our next lesson, we will look at how to create a simple command interpreter.
+
 * Footnotes
 [fn:1] /fpc aligns fields to a multiple of 4 bytes/: You can change this behavior with the [[http://www.freepascal.org/docs-html/prog/progsu60.html][$PACKRECORDS directive]]. That page actually claims that the default alignment is 2 bytes, but that doesn't appear to be the case. Hopefully [[http://bugs.freepascal.org/view.php?id=24418][#24418]] in the FPC bug tracker will lead to some clarification soon.
