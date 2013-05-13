@@ -78,6 +78,8 @@ begin
     begin
       BlockRead( f, a[0], 1 );     // load 1*kRecSize bytes from f into a
       WriteTuple(a);
-    end
+    end;
 
+  Close(f);
+  a := Nil;                        // free allocated ram.
 end.
