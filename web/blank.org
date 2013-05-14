@@ -1,21 +1,18 @@
-#+title: relational algebra: joins
+#+title: {TITLE}
  
 
 * Introduction
 * Implementation
-** A category table
-
-** program =mr1_joins=
+** program =MyProgram=
 
 #+name: urldb0
-#+begin_src pascal :tangle "../gen/mr1.pas" :noweb tangle
+#+begin_src pascal :tangle "../gen/PROG.pas" :noweb tangle
 
 #+end_src
 
 ** Walkthrough
 ** Implementation
-
-*** procedure =MakeDatabase=
+*** procedure =MyProcedure=
 #+name: routines
 #+begin_src pascal
 
@@ -25,8 +22,8 @@
 
 To compile and run the program, use the following commands:
 
-: fpc mr1.pas
-: ./urldb1
+: fpc {progname}.pas
+: ./{progname}
 
 You should see the following output:
 
@@ -35,3 +32,4 @@ You should see the following output:
 #+end_example
 
 * Summary
+
