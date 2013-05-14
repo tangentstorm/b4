@@ -1,0 +1,7 @@
+#+title: minrel : bootstrap
+
+We've shown how to reify our types so we can write generalized routines that work with user defined relations, but we haven't actually given our users a way to declare relations and keys.
+
+Except... We have a database. Wouldn't it be nice if the data that described our database could be /stored/ in the database?
+
+Let's start simple, and build a routine to import tab delimited text files. This probably won't be the primary way to get data into the system but it's a common data format that's easy to parse, easy to generate and already has decent tool support. It's also ready to write by hand in any text editor.
