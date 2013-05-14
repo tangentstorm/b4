@@ -2,6 +2,7 @@
 #+AUTHOR: Allan Winfield
 #+DATE: 1983
 #+INFOJS_OPT: view:info toc:nil
+Pascal in Forth, by Allan Winfield (1983) /(partial transcription)/
 
 * Part 1
 ** Pascal in Forth
