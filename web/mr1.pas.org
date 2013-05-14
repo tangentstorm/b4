@@ -251,8 +251,7 @@ A nicely formatted header is really just more of the same:
     end;
 #+end_src
 
-The only new addition is =[[http://www.freepascal.org/docs-html/rtl/strutils/addchar.html][strutils.AddChar( s, c, n ):String]]=, which appends =n= copies of character =c= to string =s=.
-
+The only new addition is [[http://www.freepascal.org/docs-html/rtl/strutils/addchar.html][strutils.AddChar( s, c, n ):String]], which appends =n= copies of character =c= to string =s=.
 
 ** Results
 
