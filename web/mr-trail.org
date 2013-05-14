@@ -2,14 +2,48 @@
 
 * lesson 1 : records
 ** DONE example: flat bookmarks db
-
 * lesson 2 : variants
+** record \rarr array of variant
+** parsing variants dynamically
+- numbers
+- strings
+- booleans / enums
+** TODO example: database meta model
 ** reduce hard coded logic by moving from records to arrays and type descriptors
 This basically involves lifting records up into the data model.
-** TODO example: database meta model
-** TODO indexed properties -> variants
-* type descriptors
-table of type with names, sizes
+** TODO indexed properties \rarr variants
+** type descriptor
+** reification
+[[http://en.wikipedia.org/wiki/Reification_(computer_science)][reification]]
+
+
+
+* COMMENT todo list
+** DONE step : reify the type system
+Replace the array of variants an array of bytes.
+Field name, type name
+*** DONE Records are fixed width. replace with arrays of bytes.
+*** DONE Track the width of the column in bytes.
+*** DONE The schema is described with arrays of type variables.
+You could either load the schema directly from the table's file, or you could have some number of schema tables.
+*** TODO Define a Database meta-model.
+- tables
+- column names
+- types
+** TODO step : replace hand-sequenced parser \rarr array of scanners
+*** TODO Use the first row to learn the width of the table.
+
+*** TODO While not Eof, use =SetLength= to generate each new array.
+
+*** TODO Create an Array of parsers.
+** TODO Make the separator character configurable.
+** TODO Use TClass / RTTI published fields for tool integration.
+** TODO Load tables of variants without a particular schema.
+ds
+ames.
+sizes
+
+
 * implement a command shell
 * forth like dictionary
 
@@ -31,7 +65,6 @@ table of type with names, sizes
 **** 1:1
 **** *:1
 *** hierarchical queries (transitive closure)
-
 ** compact file vs room to grow -> page model                        :cloud:
 ** show the conversion to triple store
 ** files vs arrays -> unify with IArray interface                    :cloud:
@@ -42,11 +75,10 @@ table of type with names, sizes
 *** I think a relation could be treated much like a class.
 *** relational methods would produce relations... it would depend on class methods.
 *** views would be a type of relational method
-** query planning
-*** query optimization
-** parse org-mode tables
+** query planning/optimization
 ** model a petri net
 ** write a parser for ascii-delimited data
+** parse org-mode tables
 ** implement some kindof user interface for tables
 *** implement a spreadsheet-like gui in lazarus
 ** csv/tab import
