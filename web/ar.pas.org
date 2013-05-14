@@ -283,7 +283,7 @@ In most cases, if you need to save an array to disk, it's probably better to wri
 
 * Appendix: Templates for Generated Files
 ** template for UNIT =ar=
-#+begin_src pascal :tangle "~/b/mr/code/ar.pas" :noweb tangle
+#+begin_src pascal :tangle "~/b/gen/ar.pas" :noweb tangle
   {$mode delphi}
   unit ar; { Array interface }
   interface uses sq, sysutils, bp;
