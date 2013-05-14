@@ -14,7 +14,7 @@ unit rt_term;
 {$ENDIF}
 
 interface uses xpc, grids, romFont, SysUtils, ng, ascii
-  {$IFDEF WITH_AGG}agg2d{$ENDIF};
+  {$IFDEF WITH_AGG}, agg2d{$ENDIF};
 
 const
   canvas_w  = 800;
