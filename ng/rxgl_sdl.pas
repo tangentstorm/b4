@@ -1,6 +1,6 @@
 {$i xpc.inc}
 unit rxgl_sdl;
-interface uses xpc, ng, SDL, sysutils, rt_term;
+interface uses xpc, ng, SDL, sysutils, rt_term, cw;
 
   type
     TSDLVDP = class (rt_term.TRxConsole)
@@ -21,7 +21,6 @@ implementation
 
 constructor TSDLVDP.Create;
 begin
-  inherited Create;
 
   SDL_INIT(SDL_INIT_VIDEO);
   SDL_EnableUnicode(1);
@@ -30,6 +29,7 @@ begin
   self.pBitmap := SDL_SETVIDEOMODE(canvas_w, canvas_h, bitdepth, SDL_HWSURFACE);
   if self.pBitmap = nil then
     raise Exception.Create('Failed to create SDL bitmap');
+  inherited Create;
   {$IFDEF WITH_AGG}
   self.CreateCanvas;
   {$ENDIF}
@@ -51,6 +51,7 @@ end;
 procedure TSDLVDP.PlotPixel(adr: Int32; Value: byte); inline;
   var rBitmap: ^TRGBA;
 begin
+  if not assigned(self.pBitmap) then begin writeln('pBitmap is nil!'); halt end;
   rBitmap := pBitmap^.pixels + 4 * (self.rVStart * canvas_w + self.rHStart + adr);
   with rBitmap^ do
   begin
