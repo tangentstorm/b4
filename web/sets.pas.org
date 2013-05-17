@@ -1,0 +1,106 @@
+#+title: generalized sets for pascal
+#+author: michal j. wallace
+#+date: <2013-05-17>
+
+* Pascal's Native =SET= Type
+
+A distinguishing feature of Pascal and its sucessors is the =set= type. 
+
+For example, you might declare an enumerated type =day= to represent the days of the week, and then a set type called =days= to hold multiple values of this type:
+
+#+begin_src pascal
+  type
+    Day  = (mon, tue, wed, thu, fri, sat, sun);
+    Days = set of Day;
+#+end_src
+
+You can then declare literal values of this type, either as constants or as variables:
+
+#+begin_src pascal
+  const
+    weekdays = [ mon .. fri ]; // literal range
+  
+  var
+    mwf : Days = [ mon, wed, fri ]; // literal set
+#+end_src
+
+Note that unlike a mathematical set, pascal sets are ordered.
+
+These sets can be passed as parameters, traversed with a =for= ... =in= loop. The underlying enumerated type can be parsed with =read= and printed =write= and =writeln=, so printing the contents of a set is a simple matter of looping:
+
+#+begin_src pascal
+  procedure writedays( title : string; whichdays : Days );
+    var d : Day;
+    begin
+      writeln( title );
+      for d in whichdays do write( '  ', d );
+      writeln;
+    end;
+#+end_src
+
+Most importantly, pascal offers a rich variety of set operations:
+
+#+begin_src pascal
+  var w, s : set of days;
+  begin
+    w := weekdays;              // weekdays
+    s := mwf + [sat, sun];      // arbitrary set of days
+    writedays( 's:', s);
+    writedays( 'w:', w);
+    writeln;
+    writedays( ' w + s:',  w + s ); // union
+    writedays( ' w * s:',  w * s ); // intersection
+    writedays( ' w - s:',  w - s ); // difference
+    writedays( ' s - w:',  s - w ); // difference
+    writedays( 'w >< s:', w><s );   // symmetric difference
+    writeln;
+    writeln( '  w   <= s: ', w <= s );    // subset?
+    writeln( '  mwf <= w: ', mwf <= w );  // subset?
+    writeln( '  w   >= s: ', w >= s );    // superset?
+    writeln( '  w    = s: ', w = s );     // equal
+    writeln( '  w   <> s: ', w <> s );    // not-equal
+    writeln( 'mon in mwf: ', mon in mwf); // element-of?
+    writeln( 'tue in mwf: ', tue in mwf); // element-of?
+    writeln;
+  end.
+#+end_src
+
+Here is the output of the above program:
+
+#+begin_src example
+s: [ mon wed fri sat sun ]
+w: [ mon tue wed thu fri ]
+
+ w + s: [ mon tue wed thu fri sat sun ]
+ w * s: [ mon wed fri ]
+ w - s: [ tue thu ]
+ s - w: [ sat sun ]
+w >< s: [ tue thu sat sun ]
+
+  w   <= s: FALSE
+  mwf <= w: TRUE
+  w   >= s: FALSE
+  w    = s: FALSE
+  w   <> s: TRUE
+mon in mwf: TRUE
+tue in mwf: FALSE
+#+end_src
+
+
+* Limitations of Native Sets
+
+Traditionally, pascal sets are implemented as bitmaps - usually 32-bit values - where each member of a set is represented by a single bit. This means that the underlying enumerated type is limited to ranges of 32 values.
+
+With the [[http://freepascal.org/][free pascal]] compiler, sets can be arbitrarily large, allowing you to create sets of characters or or other numbers, but they're still limited to simple underlying types.
+
+Bitmapped sets are incredibly useful, but occasionally it's convenient to work work with sets of more complex objects, that may not even map to a spefic ordinal number.
+
+For example, there's no easy way to create a set of strings or real numbers in pascal, or sets of arbitrary records, as you'd want in a database application. The best you can do is create some kind of container structure that keeps its contents sorted. Then when you add a value to the container, you just check to make sure it's not already there, and if so, discard it.
+
+In fact, there are a number of [[http://wiki.freepascal.org/Data_Structures,_Containers,_Collections][container libraries for pascal]], and some of them offer set types based on trees, ([[http://svn.freepascal.org/cgi-bin/viewvc.cgi/trunk/packages/fcl-stl/src/gset.pp?revision=17310&view=markup][gset.pp]] in the free pascal component library, for example). As far as I could tell, though, none of them actually provide the basic operations that you get with pascal's native sets.
+
+Most of the time, that's okay. Often when you reach for a set of, what you really want is a collection of unique values. But since I'm making a database that supports relational algebra, I need a =set= in the mathematical sense, with support for unions and intersections and so on.
+
+So... Let's make one.
+
+* A Generic Interface for Sets
