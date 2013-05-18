@@ -6,5 +6,5 @@ This is its story.
 
 - [[file:../mr0.pas.org][Prologue]] ::  In which we fire up pascal, create a 1-table database, and filter its rows and columns.
 - [[file:../mr1.pas.org][Reification]] :: In which we build a table to describe a table.
-- [[file:mr-boot.org][Bootstrap]] :: In which we build a database to describe a databases.
+- [[file:mr-boot.org][Bootstrap]] :: In which we build a database to describe a database.
 

@@ -1,0 +1,147 @@
+#+title: minrel: relational operators
+
+If we can guarantee that the relations won't change then we could make this a whole lot more efficient by creating views on the fly that just point to existing relations and remember how to get the data. But 
+for now we'll just copy everything.
+
+Many of these can also be optimized by sorting the rows first.
+
+* DONE selection (\sigma)
+#+begin_src pascal
+  function TRel.select( pred:predicate ) : TRel;
+    var row : tuple;
+    begin
+      result := self.copyShape;
+      for row in self do 
+        if test(pred, row) then 
+          result.include(row);
+    end;
+#+end_src
+
+* DONE projection ([..])
+
+#+begin_src pascal
+  function TRel.project( toKeep : TKeySet ) : rel;
+    var cols : array of byte; i : integer;
+    begin
+      setlength( cols, length( toKeep ));
+      for i := 0 to high(cols) do cols[i] := _keys.indexOf(toKeep[i]);
+      result := TRel.Create( toKeep );
+      for row in self do result.include(row.project(cols));
+    end;
+#+end_src
+
+* DONE product (\times)
+
+#+begin_src pascal
+  procedure TRel.cross( other : TRel ) : TRel;
+    var s, o : tuple;
+    begin
+      result := TRel.Create( self.keys + other.keys );
+      for s in self do
+        for o in others do
+          s.append( s + o );
+    end;
+#+end_src
+
+* DONE join
+#+begin_src pascal
+  procedure TRel.join( other : TRel ) : TRel;
+    var s, o, p : tuple; keys : TKeySet;
+    begin
+      keys := cols.intersect(other.cols);
+      for s in self do
+        for o in other do
+          begin
+            p = s.project(keys);
+            if p = o.project(keys) then
+              result.append(s.project(p));
+          end;
+    end;
+#+end_src
+
+* TODO tuple.intersect
+intersect :: [val] \rarr [val]
+intersection :: [val] \rarr [val] \rarr [(val, idx, idx)]
+* TODO tuple.project
+project   :: [val] \rarr [idx] \rarr [val]
+* TODO tuple.unproject
+unproject :: [val] \rarr [val] \rarr [idx]
+* TODO TRel.permute
+unproject :: [val] \rarr [val] \rarr [idx]
+
+* DONE union (\cup)
+#+begin_src pascal
+  function TRel.union(other : TRel) : TRel;
+    var s, o : tuple; v : relation;
+    begin
+      v = other.permute(self.keys);
+      for s in self  do result.append(s);
+      for o in other do result.append(row);
+    end;
+#+end_src
+
+* DONE intersect (\cap)
+#+begin_src pascal
+  function TRel.intersect(other : TRel) : TRel;
+    begin
+      for s in self do
+        for o in other.permute(self.keys) do
+          if keysmatch( s, self.keys, o, other.keys ) then
+            result.include(s)
+    end;
+#+end_src
+
+* TODO keysmatch
+keysmatch :: val, [idx], 
+Basically this would be like a.project(keys) = b.project(keys)
+
+
+* TODO division
+Per Lester McCaan:
+#+begin_quote
+Division identifies the attribute values from a relation that are
+found to be paired with all of the values from another relation.
+#+end_quote
+
+It's just like arithmetic: If  /x/ \times /y/ = /z/ then /z/ \div /x/ = /y/ and /z/ \div /y/ = /x/.
+
+#+begin_src pascal
+  if (len(other) > 0) and (other.keys < self.keys) then
+    begin
+      result.:= TRel.Create( self.keys - other.keys );
+    for row in self do begin
+      found := false;
+      cur := other.cursor;
+      repeat
+      until found or cur.atEnd;
+#+end_src
+
+
+* TODO relational operations (clean this up)
+|   | sym | name                 | sql    | pascal    |
+|---+-----+----------------------+--------+-----------|
+| 1 | \cup   | union                |        | +         |
+| 2 | \cap   | intersection         |        | *         |
+| 3 | -   | difference           |        | -         |
+| 4 | \times   | product              |        |           |
+| 5 | \sigma   | select (restriction) | where  | loop + if |
+| 6 | []  | project              | select |           |
+| 7 | ⋈   | natural join         |        |           |
+| 8 | \div   | division             |        |           |
+|---+-----+----------------------+--------+-----------|
+|   | \theta   |                      |        |           |
+|   | \rho   | rename               |        |           |
+|   | ▷   | antijoin             |        |           |
+|   |     | symmetric diff       |        | ><        |
+
+Symmetric diff = union without the intersection.
+
+* sources
+- /Codd's 8 Operators/ (handout by Mario Guimarra) [[http://science.kennesaw.edu/~mguimara/3310/RA_SQL.htm][(PDF]])
+- /Relational Algebra/, Wikipedia ([[http://en.wikipedia.org/wiki/Relational_algebra][wiki]])
+- /A Relational Model of Data for Large Shared Data Banks/, Communications of the ACM, Vol. 13, No. 6, June 1970, pp. 377-387  ([[ttp://www.seas.upenn.edu/~zives/03f/cis550/codd.pdf][PDF]])
+- /On Making Relational Division Comprehensible/, 2003 presentation by  Lester I McCann ([[http://www.cs.arizona.edu/~mccann/research/divpresentation.pdf][pdf]])
+
+
+- http://www.ideal.forestry.ubc.ca/cons340/lectures/8%20-%20SQL.pdf
+

@@ -18,6 +18,70 @@ This basically involves lifting records up into the data model.
 
 
 
+
+** We want a little command language that we can extend as we go.
+** TODO we'll create a unit
+
+* Requirements
+** doesn't need to be user-facing
+** should be small
+** should leverage the database
+** need to be able to
+*** create, modify, and delete relations
+**** represent types
+**** represent names
+*** create, modify, and delete tuples
+**** represent data
+** general command language
+** don't expect to get it right the first time
+*** we want a simple language.
+- lisp
+- forth
+- tabular
+- graph-based
+** simple forth-like language
+*** ^B and ^C delimit quotes
+
+
+
+
+
+* parsetable
+#+begin_src pascal
+  procedure parsetable;
+    begin
+      createTempBuf;
+      for key in keys do with key do
+        case keytype of
+          ktString : readstring( keysize, result );
+          ktCardinal : readNumber( keysize, result );
+        end;
+    end;
+#+end_src
+
+* later: replace case statement with dynamic lookup
+
+#+begin_src wejal
+: linearlookup
+for h in handlers where h.key ~ msg.type do  !  ~ means 'matches', which could change based on type
+    h.handle( msg );
+#+end_src
+
+* NOTE . how to escape from pascal
+:PROPERTIES:
+:TS:       <2013-05-15 01:09AM>
+:ID:       jsqbem7034g0
+:END:
+- procedure signatures are essentially records
+- records are just arrays that conform to a schema
+- so procedures could just take arrays
+  - to find the nth field, take the nth offset
+  - these can be interpreted on the fly or compiled
+  - for variable length data, use a reference
+  - references also help minimize data transfer
+    - but watch out for paging and the cpu cache
+
+
 * COMMENT todo list
 ** DONE step : reify the type system
 Replace the array of variants an array of bytes.

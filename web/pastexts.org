@@ -1,0 +1,43 @@
+#+title: the text type in object pascal
+
+This is for retroterm.
+
+UserData can store private information.
+
+#+begin_src pascal
+  type
+    TTextIOFunc = function( var f : TTextRec ) : integer;
+    TTextDriver = record
+                   Open     : TTextIOFunc;
+                   EmitText : TTextIOFunc;
+                   ReadText : TTextIOFunc;
+                   Flush    : TTextIOFunc;
+                   Close    : TTextIOFunc;
+                 end;
+    const kBufSize = 1024;
+    var Buffer : array [0..1023] of char;
+  procedure AssignDriver(var F: Text; driver : TTextDriver);
+    begin
+      with TTextRec(F) do
+        begin
+          Name[0] := #0;
+          Mode := fmClosed;
+          BufSize := SizeOf(Buffer);
+          BufPtr := @Buffer;
+          with driver do
+            begin
+              OpenFunc := @DevOpen;
+              InOutFunc := @DevInOut;
+              FlushFunc := @DevFlush;
+              CloseFunc := @DevClose;
+            end;
+        end
+    end;
+#+end_src
+
+
+* see also
+
+- [[http://docwiki.embarcadero.com/RADStudio/XE4/en/Standard_Routines_and_Input-Output][Text file device drivers]] at Embarcadero
+
+http://delphi.longzu.net/viewthread.php?tid=47907&extra=page%3D86
