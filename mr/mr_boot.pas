@@ -1,6 +1,5 @@
-
-program mr_boot;
-uses strutils;
+unit mr_boot;
+interface uses strutils;
 
   const
     kRecSize = 68;
@@ -12,12 +11,26 @@ uses strutils;
     a : array of byte;
 
   type
-    TKeyType = ( ktPadding, ktCardinal, ktString );
-    TKeyDef  = record
-		 keyName : string[31];
-		 keyType : TKeyType;
-		 keySize : cardinal;
-	       end;
+    TKeyType   = ( ktPadding, ktCardinal, ktString );
+    TKeyDef    = record
+		   keyName : string[31];
+		   keyType : TKeyType;
+		   keySize : cardinal;
+		 end;
+    TRelDef    = array of TKeyDef;
+    TBuffer    = array of byte;
+    IRelWriter = record
+		   relDef      : TRelDef;
+		   WriteHeader : procedure( def	: TRelDef );
+		   WriteTuple  : procedure( def	: TRelDef; buf : TBuffer );
+		 end;
+    IRelReader = record
+		   ReadHeader : procedure( def : TRelDef; buf : TBuffer );
+		   ReadTuple  : procedure( def : TRelDef; buf : TBuffer );
+		 end;
+
+implementation
+
   const
     keys : array [0..3] of TKeyDef =
 	   (( keyName: 'id';    keyType : ktCardinal; keySize : 4 ),
