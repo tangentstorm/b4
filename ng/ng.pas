@@ -12,11 +12,12 @@ interface uses xpc, stacks, kvm, kbd, posix, sysutils;
 	       hasarg	: boolean;
 	     end;
     image  = file of int32;
+    TInt32Stack = specialize GStack<Int32>;
 
 { interface > types }
 
     vm = class
-      data, addr : specialize stack< int32 >;
+      data, addr : TInt32Stack;
       ram, ports : array of int32;
       devices	 : array of device;
       ip	 : integer;              { instruction pointer }
@@ -32,6 +33,7 @@ interface uses xpc, stacks, kvm, kbd, posix, sysutils;
       padsize    : int32;
 
       constructor create( imagepath : string; debug : boolean; pad: int32 );
+      destructor destroy;
 
       { single-step instructions }
       procedure step;
@@ -116,8 +118,8 @@ implementation
     self.init_optable;
     assert( length( self.optbl ) >= 31 );
     self.init_porthandlers;
-    self.data.init( 128 );
-    self.addr.init( 128 );
+    self.data := TInt32Stack.Create( 128 );
+    self.addr := TInt32Stack.Create( 128 );
     self.ip := 0;
     self.imgpath := imagepath;
     assign( self.imgfile, imagepath );
@@ -125,6 +127,13 @@ implementation
     self.debugmode := debug;
     self.ports[0] := rxACTIVE;
   end; { vm.init }
+
+  destructor vm.destroy;
+  begin
+    inherited destroy;
+    self.data.free;
+    self.addr.free;
+  end;
 
 
 { load and save the vm }

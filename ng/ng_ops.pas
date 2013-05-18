@@ -63,8 +63,8 @@ unit ng.ops; implementation
     data.push( n mod t ); { yep. mod comes first }
     data.push( n div t );
   end;
-  procedure vm.oINC ; begin inc( data.cells[ data.sp ] ) end;
-  procedure vm.oDEC ; begin dec( data.cells[ data.sp ] ) end;
+  procedure vm.oINC ; begin inc( data.cells[ data.count ] ) end;
+  procedure vm.oDEC ; begin dec( data.cells[ data.count ] ) end;
 
   { -- logic -------------------------------------------------- }
 
@@ -96,8 +96,8 @@ unit ng.ops; implementation
   procedure vm.oRET; begin ip := addr.pop end;
   procedure vm.oLOOP;
   begin
-    dec( data.cells[ data.sp ] );
-    if data.cells[ data.sp ] > 0 then
+    dec( data.cells[ data.count ] );
+    if data.cells[ data.count ] > 0 then
       jump_and_roll( self, ram[ ip + 1 ])
     else begin
       inc( ip );
@@ -108,7 +108,7 @@ unit ng.ops; implementation
   { zex : exit (return) if TOS = 0 ( sort of like ~assert~ ) }
   procedure vm.oZEX;
   begin
-    if data.cells[ data.sp ] = 0 then begin
+    if data.cells[ data.count ] = 0 then begin
       data.pop;
       ip := addr.pop;
     end

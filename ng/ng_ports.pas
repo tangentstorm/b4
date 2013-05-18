@@ -130,8 +130,8 @@ unit ng.ports; implementation
       -2  : { canvas exists? } if kvm.hascanvas then result := 1;
       -3  : { canvas width } result := kvm.canvas.w;
       -4  : { canvas height } result := kvm.canvas.h;
-      -5  : { data stack depth } result := self.data.sp;
-      -6  : { address stack depth } result := self.addr.sp;
+      -5  : { data stack depth } result := self.data.count;
+      -6  : { address stack depth } result := self.addr.count;
       -7  : {  TODO: mouse exists? } result := 0;
       -8  : { current time } result := lo( posix.time );
       -9  : { exit the vm } self.ip := length( self.ram ) + 1;
