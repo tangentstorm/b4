@@ -1,13 +1,12 @@
 [submodule "lib/xpl"]
 	path = lib/xpl
-	url = https://github.com/tangentstorm/xpl.git
+	url = git@github.com:tangentstorm/xpl.git 
 [submodule "lib/retro"]
 	path = lib/retro
-	url = https://code.google.com/p/retro-language/
+	url = git@github.com:tangentstorm/retro.git
 [submodule "lib/linenoise"]
 	path = lib/linenoise
-	url = https://github.com/tangentstorm/linenoise.git
-
+	url = git@github.com:tangentstorm/linenoise.git
 [submodule "lib/aggpas"]
 	path = lib/aggpas
 	url = git@github.com:tangentstorm/aggpasmod.git
