@@ -1,8 +1,8 @@
 #+TITLE: pascal in forth ( excerpts from )
-#+AUTHOR: Allan Winfield
+#+AUTHOR: Alan Winfield
 #+DATE: 1983
 #+INFOJS_OPT: view:info toc:nil
-Pascal in Forth, by Allan Winfield (1983) /(partial transcription)/
+Pascal in Forth, by Alan Winfield (1983) /(partial transcription)/
 
 * Part 1
 ** Pascal in Forth
@@ -197,7 +197,7 @@ needs forth' with forth'            ( forth-like vocabulary     )
   vocabulary to avoid conflict with similar FORTH words. )
 VOCABULARY pascal-words IMMEDIATE pascal-words DEFINITIONS
 
-:C CREATE ; : F FIND ;             ( abbreviations to save )
+: C CREATE ; : F FIND ;             ( abbreviations to save )
 : | , ;     : ---> [COMPILE] --> ;  ( typing and conflicts )
 
 ( Define as empty definitions so that FIND will work. )

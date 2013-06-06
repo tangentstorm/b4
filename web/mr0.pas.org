@@ -1,4 +1,5 @@
 #+title: minrel, part 0
+#+COLUMNS: %25TS(ts) %TODO %ITEM  %3ID %TAGS
 
 * Introduction
 

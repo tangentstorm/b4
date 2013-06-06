@@ -1,0 +1,150 @@
+#+title: pl0rx : a pl/0 → retro compiler , part 1
+
+PL/0 is a simplified, imperative programming language designed by Niklaus Wirth to teach compilation.
+
+It has only one data structure (the integer), and three control structures (=if= / =then=, =while=, and the procedure call). Procedure declarations may be nested and may call each other recursively but do not take parameters.
+
+This tiny feature set makes programming in PL/0 cumbersome, but is sufficient to illustrate the core ideas involved in writing a compiler.
+
+Here is a contrived example of PL/0 code, which prints the first 10 cube numbers:
+
+* PL/0 example code
+#+begin_src pascal :tangle "cubes.pl0" :noweb tangle
+  var
+    i,                   { loop counter }
+    result;              { result of cube operation }
+  
+  procedure cube;
+    result := i * i * i;
+  
+  { main program }
+  begin
+    i := 1;
+    while i < 10 do
+      begin
+        call cube;
+        ! result;        { "!" means "print" }
+        i := i + 1
+      end
+  end.
+#+end_src
+
+Here is a definition of the PL/0 syntax, specified in the ANTLR4 language:
+
+* Antlr 4 Grammar for PL/0
+#+begin_src antlr :tangle "PL0.g4" :noweb tangle
+  grammar PL0;
+  
+  program
+    : block '.'
+    ;
+  
+  block
+    : consts? vars? procedure* statement
+    ;
+
+  consts
+    : 'const' Ident '=' Number (',' Ident '=' Number)* ';'
+    ;
+  
+  vars
+    : 'var' Ident (',' Ident)* ';'
+    ;
+  
+  procedure
+    : 'procedure' Ident ';' block ';'
+    ;
+
+  statement
+    : Ident ':=' expression
+    | 'call' Ident
+    | '!' Ident
+    | 'begin' statement (';' statement)* 'end'
+    | 'if' condition 'then' statement
+    | 'while' condition 'do' statement
+    ;
+  
+  condition
+    : 'odd' expression
+    | expression ('='|'#'|'<'|'<='|'>'|'>=') expression
+    ;
+  
+  expression
+    : ('+'|'-')? term (('+'|'-') term)*
+    ;
+  
+  term
+    : factor (('*'|'/') factor)*
+    ;
+  
+  factor
+    : Ident
+    | Number
+    | '(' expression ')'
+    ;
+  
+  
+  WS     : [ \t\n]+ -> skip ; // skip spaces, tabs, newlines
+  Comment : '{' .*? '}' -> skip;
+
+  Ident  : ALPHA (ALPHA | DIGIT)* ;
+  Number : DIGIT+;
+
+  ALPHA : 'a'..'z' | 'A'..'Z' ;
+  DIGIT : '0'..'9' ;
+
+#+end_src
+
+We can set up antlr to run in bash with the following lines (substituting the appropriate path to the antlr jar file of course):
+
+: export CLASSPATH=".:/path/to/antlr-4.0-complete.jar:$CLASSPATH"
+: alias antlr4='java -jar /path/to/antlr-4.0-complete.jar'
+: alias grun='java org.antlr.v4.runtime.misc.TestRig'
+
+If we then compile the grammar:
+
+: antlr4 PL0.g4 ; javac *.java
+
+... And run the test rig against the example code, using the =-tree= option:
+
+: grun PL0 program -tree cubes.pl0
+
+... Then we should see a dump of the parse tree:
+
+#+begin_src 
+(program (block (vars var i , result ;) (procedure procedure cube ;
+(block (statement result := (expression (term (factor i) * (factor i) *
+(factor i))))) ;) (statement begin (statement i := (expression (term
+(factor 1)))) ; (statement while (condition (expression (term (factor i)))
+< (expression (term (factor 10)))) do (statement begin (statement call
+cube) ; (statement ! result) ; (statement i := (expression (term (factor
+i)) + (term (factor 1)))) end)) end)) .)
+#+end_src
+
+Here's the same tree, reformatted a bit for clarity:
+
+#+begin_src text
+(program
+  (block
+    (vars var i , result ;)
+    (procedure procedure cube ;
+       (block (statement
+          result := (expression
+            (term (factor i) *
+                  (factor i) *
+                  (factor i))))) ;)
+(statement begin
+  (statement i := (expression (term (factor 1)))) ;
+  (statement while
+     (condition (expression (term (factor i))) <
+                (expression (term (factor 10)))) do 
+     (statement begin
+       (statement call cube) ;
+       (statement ! result) ;
+       (statement i := (expression 
+          (term (factor i)) +
+          (term (factor 1))))
+     end))
+end)) .)
+#+end_src
+

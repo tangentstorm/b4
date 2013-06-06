@@ -1,0 +1,143 @@
+#+title: pl0rx : a pl/0 → retro compiler , part 2
+(draft)
+
+* lexical analysis
+** tokens
+We'll use the =enum= library to generate a set of constants to identify our tokens. Purely as a convention, we'll use the backtick character as a prefix for token names:
+#+begin_src retro
+  needs enum' with enum'
+  ( tokens )
+  enum| `. `const `= `, `; `var `procedure `:=
+        `call `! `begin `end `if `then `while `do
+        `odd `# `< `<= `> `>= `+ `- `* `/ `( `) `{ `}
+        `<name> `<number> |
+#+end_src
+
+** lexer
+We will fetch one token at a time, by way of fetching one character at a time. This works for PL/0 because the grammar is designed so that everything is tagged on the left. You only have to look ahead one token to know what should come next.
+
+#+begin_src retro
+  variables| ch tok |
+
+  : next-ch getc dup ch !
+  ; "( -c) read the next character from input and populate ch" :doc
+
+#+end_src
+
+** helper routine: =in-range?=
+#+begin_src retro
+  : in-range? push over push >= pop pop <= and ;
+  ; "( nxy-f ) is n in range x..y inclusive?" :doc
+
+  : letter? 'a 'z in-range? 'A 'Z in-range? or
+  ; "( c-f ) is character c a letter?" :doc
+
+  : digit? '0 '9 in-range?
+  ; "( c-f ) is character c a digit?" :doc
+#+end_src
+
+** now the tokenizer
+*** words to skip over whitespace and comments
+#+begin_src retro
+  : skip-whitespace [ ch 32 > dup [ next-ch ] ifFalse ] until
+  ; "( - ) discard whitespace" :doc
+  
+  : skip-comment [ next-ch '} = ] until
+  ; "( - ) called when { is matched. discards the comment." :doc
+#+end_src
+
+*** keyword dictionary
+
+Borrowing a trick from Alan Winfield, we'll let retro's dictionary do the work.
+
+#+begin_src retro
+  : C: constant ;
+  chain: keywords
+    C:  const      `const           C:  var    `var
+    C:  procedure  `procedure       C:  call   `call
+    C:  begin      `begin           C:  end    `end
+    C:  if         `if              C:  then   `then
+    C:  while      `while           C:  do     `do
+    C:  odd        `odd
+  ;chain
+#+end_src
+
+*** fixed-width string reader
+This collects our read characters in a string so we can look them up.
+
+#+begin_src retro
+  C: bufsize 32   variable left
+  create buffer bufsize allot ( and write a 0 to mark the end of the string: ) 0 ,
+  
+  : buf[ bufsize negate left !
+  ; "reset the buffer" :doc
+  
+  : buf+ ( c- ) left 0; ++ buf left + bufsize + !
+  ; "write up to <bufsize> chars to the buffer" :doc
+  
+  : buf] ( -$ ) 0 buf+ buf
+  ; "( -$ )cap the buffer and put its address on the stack" :doc
+  
+  ( these two are called after checking the first character of the token )
+  ; read-number buf[ [ ch dup buf+ next-char digit? ] while buf] `nos
+  ; "( -nn ) Reads a number. TOS=`<number> NOS=value." :doc
+  
+  ; read-word buf[ [ ch dup buf+ next-char letter? ch digit? or ] while buf]
+  ; "( -?n ) Reads a word. TOS=token id. For identifiers, NOS=name." :doc
+    
+  : err "error: '" puts ch putc "' is not allowed here." puts ;
+  
+  : next-tok
+    [ skip-whitespace
+
+      ( these characters /are/ tokens, and we can use a jump table: )
+      ch 33 47 in-range? [ -33 +
+         [ `! `" `# err err err err `( `) `* `+ `, `- `. `/ ] @ ] ifTrue
+
+      ( these immediately trigger a parse rule )
+      [ '{ = ]    [ skip-comment ] whend
+      [ digit? ]  [ read-number ]  whend
+      [ letter? ] [ read-word ]    whend
+  
+      ( these require reading a second char first )
+      ( !! TODO: refactor this )
+      [ '< = ] [ next-ch '= = [ `<= ( TODO: consume ) ] [ `< ] if ] whend
+      [ '> = ] [ next-ch '= = [ `>= ( TODO: consume ) ] [ `> ] if ] whend
+      [ ': = ] [ next-ch '= ( TODO: expect ) = [ `:= ] [ err ] if ] whend
+
+    ] do
+  ; "( -t ) return the next token"
+#+end_src
+
+
+
+** Notes
+My original take on the singe-character tokens:
+
+#+begin_src retro
+  [ '. = ] [ `. ] whend [ ', = ] [ `, ] whend
+  [ '; = ] [ `; ] whend [ '# = ] [ `# ] whend
+  [ '+ = ] [ `+ ] whend [ '- = ] [ `- ] whend
+  [ '* = ] [ `* ] whend [ '/ = ] [ `/ ] whend
+  [ '( = ] [ `( ] whend [ ') = ] [ `) ] whend
+  [ '! = ] [ `! ] whend
+#+end_src
+
+But KipIngram on #forth pointed out that I could use a jump table.
+
+Looking at the ASCII character set, the characters I needed to match
+were almost all in the range #32 - #47:
+
+: #32 - #47
+:   ! " # $ % & ' ( ) * + , - . /
+
+: #48 - #63
+: 0 1 2 3 4 5 6 7 8 9 : ; < = > ?
+
+: #64 - #95
+: @ A B C D E F G H I J K L M N O
+: P Q R S T U V W X Y Z [ \ ] ^ _
+
+: #96 - #127 (DELETE)
+: ` a b c d e f g h i j k l m n o
+: p q r s t u v w x y z { | } ~
