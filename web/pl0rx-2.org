@@ -10,10 +10,10 @@ We'll use the =enum= library to generate a set of constants to identify our toke
   enum| `. `const `= `, `; `var `procedure `:=
         `call `! `begin `end `if `then `while `do
         `odd `# `< `<= `> `>= `+ `- `* `/ `( `) `{ `}
-        `<name> `<number> |
+        `<ident> `<number> |
 #+end_src
 
-** lexer
+** variables
 We will fetch one token at a time, by way of fetching one character at a time. This works for PL/0 because the grammar is designed so that everything is tagged on the left. You only have to look ahead one token to know what should come next.
 
 #+begin_src retro
@@ -36,23 +36,47 @@ We will fetch one token at a time, by way of fetching one character at a time. T
   ; "( c-f ) is character c a digit?" :doc
 #+end_src
 
-** now the tokenizer
-*** words to skip over whitespace and comments
+** words to skip over whitespace and comments
 #+begin_src retro
   : skip-whitespace [ ch 32 > dup [ next-ch ] ifFalse ] until
   ; "( - ) discard whitespace" :doc
-  
+
   : skip-comment [ next-ch '} = ] until
   ; "( - ) called when { is matched. discards the comment." :doc
+
+  ; read-number buf[ [ ch dup buf+ next-char digit? ] while ]buf `<number>
+  ; "( -nn ) Reads a number. TOS=`<number> NOS=value." :doc
+
+  : err "error: '" puts ch putc "' is not allowed here." puts ;
+
 #+end_src
 
-*** keyword dictionary
+** fixed-width string reader for holding identifiers/kewords
+This collects our read characters in a string so we can look them up.
+
+#+begin_src retro
+  C: bufsize 32   variable left
+  create buffer bufsize allot ( and write a 0 to mark the end of the string: ) 0 ,
+
+  : buf[ bufsize negate left !
+  ; "reset the buffer" :doc
+
+  : buf+ ( c- ) left 0; ++ buf left + bufsize + !
+  ; "write up to <bufsize> chars to the buffer" :doc
+
+  : ]buf ( -$ ) 0 buf+ buf
+  ; "( -$ )cap the buffer and put its address on the stack" :doc
+#+end_src
+
+** keyword dictionary
+
+When we match a word we want to check whether it's a keyword or not.
 
 Borrowing a trick from Alan Winfield, we'll let retro's dictionary do the work.
 
 #+begin_src retro
   : C: constant ;
-  chain: keywords
+  chain: pl0-kw'
     C:  const      `const           C:  var    `var
     C:  procedure  `procedure       C:  call   `call
     C:  begin      `begin           C:  end    `end
@@ -62,31 +86,27 @@ Borrowing a trick from Alan Winfield, we'll let retro's dictionary do the work.
   ;chain
 #+end_src
 
-*** fixed-width string reader
-This collects our read characters in a string so we can look them up.
-
+** word reader
 #+begin_src retro
-  C: bufsize 32   variable left
-  create buffer bufsize allot ( and write a 0 to mark the end of the string: ) 0 ,
-  
-  : buf[ bufsize negate left !
-  ; "reset the buffer" :doc
-  
-  : buf+ ( c- ) left 0; ++ buf left + bufsize + !
-  ; "write up to <bufsize> chars to the buffer" :doc
-  
-  : buf] ( -$ ) 0 buf+ buf
-  ; "( -$ )cap the buffer and put its address on the stack" :doc
-  
-  ( these two are called after checking the first character of the token )
-  ; read-number buf[ [ ch dup buf+ next-char digit? ] while buf] `nos
-  ; "( -nn ) Reads a number. TOS=`<number> NOS=value." :doc
-  
-  ; read-word buf[ [ ch dup buf+ next-char letter? ch digit? or ] while buf]
+  ( this is called when the first character is a letter )
+  ; read-word
+
+    ( first, load the string into the buffer: )
+    buf[ [ ch dup buf+ next-char letter? ch digit? or ] while ]buf
+
+    ( try to look it up in the keyword dictionary )
+    dup ' pl0-kw' findInChain
+       ( If found as keyword, get the token value from the xt field )
+       ( and discard the string. otherwise, keep the string, since )
+       ( it's an identifier )
+       [ d->xt swap drop ] [ `<ident> ] if
+
   ; "( -?n ) Reads a word. TOS=token id. For identifiers, NOS=name." :doc
-    
-  : err "error: '" puts ch putc "' is not allowed here." puts ;
-  
+#+end_src
+
+
+** main tokenizer code
+#+begin_src retro
   : next-tok
     [ skip-whitespace
 
@@ -98,7 +118,7 @@ This collects our read characters in a string so we can look them up.
       [ '{ = ]    [ skip-comment ] whend
       [ digit? ]  [ read-number ]  whend
       [ letter? ] [ read-word ]    whend
-  
+
       ( these require reading a second char first )
       ( !! TODO: refactor this )
       [ '< = ] [ next-ch '= = [ `<= ( TODO: consume ) ] [ `< ] if ] whend
@@ -109,11 +129,8 @@ This collects our read characters in a string so we can look them up.
   ; "( -t ) return the next token"
 #+end_src
 
-
-
 ** Notes
 My original take on the singe-character tokens:
-
 #+begin_src retro
   [ '. = ] [ `. ] whend [ ', = ] [ `, ] whend
   [ '; = ] [ `; ] whend [ '# = ] [ `# ] whend
