@@ -104,7 +104,6 @@ Borrowing a trick from Alan Winfield, we'll let retro's dictionary do the work.
   ; "( -?n ) Reads a word. TOS=token id. For identifiers, NOS=name." :doc
 #+end_src
 
-
 ** main tokenizer code
 #+begin_src retro
   : next-tok
@@ -130,7 +129,7 @@ Borrowing a trick from Alan Winfield, we'll let retro's dictionary do the work.
 #+end_src
 
 ** Notes
-My original take on the singe-character tokens:
+My original take on the single-character tokens:
 #+begin_src retro
   [ '. = ] [ `. ] whend [ ', = ] [ `, ] whend
   [ '; = ] [ `; ] whend [ '# = ] [ `# ] whend
