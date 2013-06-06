@@ -3,7 +3,9 @@
 
 * lexical analysis
 ** tokens
+
 We'll use the =enum= library to generate a set of constants to identify our tokens. Purely as a convention, we'll use the backtick character as a prefix for token names:
+
 #+begin_src retro
   needs enum' with enum'
   ( tokens )
@@ -14,6 +16,7 @@ We'll use the =enum= library to generate a set of constants to identify our toke
 #+end_src
 
 ** variables
+
 We will fetch one token at a time, by way of fetching one character at a time. This works for PL/0 because the grammar is designed so that everything is tagged on the left. You only have to look ahead one token to know what should come next.
 
 #+begin_src retro
@@ -24,15 +27,22 @@ We will fetch one token at a time, by way of fetching one character at a time. T
 
 #+end_src
 
-** helper routine: =in-range?=
+** helper routine: =within=
+
+I made this:
+
 #+begin_src retro
   : in-range? push over push >= pop pop <= and ;
   ; "( nxy-f ) is n in range x..y inclusive?" :doc
+#+end_src
 
-  : letter? 'a 'z in-range? 'A 'Z in-range? or
+But CRC, author of retro pointed out this already exists as =within=. So:
+
+#+begin_src retro
+  : letter? 'a 'z within 'A 'Z within or
   ; "( c-f ) is character c a letter?" :doc
 
-  : digit? '0 '9 in-range?
+  : digit? '0 '9 within
   ; "( c-f ) is character c a digit?" :doc
 #+end_src
 
@@ -48,7 +58,6 @@ We will fetch one token at a time, by way of fetching one character at a time. T
   ; "( -nn ) Reads a number. TOS=`<number> NOS=value." :doc
 
   : err "error: '" puts ch putc "' is not allowed here." puts ;
-
 #+end_src
 
 ** fixed-width string reader for holding identifiers/kewords
@@ -88,6 +97,7 @@ Borrowing a trick from Alan Winfield, we'll let retro's dictionary do the work.
 
 ** word reader
 #+begin_src retro
+
   ( this is called when the first character is a letter )
   ; read-word
 
@@ -102,10 +112,12 @@ Borrowing a trick from Alan Winfield, we'll let retro's dictionary do the work.
        [ d->xt swap drop ] [ `<ident> ] if
 
   ; "( -?n ) Reads a word. TOS=token id. For identifiers, NOS=name." :doc
+
 #+end_src
 
 ** main tokenizer code
 #+begin_src retro
+
   : next-tok
     [ skip-whitespace
 
@@ -126,6 +138,7 @@ Borrowing a trick from Alan Winfield, we'll let retro's dictionary do the work.
 
     ] do
   ; "( -t ) return the next token"
+
 #+end_src
 
 ** Notes
