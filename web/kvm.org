@@ -224,13 +224,21 @@ This is a contrcete implementation of ITerm.
   type TAnsiTerm = class (TInterfacedObject, ITerm)
     public
       <<ITerm-Members>>
+    private
+      attr : word;
     public
+      constructor Create;
       procedure ResetColor;
     end;
 #+end_src
 
 #+name: @kvm:impl
 #+begin_src pascal
+
+  constructor TAnsiTerm.Create;
+    begin
+      attr := $0007
+    end;
 
   { TODO: find a way to get this data without the baggage incurred by
     crt or video modules (breaking keyboard input or clearing the screen  }
@@ -243,23 +251,25 @@ This is a contrcete implementation of ITerm.
   function  TAnsiTerm.WhereY : word; begin result := 0    end;
   function  TAnsiTerm.GetTextAttr : word;
     begin
-      result := $0007;
+      result := attr;
     end;
 
   procedure TAnsiTerm.SetTextAttr( value : word );
     begin
-      Fg(hi(value));
-      Bg(lo(value));
+      Fg(lo(value));
+      Bg(hi(value));
     end;
 
   procedure TAnsiTerm.Fg( color : byte );
     begin
+      attr := hi(attr) shl 8 + color;
       { xterm 256-color extensions }
       write( #27, '[38;5;', color , 'm' )
     end;
 
   procedure TAnsiTerm.Bg( color : byte );
     begin
+      attr := color shl 8 + lo(attr);
       { xterm 256-color extensions }
       write( #27, '[48;5;', color , 'm' )
     end;
@@ -467,12 +477,12 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 #+begin_src pascal
   var work : ITerm;
 
-  function  Width       : word; begin result := work.Width end;
-  function  Height      : word; begin result := work.Height end;
-  function  MaxX        : word; begin result := work.MaxX end;
-  function  MaxY        : word; begin result := work.MaxY end;
-  function  WhereX      : word; begin result := work.WhereX end;
-  function  WhereY      : word; begin result := work.WhereY end;
+  function  Width  : word; begin result := work.Width end;
+  function  Height : word; begin result := work.Height end;
+  function  MaxX   : word; begin result := work.MaxX end;
+  function  MaxY   : word; begin result := work.MaxY end;
+  function  WhereX : word; begin result := work.WhereX end;
+  function  WhereY : word; begin result := work.WhereY end;
 
   procedure ClrScr; begin work.ClrScr end;
   procedure ClrEol; begin work.ClrEol end;
@@ -483,11 +493,13 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
   procedure Emit( wc : widechar ); begin work.Emit( wc ) end;
   procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
 
-  procedure InsLine; begin work.InsLine; end;
-  procedure DelLine; begin work.DelLine; end;
+  procedure InsLine; begin work.InsLine end;
+  procedure DelLine; begin work.DelLine end;
 
-  procedure SetTextAttr( value : word ); begin TextAttr := value end;
-  function  GetTextAttr : word; begin result := work.TextAttr end;
+  procedure SetTextAttr( value : word );
+    begin work.TextAttr := value end;
+  function  GetTextAttr : word;
+    begin result := work.TextAttr end;
 #+end_src
 
 ** Screens
