@@ -141,7 +141,6 @@ This is a contrcete implementation of ITerm.
     public
       constructor Create( w, h : word );
       destructor Destroy; override;
-      procedure Write( s : string );
       function  Cursor : TPoint;
     end;
 #+end_src
@@ -217,11 +216,6 @@ This is a contrcete implementation of ITerm.
       result := curs
     end;
   
-  procedure TScreenTerm.Write( s : string );
-    begin
-      Write( s )
-    end;
-  
 #+end_src
 
 * =TAnsiTerm=
@@ -231,17 +225,12 @@ This is a contrcete implementation of ITerm.
     public
       <<ITerm-Members>>
     public
-      constructor Create( w, h : word );
       procedure ResetColor;
     end;
 #+end_src
 
 #+name: @kvm:impl
 #+begin_src pascal
-  
-  constructor TAnsiTerm.Create;
-    begin
-    end;
   
   { TODO: find a way to get this data without the baggage incurred by
     crt or video modules (breaking keyboard input or clearing the screen  }
@@ -266,13 +255,13 @@ This is a contrcete implementation of ITerm.
   procedure TAnsiTerm.Fg( color : byte );
     begin
       { xterm 256-color extensions }
-      write( #27, '[38;5;', i , 'm' )
+      write( #27, '[38;5;', color , 'm' )
     end;
   
   procedure TAnsiTerm.Bg( color : byte );
     begin
       { xterm 256-color extensions }
-      write( #27, '[48;5;', i , 'm' )
+      write( #27, '[48;5;', color , 'm' )
     end;
   
   procedure TAnsiTerm.ClrScr;
@@ -303,17 +292,7 @@ This is a contrcete implementation of ITerm.
   procedure TAnsiTerm.DelLine;
     begin
     end;
-  
-  function TAnsiTerm.Cursor : TPoint;
-    begin
-      result := curs
-    end;
-  
-  procedure TAnsiTerm.Write( s : string );
-    begin
-      Write( s )
-    end;
-  
+
   procedure TAnsiTerm.ResetColor;
     begin
       write( #27, '[0m' )
