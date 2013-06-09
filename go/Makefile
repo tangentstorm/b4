@@ -4,7 +4,7 @@ FPC = fpc -gl -Fu~/x/code -Fi~/x/code -Mobjfpc
 main: b4
 	./b4
 
-bed: bed.pas sd.pas clean
+bed: bed.pas clean
 	$(FPC) -B bed.pas
 
 test_bed: bed test_sd.pas

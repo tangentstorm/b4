@@ -9,7 +9,7 @@
 }
 {$i xpc.inc }
 program bed;
-uses xpc, vt, sd, log, kbd, ascii {$ifdef gpc}, gpcutil{$endif};
+uses xpc, kvm, sd, log, kbd, ascii {$ifdef gpc}, gpcutil{$endif};
 
 const
   kw = 64;
@@ -21,7 +21,22 @@ var
   gBuf	     : sd.tBlock;
   gx, gy     : byte;
   gDone	     : boolean;
-  brightflag : byte = 0;
+  brightFlag : boolean = false;
+  color	     : char;
+
+  const infoColumn = 67;
+ 
+procedure fg( ch : char );
+  begin
+    color := ch; kvm.fg( ch );
+  end;
+
+procedure ToggleBright;
+  begin
+    if brightFlag then Fg( LowerCase( color ))
+    else Fg( UpCase( color ));
+    brightFlag := not brightFlag;
+  end;
 
 procedure handle_key;
 var
@@ -31,45 +46,48 @@ begin
 
   case key of
 
-    #0 :
+    #0 : 
       begin
         key := kbd.readkey;
         case key of
-	  kbd.LEFT  : dec( gx );
-	  kbd.UP    : dec( gy );
-	  kbd.DOWN  : inc( gy );
-	  kbd.RIGHT : inc( gx );
+	  ^C : gDone := true;
+	  ^B, kbd.LEFT  : dec( gx );
+	  ^P, kbd.UP    : dec( gy );
+	  ^N, kbd.DOWN  : inc( gy );
+	  ^F, kbd.RIGHT : inc( gx );
 
-          { colors : $08 indicates bright }
-	  kbd.F1 : vt.fg( ord(vt.red) + brightflag );
-	  kbd.F2 : vt.fg( ord(vt.grn) + brightflag );
-	  kbd.F3 : vt.fg( ord(vt.yel) + brightflag );
-	  kbd.F4 : vt.fg( ord(vt.blu) + brightflag );
-	  kbd.F5 : vt.fg( ord(vt.mgn) + brightflag );
-	  kbd.F6 : vt.fg( ord(vt.cyn) + brightflag );
-	  kbd.F7 : vt.fg( ord(vt.wht) + brightflag );
-	  kbd.F8 : vt.fg( ord(vt.blk) + brightflag );
+          { colors }
+	  kbd.F1 : Fg( 'r' );
+	  kbd.F2 : Fg( 'g' );
+	  kbd.F3 : Fg( 'y' );
+	  kbd.F4 : Fg( 'b' );
+	  kbd.F5 : Fg( 'm' );
+	  kbd.F6 : Fg( 'c' );
+	  kbd.F7 : Fg( 'w' );
+	  kbd.F8 : Fg( 'k' );
+	  
           { f9 toggles the brightness bit. }
-	  kbd.F9 : begin
-		     brightflag := brightflag xor 8;
-		     vt.fg( vt.textattr xor 8 );
-		   end
-        end;
+	  kbd.F9 : ToggleBright;
+	end;
         { black text is dark gray, OR black on gray, depending on bit 8 }
-	if lo(vt.textattr) = ord( vt.blk )
-	  then vt.bg( ord( vt.blk ) + 8 )
-          else vt.bg( ord( vt.blk ))
+	if color = 'k' then kvm.bg( 'K' ) else kvm.bg( 'k' );
       end;
 
+    ^A : gx := 0;
+    ^C,
     ascii.ESC  : gdone := true;
+    ^E : gx := 63;
+    ^B : dec( gx );
+    ^P : dec( gy );
+    ^N : inc( gy );
+    ^F : inc( gx );
     ascii.CR   : begin
-                   gx := 0;
-                   inc( gy );
+                   gx := 0; inc( gy );
                  end;
     ascii.BS   : if gx > 0 then
 		   begin
 		     dec( gx );
-		     vt.gotoxy( gx, gy );
+		     kvm.gotoxy( gx, gy );
 		     write(' ');
 		     gBuf[ gy * 64 + gx] := 32;
 		   end;
@@ -82,13 +100,14 @@ begin
   end;
 
   { debug display of keypress / color: }
-  vt.gotoxy( 67, 0 );
+  kvm.gotoxy( infoColumn, 0 );
   write( '[    ]');
-  vt.gotoxy( 68, 0 );
+  kvm.gotoxy( infoColumn + 1, 0 );
   write( ord( key ));
 
-  gx := min( kw, max( gx, 0 ));
-  gy := min( kh, max( gy, 1 )); { 2 because of title bar }
+  { bounds checking }
+  gx := min( kw-1, max( gx, 0 ));
+  gy := min( kh-1, max( gy, 1 ));
 end;
 
 
@@ -99,11 +118,11 @@ begin
   begin
     b := gBuf[ ( lineno * kw ) + i ];
     if b < 32 then begin
-      vt.fg( symcolor );
+      kvm.fg( symcolor );
       write( ' ' );
     end
     else begin
-      vt.fg( txtcolor );
+      kvm.fg( txtcolor );
       write( chr( b ) );
     end;
   end;
@@ -126,19 +145,20 @@ procedure init_view;
 var y : byte;
 begin
 
-  vt.fg( $17 );
-  vt.clrscr;
+  kvm.bg( 0 );
+  fg( 'w' );
+  kvm.clrscr;
 
   for y := 0 to 15 do
     begin
-      vt.gotoxy( 0, y );
+      kvm.gotoxy( 0, y );
       if y = 0 then write_line( y, $70, $60 )
       else write_line( y, $07, $40 );
-      vt.fg( $13 );
+      kvm.fg( $13 );
       write( '|' );
-      vt.clreol;
+      kvm.clreol;
     end;
-  vt.fg( $07 );
+  kvm.fg( $07 );
   gx := 0; gy := 1;
 end;
 
@@ -148,7 +168,7 @@ begin
   load_data;
   init_view;
   repeat
-     vt.gotoxy( gx, gy );
+     kvm.gotoxy( gx, gy );
      if kbd.keypressed then handle_key;
   until gdone;
   save_data;
