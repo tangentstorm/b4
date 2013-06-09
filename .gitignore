@@ -13,3 +13,7 @@ pre/pre_gen.pas
 ./retro
 
 run-tests.pas
+fp___.*
+fp.*
+.directory
+*.bak
