@@ -78,13 +78,13 @@ A terminal's display buffer is essentially a grid of such cells. I'm using my [[
 
 #+name: @kvm:impl
 #+begin_src pascal
-  
+
   function TScreenGrid.GetAttr( const x, y : word ) : TTextAttr;
     begin
       result.fg := self[ x, y ].attr.fg;
       result.bg := self[ x, y ].attr.bg;
     end;
-  
+
   procedure TScreenGrid.SetAttr( const x, y  : word;
                                const value : TTextAttr );
     begin
@@ -94,12 +94,12 @@ A terminal's display buffer is essentially a grid of such cells. I'm using my [[
           fg := value.fg;
         end
     end;
-  
+
   function TScreenGrid.GetChar( const x, y : word ) : WideChar;
     begin
       result := self[ x, y ].ch;
     end;
-  
+
   procedure TScreenGrid.SetChar( const x, y  : word;
                                const value : WideChar );
     begin
@@ -149,73 +149,73 @@ This is a contrcete implementation of ITerm.
 
 #+name: @kvm:impl
 #+begin_src pascal
-  
+
   constructor TScreenTerm.Create( w, h : word );
     begin
     end;
-    
+
   destructor TScreenTerm.Destroy;
     begin
     end;
-    
+
   function  TScreenTerm.Width  : word; begin result := grid.w      end;
   function  TScreenTerm.Height : word; begin result := grid.h      end;
   function  TScreenTerm.MaxX   : word; begin result := width - 1   end;
   function  TScreenTerm.MaxY   : word; begin result := height - 1  end;
   function  TScreenTerm.WhereX : word; begin result := cursor.x    end;
   function  TScreenTerm.WhereY : word; begin result := cursor.y    end;
-    
-  function  TScreenTerm.GetTextAttr : word; 
-    begin 
+
+  function  TScreenTerm.GetTextAttr : word;
+    begin
       result := word(attr)
     end;
-    
+
   procedure TScreenTerm.SetTextAttr( value : word );
     begin
       attr := TTextAttr(value)
     end;
-  
+
   procedure TScreenTerm.Fg( color : byte );
     begin
       attr.fg := color
     end;
-  
+
   procedure TScreenTerm.Bg( color : byte );
     begin
       attr.bg := color
     end;
-  
+
   procedure TScreenTerm.ClrScr;
     begin
     end;
-    
+
   procedure TScreenTerm.ClrEol;
     begin
     end;
-  
+
   procedure TScreenTerm.GotoXY( x, y : word );
     begin
       cursor.x := x;
       cursor.y := y;
     end;
-  
+
   procedure TScreenTerm.Emit( wc : widechar );
     begin
     end;
-    
+
   procedure TScreenTerm.InsLine;
     begin
     end;
-  
+
   procedure TScreenTerm.DelLine;
     begin
     end;
-  
+
   function TScreenTerm.Cursor : TPoint;
     begin
       result := curs
     end;
-  
+
 #+end_src
 
 * =TAnsiTerm=
@@ -231,64 +231,64 @@ This is a contrcete implementation of ITerm.
 
 #+name: @kvm:impl
 #+begin_src pascal
-  
+
   { TODO: find a way to get this data without the baggage incurred by
     crt or video modules (breaking keyboard input or clearing the screen  }
-  
+
   function  TAnsiTerm.Width  : word; begin result := 80   end;
   function  TAnsiTerm.Height : word; begin result := 25   end;
   function  TAnsiTerm.MaxX   : word; begin result := width  - 1  end;
   function  TAnsiTerm.MaxY   : word; begin result := height - 1  end;
   function  TAnsiTerm.WhereX : word; begin result := 0    end;
   function  TAnsiTerm.WhereY : word; begin result := 0    end;
-  function  TAnsiTerm.GetTextAttr : word; 
-    begin 
+  function  TAnsiTerm.GetTextAttr : word;
+    begin
       result := $0007;
     end;
-  
+
   procedure TAnsiTerm.SetTextAttr( value : word );
     begin
       Fg(hi(value));
       Bg(lo(value));
     end;
-  
+
   procedure TAnsiTerm.Fg( color : byte );
     begin
       { xterm 256-color extensions }
       write( #27, '[38;5;', color , 'm' )
     end;
-  
+
   procedure TAnsiTerm.Bg( color : byte );
     begin
       { xterm 256-color extensions }
       write( #27, '[48;5;', color , 'm' )
     end;
-  
+
   procedure TAnsiTerm.ClrScr;
     begin
       write( #27, '[H', #27, '[J' )
     end;
-    
+
   procedure TAnsiTerm.ClrEol;
     begin
       write( #27, '[K' )
     end;
-  
+
   procedure TAnsiTerm.GotoXY( x, y : word );
     begin
       write( #27, '[', y + 1, ';', x + 1, 'H' )
     end;
-  
+
   procedure TAnsiTerm.Emit( wc : widechar );
     begin
       write( wc )
     end;
-  
+
   { TODO }
   procedure TAnsiTerm.InsLine;
     begin
     end;
-  
+
   procedure TAnsiTerm.DelLine;
     begin
     end;
@@ -297,7 +297,7 @@ This is a contrcete implementation of ITerm.
     begin
       write( #27, '[0m' )
     end;
-  
+
 #+end_src
 
 * char mnemonics for ansi colors.
@@ -326,19 +326,34 @@ This is a contrcete implementation of ITerm.
     end;
 
 #+end_src
+* Unit Life cycle.
+#+name: lifecycle
+#+begin_src pascal
+initialization
+  work := TAnsiTerm.Create;
+finalization
+  { work is destroyed automatically by reference count }
+#+end_src
+
+
 * Legacy interface : CRT
 
 CRT was the original console library for turbo pascal. It uses 1-based cordinates, and is limited to 16 colors.
 
 ** interface
 #+begin_src pascal :tangle "~/x/code/crt.pas" :noweb tangle
-  {--- generated from kvm.org  ---}
+
+
+
+  { --- warning!! generated file. edit ~/b/web/kvm.org instead!! --- }
+
+
 
   unit crt;
   interface uses kvm;
-  
+
   <<helpers>>
-  
+
   { window / cursor managament }
   procedure GotoXY( x, y : word );
   function  WhereX : byte;
@@ -348,7 +363,7 @@ CRT was the original console library for turbo pascal. It uses 1-based cordinate
   procedure ClrScr;
   procedure DelLine; { delete line at cursor }
   procedure InsLine; { insert line at cursor }
-  
+
   { color }
   procedure TextColor( c : byte );
   procedure TextBackground( c : byte );
@@ -358,7 +373,7 @@ CRT was the original console library for turbo pascal. It uses 1-based cordinate
   property TextAttr : byte
     read  crt_get_textattr
     write crt_set_textattr;
-  
+
   { interaction }
   function  KeyPressed : boolean;
   function  ReadKey : char;
@@ -367,7 +382,7 @@ CRT was the original console library for turbo pascal. It uses 1-based cordinate
   procedure NoSound;
   { TODO:
   property CheckBreak : boolean }
-  
+
   implementation
     <<@crt:impl>>
   end.
@@ -451,20 +466,20 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 #+name: @kvm:impl
 #+begin_src pascal
   var work : ITerm;
-  
+
   function  Width       : word; begin result := work.Width end;
   function  Height      : word; begin result := work.Height end;
   function  MaxX        : word; begin result := work.MaxX end;
   function  MaxY        : word; begin result := work.MaxY end;
   function  WhereX      : word; begin result := work.WhereX end;
   function  WhereY      : word; begin result := work.WhereY end;
-  
+
   procedure ClrScr; begin work.ClrScr end;
   procedure ClrEol; begin work.ClrEol end;
-  
+
   procedure Fg( color : byte );    begin work.Fg( color ) end;
   procedure Bg( color : byte );    begin work.Bg( color ) end;
-  
+
   procedure Emit( wc : widechar ); begin work.Emit( wc ) end;
   procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
 
@@ -479,10 +494,10 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 #+begin_src pascal
   { these two are a bit trickier }
   function TScreen.GetTextAttr : word;
-    begin 
+    begin
       result := ( work._fg shl 8 ) + work._bg;
     end;
-  
+
   procedure TScreen.SetTextAttr( value : word );
     begin
       work._fg := value and $0f;
@@ -494,13 +509,18 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 
 * OUTPUT =kvm.pas=
 #+begin_src pascal :tangle "~/x/code/kvm.pas" :noweb tangle
+
+
+  { --- warning!! generated file. edit ~/b/web/kvm.org instead!! --- }
+
+
   {$mode objfpc}{$i xpc.inc}
   unit kvm;
   interface uses xpc, grids;
-  
+
     <<ITerm>>
     <<ITerm-Members>>
-  
+
     <<TTextAttr>>
     <<TScreenCell>>
     <<TScreenGrid>>
@@ -508,28 +528,17 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
     <<TRect>>
     <<TScreenTerm>>
     <<TAnsiTerm>>
-  
+
     <<extras>>
-  
+
   implementation
     <<@kvm:impl>>
+
+  <<lifecycle>>
   end.
 #+end_src
 
-
-
-
 * COMMENT
-** TODO managing the work buffer
-
-#+begin_src pascal
-initialization
-  work := screen.create;
-finalization
-  work.free
-end.
-#+end_src
-
 ** TODO mouse support
 #+name @kvm:inter
 #+begin_src pascal
@@ -598,7 +607,7 @@ type
       else if i < 17 then write( #27, '[01;3', i-8 , 'm' ); // ansi bold
       // else do nothing
     end; { ansi_fg }
-  
+
   {
   procedure ansi_bg( i : byte );
     begin
@@ -606,8 +615,8 @@ type
       else if i < 17 then write( #27, '[01;3', i-8 , 'm' ); // ansi bold
       // else do nothing
     end; }
-    
-  
+
+
 #+end_src
 
 ** TODO bitmapped fonts
@@ -632,23 +641,23 @@ type
                     true  : ( r, g, b, a : byte );
                     false : ( c : int32 );
                 end;
-    
+
       surface = record
                   w, h : int32;
                   data : array of int32;
                 end;
-    
+
       function hascanvas : boolean;
       var canvas : surface;
       var term : surface;
-  
+
   implementation
-  
+
       function HasCanvas : boolean;
         begin
           result := false;
         end; { HasCanvas }
-  
+
 #+end_src
 
 ** TODO future Goals?
