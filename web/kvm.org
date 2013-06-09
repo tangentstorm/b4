@@ -1,0 +1,686 @@
+#+title: kvm : keyboard/video/mouse support for virtual consoles
+#+author: Michal J Wallace
+#+date: <2013-06-08 Sat>
+
+* Goals
+This module implements an enhanced terminal device, with support for
+
+# My personal goal is to replace crt.
+
+* =ITerm= : abstract screen interface
+
+A screen tracks a cursor position, bounds, color.
+
+#+name: ITerm
+#+begin_src pascal
+  type ITerm = interface
+    function  Width : word;
+    function  Height: word;
+    function  MaxX  : word;
+    function  MaxY  : word;
+    function  WhereX: word;
+    function  WhereY: word;
+    procedure ClrScr;
+    procedure ClrEol;
+    procedure Fg( c : byte );
+    procedure Bg( c : byte );
+    procedure Emit( wc : widechar );
+    procedure GotoXY( x, y : word );
+    procedure InsLine;
+    procedure DelLine;
+    procedure SetTextAttr( value : word );
+    function  GetTextAttr : word;
+    property  TextAttr : word read GetTextAttr write SetTextAttr;
+  end;
+#+end_src
+
+* Data Types
+** TTextAttr
+For our text attributes, we're going to use 256 colors. This strikes a good balance between storage space and aesthetics. There's really not much need for more colors than this when we're talking about a fixed-width text display.
+
+#+name: TTextAttr
+#+begin_src pascal
+  type TTextAttr = record
+      bg : byte;
+      fg : byte;
+    end;
+#+end_src
+
+** TScreenCell
+
+A terminal cell combines a text attribute with a 16-bit WideChar.
+
+#+name: TScreenCell
+#+begin_src pascal
+  type TScreenCell = record
+      ch   : widechar;
+      attr : TTextAttr;
+    end;
+#+end_src
+
+** TScreenGrid
+
+A terminal's display buffer is essentially a grid of such cells. I'm using my [[https://github.com/tangentstorm/xpl/blob/master/code/grids.pas][generic =TGrid= class]] here to avoid duplicating code.
+
+#+name: TScreenGrid
+#+begin_src pascal
+  type TScreenGrid = class (specialize TGrid<TScreenCell>)
+    private
+      function GetAttr( const x, y : word ) : TTextAttr;
+      function GetChar( const x, y : word ) : WideChar;
+      procedure SetAttr( const x, y : word; const value : TTextAttr );
+      procedure SetChar( const x, y : word; const value : WideChar );
+    public
+      property attr[ x, y : word ] : TTextAttr read GetAttr write SetAttr;
+      property char[ x, y : word ] : WideChar read GetChar write SetChar;
+    end;
+#+end_src
+
+#+name: @kvm:impl
+#+begin_src pascal
+  
+  function TScreenGrid.GetAttr( const x, y : word ) : TTextAttr;
+    begin
+      result.fg := self[ x, y ].attr.fg;
+      result.bg := self[ x, y ].attr.bg;
+    end;
+  
+  procedure TScreenGrid.SetAttr( const x, y  : word;
+                               const value : TTextAttr );
+    begin
+      with _data[ xyToI( x, y ) ].attr do
+        begin
+          bg := value.bg;
+          fg := value.fg;
+        end
+    end;
+  
+  function TScreenGrid.GetChar( const x, y : word ) : WideChar;
+    begin
+      result := self[ x, y ].ch;
+    end;
+  
+  procedure TScreenGrid.SetChar( const x, y  : word;
+                               const value : WideChar );
+    begin
+      _data[ xyToI( x, y ) ].ch := value;
+    end;
+
+#+end_src
+
+** TPoint
+
+#+name: TPoint
+#+begin_src pascal
+  type TPoint = class
+    x, y : cardinal;
+  end;
+#+end_src
+
+** TRect
+#+name: TRect
+#+begin_src pascal
+  type TRect = class
+    x, y : cardinal;
+    w, h : cardinal;
+  end;
+#+end_src
+
+* =TScreenTerm=
+This is a contrcete implementation of ITerm.
+
+#+name: TScreenTerm
+#+begin_src pascal
+  type TScreenTerm = class (TInterfacedObject, ITerm)
+    public
+      <<ITerm-Members>>
+    private
+      attr : TTextAttr;
+      curs : TPoint;
+      grid : TScreenGrid;
+    public
+      constructor Create( w, h : word );
+      destructor Destroy; override;
+      procedure Write( s : string );
+      function  Cursor : TPoint;
+    end;
+#+end_src
+
+** Implementation
+
+#+name: @kvm:impl
+#+begin_src pascal
+  
+  constructor TScreenTerm.Create( w, h : word );
+    begin
+    end;
+    
+  destructor TScreenTerm.Destroy;
+    begin
+    end;
+    
+  function  TScreenTerm.Width  : word; begin result := grid.w      end;
+  function  TScreenTerm.Height : word; begin result := grid.h      end;
+  function  TScreenTerm.MaxX   : word; begin result := width - 1   end;
+  function  TScreenTerm.MaxY   : word; begin result := height - 1  end;
+  function  TScreenTerm.WhereX : word; begin result := cursor.x    end;
+  function  TScreenTerm.WhereY : word; begin result := cursor.y    end;
+    
+  function  TScreenTerm.GetTextAttr : word; 
+    begin 
+      result := word(attr)
+    end;
+    
+  procedure TScreenTerm.SetTextAttr( value : word );
+    begin
+      attr := TTextAttr(value)
+    end;
+  
+  procedure TScreenTerm.Fg( color : byte );
+    begin
+      attr.fg := color
+    end;
+  
+  procedure TScreenTerm.Bg( color : byte );
+    begin
+      attr.bg := color
+    end;
+  
+  procedure TScreenTerm.ClrScr;
+    begin
+    end;
+    
+  procedure TScreenTerm.ClrEol;
+    begin
+    end;
+  
+  procedure TScreenTerm.GotoXY( x, y : word );
+    begin
+      cursor.x := x;
+      cursor.y := y;
+    end;
+  
+  procedure TScreenTerm.Emit( wc : widechar );
+    begin
+    end;
+    
+  procedure TScreenTerm.InsLine;
+    begin
+    end;
+  
+  procedure TScreenTerm.DelLine;
+    begin
+    end;
+  
+  function TScreenTerm.Cursor : TPoint;
+    begin
+      result := curs
+    end;
+  
+  procedure TScreenTerm.Write( s : string );
+    begin
+      Write( s )
+    end;
+  
+#+end_src
+
+* =TAnsiTerm=
+#+name: TAnsiTerm
+#+begin_src pascal
+  type TAnsiTerm = class (TInterfacedObject, ITerm)
+    public
+      <<ITerm-Members>>
+    public
+      constructor Create( w, h : word );
+      procedure ResetColor;
+    end;
+#+end_src
+
+#+name: @kvm:impl
+#+begin_src pascal
+  
+  constructor TAnsiTerm.Create;
+    begin
+    end;
+  
+  { TODO: find a way to get this data without the baggage incurred by
+    crt or video modules (breaking keyboard input or clearing the screen  }
+  
+  function  TAnsiTerm.Width  : word; begin result := 80   end;
+  function  TAnsiTerm.Height : word; begin result := 25   end;
+  function  TAnsiTerm.MaxX   : word; begin result := width  - 1  end;
+  function  TAnsiTerm.MaxY   : word; begin result := height - 1  end;
+  function  TAnsiTerm.WhereX : word; begin result := 0    end;
+  function  TAnsiTerm.WhereY : word; begin result := 0    end;
+  function  TAnsiTerm.GetTextAttr : word; 
+    begin 
+      result := $0007;
+    end;
+  
+  procedure TAnsiTerm.SetTextAttr( value : word );
+    begin
+      Fg(hi(value));
+      Bg(lo(value));
+    end;
+  
+  procedure TAnsiTerm.Fg( color : byte );
+    begin
+      { xterm 256-color extensions }
+      write( #27, '[38;5;', i , 'm' )
+    end;
+  
+  procedure TAnsiTerm.Bg( color : byte );
+    begin
+      { xterm 256-color extensions }
+      write( #27, '[48;5;', i , 'm' )
+    end;
+  
+  procedure TAnsiTerm.ClrScr;
+    begin
+      write( #27, '[H', #27, '[J' )
+    end;
+    
+  procedure TAnsiTerm.ClrEol;
+    begin
+      write( #27, '[K' )
+    end;
+  
+  procedure TAnsiTerm.GotoXY( x, y : word );
+    begin
+      write( #27, '[', y + 1, ';', x + 1, 'H' )
+    end;
+  
+  procedure TAnsiTerm.Emit( wc : widechar );
+    begin
+      write( wc )
+    end;
+  
+  { TODO }
+  procedure TAnsiTerm.InsLine;
+    begin
+    end;
+  
+  procedure TAnsiTerm.DelLine;
+    begin
+    end;
+  
+  function TAnsiTerm.Cursor : TPoint;
+    begin
+      result := curs
+    end;
+  
+  procedure TAnsiTerm.Write( s : string );
+    begin
+      Write( s )
+    end;
+  
+  procedure TAnsiTerm.ResetColor;
+    begin
+      write( #27, '[0m' )
+    end;
+  
+#+end_src
+
+* char mnemonics for ansi colors.
+
+#+name: extras
+#+begin_src pascal
+  procedure fg( c : char );
+  procedure bg( c : char );
+#+end_src
+
+#+name: @kvm:impl
+#+begin_src pascal
+
+  procedure bg( c :  char );
+    var i : byte;
+    begin
+      i := pos( c, 'krgybmcwKRGYBMCW' );
+      if i > 0 then bg( i - 1  );
+    end;
+
+  procedure fg( c :  char );
+    var i : byte;
+    begin
+      i := pos( c, 'krgybmcwKRGYBMCW' );
+      if i > 0 then fg( i - 1  );
+    end;
+
+#+end_src
+* Legacy interface : CRT
+
+CRT was the original console library for turbo pascal. It uses 1-based cordinates, and is limited to 16 colors.
+
+** interface
+#+begin_src pascal :tangle "~/x/code/crt.pas" :noweb tangle
+  {--- generated from kvm.org  ---}
+
+  unit crt;
+  interface uses kvm;
+  
+  <<helpers>>
+  
+  { window / cursor managament }
+  procedure GotoXY( x, y : word );
+  function  WhereX : byte;
+  function  WhereY : byte;
+  procedure Window( x1, y1, x2, y2 : Byte );
+  procedure ClrEol;
+  procedure ClrScr;
+  procedure DelLine; { delete line at cursor }
+  procedure InsLine; { insert line at cursor }
+  
+  { color }
+  procedure TextColor( c : byte );
+  procedure TextBackground( c : byte );
+  procedure HighVideo;
+  procedure LowVideo;
+  procedure NormVideo; { restores color from startup }
+  property TextAttr : byte
+    read  crt_get_textattr
+    write crt_set_textattr;
+  
+  { interaction }
+  function  KeyPressed : boolean;
+  function  ReadKey : char;
+  procedure Delay;
+  procedure Sound;
+  procedure NoSound;
+  { TODO:
+  property CheckBreak : boolean }
+  
+  implementation
+    <<@crt:impl>>
+  end.
+#+end_src
+
+** implementation
+*** the =TextAttr= property
+
+#+name: @crt:impl
+#+begin_src pascal
+  var _textattr : kvm.TTextAttr;
+  type TCrtColor  = $0 .. $f;
+
+  procedure crt_set_textattr( value : byte );
+  begin
+    _textattr.bg := hi( value );
+    _textattr.fg := lo( value );
+  end;
+
+  function crt_get_textattr : byte;
+  begin
+    result := (_textattr.bg shl 8) + _textattr.fg;
+  end;
+
+  procedure TextColor( c : byte );
+  begin
+    _textattr.fg := TCrtColor( c );
+  end;
+
+  procedure TextBackground( c : byte );
+  begin
+    _textattr.bg := TCrtColor( c );
+  end;
+
+#+end_src
+
+*** Cursor control
+#+name: @crt:impl
+#+begin_src pascal
+
+  procedure GotoXY( x, y : cardinal );
+  begin
+    WhereX := x;
+    WhereY := y;
+  end;
+
+#+end_src
+
+* APPENDIX Convenience Routines
+
+In general, you're only going to work with one screen at a time, so it's convenient to have a set of routines that deal with whatever the current screen happens to be at the moment.
+
+** interface
+These follow the ITerm interface exactly.
+
+#+name: ITerm-Members
+#+begin_src  pascal
+  function  Width : word;
+  function  Height: word;
+  function  MaxX  : word;
+  function  MaxY  : word;
+  function  WhereX : word;
+  function  WhereY : word;
+  procedure ClrScr;
+  procedure ClrEol;
+  procedure Fg( color : byte );
+  procedure Bg( color : byte );
+  procedure Emit( wc : widechar );
+  procedure GotoXY( x, y : word );
+  procedure InsLine;
+  procedure DelLine;
+  procedure SetTextAttr( value : word );
+  function  GetTextAttr : word;
+  property  TextAttr : word read GetTextAttr write SetTextAttr;
+#+end_src
+
+** implementation
+
+Since they just delegate to an =ITerm=, the implementation is trivial.
+
+#+name: @kvm:impl
+#+begin_src pascal
+  var work : ITerm;
+  
+  function  Width       : word; begin result := work.Width end;
+  function  Height      : word; begin result := work.Height end;
+  function  MaxX        : word; begin result := work.MaxX end;
+  function  MaxY        : word; begin result := work.MaxY end;
+  function  WhereX      : word; begin result := work.WhereX end;
+  function  WhereY      : word; begin result := work.WhereY end;
+  
+  procedure ClrScr; begin work.ClrScr end;
+  procedure ClrEol; begin work.ClrEol end;
+  
+  procedure Fg( color : byte );    begin work.Fg( color ) end;
+  procedure Bg( color : byte );    begin work.Bg( color ) end;
+  
+  procedure Emit( wc : widechar ); begin work.Emit( wc ) end;
+  procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
+
+  procedure InsLine; begin work.InsLine; end;
+  procedure DelLine; begin work.DelLine; end;
+
+  procedure SetTextAttr( value : word ); begin TextAttr := value end;
+  function  GetTextAttr : word; begin result := work.TextAttr end;
+#+end_src
+
+** Screens
+#+begin_src pascal
+  { these two are a bit trickier }
+  function TScreen.GetTextAttr : word;
+    begin 
+      result := ( work._fg shl 8 ) + work._bg;
+    end;
+  
+  procedure TScreen.SetTextAttr( value : word );
+    begin
+      work._fg := value and $0f;
+      work._bg := (value and $f00) shr 8;
+      fg( work._fg );
+      bg( work._bg );
+    end;
+#+end_src
+
+* OUTPUT =kvm.pas=
+#+begin_src pascal :tangle "~/x/code/kvm.pas" :noweb tangle
+  {$mode objfpc}{$i xpc.inc}
+  unit kvm;
+  interface uses xpc, grids;
+  
+    <<ITerm>>
+    <<ITerm-Members>>
+  
+    <<TTextAttr>>
+    <<TScreenCell>>
+    <<TScreenGrid>>
+    <<TPoint>>
+    <<TRect>>
+    <<TScreenTerm>>
+    <<TAnsiTerm>>
+  
+    <<extras>>
+  
+  implementation
+    <<@kvm:impl>>
+  end.
+#+end_src
+
+
+
+
+* COMMENT
+** TODO managing the work buffer
+
+#+begin_src pascal
+initialization
+  work := screen.create;
+finalization
+  work.free
+end.
+#+end_src
+
+** TODO mouse support
+#+name @kvm:inter
+#+begin_src pascal
+function hasmouse : boolean;
+function mx : int32;
+function my : int32;
+function mb : set32;
+#+end_src
+
+#+name @kvm:impl
+#+begin_src pascal
+{  mouse routines are just stubs at the moment }
+
+function hasmouse : boolean;
+begin
+  result := false;
+end; { hasmouse }
+
+function mx : int32;
+begin
+  result := 0;
+end; { mx }
+
+function my : int32;
+begin
+  result := 0;
+end; { my }
+
+function mb : set32;
+begin
+  result := [];
+end; { mbtn }
+#+end_src
+
+** TODO bitmap fonts
+#+begin_src pascal
+
+type
+{  this should probably get moved into its own class? }
+type
+  vector2d = record
+	       case kind : ( asize, apoint, avec2d ) of
+		 asize	: ( w, h : int32 );
+		 apoint	: ( x, y : int32 );
+		 avec2d	: ( v : array[ 0 .. 1 ] of int32 );
+	     end;
+
+  glyph	  = record
+	      codepoint	: int32;
+	      w, h	: int32;
+	    end;
+
+  bmpfont = record
+	      size   : vector2d;
+	      glyphs : array of glyph;
+	    end;
+
+
+#+end_src
+
+** TODO 16-color ansi codes
+#+begin_src pascal
+  procedure ansi_fg( i : byte );
+    begin
+      if i < 8 then write( #27, '[0;3', i , 'm' )           // ansi dim
+      else if i < 17 then write( #27, '[01;3', i-8 , 'm' ); // ansi bold
+      // else do nothing
+    end; { ansi_fg }
+  
+  {
+  procedure ansi_bg( i : byte );
+    begin
+      if i < 8 then write( #27, '[0;3', i , 'm' )           // ansi dim
+      else if i < 17 then write( #27, '[01;3', i-8 , 'm' ); // ansi bold
+      // else do nothing
+    end; }
+    
+  
+#+end_src
+
+** TODO bitmapped fonts
+
+#+begin_src pascal
+  procedure setfont( font :  bmpfont );
+#+end_src
+
+#+begin_src pascal
+  procedure setfont( font : bmpfont );
+    begin
+    end;
+#+end_src
+
+** TODO canvas
+#+begin_src pascal
+  interface
+
+    type
+      color   = record
+                  case separate : boolean of
+                    true  : ( r, g, b, a : byte );
+                    false : ( c : int32 );
+                end;
+    
+      surface = record
+                  w, h : int32;
+                  data : array of int32;
+                end;
+    
+      function hascanvas : boolean;
+      var canvas : surface;
+      var term : surface;
+  
+  implementation
+  
+      function HasCanvas : boolean;
+        begin
+          result := false;
+        end; { HasCanvas }
+  
+#+end_src
+
+** TODO future Goals?
+| device           | in | out |                          |
+|------------------+----+-----+--------------------------|
+| keyboard         | x  |     |                          |
+| mouse            | x  |     |                          |
+| touch            | x  |     |                          |
+| gamepad          | x  | ?   | maybe output for rumble? |
+| audio            | x  | x   | telephony                |
+| midi             | x  | x   |                          |
+| network          | x  | x   |                          |
+| display:text     |    | x   |                          |
+| display:graphics |    | x   |                          |
