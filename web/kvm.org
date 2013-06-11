@@ -225,6 +225,7 @@ This is a contrcete implementation of ITerm.
     public
       <<ITerm-Members>>
     private
+      x, y : word;
       attr : word;
     public
       constructor Create;
@@ -243,12 +244,12 @@ This is a contrcete implementation of ITerm.
   { TODO: find a way to get this data without the baggage incurred by
     crt or video modules (breaking keyboard input or clearing the screen  }
 
-  function  TAnsiTerm.Width  : word; begin result := 80   end;
-  function  TAnsiTerm.Height : word; begin result := 25   end;
+  function  TAnsiTerm.Width  : word; begin result := terminal.w end;
+  function  TAnsiTerm.Height : word; begin result := terminal.h end;
   function  TAnsiTerm.MaxX   : word; begin result := width  - 1  end;
   function  TAnsiTerm.MaxY   : word; begin result := height - 1  end;
-  function  TAnsiTerm.WhereX : word; begin result := 0    end;
-  function  TAnsiTerm.WhereY : word; begin result := 0    end;
+  function  TAnsiTerm.WhereX : word; begin result := x  end;
+  function  TAnsiTerm.WhereY : word; begin result := y  end;
   function  TAnsiTerm.GetTextAttr : word;
     begin
       result := attr;
@@ -280,8 +281,11 @@ This is a contrcete implementation of ITerm.
     end;
 
   procedure TAnsiTerm.ClrEol;
+    var curx, cury, i : byte;
     begin
-      write( #27, '[K' )
+      terminal.getxy( curx, cury );
+      for i := succ(curx) to maxX do write(' ');
+      gotoxy( curx, cury );
     end;
 
   procedure TAnsiTerm.GotoXY( x, y : word );
@@ -339,10 +343,11 @@ This is a contrcete implementation of ITerm.
 * Unit Life cycle.
 #+name: lifecycle
 #+begin_src pascal
-initialization
-  work := TAnsiTerm.Create;
-finalization
-  { work is destroyed automatically by reference count }
+  initialization
+    work := TAnsiTerm.Create;
+    work.GotoXY( terminal.startX, terminal.startY );
+  finalization
+    { work is destroyed automatically by reference count }
 #+end_src
 
 
@@ -528,7 +533,7 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 
   {$mode objfpc}{$i xpc.inc}
   unit kvm;
-  interface uses xpc, grids;
+  interface uses xpc, grids, terminal;
 
     <<ITerm>>
     <<ITerm-Members>>
