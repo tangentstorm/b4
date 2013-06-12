@@ -10,7 +10,7 @@
 #+name: interface
 #+begin_src pascal
   { B+ Trees for pascal }
-  {$DEFINE DELPHIMODE} {$i xpc.inc} {$H+}
+  {$mode delphi} {$i xpc.inc} {$H+}
   unit bp;
   interface uses xpc, sysutils;
 
@@ -481,8 +481,8 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
 #+end_src
 
 ** OUTPUT: =bp.pas=
-#+begin_src pascal :tangle "~/b/go/bp.pas" :padline yes :noweb tangle
-  { NOTE : this file is generated from ../ref/bplus.org , so...
+#+begin_src pascal :tangle "~/b/lib/xpl/code/bp.pas" :padline yes :noweb tangle
+  { NOTE : this file is generated from ~/b/web/bp.pas.org , so...
     --->> DON'T EDIT THIS FILE! <<--- }
   <<interface>>
   implementation

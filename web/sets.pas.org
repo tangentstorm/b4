@@ -197,8 +197,6 @@ This repository includes both the finished =test_sets.pas= and (if you move over
 There is currently a small python dependency used to generate the boilerplate code for the tests. (hopefully this will be ported to pascal soon).
 
 * Implementation : GSet<T>
-
-
 ** Constructor and Destructor
 #+name: class:GSet
 #+begin_src pascal
@@ -233,7 +231,6 @@ There is currently a small python dependency used to generate the boilerplate co
   end;
 
 #+end_src
-
 
 
 ** Appendix: unit =sets=
