@@ -6,14 +6,14 @@
   see ../LICENSE.org for ( MIT-style ) licensing details
 
 ---------------------------------------------------------------- }
-{$i xpc.inc }
+{$mode objfpc}{$i xpc.inc }
 unit pre;
 interface uses xpc, stacks, ll, ascii, num;
 
   type
 
     Marker  = class end;
-    MarkerStack = specialize Stack< Marker >;
+    MarkerStack = specialize GStack< Marker >;
 
     Source = class
       procedure next( var ch : char );   virtual; abstract;
@@ -160,7 +160,7 @@ implementation
   constructor matcher.create( s	: string );
   begin
     self.src := StringSource.create( s );
-    self.marks.init( 32 );
+    self.marks := MarkerStack.Create( 32 );
   end;
 
   procedure matcher.match( s : source; rule : string );
