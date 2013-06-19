@@ -1,0 +1,106 @@
+
+* There are four fundamental aspects to computation:
+:PROPERTIES:
+:TS:       <2013-06-18 12:07PM>
+:ID:       ors8y7t0c5g0
+:END:
+
+** /State/ : A computer has a state consisting of data that it can both modify and observe.
+:PROPERTIES:
+:TS:       <2013-06-18 12:08PM>
+:ID:       orrag8t0c5g0
+:END:
+For example, the state of its ram and the colors of the pixels on the screen and whether a motor is moving in a printer and so on.
+
+We can gather observers we can collect this data and notice that it changes over time.
+
+The arrangement of the data at a particular point in time is called a state.
+
+Only some of this state is important for computation.
+
+*** The state must be observable /and actually observed/ by the computer itself. 
+For example, the state of the pixels on a desktop computer's monitor is an output of the computer, and it is part of the state, but it is irrelevant to computation. The video signal is simply an /output/. You can safely disconnect your computer's monitor without affecting the operation of the computer. (This is true even if you're using a touchscreen: the touchscreen is an input device but the video signal going out and the touch signals coming in are completely separate and not necessarily related. (For example, a touch event could be accidental and unknown to the user... As anyone who has ever pocket-dialed a number on their cellphone can appreciate.))
+
+*** The state must be modifiable by the computer itself.
+
+The state of a keyboard or mouse is outside of the computer's control
+
+From a certain point of view, you can think of the combination of an electronic computer and a human user as a sort of cyborg computing system. From this point of view, the input/output devices /are/ a form of state, because they are observable and modifiable by the human part of the system. But for our purposes we will be talking about actual, physical, computers, or simulations of physical computers. 
+
+When the computer receives a signal from a keyboard, they record it in memory and usually put it in a queue to be processed. Of course the "queue" is just an arbitrary section of the computer's RAM. Whoever programmed the computer decided how and where the keyboard events should be allocated, how many should be remembered, and what format would be used, and so on. There are many ways to do this, and in fact, it's common for different libraries to represent keyboard events in radically different ways, even when using the same programming language on the same computer.
+
+The fact that such choices are even possible is a result of the fact that the computer is able to observe and modify its data stores.
+
+So this is what we mean by /state/.
+
+** /Sequence/ : A computer performs a sequence of actions specified by its state.
+:PROPERTIES:
+:TS:       <2013-06-18 12:39PM>
+:ID:       pkwaznu0c5g0
+:END:
+
+*** TODO shorten this
+
+Any number of machines perform sequences of actions.
+
+Cuckoo Clocks can perform incredibly elaborate sequences of actions whose timings are controlled precisely by the rotatation of differently sized gears.
+
+Devices consisting of gears are even capable of very impressive feats, even performing computations.
+
+The first working mechanical calculator, the Pascaline, was a desk-sized device created in the 1700's by French mathematician Blaise Pascal, capable of performing basic arithmetic. [fn:1] By the mid 20th century there were handheld mechanical calculators capable of performing complicated arithmetic such as square roots.[fn:2]
+  
+Mechanical devices were also capable of carrying out sophisticated operations like encryption. In fact one of the forces that lead to the rapid developement of electronic computers in the 1940's was the British and American need to decipher encrypted messages such as those produced by the Enigma machine. [fn:3]
+
+There were also /programmable/ mechanical devices. For example, the Jaquard Loom [fn:4], invented in 1801 was capable of producing a wide variety of patterns determined by holes punched into stiff paper cards.
+
+During World War II, while the early computer scientists were developing code-breaking machines in Bletchley Park, the great physicists of the time were hard at work in Los Alamos, using punch-card driven mechanical calculating devices to work through the complicated math involved in developing the atomic bomb. [fn:5]
+
+All of these machines were fascinating, complicated devices, but they were not true computers. It was the British mathematician Alan Turing who first described a specification of a /universal/ device capable of carrying out any conceivable compuation.
+
+Turing's computer was purely mathematical construct[fn:7],
+
+universal computer is a purely mathematical construct, and can never actually be built[fn:6] and the bears only a superficial resemblence to the way modern electronic computers work, but 
+
+*** TODO finish /sequence/
+:PROPERTIES:
+:TS:       <2013-06-18 07:53PM>
+:ID:       j1t1p700d5g0
+:END:
+
+** TODO /Selection/ : A computer chooses between different sequences of action, according to its state.
+n:PROPERTIES:
+:TS:       <2013-06-18 12:41PM>
+:ID:       1lqairu0c5g0
+:END:n
+
+** TODO /Recursion/ : A computer can repeat sequences of actions indefinitely.
+:PROPERTIES:
+:TS:       <2013-06-18 12:40PM>
+:ID:       t3f5iqu0c5g0
+:END:
+
+* TODO footnote 7 (summarizing turings paper) should me moved to its own document
+:PROPERTIES:
+:TS:       <2013-06-18 07:53PM>
+:ID:       gojkh700d5g0
+:END:
+
+
+* Footnotes
+
+[fn:1] [[http://www.youtube.com/watch?v=3h71HAJWnVU][Pascaline Video Demo]]
+
+[fn:2]  [[http://www.youtube.com/watch?v=HYsOi6L_Pw4][Curta Video]]
+
+[fn:3] Neal Stephenson's [[http://www.cryptonomicon.com/][Cryptonomicon]] offers an entertaining fictional view of the developement of computers and information theory during the war.
+
+[fn:4] Wikipedia: [[http://en.wikipedia.org/wiki/Jacquard_loom][Jacquard Loom]]
+
+[fn:5] The great physicist Richard Feynman tells a number of stories about the computing lab at Los Alamos in [[http://en.wikipedia.org/wiki/Surely_You%27re_Joking,_Mr._Feynman!][Surely You're Joking, Mr. Feynman!]] (That book is purely a book of stories. /Feynman Lectures on Computation/ is also quite good and is aimed at a technical audience, and is a fascinating look at computation from a physicist's point of view.)
+
+[fn:7] Turing's machine is described in his 1936 paper, /On Computable Numbers, with an Application to the Entscheidungsproblem/ ([[http://classes.soe.ucsc.edu/cmps210/Winter11/Papers/turing-1936.pdf][PDF]], [[https://docs.google.com/file/d/0BwO0SQND3WU5WHZEY2pIWGpfQzg/edit?usp=sharing][google drive]]). The /Entscheidungsproblem/ (German for "decision problem") was a mathematical named by the mathematician David Hilbert in 1928 as being one of the most important unsolved mathematical problems of the time. It asks whether or not it is possible to produce an algorithm that, given a set of axioms and following the rules of first-order logic, can accurately decide whether an arbitrary logical statement is universally true or not. Turing defines the notion of a computable number - one "whose expressions as a decimal are calculable by finite means" and shows that his machines are capable of computing any such computable number. He then goes on to distinguish between situations in which the machine continues to run indefinitely without producing any more digits and introduces what has come to be called the /halting problem/, which shows that 
+# That is to say, given a definition of a number,paper describes a machine that can print out the digits of any number whose digits can be calculated with finite resourcese. 
+
+
+[fn:6] A /truly universal/ Turing Machine can never be built because it would require an infinite amount of tape. Without infinite tape, it's possible that the result of a computation will be too big to fit on the tape. But of course to build one would require an infinite amount of matter, and as you started to gather that tape, the gravitational force of all the tape would cause the machine to deform into a sphere (that's why planets are spheres) and, eventually, a black hole. Of course you could reduce the density by leaving the tape unspooled, but you still eventually need an infinite amount of space to hold it. Fortunately, we don't actually need to perform /every/ possible calculation, and even a small approximation of a Turing machine is capable of performing a staggering variety of useful and interesting computations.
+
