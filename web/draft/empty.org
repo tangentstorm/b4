@@ -1,0 +1,160 @@
+
+* the core loop
+:PROPERTIES:
+:TS:       <2013-06-18 07:56PM>
+:ID:       pbu33c00d5g0
+:END:
+
+The following general procedure describes the behavior of an arbitrary interactive program in the syntax of the programming language pascal.
+
+#+name: coreloop
+#+begin_src pascal
+  procedure coreloop;
+    begin
+      with context do
+        repeat
+          observe; evaluate; respond
+        until done
+    end;
+#+end_src
+
+* definition of =context=
+:PROPERTIES:
+:TS:       <2013-06-18 08:31PM>
+:ID:       56mczy10d5g0
+:END:
+
+The =with ... do ...= construct tells the compiler that the identifiers in the following statement needn't be defined globally, but may instead refer to components of a specified object.
+
+In this case, the object is specified by the word =context=, and this identifier could be defined in a number of different ways: as a constant value, as a variable bound to an object, as a function that produces an object, or as a variable bound to a function that produces an object.
+
+As it happens, we will take this last option, as it is the most flexible, and we will define =context= like so:
+
+#+name: context
+#+begin_src pascal
+  var context : TCtxFn;
+#+end_src
+
+The word =var= instructs the compiler to process a series of variable declarations. The above line defines a single variable, =context=, which may refer to any value of the type =TCtxFn=.
+
+Before we explain what this means, let's take a moment and explain where to put it.
+
+** ASIDE organizing pascal code
+:PROPERTIES:
+:TS:       <2013-06-18 09:40PM>
+:ID:       tv1ec650d5g0
+:END:
+
+Pascal compilers are extraordinarily fast compared to compilers for other languages. In part, this is because the language is designed to be compilable in a single pass from top to bottom, without the need for any sort of intermediate tree representation.
+
+In order to do compile each section of code as it is encountered, all the words used by that definition must already be declared, and since the compiler works top to bottom, this means that the declaration of a word must always appear /above/ its first usage. Further, if the file contains a program to be excuted (rather than just a module), the main routine of the file is at the very bottom.
+
+One consequence is that when you work in pascal, you start to develop a strong sense of direction and spatial awareness in regards to a program's layout. Definitions are easy to locate because they are arranged in a logical progression.
+
+Anyway, =coreloop= calls =context= so =context= must be placed /above/ the definition of =coreloop=.
+
+Likewise, since we defined =context= in terms of =TCtx=, we must now define =TCtx= and put that somewhere in the file above =context=.
+
+This file presents the code in the order that I would write it from scratch. At the very bottom is an outline of how the code is laid out for pascal, and you can see the final "tangled" version of the code  [[somewhere]]
+*** TODO (put tangled code somewhere and link to it)
+** <=
+:PROPERTIES:
+:TS:       <2013-06-19 12:09AM>
+:ID:       omgap2c0d5g0
+:END:
+
+=TCtxFn= is the type (=T=) of a function (=Fn=) that produces a context (=Ctx=).[fn:1] 
+
+#+name: TCtxFn
+#+begin_src pascal
+  type TCtxFn = function : TCtx;
+#+end_src
+
+=TCtx= is a =record= type, which is how pascal creates fixed size structured data.
+
+Recall that we have reached this point through a series of refinement steps of the phrase =with context do <statement>= in the code for =coreloop=. We said that this allows us to define some of the other identifiers used in the following statement. In the case of =coreloop=, this happened to be:
+
+#+begin_src pascal
+  repeat
+    observe; evaluate; respond
+  until done
+#+end_src
+
+The words =repeat= and =until= are part of the pascal syntax, but the others we must define ourselves.
+
+The rules of pascal syntax dictate that =observe=, =evaluate= and =respond= must each evaluate to a parameterless procedure, so we must define them as procedures directly or as procedure variables.[fn:2] 
+
+Procedures in pascal differ from functions in that functions evaluate to a single result value that can be used in an expression, whereas procedures produce no such result.[fn:3] This is why there is no option to represent the three procedures as constants or variables of a simple type.
+
+On the other hand, since a =repeat..until= statement must end with a condition, we can deduce that =done= must evaluate to a =boolean= value, and therefore we can define it using any of the four representations (constant, variable, function, or function variable).
+
+In each of these cases, we will choose the procedure variable or function variable as our representation. Furthermore, even though we have a choice of defining the words globally (within the module's namespace) or in or =TCtx= type, we will choose to define them all as fields inside =TCtx=:
+
+#+name: TCtx
+#+begin_src pascal
+  type TCtx = record
+    observe, evaluate, respond : TProcedure;
+    done : TPredicate;
+  end;
+#+end_src
+
+As a result, we have now fully defined all the words in the original =coreloop=, but have introduced two new words to define: =TProcedure= and =TPredicate=.
+
+Under free pascal and Delphi, =TProcedure= is predefined for us in the =system= unit, but the definition is trivial and there is no harm in defining it explicitly ourselves:
+
+#+name: TProcedure
+#+begin_src pascal
+type TProcedure = procedure;
+#+end_src
+
+Really there is really no need to define =TProcedure= at all, since we could have just used the word =procedure= and saved ourselves a keystroke, but the =T= prefix brings it in line with our naming convention. As we add parameters and return values, explicit names become more convenient and readable.
+
+A function that returns a boolean is called a /predicate/, so at last we define the name =TPredicate= to refer to the type of done.
+
+#+name: TPredicate
+#+begin_src pascal
+type TPredicate = function : boolean;
+#+end_src
+
+
+* Summary of the =core= module
+:PROPERTIES:
+:TS:       <2013-06-18 09:29PM>
+:ID:       vrk2tm40d5g0
+:END:
+
+Our code is now arranged like this:
+
+#+name: core-module
+#+begin_src pascal
+  <<TProcedure>>
+  <<TPredicate>>
+  <<TCtx>>
+  <<TCtxFn>>
+  <<context>>
+  <<coreloop>>
+#+end_src
+
+Since =TProcedure= and =TPredicate= are completely independent of each other, it doesn't matter which is defined first, but they must both appear before the definition of =TCtx=.
+
+The remaining definitions must appear in the above sequence in order to compile.[fn:4]
+
+The code /does/ compile now, but we can't actually run our =loop= procedure until we create a =TCtx= record.
+
+
+
+
+* TODO
+          if command then interpret
+          else if data then keep
+          else notfound;
+
+* Footnotes
+
+[fn:1] We could have called it anything of course. Personally, I had a hard time getting used to the =T= convention but it's ubiquitous in pascal culture due to the Borland coding conventions, and it does provide a useful way to distinguish values from types in a case-insensitive language.
+
+[fn:2] In free pascal and delphi, the ={$X+}= compiler directive enables "extended syntax", which allows you to evaluate functions without processing their return values. This is often convenient, and is in fact the default, but we will ignore it for our purposes.
+
+[fn:3] Procedures and functions can produce any number of outputs, but they must be given names and passed as paramters. Output parameters are prefixed with the word =out=, and parameters that are used for both input and output have the prefix =var=. The extra result value that a function produces is anonymous outside of the function. Inside the function's code, the result value shares the name of the function itself, though modern pascal dialects allow using the name =result= instead, and this is generally the preferred approach.
+
+[fn:4] In a =program= module, the order is always fixed like this. However, the rules in a =unit= are more flexible, because functions can be predeclared in the =interface= section and then their declarations can be arranged freely in the =implementation= section, regardless of their dependencies. However, in the module described here, there are no actual definitions.
