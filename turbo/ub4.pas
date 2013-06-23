@@ -12,29 +12,38 @@ type
 const
   {-- memory layout --}
   maxcell = 4095;
+  { return stack }
   maxretn = maxcell;
   minretn = maxretn-256;
+  { data stack }
   maxdata = minretn-1;
   mindata = maxdata-256;
+  { io buffer }
   maxbuff = mindata-1;
   minbuff = maxbuff-256;
+  { scratch workspace }
+  maxwork = minbuff-1;
+  minwork = maxwork-256;
   maxheap = maxbuff; { so you can read/write the i/o buffer }
+  minheap = 64;
   maxblok = 1023;
 var
   ram  : array[0..maxcell] of value;
+  bytes: array[0..maxcell*sizeof(value)] of byte;
   disk : file of block;
 const {-- these are all offsets into the ram array --}
   ip    = 0; { instruction pointer }
   dp    = 1; { data stack pointer }
   rp    = 2; { addr stack pointer }
-  heap  = 3; { heap pointer }
-	last  = 4; { last dictionary entry }
+  hp    = 3; { heap pointer }
+  last  = 4; { last dictionary entry }
   ml    = 64; { main loop }
 
 
   procedure open( path : string );
   procedure boot;
   function step : value;
+  procedure dput( val : value );
 
 implementation
 
@@ -43,7 +52,8 @@ procedure boot;
     fillchar(ram, (maxcell + 1) * sizeof(value), 0);
     ram[dp] := maxdata;
     ram[rp] := maxretn;
-    ram[ip] := 64;
+    ram[ip] := 32;
+    ram[hp] := 64;
   end;
 
 procedure halt;
@@ -110,8 +120,8 @@ procedure rput( val : value );
 
 procedure comma;
   begin
-		ram[ram[heap]] := dpop;
-    inc(ram[heap]);
+    ram[ram[hp]] := dpop;
+    inc(ram[hp]);
   end;
 
 procedure bye;
@@ -245,7 +255,9 @@ function step : value;
       37 : {load} load;
       38 : {save} save;
       39 : {keyp} if keypressed then dput(-1) else dput(0);
-      { reserved: } 40 .. 63 : begin end;
+      40 : {cscr} crt.clrscr;
+      41 : {ceol} crt.clreol;
+      { reserved: } 42 .. 63 : begin end;
       else
         rput(ram[ip]);
         ram[ip] := ram[ram[ip]];

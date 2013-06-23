@@ -45,8 +45,8 @@ begin
   optbl[37] := 'load';
   optbl[38] := 'save';
   optbl[39] := 'keyp';
-  optbl[40] := '';
-  optbl[41] := '';
+  optbl[40] := 'cscr';
+  optbl[41] := 'ceol';
   optbl[42] := '';
   optbl[43] := '';
   optbl[44] := '';
