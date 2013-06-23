@@ -1,5 +1,9 @@
-program forth;
-uses crt;
+unit ub4;
+interface uses crt;
+{
+  this contains the virtual machine
+  and the code to load and save blocks.
+}
 
 type
   value = longint;
@@ -26,7 +30,12 @@ const {-- these are all offsets into the ram array --}
 	last  = 4; { last dictionary entry }
   ml    = 64; { main loop }
 
-{$i b4init.inc}
+
+  procedure open;
+  procedure boot;
+  function step : value;
+
+implementation;
 
 procedure boot;
   begin
@@ -42,15 +51,15 @@ procedure halt;
     system.halt;
   end;
 
-procedure open;
+procedure open(path:string);
   begin
-    assign(disk, 'disk.b4');
+    assign(disk, path);
     {$i-}
       reset(disk);
       if ioresult <> 0 then rewrite(disk);
       if ioresult <> 0 then
         begin
-          writeln('error: couldn''t open disk.b4 :(');
+          writeln('error: couldn''t open ', path);
           halt;
         end;
     {$i+}
@@ -59,7 +68,7 @@ procedure open;
 
 function dpop : value;
   begin
-		dpop := ram[ram[dp]]; inc(ram[dp]);
+    dpop := ram[ram[dp]]; inc(ram[dp]);
     if ram[dp] > maxdata then ram[dp] := mindata;
   end;
 
@@ -168,57 +177,58 @@ function step : value;
   { execute next instruction, then increment and return the IP }
   begin
     case ram[ram[ip]] of
-      0 : {nop } begin end;
-      1 : {lit } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
-      2 : {jmp } ram[ram[ip]] := ram[ram[ip]+1];
-      3 : {jwz } if tos = 0 then
+      { Do not reformat this function! mkb4asm.pas uses it! }
+      00 : {nop } begin end;
+      01 : {lit } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
+      02 : {jmp } ram[ram[ip]] := ram[ram[ip]+1];
+      03 : {jwz } if tos = 0 then
                   begin
                     zap(dpop);
                     ram[ram[ip]] := ram[ram[ip]+1];
                   end;
-      4 : {ret } ram[ip] := rpop;
-      5 : {rwz } if tos = 0 then
+      04 : {ret } ram[ip] := rpop;
+      05 : {rwz } if tos = 0 then
                    begin
                      zap(dpop);
                      ram[ip] := rpop;
                    end;
-      4 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
-      5 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
-      5 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
-      6 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
-      7 : {lte } if dpop <= dpop then dput(-1) else dput(0);
-      8 : {gte } if dpop >= dpop then dput(-1) else dput(0);
-      9 : {and } dput(dpop and dpop);
-      10: {or  } dput(dpop or dpop);
-      11: {xor } dput(dpop xor dpop);
-      12: {add } dput(dpop  + dpop);
-      13: {sub } dput(-dpop + dpop);
-      14: {mul } dput(dpop * dpop);
-      15: {dvm } begin
+      06 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
+      07 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
+      08 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
+      09 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
+      10 : {lte } if dpop <= dpop then dput(-1) else dput(0);
+      11 : {gte } if dpop >= dpop then dput(-1) else dput(0);
+      12 : {and } dput(dpop and dpop);
+      13 : {or  } dput(dpop or dpop);
+      14 : {xor } dput(dpop xor dpop);
+      15 : {add } dput(dpop  + dpop);
+      16 : {sub } dput(-dpop + dpop);
+      17 : {mul } dput(dpop * dpop);
+      18 : {dvm } begin
                    rput(tos mod nos);
                    dput(dpop div dpop);
                    dput(rpop);
                  end;
-      16: {shl } begin swap; dput(dpop shl dpop) end;
-      17: {shr } begin swap; dput(dpop shr dpop) end;
-      18: {push} rput(dpop);
-      19: {pop } dput(rpop);
-      20: {inc } inc(ram[ram[dp]]);
-      21: {dec } dec(ram[ram[dp]]);
-      22: {get } dput(ram[dpop]);
-      23: {set } ram[dpop] := dpop;
-      24: {dup } dput(tos);
-      25: {zap } zap(dpop);
-      26: {swap} swap;
-      27: {over} dput(nos);
-      28: {goxy} begin
+      19 : {shl } begin swap; dput(dpop shl dpop) end;
+      20 : {shr } begin swap; dput(dpop shr dpop) end;
+      21 : {push} rput(dpop);
+      22 : {pop } dput(rpop);
+      23 : {inc } inc(ram[ram[dp]]);
+      24 : {dec } dec(ram[ram[dp]]);
+      25 : {get } dput(ram[dpop]);
+      26 : {set } ram[dpop] := dpop;
+      27 : {dup } dput(tos);
+      28 : {zap } zap(dpop);
+      29 : {swap} swap;
+      30 : {over} dput(nos);
+      31 : {goxy} begin
                    swap;
                    crt.gotoxy(dpop mod (maxY + 1),
                               dpop mod (maxY + 1))
                  end;
-      29: {attr} crt.textattr := dpop;
-      30: {putc} write(chr(dpop));
-      31: {getc} begin
+      32 : {attr} crt.textattr := dpop;
+      33 : {putc} write(chr(dpop));
+      34 : {getc} begin
                    dput(value(crt.readkey));
                    { we have 32 bits and only need 16,
                      so we can store extended keys in
@@ -229,12 +239,12 @@ function step : value;
                        dput(value(crt.readkey) shl 8)
                      end
                  end;
-      32: {halt} halt;
-      33: {boot} boot;
-      34: {load} load;
-      35: {save} save;
-      36: {keyp} if keypressed then dput(-1) else dput(0);
-      37 .. 63 : begin end;
+      35 : {halt} halt;
+      36 : {boot} boot;
+      37 : {load} load;
+      38 : {save} save;
+      39 : {keyp} if keypressed then dput(-1) else dput(0);
+      { reserved: } 40 .. 63 : begin end;
       else
         rput(ram[ip]);
         ram[ip] := ram[ram[ip]];
@@ -244,7 +254,4 @@ function step : value;
   end;
 
 begin
-  open; boot;
-  repeat until step >= maxheap;
-  close(disk);
-end.
+end.
