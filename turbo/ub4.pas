@@ -10,14 +10,15 @@ type
   block = array[0..1023] of byte;
 
 const
+  {-- memory layout --}
   maxcell = 4095;
-  maxbuff = maxcell;
-  minbuff = maxcell-256;
-  maxdata = minbuff-1;
-  mindata = maxdata-256;
-  maxretn = mindata-1;
+  maxretn = maxcell;
   minretn = maxretn-256;
-  maxheap = minretn-1;
+  maxdata = minretn-1;
+  mindata = maxdata-256;
+  maxbuff = mindata-1;
+  minbuff = maxbuff-256;
+  maxheap = maxbuff; { so you can read/write the i/o buffer }
   maxblok = 1023;
 var
   ram  : array[0..maxcell] of value;
@@ -31,11 +32,11 @@ const {-- these are all offsets into the ram array --}
   ml    = 64; { main loop }
 
 
-  procedure open;
+  procedure open( path : string );
   procedure boot;
   function step : value;
 
-implementation;
+implementation
 
 procedure boot;
   begin
