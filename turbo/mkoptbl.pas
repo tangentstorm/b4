@@ -1,8 +1,8 @@
 program mkoptbl;
 
 {
-  this reads the source of b4unit.pas
-  and generates b4optbl.inc
+  this reads the source of the vm
+  and generates an optable unit.
 
   kind of a lot of work to avoid
   copying and pasting. :)
@@ -10,7 +10,7 @@ program mkoptbl;
 
 const
   ipath = 'ub4.pas';
-  opath = 'b4optbl.inc';
+  opath = 'ub4ops.pas';
 
 var
  line  : string;
@@ -62,8 +62,15 @@ begin
   assign(out, opath);
   rewrite(out);
   writeln(out, '{-- do not edit! regenerate with mkoptbl.pas --}');
+  writeln(out, 'unit ub4ops;');
+  writeln(out, 'interface');
+  writeln(out, '  type opstring = string[4];');
+  writeln(out, '  var optbl : array[ 0 .. 63 ] of opstring;');
+  writeln(out, 'implementation');
+  writeln(out, 'begin');
   for i := 0 to 63 do
-    writeln(out, 'optbl[', i:2, '] := ''', optbl[ i ], ''';');
+    writeln(out, '  optbl[', i:2, '] := ''', optbl[ i ], ''';');
+  writeln(out, 'end.');
   close(out);
 end.
 
