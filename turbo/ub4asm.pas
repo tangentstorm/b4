@@ -22,8 +22,15 @@ function b4op(code : opstring; var op:byte) : boolean;
     b4op := found;
   end;
 
+function b4opc(code:opstring) : byte;
+  var result : byte;
+  begin
+    if b4op(code, result) then b4opc := result
+    else begin writeln('invalid op: ', code); halt end;
+  end;
+
 type
-  tokentag = ( wsp, cmt, raw, lit, def, ref );
+  tokentag = ( wsp, cmt, raw, lit, def, ref, _wh, _do, _od, _if, _fi );
   token = record
     tag : tokentag;
     str : string;
@@ -71,6 +78,13 @@ function next( var tok : token; var ch : char ) : boolean;
                    tok.tag := ref;
                    while nextchar(ch) > #32 do keep
                  end;
+
+      { curly = (while | body) }
+      '{' : begin tok.tag := _wh; ch:=nextchar(ch) end;
+      '|' : begin tok.tag := _do; ch:=nextchar(ch) end;
+      '}' : begin tok.tag := _od; ch:=nextchar(ch) end;
+      '[' : begin tok.tag := _if; ch:=nextchar(ch) end;
+      ']' : begin tok.tag := _fi; ch:=nextchar(ch) end;
       else next := false
     end
   end;
@@ -122,7 +136,26 @@ procedure b4as;
                           emit(dict[op].val);
                         inc(op);
                       end
-                  end
+
+                end;
+          _wh :
+                dput(here);
+          _do : begin
+                  emit(b4opc('jwz'));
+                  emit(0);
+                  dput(here-1);
+                 { emit(b4opc('drop'));  }
+                end;
+          _od : begin
+                  { first, an unconditional jump back to the _do }
+                  { the if is just to discard the boolean }
+                  emit(b4opc('jmp'));
+                  swap; emit(1234);
+                  { now go back to the guard and compile the forward jump }
+                  ram[dpop] := here-1;
+                 end;
+          _if : ; { if does nothing. it's just there to look nice }
+          _fi : ram[dpop] := here-1; { compile the forward jump at '|' }
         end
       end;
 

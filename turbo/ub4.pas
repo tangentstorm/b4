@@ -43,7 +43,11 @@ const {-- these are all offsets into the ram array --}
   procedure open( path : string );
   procedure boot;
   function step : value;
+
+  { these internal ops are used in the assembler }
   procedure dput( val : value );
+  function dpop:value;
+  procedure swap;
 
 implementation
 
@@ -52,7 +56,7 @@ procedure boot;
     fillchar(ram, (maxcell + 1) * sizeof(value), 0);
     ram[dp] := maxdata;
     ram[rp] := maxretn;
-    ram[ip] := 32;
+    ram[ip] := 64;
     ram[hp] := 64;
   end;
 
@@ -191,17 +195,19 @@ function step : value;
       { Do not reformat this function! mkb4asm.pas uses it! }
       00 : {nop } begin end;
       01 : {lit } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
-      02 : {jmp } ram[ram[ip]] := ram[ram[ip]+1];
+      02 : {jmp } ram[ip] := ram[ram[ip]+1];
       03 : {jwz } if tos = 0 then
-                  begin
-                    zap(dpop);
-                    ram[ram[ip]] := ram[ram[ip]+1];
-                  end;
+                    begin
+                      zap(dpop);
+                      ram[ip] := ram[ram[ip]+1];
+                    end
+                  else
+                   inc(ram[ip]) { skip over the addres };
       04 : {ret } ram[ip] := rpop;
       05 : {rwz } if tos = 0 then
                    begin
                      zap(dpop);
-                     ram[ip] := rpop;
+                     ram[ip] := rpop
                    end;
       06 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
       07 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
@@ -216,9 +222,9 @@ function step : value;
       16 : {sub } dput(-dpop + dpop);
       17 : {mul } dput(dpop * dpop);
       18 : {dvm } begin
-                   rput(tos mod nos);
-                   dput(dpop div dpop);
-                   dput(rpop);
+                    rput(tos mod nos);
+                    dput(dpop div dpop);
+                    dput(rpop);
                  end;
       19 : {shl } begin swap; dput(dpop shl dpop) end;
       20 : {shr } begin swap; dput(dpop shr dpop) end;
@@ -229,7 +235,7 @@ function step : value;
       25 : {get } dput(ram[dpop]);
       26 : {set } ram[dpop] := dpop;
       27 : {dup } dput(tos);
-      28 : {zap } zap(dpop);
+      28 : {drop} zap(dpop);
       29 : {swap} swap;
       30 : {over} dput(nos);
       31 : {goxy} begin

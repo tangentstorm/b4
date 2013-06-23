@@ -1,6 +1,20 @@
-# b4 bios
 cscr
-# hrm
-65
-putc
+15 { dec dup | dup attr 64 putc }
+[ 1 | 2 attr 65 putc ]
+
+
+nop nop nop nop nop
+nop nop nop nop nop
+nop nop nop nop nop
+nop nop nop nop nop
+nop nop nop nop nop
+
+# b4 bios
+# cscr
+#1 attr 87 putc
+#2 attr 88 putc
+#15 { dec dup | dup attr 64 putc }
+#4 attr 65 putc
+#[ 0 | 4 attr 66 putc ]
+# 4 attr 67 putc
 

@@ -33,7 +33,7 @@ begin
   optbl[25] := 'get';
   optbl[26] := 'set';
   optbl[27] := 'dup';
-  optbl[28] := 'zap';
+  optbl[28] := 'drop';
   optbl[29] := 'swap';
   optbl[30] := 'over';
   optbl[31] := 'goxy';
