@@ -120,6 +120,9 @@ procedure dput( val : value );
 
 procedure rput( val : value );
   begin
+    dec(ram[rp]);
+    if ram[rp] < minretn then ram[rp] := maxretn;
+    ram[ram[rp]] := val;
   end;
 
 procedure comma;
