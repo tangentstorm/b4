@@ -138,23 +138,22 @@ procedure b4as;
                       end
 
                 end;
-          _wh :
-                dput(here);
+          _wh : dput(here-1);
           _do : begin
                   emit(b4opc('jwz'));
                   emit(0);
                   dput(here-1);
-                 { emit(b4opc('drop'));  }
+                  emit(b4opc('drop'));
                 end;
           _od : begin
                   { first, an unconditional jump back to the _do }
                   { the if is just to discard the boolean }
                   emit(b4opc('jmp'));
-                  swap; emit(1234);
+                  swap; emit(dpop);
                   { now go back to the guard and compile the forward jump }
                   ram[dpop] := here-1;
                  end;
-          _if : ; { if does nothing. it's just there to look nice }
+          _if : ; { if does nothing. it's just syntactic sugar. }
           _fi : ram[dpop] := here-1; { compile the forward jump at '|' }
         end
       end;
@@ -168,7 +167,7 @@ procedure b4as;
 
     if err <> 0
       then dput(err)
-      else begin ram[hp] := here; dput(0) end
+      else begin ram[hp] := here end
   end;
 
 begin
