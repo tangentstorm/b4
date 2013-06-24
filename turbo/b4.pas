@@ -1,7 +1,9 @@
+{ this is the main entry point for b4 }
 program b4;
 uses ub4, ub4asm, ub4ops, crt;
 
 procedure dump;
+  { this displays the visual debugger }
   var x,y, oldattr :byte; i, r : integer; literal, target : boolean;
   begin
     x:= wherey; y:=wherey; oldattr := textattr;
@@ -16,14 +18,14 @@ procedure dump;
           begin textcolor(6); write(ram[i]:5); literal := false end
         else if target then
           begin textcolor(4); write(ram[i]:5); target := false end
-        else if (ram[i] in [1..63])
-          then begin
-               textcolor(15);
-               write(optbl[ram[i]]:5);
-               if ram[i] = 1 then literal := true;
-               if ram[i] in [2..3] then target := true;
-             end
-          else begin textcolor(3); write(ram[i]:5) end;
+        else if (ram[i] in [1..63]) then
+          begin
+            textcolor(15);
+            write(optbl[ram[i]]:5);
+            if ram[i] = 1 then literal := true;
+            if ram[i] in [2..3] then target := true;
+          end
+        else begin textcolor(3); write(ram[i]:5) end;
       end;
       gotoxy(1,23); textbackground(cyan); clreol; textcolor(0);
       textcolor(14); write('<', maxdata-ram[dp] ,'> ');
@@ -55,4 +57,5 @@ begin
   close(disk);
   writeln('done. press any key to continue');
   repeat until keypressed;
-end.
+end.
+
