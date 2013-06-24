@@ -6,7 +6,7 @@ procedure dump;
   { this displays the visual debugger }
   var x,y, oldattr :byte; i, r : integer; literal, target : boolean;
   begin
-    x:= wherey; y:=wherey; oldattr := textattr;
+    x:= wherex; y:=wherey; oldattr := textattr;
     writeln; gotoxy(1,16);
     literal := false; target := false; r := 0;
     while (r < (maxheap - 64)) and not (ram[ip] in [r..r+63]) do inc(r,64);
@@ -30,7 +30,7 @@ procedure dump;
       gotoxy(1,23); textbackground(cyan); clreol; textcolor(0);
       textcolor(14); write('<', maxdata-ram[dp] ,'> ');
       textcolor(0);
-      for i := maxdata downto ram[dp] do write(ram[i],' ');
+      for i := maxdata-1 downto ram[dp] do write(ram[i],' ');
       gotoxy(x,y); textattr:=oldattr;
   end;
 
