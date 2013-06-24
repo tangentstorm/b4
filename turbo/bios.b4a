@@ -1,5 +1,5 @@
 cscr
-15 { dec dup | dup attr 64 putc }
+15 { dup 0 gt | dup attr 64 putc dec } drop
 [ 1 | 2 attr 65 putc ]
 
 
@@ -8,6 +8,7 @@ nop nop nop nop nop
 nop nop nop nop nop
 nop nop nop nop nop
 nop nop nop nop nop
+getc
 
 # b4 bios
 # cscr
