@@ -34,9 +34,11 @@ var
 const {-- these are all offsets into the ram array --}
   ip    = 0; { instruction pointer }
   dp    = 1; { data stack pointer }
-  rp    = 2; { addr stack pointer }
+  rp    = 2; { retn stack pointer }
   hp    = 3; { heap pointer }
   last  = 4; { last dictionary entry }
+  ap    = 5; { the 'a' register }
+  ep    = 6; { the editor pointer }
   ml    = 64; { main loop }
 
 
@@ -58,6 +60,8 @@ procedure boot;
     ram[rp] := maxretn;
     ram[ip] := 64;
     ram[hp] := 64;
+    ram[ap] := 64;
+    ram[ep] := 64;
   end;
 
 procedure halt;
@@ -266,7 +270,8 @@ function step : value;
       39 : {keyp} if keypressed then dput(-1) else dput(0);
       40 : {cscr} crt.clrscr;
       41 : {ceol} crt.clreol;
-      { reserved: } 42 .. 63 : begin end;
+      45 : {crxy} begin dput(crt.wherex); dput(crt.wherey) end;
+      { reserved: } 43 .. 63 : begin end;
       else
         rput(ram[ip]);
         ram[ip] := ram[ram[ip]];

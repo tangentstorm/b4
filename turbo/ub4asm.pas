@@ -85,7 +85,7 @@ function next( var tok : token; var ch : char ) : boolean;
       '}' : begin tok.tag := _od; ch:=nextchar(ch) end;
       '[' : begin tok.tag := _if; ch:=nextchar(ch) end;
       ']' : begin tok.tag := _fi; ch:=nextchar(ch) end;
-      else next := false
+      else  begin tok.tag := ref; ch:=nextchar(ch) end;
     end
   end;
 
@@ -121,9 +121,10 @@ procedure b4as;
                   end
                 end;
           def : if ents > 31 then err := -12345
-                  else begin
+   else
+                  begin
                     dict[ents].key := tok.str;
-                    dict[ents].val := here;
+                    dict[ents].val := here-1 ;
                     inc(ents)
                   end;
           ref : if b4op(tok.str, op) then emit(op)
