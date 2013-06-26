@@ -1,0 +1,91 @@
+#+date: <2013-06-20 Thu>
+
+* a simple memory manager
+:PROPERTIES:
+:TS:       <2013-06-20 11:41PM>
+:ID:       gfck2y61f5g0
+:END:
+
+#+begin_src pascal
+ram := array [ 0 .. ramsize - 1 ] of cell;
+#+end_src
+
+Now we can store a set of chains (linked lists) that contain data of different sizes:
+
+( /c/ is the address of the cell for the first chain )
+
+#+begin_src pascal
+
+  for i := 0 to $f do
+    begin
+      ram[ c + i ] := 0;
+      ram[ c + i + $10 ] := 2 ** i;
+    end;
+
+#+end_src
+
+The second set of numbers indicate the size of the memory block, in powers of 2. The smallest block size is 1 cell, and the largest is 2**15, or 32768 cells.
+
+Here's how we allocate ram:
+
+- find the smallest block size that will hold the data
+- if there's a block of that size on the chain:
+    - copy its address to the result
+    - fetch the value at that address (the next link in the chain)
+    - make that value the new head for the list
+- if there /wasn't/ a block of that size on the chain:
+    - set the result to the current "end of heap" value
+    - grow heap by blocksize
+
+* TODO How to implement nested trees in b4/retro?
+:PROPERTIES:
+:TS:       <2013-06-26 02:48PM>
+:ID:       onz9pqd0n5g0
+:END:
+
+** one option is to implement dynamic memory
+:PROPERTIES:
+:TS:       <2013-06-26 04:44PM>
+:ID:       wynk73j0n5g0
+:END:
+*** maintain an array of heads for the chains
+:PROPERTIES:
+:TS:       <2013-06-26 03:45PM>
+:ID:       3ne5ddg0n5g0
+:END:
+#+begin_src retro
+create heads 15 allot
+#+end_src
+
+*** allocate ram
+:PROPERTIES:
+:TS:       <2013-06-26 04:48PM>
+:ID:       e6sc4bj0n5g0
+:END:
+**** check if it's already in the chain
+:PROPERTIES:
+:TS:       <2013-06-26 04:49PM>
+:ID:       izpahbj0n5g0
+:END:
+**** TODO figure out which chain to use
+:PROPERTIES:
+:TS:       <2013-06-26 04:42PM>
+:ID:       qfr1i0j0n5g0
+:END:
+loop through the powers of 2
+
+** what if we just made a THERE at the other end of ram?
+:PROPERTIES:
+:TS:       <2013-06-26 04:45PM>
+:ID:       smngw5j0n5g0
+:END:
+
+
+
+** How to implement a simple Forth83 in b4/retro?
+:PROPERTIES:
+:TS:       <2013-06-26 02:51PM>
+:ID:       0tnjtud0n5g0
+:END:
+
+
