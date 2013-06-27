@@ -1,0 +1,87 @@
+#+title: specter : component specification tester
+
+* overview
+
+Specter is a simple language for /specifying/ and /testing/ the behavior of software components by presenting the transcripts of dialogs between the component and a controlling actor.
+
+When the tests run, specter plays the role of the controlling actor, and communicates with the component through an interpreter program.
+
+* TODO define /Component/
+
+- major examples: COM, javabeans, Delphi TComponent
+- specified by interface
+- interfaces are queryable at runtime
+- tagged with a constructor
+- but anything can be made to look like a component
+- constructor with no arguments
+- attributes with getters and setters
+- may contain child nodes in bins specific to the type
+- may be arranged in arbitrary nodes.
+- responsible for their child objects (as in Delphi)
+
+
+* philosophy
+
+- minimal syntax
+
+* formal definition of transcript language
+
+#+begin_src antlr
+
+  start : line / nl ;
+  line  : ( '#' _ * )!
+        | '>' CHARS -> In _
+        | CHARS     -> Out _
+        ;
+  NL    : { #10 #13 } ;
+  ANY   : { #0 .. #255 } ;
+  CHARS : ( '\\' ANY | ~ NL ) * ;
+
+#+end_src
+
+
+* example implementation
+
+#+begin_src python
+  
+  def spectate( stream, send, expect ):
+      """
+      stream should yield lines of text
+  
+      send and expect are callbacks that each take a line.
+      presumably send would send data to a child program
+      and expect would read a line of the child program's 
+      output and raise an exception if it didn't match.
+      """
+  
+      def getnext(iterator, default):
+          try: return iterator.next()
+          except StopIteration: return default
+      
+      def chomp(s):
+          return line[:-1] if type(s)==str and line.endswith('\n') else line
+      
+      end = None # i just like seeing it now. :)
+  
+      def nxt(): return chomp(getnext(stream, END))
+      
+      done = False
+      while not done:
+          this = nxt()
+          while this != END:
+              line = this
+              while line.endswith('\\') and this != END:
+                  this = nxt()
+                  if this == END:
+                      raise SyntaxError('expected another line')
+                  line = line[:-1] + this()
+              end
+              if   line[0]  == '>' : send(line[1:-1])
+              elif line[0]  == '#' : pass
+              elif line[0]  == '\\': expect(line[1:])
+              else : expect(line)
+              this = nxt()
+          end
+      end
+
+#+end_src
