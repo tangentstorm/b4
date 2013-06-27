@@ -1,6 +1,9 @@
 XPL = ../lib/xpl/code
 GEN = ../gen
-FPC = fpc -Fu$(XPL) -Fi$(XPL) -Mobjfpc -gl -FE$(GEN) -Fi$(GEN)
+FCL = ~/f/packages/fcl-base/src
+FCLXML = ~/f/packages/fcl-xml/src
+FPC = fpc -B -Fu$(XPL) -Fi$(XPL) -Mobjfpc -gl -FE$(GEN) -Fi$(GEN) \
+          -Fu$(FCL) -Fu$(FCLXML)
 PYTHON = python
 
 main: grin

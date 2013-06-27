@@ -1,0 +1,21 @@
+#+title: the b4 language
+
+* Types
+** B4
+There is exactly one type in b4: the 32-bit unsigned integer.
+** Wejal
+*** Primitive Types
+**** Natural Numbers
+**** Integers
+**** Scalars
+*** Fixed-Size Structures
+**** Array
+**** Record
+**** Variant
+**** Sets
+*** Dynamically-Sized Data Structures
+**** File
+**** List
+
+* 
+

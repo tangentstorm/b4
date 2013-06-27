@@ -1,0 +1,83 @@
+* b4-opcodes
+
+The following is a small virtual machine with an instruction set inspired by the UTF-8 encoding.
+
+#+begin_src pascal
+  
+  const
+    s0 = [ $00 .. $7F ]; { ascii character set }
+    s1 = [ $80 .. $BF ]; { instructions }
+    s2 = [ $C0 .. $DF ]; { start of 2-byte sequence }
+    s3 = [ $E0 .. $EF ]; { start of 3-byte sequence }
+    s4 = [ $F0 .. $F4 ]; { start of 4-byte sequence }
+    s5 = [ $F4 .. $FF ]; { reserved }
+  
+    kRamsize   = 65536; { 64k, or 2^16 }
+    kStackSize =  1024;
+  
+  type
+    u32     = 0 .. 4294967295; { 2^32 - 1 }
+    stack   = array[ 0 .. kStackSize - 1 ] of u32;
+    store   = array[ 0 .. kRamSize - 1 ] of u32;
+            
+    machine = record
+                ram  : store;
+                data : stack;
+                addr : stack;
+                regs : record
+                         t, s : u32; { top and second values of the data stack }
+                         r    : u32; { top value of the return stack }
+                         i, o : u32; { input/output pointers }
+                         p    : u32; { program counter (instructon pointer) }
+                         q    : u32; { previous opcode }
+                       end;
+              end;
+  
+  procedure init( self : machine );
+    begin
+      with self.regs do
+        begin
+          t := 0; s := 0; r := 0; q := 0;
+          p :=  $00; { program counter starts here. 
+                       the first 256 bytes should therefore contain 
+                       the bios }
+          i := $100; { start of input buffer }
+          o := $200; { start of output buffer }
+        end;
+    end;
+  
+  procedure emit( self : machine; u : u32 );
+    begin
+      self.ram[ self.regs.o ] := u;
+      inc( self.regs.o );
+    end;
+  
+  function next( self : machine ) : u32;
+    begin
+      result := self.ram[ self.regs.i ];
+      inc( self.regs.i );
+    end;
+  
+  procedure step( self : machine );
+    var
+      op : byte = 0; { current opcode }
+      po : byte = 0; { previous opcode }
+    begin
+      with self do
+        begin
+          po := regs.q;
+          op := ram[ regs.p ];
+          {  } if po in s4 and op in s3 then  inc( regs.t, ( op - $E0 ) * $1000 )
+          else if po in s3 and op in s2 then  inc( regs.t, ( op - $C0 ) *   $40 )
+          else if po in s2 and op in s1 then emit( regs.t + op - $80 )
+          else if op in s0 then emit( op )
+          else if op in s1 then perform( opcodes[ op - $80 ])
+          else if op in s2 then push(( op - $C0 ) *    $40 )
+          else if op in s3 then push(( op - $E0 ) *  $1000 )
+          else if op in s4 then push(( op - $F0 ) * $40000 )
+          else if op in s5 then pass; { ignore reserved bytecodes }
+          regs.q := op;
+          inc( regs.p );
+        end;
+    end;
+#+end_src

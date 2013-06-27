@@ -1,0 +1,66 @@
+#+title: a pre-metacomplier for retro
+
+* Asynchronous Environment
+** 28-bit address space (16 MB)
+** Byte-addressed RAM, working with 32-bit cells at once.
+*** Smallest five bits are used for type code. Maybe more?
+** Event Polling System
+** Dispatch Events to Focus Object
+** Keys can be marked as modifiers or not.
+** Objects can have keymaps (which can inherit from other keymaps).
+** There should be a line / editor object.
+** The line editor manages a single string.
+** String is passed by reference to a tokenizer.
+** Tokenizer colors the string and maintains a sequence of tokens.
+** Token Sequences are further grouped into nodes.
+** Keyboard Navigation commands work with tokens and nodes.
+
+* Bicameral VM
+** Outer shell uses strings only
+** Outer shell maintains the scene graph.
+
+* redl
+The asynchronous message passing system is already running.
+#+begin_src retro
+  main: ( \rarr IO \bullet ) read eval draw loop .
+  read: ( \rarr Tok )
+  eval: ( compile or execute )
+  draw:                         compile-only
+  loop:                         immediate
+  getc end ;
+  eval print loop ;
+#+end_src
+
+#+begin_src  retro
+( from kernel.rx )
+i: (accept)    ( i: in the kernel defines an intermediate/helper word )
+   repeat
+     getc
+     ( handle backspace. guard against underflow. )
+     dup, 8 # =if drop, 1-, guard? jump: (accept) then
+     ( echo to the screen )
+     dup, putc
+     ( if it's the terminal char, then exit )
+     dup, break # @, =if drop, ; then
+     ( else append ch to buffer and return next address )
+     swap, !+
+   again ;
+#+end_src
+
+
+* TODO define metacompiler
+
+* TODO byte loader
+
+* TODO create and emit numbers
+
+
+
+* IDEA simple calculator loop.
+Loop that reads words, then shows the stack.
+
+
+
+
+* Dynamic Dispatch Word
+This word would execute an instruction from the top of the stack.

@@ -1,4 +1,4 @@
-{$i xpc.inc }
+{$mode objfpc}{$i xpc.inc }
 unit ng;
 interface uses xpc, stacks, kvm, kbd, posix, sysutils;
 

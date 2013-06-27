@@ -122,7 +122,7 @@ Borrowing a trick from Alan Winfield, we'll let retro's dictionary do the work.
     [ skip-whitespace
 
       ( these characters /are/ tokens, and we can use a jump table: )
-      ch 33 47 in-range? [ -33 +
+      ch '! '/ within [ ch -33 +
          [ `! `" `# err err err err `( `) `* `+ `, `- `. `/ ] @ ] ifTrue
 
       ( these immediately trigger a parse rule )
@@ -170,3 +170,9 @@ were almost all in the range #32 - #47:
 : #96 - #127 (DELETE)
 : ` a b c d e f g h i j k l m n o
 : p q r s t u v w x y z { | } ~
+
+* the parser
+#+begin_src retro
+  : next ( -at ) ( next node. tos = tokenid for head, nos = node address )
+  ;
+#+end_src

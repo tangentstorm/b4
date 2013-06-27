@@ -1,0 +1,314 @@
+#+title: generalized sets for pascal
+#+author: michal j. wallace
+#+date: <2013-05-17>
+
+* Pascal's Native =SET= Type
+
+A distinguishing feature of Pascal and its sucessors is the =set= type. 
+
+For example, you might declare an enumerated type =day= to represent the days of the week, and then a set type called =days= to hold multiple values of this type:
+
+#+begin_src pascal
+  type
+    Day  = (mon, tue, wed, thu, fri, sat, sun);
+    Days = set of Day;
+#+end_src
+
+You can then declare literal values of this type, either as constants or as variables:
+
+#+begin_src pascal
+  const
+    weekdays = [ mon .. fri ]; // literal range
+  
+  var
+    mwf : Days = [ mon, wed, fri ]; // literal set
+#+end_src
+
+Note that unlike a mathematical set, pascal sets are ordered.
+
+These sets can be passed as parameters, traversed with a =for= ... =in= loop. The underlying enumerated type can be parsed with =read= and printed =write= and =writeln=, so printing the contents of a set is a simple matter of looping:
+
+#+begin_src pascal
+  procedure writedays( title : string; whichdays : Days );
+    var d : Day;
+    begin
+      writeln( title );
+      for d in whichdays do write( '  ', d );
+      writeln;
+    end;
+#+end_src
+
+Most importantly, pascal offers a rich variety of set operations:
+
+#+begin_src pascal
+  var w, s : set of days;
+  begin
+    w := weekdays;              // weekdays
+    s := mwf + [sat, sun];      // arbitrary set of days
+    writedays( 's:', s);
+    writedays( 'w:', w);
+    writeln;
+    writedays( ' w + s:',  w + s ); // union
+    writedays( ' w * s:',  w * s ); // intersection
+    writedays( ' w - s:',  w - s ); // difference
+    writedays( ' s - w:',  s - w ); // difference
+    writedays( 'w >< s:', w><s );   // symmetric difference
+    writeln;
+    writeln( '  w   <= s: ', w <= s );    // subset?
+    writeln( '  mwf <= w: ', mwf <= w );  // subset?
+    writeln( '  w   >= s: ', w >= s );    // superset?
+    writeln( '  w    = s: ', w = s );     // equal
+    writeln( '  w   <> s: ', w <> s );    // not-equal
+    writeln( 'mon in mwf: ', mon in mwf); // element-of?
+    writeln( 'tue in mwf: ', tue in mwf); // element-of?
+    writeln;
+  end.
+#+end_src
+
+Here is the output of the above program:
+
+#+begin_src example
+s: [ mon wed fri sat sun ]
+w: [ mon tue wed thu fri ]
+
+ w + s: [ mon tue wed thu fri sat sun ]
+ w * s: [ mon wed fri ]
+ w - s: [ tue thu ]
+ s - w: [ sat sun ]
+w >< s: [ tue thu sat sun ]
+
+  w   <= s: FALSE
+  mwf <= w: TRUE
+  w   >= s: FALSE
+  w    = s: FALSE
+  w   <> s: TRUE
+mon in mwf: TRUE
+tue in mwf: FALSE
+#+end_src
+
+* Limitations of Native Sets
+
+Traditionally, pascal sets are implemented as bitmaps - usually 32-bit values - where each member of a set is represented by a single bit. This means that the underlying enumerated type is limited to ranges of 32 values.
+
+With the [[http://freepascal.org/][free pascal]] compiler, sets can be arbitrarily large, allowing you to create sets of characters or or other numbers, but they're still limited to simple underlying types.
+
+Bitmapped sets are incredibly useful, but occasionally it's convenient to work work with sets of more complex objects, that may not even map to a spefic ordinal number.
+
+For example, there's no easy way to create a set of strings or real numbers in pascal, or sets of arbitrary records, as you'd want in a database application. The best you can do is create some kind of container structure that keeps its contents sorted. Then when you add a value to the container, you just check to make sure it's not already there, and if so, discard it.
+
+In fact, there are a number of [[http://wiki.freepascal.org/Data_Structures,_Containers,_Collections][container libraries for pascal]], and some of them offer set types based on trees, ([[http://svn.freepascal.org/cgi-bin/viewvc.cgi/trunk/packages/fcl-stl/src/gset.pp?revision=17310&view=markup][gset.pp]] in the free pascal component library, for example). As far as I could tell, though, none of them actually provide the basic operations that you get with pascal's native sets.
+
+Most of the time, that's okay. Often when you reach for a set of, what you really want is a collection of unique values. But since I'm making a database that supports relational algebra, I need a =set= in the mathematical sense, with support for unions and intersections and so on.
+
+So... Let's make one.
+
+* A Generic Interface for Sets
+
+In thinking through an implementation, it can be helpful to define an interface. Interfaces have no code associated with them. They simply define a set of attributes and operations that other types can provide. This allows you to swap out different implementations of an interface without changing the code that uses it.
+
+Here's an interface for our set type:
+
+#+name: type:ISet
+#+begin_src pascal
+  type ISet<T> = interface
+    { stateful operations } 
+    procedure include( val : T );
+    procedure exclude( val : T );
+    { predicates, comparisons, and queries }
+    function contains( val : T ): boolean;
+    function isSubsetOf( other : ISet<T> ): boolean;
+    function isSupersetOf( other : ISet<T> ): boolean;
+    function isEqualTo( other : ISet<T> ): boolean;
+    function count : cardinal;
+    { algebraic operations }
+    function copy : ISet<T>;
+    function withval( val : T ) : ISet<T>;
+    function without( val : T ) : ISet<T>;
+    function union( other : ISet<T> ): ISet<T>;
+    function intersect( other : ISet<t> ): ISet<T>;
+    function difference( other : ISet<t> ): Iset<T>;
+    function symdiff( other : ISet<t> ): Iset<T>;
+  end;
+#+end_src
+
+The =<T>= syntax indicates that the interface is generic, which means it takes a type as a parameter. If we want a set of string, for example, we could declare a variable of type =ISet<string>=. To use this syntax in free pascal, you need to make sure the compiler is in ={$mode delphi}=. You can also use generics in ={$mode objfpc}= but the syntax is [[http://www.freepascal.org/docs-html/ref/refse44.html#x97-1070008.2][slightly different]].
+
+Since we are only providing one implementation, you might think declaring an interface is overkill, but there is a second benefit to using interfaces in pascal:
+
+If you use an interface in your variable declaration rather than a concrete type, the compiler will generate a little extra code that performs reference counting on your behalf. the reference count callbacks can do whatever you want them to do, but if you make your class an instance of =tinterfacedobject= then it will inherit some basic garbage collection behavior. (if you don't want that, just work directly with the class, rather than the interface.)
+
+The only slight downside to interfaces in pascal is that (unlike in java or c#) you have to explicitly redeclare that you're implementing each part of the interface. so, if you skip to the end of this document, you'll see where i've declared the =gset= class, and it's a word for word copy of of the interface declaration (with the addition of a contstructor and destructor, which we'll get to in a moment.)
+
+* Using this document as a tutorial.
+
+Before we get started, I want to point out that this document is meant as a trail for others to follow as they build up their understanding.
+
+Usually, we're confronted with code in a finished state, with routines presented in some arbitrary order, with all kinds of interdependencies, and it can be hard to know where to start reading.
+
+The goal here is to provide not so much a description of how it is, but how it got to be that way.
+
+The discussion and interface above should give you a clear idea of where we're going. The narrative below provides the step by step instructions for how to get there.
+
+In fact, both the finished code and the nicely rendered version you are reading are both generated from the same file. 
+
+If you just want to use the library, a link to the finished code is provided at the end.
+
+If you'd prefer to follow along yourself and treat this document as a tutorial, then you should start by copying and pasting the following commented-out version of the code. (Or just adding the method declarations one by one as we go along).
+
+#+begin_src pascal
+  type GSet<t> = class // ( TInterfacedObject, ISet<T> )
+  private
+    type TRBTree = TRBMap<T,byte>;
+  private
+    _tree : TRBTree;
+  public
+    // constructor Create;
+    // destructor Destroy; override;
+    { stateful operations }
+    // procedure include( val : T ); virtual;
+    // procedure exclude( val : T ); virtual;
+    { predicates, comparisons, and queries }
+    // function contains( val : T ): boolean; virtual;
+    // function isSubsetOf( other : ISet<T> ): boolean;virtual;
+    // function isSupersetOf( other : ISet<T> ): boolean;virtual;
+    { algebraic operations }
+    // function copy : ISet<T>;
+    // function withval( val : T ) : ISet<T>;virtual;
+    // function without( val : T ) : ISet<T>;virtual;
+    // function union( other : ISet<T> ): ISet<T>;virtual;
+    // function intersect( other : ISet<t> ): ISet<T>;virtual;
+    // function difference( other : ISet<t> ): Iset<T>;virtual;
+    // function symdiff( other : ISet<t> ): Iset<T>;virtual;
+  end;       
+#+end_src
+
+We'll tackle the functions in order of the dependency, so that we don't have half-finished code lying around, and we can keep the tests running after every step.
+
+We won't declare that =GSet= implements =ISet= until we've implemented all the methods. Otherwise the compiler will complain and we won't be able to run the tests.
+
+* The Test Framework
+
+I use a very simple test framework that generates some of the boilerplate code that pascal requires. You can find it here:
+
+https://github.com/tangentstorm/xpl/tree/master/test
+
+This repository includes both the finished =test_sets.pas= and (if you move over to =../code=, the finished =sets.pas=).
+
+There is currently a small python dependency used to generate the boilerplate code for the tests. (hopefully this will be ported to pascal soon).
+
+* Implementation : GSet<T>
+** Constructor and Destructor
+#+name: class:GSet
+#+begin_src pascal
+  
+  constructor GSet<t>.Create;
+  begin
+    inherited;
+    _tree := TRBTree.Create;
+  end;
+  
+  destructor GSet<T>.Destroy;
+  begin
+    _tree.Free;
+  end;
+  
+#+end_src
+
+** Membership
+#+name: class:GSet
+#+begin_src pascal
+
+  procedure GSet<T>.include( val : T );
+  begin
+  end;
+
+  procedure GSet<T>.exclude( val : T );
+  begin
+  end;
+
+  function GSet<T>.contains( val : T ) : boolean;
+  begin
+  end;
+
+#+end_src
+
+
+** Appendix: unit =sets=
+
+#+begin_src pascal :tangle "~/x/test/test_sets.pas" :noweb tangle
+{$mode delphi}
+{$i test_sets.def }{$h+}
+implementation uses sets;
+
+  type
+    TStringSet = GSet<string>;
+    TCharSet   = set of char;
+
+  const { these are built-in (set of char), tested with bits }
+    hexits = ['0'..'9','a'..'f'];
+    vowels = ['a','e','i','o','u'];
+
+  var { these use the custom implementation }
+    h, v : TStringSet;
+
+  function makeStringSet( chs : TCharSet ) : TStringSet;
+    var ch : char;
+    begin
+      result := TStringSet.Create;
+      for ch in chs do result.include( ch );
+    end;
+  
+  function ToString( ss : TStringSet) : string;
+    var s : string;
+    begin
+      result := '';
+      for s in s do result += s;
+    end;
+
+  procedure setup;
+    begin
+      h := makeStringSet(hexits);
+      v := makeStringSet(vowels);
+    end;
+  
+  procedure test_iter;
+    begin
+      chk.equal( '0123456789abcdef', ToString(h));
+    end;
+
+end.
+#+end_src
+
+#+begin_src pascal :tangle "~/x/code/sets.pas" :noweb tangle
+  {$mode delphi}
+  unit sets;
+  interface uses rb;
+    <<type:ISet>>
+    type GSet<t> = class // ( TInterfacedObject, ISet<T> )
+    private
+      type TRBTree = TRBMap<T,byte>;
+    private 
+      _tree : TRBTree;
+    public
+      constructor Create;
+      destructor Destroy; override;
+      { stateful operations }
+      procedure include( val : T ); virtual;
+      procedure exclude( val : T ); virtual;
+      { predicates, comparisons, and queries }
+      function contains( val : T ): boolean; virtual;
+      // function isSubsetOf( other : ISet<T> ): boolean;virtual;
+      // function isSupersetOf( other : ISet<T> ): boolean;virtual;
+      { algebraic operations }
+      // function copy : ISet<T>;
+      // function withval( val : T ) : ISet<T>;virtual;
+      // function without( val : T ) : ISet<T>;virtual;
+      // function union( other : ISet<T> ): ISet<T>;virtual;
+      // function intersect( other : ISet<t> ): ISet<T>;virtual;
+      // function difference( other : ISet<t> ): Iset<T>;virtual;
+      // function symdiff( other : ISet<t> ): Iset<T>;virtual;
+    end;
+  implementation
+    <<class:GSet>>
+  end.
+#+end_src

@@ -1,0 +1,19 @@
+
+
+
+first make an infinite loop
+
+save (the interpreter program)
+load (the interpreter program)
+
+
+<io buffers>
+<stacks>
+
+
+find
+word
+numb
+loop
+defn
+emit

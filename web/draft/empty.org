@@ -1,34 +1,114 @@
+#+title: creating interactive programs
 
-* the core loop
+* program =helloworld=
+:PROPERTIES:
+:TS:       <2013-06-19 10:35AM>
+:ID:       0eugt051d5g0
+:END:
+Here is a famous program, implemented in the programming language /pascal/:
+
+#+begin_src pascal :tangle "~/b/tangled/empty/helloworld.pas" :comments both :noweb tangle
+  program helloworld;
+  begin
+    WriteLn('Hello, World!')
+  end.
+#+end_src
+
+If you install the free pascal compiler from [[http://www.freepascal.org/download.var][freepascal.org]] and save the above code to a file called =helloworld.pas=, then you can compile it to an executable with the command:
+
+: fpc helloworld.pas
+
+If you'd prefer to run the code immediately, you can also type:
+
+: instantfpc helloworld.pas
+
+At which point you should see the output:
+
+: Hello, World!
+
+I show you this now so that you could see that pascal is rather simple, because we are about to introduce a few layers of abstraction and indirection, and we will not see much of a payoff for our trouble until we reach the end.
+
+* Interactive programs
+:PROPERTIES:
+:TS:       <2013-06-19 11:03AM>
+:ID:       14z2tc61d5g0
+:END:
+Our goal here is to create an /interactive/ computing environment. This means that there will be a sort of feedback loop between the computer and the user.
+
+The term /interactive computing environment/ is deliberately general. It's meant to cover a wide spectrum of programs, from an interpreter that reads a standard input stream and executes commands immediately, to an immersive 3D environment.
+
+Here is a simple example of an interactive program:
+
+#+begin_src pascal :tangle "~/b/tangled/empty/goodbye.pas" :comments both :noweb tangle
+  program goodbye;
+  var cmd : string;
+  begin
+    writeln('Hello! I am an interactive program. Type "exit" to quit using me.');
+    repeat
+      write('> '); readln( cmd )
+    until cmd = 'exit';
+    writeln('Bye!');
+  end.
+#+end_src
+
+If you run this, you will see the welcome message and a prompt:
+
+: instantfpc goodbye.pas
+: Hello! I am an interactive program. Type "exit" to quit using me.
+: >
+
+You can type anything you want, but of course the only command it understand is =exit=:
+
+: Hello! I am an interactive program. Type "exit" to quit using me.
+: > Hello.
+: > Make me a sandwich.
+: > sudo make me a sandwich
+: > exit
+: Bye!
+
+All interactive or programs share this same basic structure, though of course they might display graphics and make sounds and the input may come from something other than a keyboard - perhaps a mouse or gamepad or microphone.
+
+* The core procedure: =interact=
 :PROPERTIES:
 :TS:       <2013-06-18 07:56PM>
 :ID:       pbu33c00d5g0
 :END:
 
-The following general procedure describes the behavior of an arbitrary interactive program in the syntax of the programming language pascal.
+The following general procedure describes the behavior of an arbitrary interactive program:
 
-#+name: coreloop
+#+name: interact
 #+begin_src pascal
-  procedure coreloop;
+  procedure interact;
     begin
       with context do
-        repeat
-          observe; evaluate; respond
-        until done
+        begin
+          init;
+          repeat 
+            behavior
+          until finished;
+          done;
+        end
     end;
 #+end_src
 
-* definition of =context=
+The =with <object> do <statement>= construct tells the compiler that the identifiers in /<statement>/ needn't be defined globally, but may instead refer to components of the specified object.
+
+In this case, the object is whatever the result of evaluating =context= happens to be.
+
+* Definition of =context=
 :PROPERTIES:
 :TS:       <2013-06-18 08:31PM>
 :ID:       56mczy10d5g0
 :END:
 
-The =with ... do ...= construct tells the compiler that the identifiers in the following statement needn't be defined globally, but may instead refer to components of a specified object.
+We can choose to define =context= in a variety of ways:
 
-In this case, the object is specified by the word =context=, and this identifier could be defined in a number of different ways: as a constant value, as a variable bound to an object, as a function that produces an object, or as a variable bound to a function that produces an object.
+- as a constant value,
+- as a variable bound to an object,
+- as a function that produces an object, or
+- as a variable bound to a function that produces an object.
 
-As it happens, we will take this last option, as it is the most flexible, and we will define =context= like so:
+As it happens, we're going to use the last option, as it is the most flexible, and we will define =context= like so:
 
 #+name: context
 #+begin_src pascal
@@ -39,7 +119,7 @@ The word =var= instructs the compiler to process a series of variable declaratio
 
 Before we explain what this means, let's take a moment and explain where to put it.
 
-** ASIDE organizing pascal code
+* Organizing pascal code
 :PROPERTIES:
 :TS:       <2013-06-18 09:40PM>
 :ID:       tv1ec650d5g0
@@ -51,13 +131,13 @@ In order to do compile each section of code as it is encountered, all the words 
 
 One consequence is that when you work in pascal, you start to develop a strong sense of direction and spatial awareness in regards to a program's layout. Definitions are easy to locate because they are arranged in a logical progression.
 
-Anyway, =coreloop= calls =context= so =context= must be placed /above/ the definition of =coreloop=.
+Anyway, =interact= calls =context= so =context= must be placed /above/ the definition of =interact=.
 
 Likewise, since we defined =context= in terms of =TCtx=, we must now define =TCtx= and put that somewhere in the file above =context=.
 
 This file presents the code in the order that I would write it from scratch. At the very bottom is an outline of how the code is laid out for pascal, and you can see the final "tangled" version of the code  [[somewhere]]
-*** TODO (put tangled code somewhere and link to it)
-** <=
+* TODO (put tangled code somewhere and link to it)
+* =TCtxFn= and =TCtx=
 :PROPERTIES:
 :TS:       <2013-06-19 12:09AM>
 :ID:       omgap2c0d5g0
@@ -70,35 +150,35 @@ This file presents the code in the order that I would write it from scratch. At 
   type TCtxFn = function : TCtx;
 #+end_src
 
-=TCtx= is a =record= type, which is how pascal creates fixed size structured data.
+=TCtx= will be a type of =record=, which is one of the ways pascal can create a fixed size data structure.
 
-Recall that we have reached this point through a series of refinement steps of the phrase =with context do <statement>= in the code for =coreloop=. We said that this allows us to define some of the other identifiers used in the following statement. In the case of =coreloop=, this happened to be:
+Recall that we have reached this point through a series of refinement steps of the phrase =with context do <statement>= in the code for =interact=. We said that this allows us to define some of the other identifiers used in the following statement. In the case of =interact=, this happened to be:
 
 #+begin_src pascal
   repeat
-    observe; evaluate; respond
-  until done
+    behavior
+  until finished
 #+end_src
 
 The words =repeat= and =until= are part of the pascal syntax, but the others we must define ourselves.
 
-The rules of pascal syntax dictate that =observe=, =evaluate= and =respond= must each evaluate to a parameterless procedure, so we must define them as procedures directly or as procedure variables.[fn:2] 
+The rules of pascal syntax dictate that =behavior= must each evaluate to a parameterless procedure, so we must define them as procedures directly or as procedure variables.[fn:2]
 
 Procedures in pascal differ from functions in that functions evaluate to a single result value that can be used in an expression, whereas procedures produce no such result.[fn:3] This is why there is no option to represent the three procedures as constants or variables of a simple type.
 
-On the other hand, since a =repeat..until= statement must end with a condition, we can deduce that =done= must evaluate to a =boolean= value, and therefore we can define it using any of the four representations (constant, variable, function, or function variable).
+On the other hand, since a =repeat..until= statement must end with a condition, we can deduce that =finished= must evaluate to a =boolean= value, and therefore we can define it using any of the four representations (constant, variable, function, or function variable).
 
-In each of these cases, we will choose the procedure variable or function variable as our representation. Furthermore, even though we have a choice of defining the words globally (within the module's namespace) or in or =TCtx= type, we will choose to define them all as fields inside =TCtx=:
+In each of these cases, we will choose the procedure variable or function variable as our representation. Furthermore, even though we have a choice of defining the words globally or in or =TCtx= type, we will choose to define them all as fields inside =TCtx=:
 
 #+name: TCtx
 #+begin_src pascal
   type TCtx = record
-    observe, evaluate, respond : TProcedure;
-    done : TPredicate;
+    init, done, behavior : TProcedure;
+    finished : TPredicate;
   end;
 #+end_src
 
-As a result, we have now fully defined all the words in the original =coreloop=, but have introduced two new words to define: =TProcedure= and =TPredicate=.
+We have now fully defined all the words in the original =interact= loop, but have introduced two new words to define: =TProcedure= and =TPredicate=.
 
 Under free pascal and Delphi, =TProcedure= is predefined for us in the =system= unit, but the definition is trivial and there is no harm in defining it explicitly ourselves:
 
@@ -109,13 +189,51 @@ type TProcedure = procedure;
 
 Really there is really no need to define =TProcedure= at all, since we could have just used the word =procedure= and saved ourselves a keystroke, but the =T= prefix brings it in line with our naming convention. As we add parameters and return values, explicit names become more convenient and readable.
 
-A function that returns a boolean is called a /predicate/, so at last we define the name =TPredicate= to refer to the type of done.
+A function that returns a boolean is called a /predicate/, so at last we define the name =TPredicate= to refer to the type of =finished=.
 
 #+name: TPredicate
 #+begin_src pascal
 type TPredicate = function : boolean;
 #+end_src
 
+* A default Context: =NewEmptyCtx=
+:PROPERTIES:
+:TS:       <2013-06-19 09:03AM>
+:ID:       hhp69r01d5g0
+:END:
+We have now specified the interface to an interactive program. In order to run =interact=, we need to construct a =TCtx= record.
+
+Let's create one that does nothing:
+
+#+name: NewEmptyCtx
+#+begin_src pascal
+  function NewEmptyCtx : TCtx;
+    begin 
+      result.init     := @pass;
+      result.behavior := @pass;
+      result.done     := @pass;
+      result.finished := @always;
+    end;
+#+end_src
+
+To implement =pass=, we simply define an empty procedure:
+
+#+name: pass
+#+begin_src pascal
+  procedure pass;
+    begin
+    end;
+#+end_src
+
+Since we need =always= to be a =TPredicate=, we have to do a /tiny/ bit more work:
+
+#+name: always
+#+begin_src pascal
+  function always : boolean;
+    begin
+      result := true
+    end;
+#+end_src
 
 * Summary of the =core= module
 :PROPERTIES:
@@ -126,25 +244,121 @@ type TPredicate = function : boolean;
 Our code is now arranged like this:
 
 #+name: core-module
-#+begin_src pascal
+#+begin_src pascal :tangle "~/b/tangled/empty/core.inc" :comments both :noweb tangle
   <<TProcedure>>
   <<TPredicate>>
   <<TCtx>>
   <<TCtxFn>>
   <<context>>
-  <<coreloop>>
+  <<interact>>
+  <<pass>>
+  <<always>>
+  <<NewEmptyCtx>>
 #+end_src
 
 Since =TProcedure= and =TPredicate= are completely independent of each other, it doesn't matter which is defined first, but they must both appear before the definition of =TCtx=.
 
 The remaining definitions must appear in the above sequence in order to compile.[fn:4]
 
-The code /does/ compile now, but we can't actually run our =loop= procedure until we create a =TCtx= record.
+Although modern pascal dialects have very nice module systems allowing for separate compilation[fn:5], I'm going to hold off demonstrating them for a bit, and simply use compiler's ={$include filename}= directive (or ={$i filename}= for short). This will cause the compiler to compile the contents of =filename= as if it had been written inline.
 
+So for now, all the code we've created will go into a file called =core.inc=, and we will use the following line in each of our programs:
+
+#+begin_src pascal
+  {$i core.inc}
+#+end_src
+
+* Our first program: =stop=
+:PROPERTIES:
+:TS:       <2013-06-19 09:16AM>
+:ID:       87t4vd11d5g0
+:END:
+We can now create a complete, executable program:
+
+#+begin_src pascal :tangle "~/b/tangled/empty/stop.pas" :comments both :padline yes :noweb tangle
+
+  program stoploop;
+
+  {$i core.inc}
+
+  begin
+    context := @NewEmptyCtx;
+    interact; { calls pass once, then halts }
+  end.
+#+end_src
+
+This program executes the body of the loop once and then stops, because the =finished= predicate always returns =true=.
+
+You might think that users would be happy with our work so far, and can probably imagine them camping out in long lines to trade their hard-earned cash for our initial release, but it turns out most users prefer software with actual features, and if we ever wish to compete with software giants like =echo= and =pause=, then we must cater to popular demand.
+
+* program: =exitloop=
+:PROPERTIES:
+:TS:       <2013-06-19 09:45AM>
+:ID:       fn6bqp21d5g0
+:END:
+
+#+begin_src pascal :tangle "~/b/tangled/empty/exitloop.pas" :comments both :padline yes :noweb tangle
+  program exitloop;
+  
+  {$i core.inc}
+  
+  {-- our interactive object --}
+  var cmd : string;  // the last command typed
+  
+  procedure SayHello;
+    begin
+      WriteLn('Hello! I am a loop. Type "exit" to exit me!')
+    end;
+  
+  procedure SayGoodbye;
+    begin
+      WriteLn('Great work!')
+    end;
+  
+  procedure Prompt;
+    begin
+      Write('> ');
+      ReadLn( cmd );
+    end;
+  
+  function UserExit : boolean;
+    begin
+      result := cmd = 'exit'
+    end;
+  
+  var HelloCtx : TCtx = ( 
+      init :     @SayHello;
+      done :     @SayGoodbye;
+      behavior : @Prompt;
+      finished : @UserExit );
+  
+  {-- context selector -------}
+  
+  function GetHelloCtx : TCtx;
+    begin
+      result := HelloCtx;
+    end;
+  
+  {-- main program ------------}
+  begin
+    context := @GetHelloCtx;
+    interact;
+  end.
+#+end_src
+
+
+* Why bother?
+:PROPERTIES:
+:TS:       <2013-06-19 12:10PM>
+:ID:       vpe5kf91d5g0
+:END:
 
 
 
 * TODO
+
+observe, evaluate, respond
+
           if command then interpret
           else if data then keep
           else notfound;
@@ -158,3 +372,5 @@ The code /does/ compile now, but we can't actually run our =loop= procedure unti
 [fn:3] Procedures and functions can produce any number of outputs, but they must be given names and passed as paramters. Output parameters are prefixed with the word =out=, and parameters that are used for both input and output have the prefix =var=. The extra result value that a function produces is anonymous outside of the function. Inside the function's code, the result value shares the name of the function itself, though modern pascal dialects allow using the name =result= instead, and this is generally the preferred approach.
 
 [fn:4] In a =program= module, the order is always fixed like this. However, the rules in a =unit= are more flexible, because functions can be predeclared in the =interface= section and then their declarations can be arranged freely in the =implementation= section, regardless of their dependencies. However, in the module described here, there are no actual definitions.
+
+[fn:5] In the early days, pascal had no module system. The creator of pascal, Niklaus Wirth, went on to create other pascal-like languages that /did/ have modules (notably Modula, Modula-2, and several dialects of Oberon). Various pascal vendors introduced module systems for pascal, and eventually an Extended Pascal ISO standard emerged that included modules. However, the extended standard never saw much support in industry. The /de facto/ standard module system is the =unit= concept introduced by Borland, and we will get to that soon enough.

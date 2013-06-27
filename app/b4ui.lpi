@@ -27,6 +27,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
+        <LaunchingApplication PathPlusParams="\usr\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
     <RequiredPackages Count="3">
@@ -42,7 +43,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="2">
+    <Units Count="3">
       <Unit0>
         <Filename Value="b4ui.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -56,17 +57,28 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Console"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="18" Y="4"/>
+        <CursorPos X="1" Y="4"/>
         <UsageCount Value="22"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="..\..\ver\dwscript\Source\dwsXPlatform.pas"/>
+        <UnitName Value="dwsXPlatform"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="19"/>
+        <CursorPos X="28" Y="40"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit2>
     </Units>
-    <JumpHistory Count="25" HistoryIndex="24">
+    <JumpHistory Count="27" HistoryIndex="26">
       <Position1>
         <Filename Value="console.pas"/>
         <Caret Line="1" Column="7" TopLine="1"/>
@@ -167,6 +179,14 @@
         <Filename Value="console.pas"/>
         <Caret Line="62" Column="3" TopLine="18"/>
       </Position25>
+      <Position26>
+        <Filename Value="..\..\ver\dwscript\Source\dwsXPlatform.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position26>
+      <Position27>
+        <Filename Value="..\..\ver\dwscript\Source\dwsXPlatform.pas"/>
+        <Caret Line="40" Column="35" TopLine="28"/>
+      </Position27>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>

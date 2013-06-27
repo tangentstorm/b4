@@ -1,0 +1,149 @@
+<2013-06-12 Wed>
+
+clarifying questions provided by sirdancealo3. :) 
+
+
+* what's a mirror node?
+
+you get that there are a bunch of rings, and the rings form a tree, right?
+
+so.. not all the nodes in the rings have children.
+
+if a node has a child, then that child is a ring.
+
+but not all nodes have children.
+
+so in a normal tree, the nodes without children are the leaves.
+
+each of those leaves is on one of the rings.
+
+we want the rim to be a ring of all the leaf nodes, but we can't break the rings that are already there.
+
+instead, we create a secondary node corresponding to each leaf, and link /those/.
+
+the name 'mirror' indicates both the 1-1 correspondence to the leaf nodes and also the idea of 'stepping through the looking glass', since going downward from a mirror node takes you back to the hub.
+
+* what is the purpose of the data structure?
+see... the tree contains a program
+each ring is a loop.
+each node contains an instruction.
+multiple rings represent multiple concurrent tasks.
+but if you only have one turist (instruction pointer...)
+then you need to switch between those concurrent tasks.
+
+Since every downward link points to a node on a ring, the downward links can rotate to point to different items.
+
+
+* so you have item nodes, ring "parents", and special clasp type that marks the end of the ring and carries the parent pointer?
+
+item = instruction... 
+parent = subroutine call... 
+clasp = return from routine / go back to top of loop
+
+
+
+* in ordinary computer science theory, you have to choose, a subroutine or a thread..not both
+
+subroutines and threads are different things.
+
+a thread is basically a virtual instruction pointer / cpu... it's a thing that moves around the tree of your source code.
+
+a subroutine is the thing through which it moves.
+
+* im asking if the tree levels represent subroutines or parallel threads
+
+think of it as an org chart in a company.
+
+each ring is a department or job
+
+so it's like a routine that needs to be populated with workers
+
+worker = thread.
+
+if the company is fully staffed, then each job is filled by a dedicated worker.
+
+if the company is not fully staffed, then some workers must fill multiple jobs. (multi-tasking)
+
+but suppose there is a job that many different people can do.
+
+i might do step 1, and then get called away.
+
+now, i remeber that i'm about to do step 2, but you don't know that.
+
+so even though you can do the job, you won't because it's already in progress and you don't know where i left it.
+
+but suppose instead of keeping it in my head, the steps were arranged in a ring, and there was a pointer showing which one was next.
+
+then i can just leave, and whoever shows up next can just start on step 2.
+
+the child pointer serves this purpose.
+
+or
+
+the child pointer could just point at the clasp, which is the "start"
+
+(also the end of course)
+
+the clasp is allowed to have an arbitrary child
+
+so as you walk the tree, you arrive at this clasp.
+
+if the child of the clasp is not itself, then you start a new instance of the thread.
+
+if the child of the clasp is one of its siblings, then there is work in progress and you can pick up on that job where the last guy left off.
+
+(you close the door behind you by setting the clasp's child back to the clasp itself)
+
+here's the thing
+
+* why do you imagine people leaving their job like that?
+
+it's just a metaphor.
+
+but one reason is that the company is understaffed
+
+and so they have to go do their other job.
+
+here's the thing:
+
+it doesn't matter whether you pick the next task to be done or start a new task.
+
+your choice can be completely random.
+
+if you resume the previous task, the door closes behind you and the clasp now links back to itself.
+
+so if you flip a coin and decide to walk down to the child node, you wind up back where you started immediately.
+
+and are presented with the exact same choice again.
+
+so you just keep looping until either your coin tells you to start a new instance or some other worker sets the child pointer to resume a task that they're leaving.
+
+now for the kicker...
+
+this property of being able to randomly choose to go forward or descend the tree...
+
+this same choice works no matter where you are in the tree.
+
+that is why, when you reach the bottom, you are simply teleported back to the hub.
+
+well. except first you pass "through the looking glass" (the mirror node)
+
+which can randomly teleport you to any workstation (leaf node)
+
+now, there may not be anything to do there.
+
+wait.
+
+it's not randomly teleporting you.
+
+you are randomly deciding whether to keep walking around the ring or not.
+
+(on the mirror nodes, you have the aditional choice of going back through the mirror)
+
+so basically all the working memory is stored in little tokens that are sitting
+around these nodes.. tokens = documents, whatever... whatever you would need to do
+in order to do the job at that workstation.
+
+since all the data is stored in the tree, the computers can all be very dumb, and hardly even need any ram at all.
+
+they only need to be smart enough to do the work in front of them and follow the instructions at that particular node.

@@ -23,8 +23,11 @@ copyright 2010 charles cave <[[http://members.optusnet.com.au/~charles57/GTD]]>
 * orgnode subclasses
 * class =table_node=
 ** DONE =table_node.row=
+
 ** DONE =table_node.divider=
+
 ** DONE =block_node.consume_end=
+
 ** DONE =drawer_node.consume_end=
 
 * parser
@@ -37,7 +40,7 @@ copyright 2010 charles cave <[[http://members.optusnet.com.au/~charles57/GTD]]>
 |------+------+-----+-------+-------+-------|
 | hdln | '*'  | +   | len   | depth | byte  |
 
-
+ 
 * templates
 | meta | 0 |   |
 

@@ -1,0 +1,66 @@
+#+title: steps to implement b4
+
+* basic ideas
+Use the VM to build itself.
+Get the student to think about using stacks.
+- provide a way to visualize the ram
+
+* implement the basic vm
+
+* the core vm loop (nop, instructions)
+** implement =hex= output
+** implement =fill= and =copy= at the vm level
+** implement hardware interrupts
+** implement =nop= (that is, ignore 0)
+
+#+begin_src pascal
+  case ram[ram[ip]] of
+    $00: ;
+    else { do nothing }
+  end;
+#+end_src
+
+** implement reset (everything = 0)
+
+This will set ip=0 too
+
+#+begin_src pascal
+  fill(ram, sizeof(ram), 0);
+#+end_src
+
+** execute opcodes until the end of ram
+
+#+begin_src pascal
+  repeat
+    eval(ram[ip]); inc(ram[ip])
+  until ram[ip] = maxcode;
+#+end_src
+
+** implement : dput dpop rput rpop
+# get from b4:turbo
+
+
+** conditionals
+*** jump table
+*** call a routine
+
+* step : i/o
+** read a number
+*** get a character
+
+* provide an input buffer
+
+* implement interrupts
+
+These provide a way to execute code at an address from the host language.
+
+- rput( ip )
+- rput( maxheap )
+- ram[ip] := rpop;
+- run;
+- ram[ip] := rpop;
+
+* provide a way to move chunks of ram around
+
+* implement dictionary lookups
+

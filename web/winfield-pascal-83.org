@@ -689,7 +689,7 @@ FIND expression expr
 ** block 2017 assignment
 #+begin_src forth
 ( assignment statement )
-:assign                 ( we've already found the variable )
+: assign                 ( we've already found the variable )
   find @ ,              ( compile its address )
   next                  ( we might have [ next )
   type @ 35 = if           ( is it? if so... )

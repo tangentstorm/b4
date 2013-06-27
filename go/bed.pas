@@ -25,7 +25,7 @@ var
   color	     : char;
 
   const infoColumn = 67;
- 
+
 procedure fg( ch : char );
   begin
     color := ch; kvm.fg( ch );
@@ -46,13 +46,13 @@ begin
 
   case key of
 
-    #0 : 
+    #0 :
       begin
         key := kbd.readkey;
         case key of
 	  ^C : gDone := true;
-	  ^B, kbd.LEFT  : dec( gx );
-	  ^P, kbd.UP    : dec( gy );
+	  ^B, kbd.LEFT  : if gx > 0 then dec( gx );
+	  ^P, kbd.UP    : if gy > 0 then dec( gy );
 	  ^N, kbd.DOWN  : inc( gy );
 	  ^F, kbd.RIGHT : inc( gx );
 
@@ -65,7 +65,7 @@ begin
 	  kbd.F6 : Fg( 'c' );
 	  kbd.F7 : Fg( 'w' );
 	  kbd.F8 : Fg( 'k' );
-	  
+
           { f9 toggles the brightness bit. }
 	  kbd.F9 : ToggleBright;
 	end;
@@ -77,8 +77,8 @@ begin
     ^C,
     ascii.ESC  : gdone := true;
     ^E : gx := 63;
-    ^B : dec( gx );
-    ^P : dec( gy );
+    ^B : if gx > 0 then dec( gx );
+    ^P : if gy > 0 then dec( gy );
     ^N : inc( gy );
     ^F : inc( gx );
     ascii.CR   : begin
@@ -89,8 +89,8 @@ begin
 		     dec( gx );
 		     kvm.gotoxy( gx, gy );
 		     write(' ');
-		     gBuf[ gy * 64 + gx] := 32;
-		   end;
+		     gBuf[ gy * 64 + gx ] := 32;
+	           end;
   else
     begin
       gBuf[ gy * 64 + gx ] := ord( key );
@@ -107,7 +107,7 @@ begin
 
   { bounds checking }
   gx := min( kw-1, max( gx, 0 ));
-  gy := min( kh-1, max( gy, 1 ));
+  gy := min( kh-1, max( gy, 0 ));
 end;
 
 
