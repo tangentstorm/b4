@@ -1,0 +1,59 @@
+#+title: the wejal language spec
+
+* multicameral interpreter
+** turists handle control flow, walk tree, relay messages
+** underlying components issue messages
+
+* outlang : overall data language / file format
+** notes
+- users don't directly interact with this
+- uses ascii control codes for markup
+- meant for for protocol/interchange and metaprogramming tools
+- allows switching between language levels/channels
+
+
+
+
+
+
+
+
+
+
+* turist language : imperative flow keywords
+** general idea: pascal or oberon but expressions are in the sublanguage.
+** with <selector> (for all?)
+** case
+** if/then
+** repeat .. until ;
+** while .. do .. end ;
+** var
+** const
+** type
+** procedure
+
+* type language
+
+* declarative/logical words
+** ensure
+* data building words
+** { } = Set
+** {:} = Dict
+** ( ) = nested
+** [ ] = List
+** '   = Quote
+** ;   = separator
+** ,   = emit
+** $   = hex
+** _   = template vars
+* message words
+** iden
+** x: y: z:
+** +
+** (concatenation)
+** . operator
+
+* sending messages
+* quotations
+* parens (nested stacks)
+
