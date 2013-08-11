@@ -56,7 +56,11 @@ unit ng.ops; implementation
 
   procedure vm.oADD ; begin data.push(  data.pop + data.pop ) end;
   procedure vm.oSUB ; begin data.push( -data.pop + data.pop ) end;
-  procedure vm.oMUL ; begin data.push(  data.pop * data.pop ) end;
+
+  {$PUSH}{$RANGECHECKS OFF}
+  procedure vm.oMUL ; begin data.push(data.pop * data.pop) end;
+  {$POP}
+
   procedure vm.oDIVM;
   begin
     TN
