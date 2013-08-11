@@ -127,17 +127,17 @@ unit ng.ports; implementation
     case msg of
 
       -1  : { memory size } result := length( self.ram );
-      -2  : { canvas exists? } if kvm.hascanvas then result := 1;
-      -3  : { canvas width } result := kvm.canvas.w;
-      -4  : { canvas height } result := kvm.canvas.h;
+//      -2  : { canvas exists? } if kvm.hascanvas then result := 1;
+//      -3  : { canvas width } result := kvm.canvas.w;
+//      -4  : { canvas height } result := kvm.canvas.h;
       -5  : { data stack depth } result := self.data.count;
       -6  : { address stack depth } result := self.addr.count;
       -7  : {  TODO: mouse exists? } result := 0;
       -8  : { current time } result := lo( posix.time );
       -9  : { exit the vm } self.ip := length( self.ram ) + 1;
       -10 : {  TODO: environ } result := 0;
-      -11 : { console width } result := kvm.term.w;
-      -12 : { console height } result := kvm.term.h;
+      -11 : { console width } result := kvm.width;
+      -12 : { console height } result := kvm.height;
       -13 : { num bits/cell } result := 32;
       -14 : {$IFDEF ENDIAN_BIG} result := 1; {$ELSE} result := 0; {$ENDIF}
       -15 : { extended console? } result := -1;
@@ -167,11 +167,11 @@ unit ng.ports; implementation
   function vm.handle_mouse( msg : int32 ) : int32;
   begin
     result := 0;
-    case msg of
-      1 : self.data.push2( kvm.mx, kvm.my );
-      2 : self.data.push( toint( kvm.mb ));
-      else result := -1;
-    end;
+//    case msg of
+//      1 : self.data.push2( kvm.mx, kvm.my );
+//      2 : self.data.push( toint( kvm.mb ));
+//      else result := -1;
+//    end;
   end;
 
   { -- port 8 : enhanced terminal ----------------------------- }
