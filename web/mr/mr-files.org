@@ -1,0 +1,25 @@
+#+title: mr-files
+
+# see also file:~/x/text/arrays.pas.org
+
+* NOTE . big data in small pieces
+:PROPERTIES:
+:TS: <2013-08-12 06:55AM>
+:ID: zv79ii41c7g0
+:END:
+** .
+The problem with reserving linear chunks to store tables/files/etc:
+
+- if you allocate more space than you need, you're just wasting space.
+- if you don't allocate enough space, you have to move the old data.
+
+There are lots of ways to deal with these problems. For many applications, they're not even problems.
+
+In any case, we'll assume our data is stored in linked lists of blocks.
+
+* SECTION Tables
+:PROPERTIES:
+:TS: <2013-08-12 07:02AM>
+:ID: zsogfu41c7g0
+:END:
+
