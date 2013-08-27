@@ -1,0 +1,64 @@
+#+title: drastic ui
+#+date: <2013-08-27>
+
+* overview : direct interaction with abstract syntax trees
+:PROPERTIES:
+:TS: <2013-08-27 01:11PM>
+:ID: dppgt2b1w7g0
+:END:
+
+The basic idea behind the /drastic/ user interface is that you are interacting directly with abstract syntax trees.
+
+The visual metaphor is one of /text in space/.
+
+Text is typed into rectangular boxes, which can be moved around freely within a scene graph.
+
+* relationships between graphical (2.5 dimensional) objects
+:PROPERTIES:
+:TS: <2013-08-27 01:23PM>
+:ID: 7ctg54b1w7g0
+:END:
+** containment
+:PROPERTIES:
+:TS: <2013-08-27 01:24PM>
+:ID: 61dl16b1w7g0
+:END:
+All graphical objects have a container.
+Containers can be nested.
+
+Items can be freely dragged around within their containers.
+
+** z-order
+:PROPERTIES:
+:TS: <2013-08-27 01:30PM>
+:ID: efcg2gb1w7g0
+:END:
+Containers can be ordered by their z-index.
+
+** proximity
+:PROPERTIES:
+:TS: <2013-08-27 01:25PM>
+:ID: dpyb39b1w7g0
+:END:
+
+** adjacency
+:PROPERTIES:
+:TS: <2013-08-27 01:23PM>
+:ID: o34fq5b1w7g0
+:END:
+Items can be freely dragged around.
+
+** alignment
+:PROPERTIES:
+:TS: <2013-08-27 01:24PM>
+:ID: tifda6b1w7g0
+:END:
+
+* SVG and the DOM vs internal representations.
+:PROPERTIES:
+:TS: <2013-08-27 01:33PM>
+:ID: qn6dxlb1w7g0
+:END:
+SVG is only part of the 'view', and only one possible implementation. There's no reason the core logic needs to know anything about SVG.
+
+Intstead, the model should be represented abstractly.
