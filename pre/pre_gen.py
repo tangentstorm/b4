@@ -145,7 +145,7 @@ def gen_code_for( line ):
 
     intf = trim(
         """
-        function {name}( {fun_args} ) : pattern;
+        function {name}( {fun_args} ) : IPattern;
         """
         ).format( **locals( ))
 
@@ -172,7 +172,7 @@ def gen_code_for( line ):
         begin result := self.match( matcher.create( s ));
         end;
 
-        function {name}( {fun_args} ) : pattern;
+        function {name}( {fun_args} ) : IPattern;
         begin result := {klass}.create( {call} )
         end;
 

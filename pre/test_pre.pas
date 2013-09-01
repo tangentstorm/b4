@@ -1,7 +1,7 @@
 {$i test_pre.def }
 implementation uses pre;
 
-  var pat : pattern;
+  var pat : IPattern;
 
   procedure should_match( s : string );
   begin

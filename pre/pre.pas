@@ -10,7 +10,7 @@
 unit pre;
 interface uses xpc, stacks, ll, ascii, num;
 
-  type
+ type
 
     Marker  = class end;
     MarkerStack = specialize GStack< Marker >;
@@ -39,13 +39,18 @@ interface uses xpc, stacks, ll, ascii, num;
 
     CharSet = set of Char;
     matcher = class; // forward reference
-
-    Pattern = class
+
+    IPattern = interface
+      function match( m : matcher )  : boolean;
+      function matches( s : string ) : boolean;
+    end;
+    
+    Pattern = class (TInterfacedObject, IPattern)
       function match( m : matcher )  : boolean; virtual; abstract;
       function matches( s : string ) : boolean; virtual; abstract;
     end;
 
-    patterns = array of pattern;
+    patterns = array of IPattern;
 
     { match effects ( for DefPattern )
       ----------------------------------
@@ -87,8 +92,8 @@ interface uses xpc, stacks, ll, ascii, num;
       function lit( const s  : string) : boolean;
 
       { regular expression support }
-      function opt( p : pattern ) : boolean;   // like regexp '?'
-      function rep( p : pattern ) : boolean;   // like '*'
+      function opt( p : IPattern ) : boolean;   // like regexp '?'
+      function rep( p : IPattern ) : boolean;   // like '*'
       function alt( const ps : patterns ) : boolean; // like "|"
       function seq( const ps : patterns ) : boolean; // like "(...)"
 
@@ -117,12 +122,11 @@ interface uses xpc, stacks, ll, ascii, num;
       procedure keep;
 
     end;
-
 
   {-- module-level routines -----------------------}
-
-  procedure def( const iden : string; p : pattern;
-                   effect : match_effect = ef_stream );
+    
+  procedure def( const iden : string; p : IPattern;
+                 effect : match_effect = ef_stream );
 
   { support for multiple grammars }
   procedure new_grammar( const iden : string );
@@ -133,7 +137,7 @@ interface uses xpc, stacks, ll, ascii, num;
 
   { helper routines : only  for bootstrapping and testing }
   function ps( len : cardinal ) : patterns; { creates a new patterns array }
-  procedure p( pat : pattern ); { appends to the last array }
+  procedure p( pat : IPattern ); { appends to the last array }
 
 implementation
 
@@ -141,7 +145,7 @@ implementation
 
   type pattern_def = record
 		       iden : string;
-		       p    : Pattern;
+		       p    : IPattern;
 		       ef   : match_effect
 		     end;
   var defs : array of pattern_def;
@@ -160,7 +164,7 @@ implementation
   constructor matcher.create( s	: string );
   begin
     self.src := StringSource.create( s );
-    self.marks := MarkerStack.Create( 32 );
+    self.marks := MarkerStack.Create( 128 );
   end;
 
   procedure matcher.match( s : source; rule : string );
@@ -248,7 +252,7 @@ implementation
     but if the pattern doesn't match, it backtracks
     and returns true anyway.
     algebraically, opt p = alt ( p , nul ) }
-  function matcher.opt( p : pattern ) : boolean;
+  function matcher.opt( p : IPattern ) : boolean;
   begin
     mark;
     if p.match( self ) then keep else back;
@@ -258,7 +262,7 @@ implementation
   { rep : ( repeating ) is like opt, but it will keep consuming
     input until the underlying pattern fails. since matching 0
     copies is still a match, rep always succeeds }
-  function matcher.rep( p : pattern ) : boolean;
+  function matcher.rep( p : IPattern ) : boolean;
   begin
     repeat
       mark;
@@ -271,7 +275,7 @@ implementation
   {--  dictionary routines ----------------------}
 
   { def : assigns a name to the specified pattern. }
-  procedure def( const iden : string ; p : pattern;
+  procedure def( const iden : string ; p : IPattern;
                  effect : match_effect = ef_stream );
     var len : cardinal;
   begin
@@ -285,7 +289,7 @@ implementation
   { lookup : searches through the dictionary backward, so that the last
     entry added is the one returned }
   function lookup(const iden   : string;
-		    var p      : pattern;
+		    var p      : IPattern;
 		    var effect : match_effect ) : boolean;
     var i : integer; found : boolean = false;
   begin
@@ -304,7 +308,7 @@ implementation
 
   { sub : invokes a rule ( provided it's found in the dictionary ) }
   function matcher.sub( const iden : string ) : boolean;
-    var p : pattern; effect : match_effect;
+    var p : IPattern; effect : match_effect;
   begin
     if lookup( iden, p, effect ) then begin
       self.mark;
@@ -479,7 +483,7 @@ implementation
   end;
 
   { p( pat ) : fills the next open slot in the array created by ps }
-  procedure p( pat : pattern );
+  procedure p( pat : IPattern );
   begin
     build[ build_idx ] := pat;
     inc( build_idx );
