@@ -8,7 +8,7 @@
 ---------------------------------------------------------------- }
 {$mode objfpc}{$i xpc.inc }
 unit pre;
-interface uses xpc, stacks, ll, ascii, num;
+interface uses xpc, stacks, ll, ascii, num, sysutils;
 
  type
 
@@ -40,17 +40,20 @@ interface uses xpc, stacks, ll, ascii, num;
     CharSet = set of Char;
     matcher = class; // forward reference
 
-    IPattern = interface
+    IPattern = interface (IUnknown)
       function match( m : matcher )  : boolean;
       function matches( s : string ) : boolean;
+      function ToString : string;
     end;
-    
+
     Pattern = class (TInterfacedObject, IPattern)
       function match( m : matcher )  : boolean; virtual; abstract;
       function matches( s : string ) : boolean; virtual; abstract;
+      function ToString : string; virtual; abstract;
     end;
 
     patterns = array of IPattern;
+
 
     { match effects ( for DefPattern )
       ----------------------------------
@@ -80,7 +83,7 @@ interface uses xpc, stacks, ll, ascii, num;
 
         For example, the definition of =matcher.sym= here triggers the
         generation of code for a class called =SymPattern= ( a subclass
-        of =Pattern=, as well as a =function sym( const c : char ) : Pattern=
+        of =Pattern=, as well as a =function sym( const c: char ) : Pattern=
         at the module level that invokes =SymPattern='s constructor and
         returns the result. }
     protected
@@ -124,7 +127,7 @@ interface uses xpc, stacks, ll, ascii, num;
     end;
 
   {-- module-level routines -----------------------}
-    
+
   procedure def( const iden : string; p : IPattern;
                  effect : match_effect = ef_stream );
 
@@ -138,6 +141,7 @@ interface uses xpc, stacks, ll, ascii, num;
   { helper routines : only  for bootstrapping and testing }
   function ps( len : cardinal ) : patterns; { creates a new patterns array }
   procedure p( pat : IPattern ); { appends to the last array }
+  function seq( args : array of variant ) : IPattern;
 
 implementation
 
@@ -154,6 +158,7 @@ implementation
   procedure new_grammar( const iden : string ); begin end;
   procedure end_grammar; begin end;
   procedure use_grammar( const iden : string ); begin end;
+
 
   {-- matcher : public interface --}
 
@@ -458,7 +463,21 @@ implementation
     build     : patterns;
     build_max : integer = 0;
     build_idx : integer = 0;
+
 
+  function seq( args : array of variant ) : IPattern;
+    var ps : patterns; i : cardinal; ipat : Ipattern;
+    var unused : variant; // !! without this, I get access violations!
+  begin
+    SetLength(ps, length(args));
+    if length(args) > 0 then begin
+      for i := Low(args) to High( args ) do begin
+	ipat := args[i];
+	ps[i] := ipat;
+      end;
+    end;
+    result := seq( ps );
+  end;
 
   { ps( len ) : creates a new pattern array with =len= elements }
   // !! I added the 'len' parameter because calling setlength
@@ -509,11 +528,9 @@ initialization
 
   // rule = iden "=" expr .
   // ----------------------
-  def( 'rule', seq( ps( 4 )), ef_enlist );
-    p( sub( 'iden' ));
-    p( lit( '=' ));
-    p( sub( 'expr' ));
-    p( lit( '.' ));
+  def( 'rule', seq([
+         sub( 'iden' ), lit( '=' ), sub( 'expr' ), lit( '.' )
+     ]), ef_enlist );
 
   // iden = alpha { alpha | digit } .
   // --------------------------------

@@ -79,9 +79,7 @@ implementation uses pre;
 
   procedure test_seq;
   begin
-    pat := seq( ps( 2 ));
-    p( lit( '0' ));
-    p( any([ 'x', 'b', 'o' ]));
+    pat := seq([ lit( '0' ), any([ 'x', 'b', 'o' ]) ]);
     should_consume( '0x', '0x' );
     should_consume( '0b', '0bx' );
     should_consume( '',   '0-o' );
