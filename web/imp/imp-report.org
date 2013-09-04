@@ -1,0 +1,66 @@
+#+title: The Implish Language Report
+
+* Introduction
+
+/Implish/ is a small imperative programming language that blends elements of forth, pascal, and APL with a notation inspired by smalltalk and lisp.
+
+* Notation
+
+Implish has a simple, flexible syntax, specified by the following ANTLR grammar:
+
+#+begin_src antlr
+
+program
+  : ( expr )*
+  ;
+
+expr // a single expression
+  : block | quote | phrase | number | STRING | WORD | SYMBOL
+  ;
+
+block
+  : '[' program ']'  // ordered block (list/array/etc)
+  | '(' program ')'  // inline block (expresssions, etc)
+  | '{' program '}'  // unordered block (dict, set, etc)
+  ;
+
+quote
+  : "'" expr // normal quote
+  | '`' expr // quasiquote
+  | ',' expr // unquote
+  | '@' expr // splice
+  ;
+
+number
+  : Digit +    // decimal
+  | '$' Hexit+ // hexidecimal
+  ;
+
+phrase
+  : (KEYWORD expression)+
+  | expr OPERATOR expr
+  ;
+
+COMMENT
+  : '#' (Any)*  '\n' { $channel = HIDDEN; }
+  ;
+
+STRING
+  : '"' ( Esc | ~'"' )* '"'
+  ;
+
+KEYWORD
+  : Alpha ( Alp ) ':'
+  ;
+
+fragment Space = #0 .. #32 ;
+fragment Alpha = 'A'..'Z' | 'a'..'z' ;
+fragment Digit = '0'..'9' ;
+fragment Hexit = Digit | 'A' .. 'F' | 'a' .. 'f' ;
+fragment Esc = '\\' ( 'n' | 't' | '\\' | '"' ) ;
+fragment Any = #0 .. #255 ;
+
+#+end_src
+
+
+
