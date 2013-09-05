@@ -1,0 +1,125 @@
+#+title: an interpreter for implish
+
+* hello world
+:PROPERTIES:
+:TS:       <2013-09-04 05:46PM>
+:ID:       nyn9md0178g0
+:END:
+
+Suppose we have the following program:
+
+#+begin_src picolisp
+  '((program hello)
+    (begin
+      (writeln "hello world")))
+#+end_src
+
+This corresponds to the pascal code:
+
+#+begin_src pascal
+  program hello;
+  begin
+    writeln('hello world')
+  end.
+#+end_src
+
+Or in retro:
+
+#+begin_src retro
+: hello "hello world" puts cr ;
+#+end_src
+
+How can we translate it?
+
+* Walking the tree.
+:PROPERTIES:
+:TS:       <2013-09-04 08:13PM>
+:ID:       4cxbd77178g0
+:END:
+** walking the tree is what lisp does on its own :)
+:PROPERTIES:
+:TS:       <2013-09-04 09:42PM>
+:ID:       qn3i2cb178g0
+:END:
+
+It's kind of interesting... all the normal dispatch stuff you have to do even in a high level language like python or haskell just goes away.
+
+I was writing this whole big case statement like:
+
+#+begin_src picolisp
+  (case symbol
+     ('repeat ...)
+     ('while ...)
+     ('if ...) ... )
+#+end_src
+
+... but then i realized i could just make them all functions.
+
+* DONE zip in picolisp
+:PROPERTIES:
+:TS:       <2013-09-04 09:44PM>
+:ID:       b7r4kfb178g0
+:END:
+#+begin_src picolisp
+  
+  (de zip (F A B)
+     (if (and A B)
+        (cons (F (car A) (car B))
+           (zip F (cdr A) (cdr B)) ) ) )
+#+end_src
+
+** NOTE . actually that was more like zipwith
+:PROPERTIES:
+:TS:       <2013-09-05 06:20PM>
+:ID:       ky7cvi3098g0
+:END:
+
+The goal of the zip routine was to help me make the function that I eventually called =qd=... Basically a way to define special forms that didn't evaluate their arguments.
+
+* DONE repeat loops
+:PROPERTIES:
+:TS:       <2013-09-04 09:46PM>
+:ID:       v6w1zhb178g0
+:END:
+
+#+name: interpret
+#+begin_src picolisp
+  (de repeat -
+     (let (Block (car -)
+           Cond  (cdr -) )
+        (eval Block)
+        (while (not (eval Cond))
+           (eval Block) ) ) )
+#+end_src
+
+** NOTE . wasn't a good idea to use "-" here!
+:PROPERTIES:
+:TS:       <2013-09-05 06:23PM>
+:ID:       hr4bdn3098g0
+:END:
+I caught the error before it caused a problem, but with picolisp's dynamic interpreter, pretty sure this would have replaced the "-" function... Whoops!
+
+* DONE some stuff i wrote earlier:
+:PROPERTIES:
+:TS:       <2013-09-04 11:23PM>
+:ID:       ta01zf1088g0
+:END:
+
+This file seems to be turning into more of a blog than a program... maybe that's how i should write things?
+
+#+begin_src picolisp
+  
+  (de writeln @
+     (pass println) )
+  
+  (de program (Name)
+     (writeln) )
+  
+  (de begin @ (rest)) # just pass through
+  
+#+end_src
+
+<top level> -> ":" (contents) ";"
+(program hello) -> "hello"
+(begin ...) ->
+writeln ->
