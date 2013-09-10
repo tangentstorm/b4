@@ -1,0 +1,31 @@
+# grammar for PL/0
+(lang PL/0
+   (lexer
+      (: Alpha (| (- "a" "z") (- "A" "Z")))
+      (: Digit (- "0" "9"))
+      (: IDENT alpha (+ Alpha Digit))
+      (: NUMBER (+ Digit)) )
+   (grammar
+      (: program
+         block "." )
+      (: block 
+         (? "const" (/ (IDENT "=" NUMBER) ",") ";")
+         (? "var" (/ IDENT ",") ";")
+         (* "procedure" IDENT ";" block ";")
+         statement )
+      (: statement
+         (? (| (IDENT ":=" expression)
+               ("call" ident)
+               ("begin" (/ statement ";") "end")
+               ("if" condition "then" statement)
+               ("while" condition "do" statement) ) ) )
+      (: condition
+         (| ("odd" expression)
+            (expression (| "=" "#" "<" "<=" ">" ">=") expression) ) )
+      (: expression
+         (+ (? (| "+" "-"))
+            (/ term (^ (| "+" "-"))) ) )
+      (: term
+         (/ factor (^ (| "*" "/"))) )
+      (: factor
+         (| IDENT NUMBER ("(" expression ")")) ) ) )
