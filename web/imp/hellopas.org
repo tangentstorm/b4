@@ -1,0 +1,187 @@
+#+title: hellopas: implish pascal compiler spike
+#+date: <2013-09-18 Wed>
+
+* DONE pascal source
+
+My goal here is to get implish to compile 'hello world' down to ngaro instructions, and have the resulting image run successfully in a web browser.
+
+Here is the program:
+
+#+begin_src pascal
+  program hello;
+  begin
+    WriteLn('hello, world.')
+  end.
+#+end_src
+
+* TODO expected parse tree
+#+begin_src elisp
+  '(program (IDENT "hello")
+            (block (writeln (STRING "hello, world."))) )
+#+end_src
+
+* TODO expected assembler output
+#+begin_src asm
+  .prog hello
+  .data
+  :$0 "hello, world."
+  .code                  ; runtime ported from assembler_lib.rx
+  :wait                  ; ( - ) used for talking to the ports
+      LIT 0
+      LIT 0
+      OUT
+      WAIT
+    RET
+
+  :putc                  ; ( c - )
+    ZRET                 ; discard char #0 and return
+      LIT 1
+      LIT 2
+      OUT                ; send character to terminal
+      RUN wait
+    RET
+
+  :(puts)                ; ( $ - a ) a points to end of string
+    .repeat
+      DUP
+      GET
+    ZRET                 ; break the loop on char #0
+      RUN putc
+      LIT 1
+      ADD                ; move to next char in string
+    .again
+
+  :puts                  ; ( $ - )
+      RUN (puts)
+      DROP
+    RET
+
+  :cr                    ; ( - )
+      LIT 10
+      RUN putc
+    RET
+
+  .main
+      LIT $0
+      RUN puts
+      RUN cr
+  .end
+
+#+end_src
+
+* TODO [0/5] assembler semantics
+** TODO [0/7] macros ("." prefix)
+*** TODO .prog
+- Skip next symbol (ignore the program name).
+- Write two NOP (leaving space for a jump to .main)
+*** TODO .data
+No effect.
+*** TODO .code
+While the current location is <= 32, write NOPS (because the first 32 values are reserved for .
+*** TODO .repeat
+Push the current location to a stack so .again can jump back.
+*** TODO .again
+Pop location (stored by repeat) and jump backward.a
+*** TODO .main
+Update the first two instructions of the image (left blank by .prog) so they jump to this location.
+*** TODO .end
+Write the assembled file to disk and exit.
+
+** TODO labels and symbols (":" syntax)
+- Can contain any symbol, up to space
+- Store current location in a runtime list.
+- If the symbol starts with "$", increment address by 1 before recording. This is so we can skip over the length field in strings.
+
+** TODO instructions
+Syntactically, these can be treated like predefined labels, since they just emit numbers.
+
+** TODO numeric literals
+Write directly to the image as 32-bit signed ints.
+
+** TODO strings ('"' .. '"')
+- One character per 32-bit cell as in retro. (for now, anyway)
+- The assembler should store the length of the string, but also terminate it with a 0. (This is what free pascal does, too).
+
+* TODO parser for the assembly language
+All the tokens in the assembler syntax are already recognized by the implish reader, so they could be read from a file or just created directly as symbols. The only thing special to do is add a function that extracts the prefix characters.
+
+* DONE grammar for the pascal subset
+
+#+begin_src elisp
+  (lang hello-pascal
+     (lexer
+        (: .Alpha (| (- "a" "z") (- "A" "Z")))
+        (: .Digit (- "0" "9"))
+        (: IDENT .Alpha (+ .Alpha .Digit))
+        (: STRING
+           (! "'")         ; drop leading quote
+           (* (| "''"      ; escape quotes by doubling them
+                 (~ "'"))) ; allow anything else inside the string
+           (! "'")))       ; drop
+     (rules
+        (: program
+           'PROGRAM IDENT  ; quoted = case insensitive keyword
+           block "." )
+        (: block
+           'BEGIN
+              writeln      ; special syntactic form in pascal :/
+           'END)
+        (: writeln 'WRITELN "(" STRING ")") ) )
+#+end_src
+
+* TODO [0/9] translate grammar symbols to associated combinators
+** TODO string -> lit(st)
+** TODO quoted symbol -> case insensitive keyword
+** TODO normal symbol -> sub(sym)
+** TODO ":" -> define a rule
+*** TODO ".name" -> fragment
+*** TODO "NAME" -> token
+*** TODO "name" -> rule (produces a node)n
+** TODO "|" -> alt([...])
+** TODO "-" -> any (charset)
+** TODO "+" -> rep([...])
+** TODO "!" -> hide([...])
+** TODO "~" -> neg([...])
+
+* TODO transform pascal parse tree
+- collect the constant strings and assign labels ($0, etc) so i can move them all to the .data section.
+- if 'writeln' is encountered, include the retro code
+
+* DONE template for pascal -> assembler
+#+begin_src lisp
+  
+  (template hellopas->b4asm
+  
+    (% program (iden data* code* main)
+       ".prog " {iden} ,
+       ".data" ,
+       (>> (\ data* "\n")) ,
+       ".code" ,
+       (>> (\ code* "\n")) ,
+       ".main" ,
+       (>> {main}) ,
+       ".end" , )
+      
+    (% block (stmt*)
+       (>> (\ stmt* ";\n")) )
+    
+    (% writeln (strid)
+       "LIT $" {strid} ,
+       "CALL puts" ,
+       "CALL cr" , )
+    
+    (% asm (label sym*)
+       ":" {label} ,
+       (>> (\ sym* "\n")) ) )
+  
+#+end_src
+
+* TODO template combinators
+** TODO default: emit each expression in turn
+** TODO "," -> emit a newline and indent
+** TODO (\ list sep) -> emit (eval list), separated by sep
+if sep is "\n" then indent
+** TODO {name} -> call template that maches (eval name)
+** TODO (% name (args..) ...) -> define a template rule
+** TODO (>> ...) -> increase indent while emitting the values
+
