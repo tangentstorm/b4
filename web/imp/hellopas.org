@@ -1,26 +1,75 @@
 #+title: hellopas: implish pascal compiler spike
 #+date: <2013-09-18 Wed>
 
-* DONE pascal source
+* Overview
 
 My goal here is to get implish to compile 'hello world' down to ngaro instructions, and have the resulting image run successfully in a web browser.
 
-Here is the program:
-
+* DONE pascal source
 #+begin_src pascal
   program hello;
   begin
     WriteLn('hello, world.')
   end.
 #+end_src
+* DONE grammar for the pascal subset
+#+begin_src elisp
+  (lang hello-pascal
+     (lexer
+        (: .Alpha (| (- "a" "z") (- "A" "Z")))
+        (: .Digit (- "0" "9"))
+        (: IDENT .Alpha (+ .Alpha .Digit))
+        (: STRING
+           (! "'")         ; drop leading quote
+           (* (| "''"      ; escape quotes by doubling them
+                 (~ "'"))) ; allow anything else inside the string
+           (! "'")))       ; drop
+     (rules
+        (: program
+           'PROGRAM IDENT  ; quoted = case insensitive keyword
+           block "." )
+        (: block
+           'BEGIN
+              writeln      ; special syntactic form in pascal :/
+           'END)
+        (: writeln 'WRITELN "(" STRING ")") ) )
+#+end_src
 
-* TODO expected parse tree
+* DONE expected parse tree
 #+begin_src elisp
   '(program (IDENT "hello")
             (block (writeln (STRING "hello, world."))) )
 #+end_src
 
-* TODO expected assembler output
+* DONE template for pascal -> assembler
+#+begin_src lisp
+  (template hellopas->b4asm
+  
+    (% program (iden data* code* main)
+       ".prog " {iden} ,
+       ".data" ,
+       (>> (\ data* "\n")) ,
+       ".code" ,
+       (>> (\ code* "\n")) ,
+       ".main" ,
+       (>> {main}) ,
+       ".end" , )
+      
+    (% block (stmt*)
+       (>> (\ stmt* ";\n")) )
+    
+    (% writeln (strid)
+       "LIT $" {strid} ,
+       "CALL puts" ,
+       "CALL cr" , )
+    
+    (% asm (label sym*)
+       ":" {label} ,
+       (>> (\ sym* "\n")) ) )
+  
+#+end_src
+
+* DONE expected assembler output
 #+begin_src asm
   .prog hello
   .data
@@ -69,7 +118,13 @@ Here is the program:
 
 #+end_src
 
-* TODO [0/5] assembler semantics
+* TODO [0/3] parser for the assembly language
+** TODO Expose the existing implish reader as a function.
+All the tokens in the assembler syntax are already recognized by the implish reader, so they could be read from a file or just created directly as symbols.
+** TODO Create functions for sym->chars and chars->sym
+** TODO extract prefix characters from the tokens in the assembly
+* TODO [0/7] assembler semantics
+** TODO expose an [array of uint32] type
 ** TODO [0/7] macros ("." prefix)
 *** TODO .prog
 - Skip next symbol (ignore the program name).
@@ -97,38 +152,21 @@ Syntactically, these can be treated like predefined labels, since they just emit
 
 ** TODO numeric literals
 Write directly to the image as 32-bit signed ints.
-
 ** TODO strings ('"' .. '"')
 - One character per 32-bit cell as in retro. (for now, anyway)
 - The assembler should store the length of the string, but also terminate it with a 0. (This is what free pascal does, too).
-
-* TODO parser for the assembly language
-All the tokens in the assembler syntax are already recognized by the implish reader, so they could be read from a file or just created directly as symbols. The only thing special to do is add a function that extracts the prefix characters.
-
-* DONE grammar for the pascal subset
-
-#+begin_src elisp
-  (lang hello-pascal
-     (lexer
-        (: .Alpha (| (- "a" "z") (- "A" "Z")))
-        (: .Digit (- "0" "9"))
-        (: IDENT .Alpha (+ .Alpha .Digit))
-        (: STRING
-           (! "'")         ; drop leading quote
-           (* (| "''"      ; escape quotes by doubling them
-                 (~ "'"))) ; allow anything else inside the string
-           (! "'")))       ; drop
-     (rules
-        (: program
-           'PROGRAM IDENT  ; quoted = case insensitive keyword
-           block "." )
-        (: block
-           'BEGIN
-              writeln      ; special syntactic form in pascal :/
-           'END)
-        (: writeln 'WRITELN "(" STRING ")") ) )
-#+end_src
-
+** TODO expose a blockwrite function to write the array to a file
+* TODO template combinators
+** TODO default: emit each expression in turn
+** TODO "," -> emit a newline and indent
+** TODO (\ list sep) -> emit (eval list), separated by sep
+if sep is "\n" then indent
+** TODO {name} -> call template that maches (eval name)
+** TODO (% name (args..) ...) -> define a template rule
+** TODO (>> ...) -> increase indent while emitting the values
+* TODO transform pascal parse tree
+- collect the constant strings and assign labels ($0, etc) so i can move them all to the .data section.
+- if 'writeln' is encountered, include the retro code
 * TODO [0/9] translate grammar symbols to associated combinators
 ** TODO string -> lit(st)
 ** TODO quoted symbol -> case insensitive keyword
@@ -142,46 +180,4 @@ All the tokens in the assembler syntax are already recognized by the implish rea
 ** TODO "+" -> rep([...])
 ** TODO "!" -> hide([...])
 ** TODO "~" -> neg([...])
-
-* TODO transform pascal parse tree
-- collect the constant strings and assign labels ($0, etc) so i can move them all to the .data section.
-- if 'writeln' is encountered, include the retro code
-
-* DONE template for pascal -> assembler
-#+begin_src lisp
-  
-  (template hellopas->b4asm
-  
-    (% program (iden data* code* main)
-       ".prog " {iden} ,
-       ".data" ,
-       (>> (\ data* "\n")) ,
-       ".code" ,
-       (>> (\ code* "\n")) ,
-       ".main" ,
-       (>> {main}) ,
-       ".end" , )
-      
-    (% block (stmt*)
-       (>> (\ stmt* ";\n")) )
-    
-    (% writeln (strid)
-       "LIT $" {strid} ,
-       "CALL puts" ,
-       "CALL cr" , )
-    
-    (% asm (label sym*)
-       ":" {label} ,
-       (>> (\ sym* "\n")) ) )
-  
-#+end_src
-
-* TODO template combinators
-** TODO default: emit each expression in turn
-** TODO "," -> emit a newline and indent
-** TODO (\ list sep) -> emit (eval list), separated by sep
-if sep is "\n" then indent
-** TODO {name} -> call template that maches (eval name)
-** TODO (% name (args..) ...) -> define a template rule
-** TODO (>> ...) -> increase indent while emitting the values
 
