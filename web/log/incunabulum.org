@@ -1,0 +1,141 @@
+#+title: understanding cryptic code: a fictional account of the j incunabulum
+
+* J
+:PROPERTIES:
+:TS:       <2013-09-19 02:05AM>
+:ID:       zy39f2w0q8g0
+:END:
+
+[[http://www.jsoftware.com/][J]] is a terse programming language with a wide variety of operations that deal with arrays.
+
+Here are a few examples of elementary-school arithmetic in J:
+
+#+begin_src j
+   i.10             NB. The first 10 natural numbers
+0 1 2 3 4 5 6 7 8 9
+
+   +/i.10           NB. Sum of the first 10 natural numbers.
+45
+
+   +:i.10           NB. The first 10 even numbers.
+0 2 4 6 8 10 12 14 16 18
+
+   1++:i.10         NB. The first 10 odd numbers.
+1 3 5 7 9 11 13 15 17 19
+
+   *:i.10           NB. the first 10 square numbers
+0 1 4 9 16 25 36 49 64 81
+
+   *:1+i.10         NB. the first 10 square numbers (not counting 0)
+1 4 9 16 25 36 49 64 81 100
+
+   */~i.10           NB. multiplication table
+0 0  0  0  0  0  0  0  0  0
+0 1  2  3  4  5  6  7  8  9
+0 2  4  6  8 10 12 14 16 18
+0 3  6  9 12 15 18 21 24 27
+0 4  8 12 16 20 24 28 32 36
+0 5 10 15 20 25 30 35 40 45
+0 6 12 18 24 30 36 42 48 54
+0 7 14 21 28 35 42 49 56 63
+0 8 16 24 32 40 48 56 64 72
+0 9 18 27 36 45 54 63 72 81
+
+#+end_src
+
+* The Incunabulum
+:PROPERTIES:
+:TS:       <2013-09-19 02:34AM>
+:ID:       d1s0adx0q8g0
+:END:
+
+This story is not about J but rather about the following C program, which served as the model for the current J interpreter:
+
+#+begin_src c
+typedef char C;typedef long I;
+typedef struct a{I t,r,d[3],p[2];}*A;
+#define P printf
+#define R return
+#define V1(f) A f(w)A w;
+#define V2(f) A f(a,w)A a,w;
+#define DO(n,x) {I i=0,_n=(n);for(;i<_n;++i){x;}}
+I *ma(n){R(I*)malloc(n*4);}mv(d,s,n)I *d,*s;{DO(n,d[i]=s[i]);}
+tr(r,d)I *d;{I z=1;DO(r,z=z*d[i]);R z;}
+A ga(t,r,d)I *d;{A z=(A)ma(5+tr(r,d));z->t=t,z->r=r,mv(z->d,d,r);
+ R z;}
+V1(iota){I n=*w->p;A z=ga(0,1,&n);DO(n,z->p[i]=i);R z;}
+V2(plus){I r=w->r,*d=w->d,n=tr(r,d);A z=ga(0,r,d);
+ DO(n,z->p[i]=a->p[i]+w->p[i]);R z;}
+V2(from){I r=w->r-1,*d=w->d+1,n=tr(r,d);
+ A z=ga(w->t,r,d);mv(z->p,w->p+(n**a->p),n);R z;}
+V1(box){A z=ga(1,0,0);*z->p=(I)w;R z;}
+V2(cat){I an=tr(a->r,a->d),wn=tr(w->r,w->d),n=an+wn;
+ A z=ga(w->t,1,&n);mv(z->p,a->p,an);mv(z->p+an,w->p,wn);R z;}
+V2(find){}
+V2(rsh){I r=a->r?*a->d:1,n=tr(r,a->p),wn=tr(w->r,w->d);
+ A z=ga(w->t,r,a->p);mv(z->p,w->p,wn=n>wn?wn:n);
+ if(n-=wn)mv(z->p+wn,z->p,n);R z;}
+V1(sha){A z=ga(0,1,&w->r);mv(z->p,w->d,w->r);R z;}
+V1(id){R w;}V1(size){A z=ga(0,0,0);*z->p=w->r?*w->d:1;R z;}
+pi(i){P("%d ",i);}nl(){P("\n");}
+pr(w)A w;{I r=w->r,*d=w->d,n=tr(r,d);DO(r,pi(d[i]));nl();
+ if(w->t)DO(n,P("< ");pr(w->p[i]))else DO(n,pi(w->p[i]));nl();}
+
+C vt[]="+{~<#,";
+A(*vd[])()={0,plus,from,find,0,rsh,cat},
+ (*vm[])()={0,id,size,iota,box,sha,0};
+I st[26]; qp(a){R  a>='a'&&a<='z';}qv(a){R a<'a';}
+A ex(e)I *e;{I a=*e;
+ if(qp(a)){if(e[1]=='=')R st[a-'a']=ex(e+2);a= st[ a-'a'];}
+ R qv(a)?(*vm[a])(ex(e+1)):e[1]?(*vd[e[1]])(a,ex(e+2)):(A)a;}
+noun(c){A z;if(c<'0'||c>'9')R 0;z=ga(0,0,0);*z->p=c-'0';R z;}
+verb(c){I i=0;for(;vt[i];)if(vt[i++]==c)R i;R 0;}
+I *wd(s)C *s;{I a,n=strlen(s),*e=ma(n+1);C c;
+ DO(n,e[i]=(a=noun(c=s[i]))?a:(a=verb(c))?a:c);e[n]=0;R e;}
+
+main(){C s[99];while(gets(s))pr(ex(wd(s)));}
+#+end_src
+
+Roger Hui, the co-developer of J, tells the story:
+
+#+begin_quote
+One summer weekend in 1989, Arthur Whitney visited Ken Iverson at Kiln Farm and produced -- on one page and in one afternoon -- an interpreter fragment on the AT&T 3B1 computer. I studied this interpreter for about a week for its organization and programming style; and on Sunday, August 27, 1989, at about four o'clock in the afternoon, wrote the first line of code that became the implementation described in this document.
+-- Roger Hui, [[http://www.jsoftware.com/jwiki/Doc/An%20Implementation%20of%20J][An implementation of J]]
+#+end_quote
+
+For a bit of background: Ken Iverson was a mathematician who had been developing an array-centric notation for mathematics as a young man in the 1940s, before the first computer had even been built. Later in life, he was awarded a fellowship by IBM, where he and his team developed a computer programming language based on his ideas, and called APL.
+
+APL predated the ASCII standard, and was famous for its unusual symbol set. It was fairly widely used in certain industries - especially in the financial sector.
+
+In the 1980's, though, personal computers were becoming more and more popular, and perhaps Iverson was thinking about all those ASCII keyboards when he decided to create a new APL-like language that restricted itself to the ASCII character set.
+
+* What was Arthur Whitney thinking?
+:PROPERTIES:
+:TS:       <2013-09-19 03:46AM>
+:ID:       s0w41q01q8g0
+:END:
+In 1988 (a year before writing the incunabulum) Arthur Whitney had created the an APL-like language called A for Morgan Stanley.
+
+In addition to his experience /implementing/ array languages, Whitney had been /using/ them since he was a young boy. Iverson had been a friend of Whitney's father, and personally taught the 11-year old Arthur APL.
+
+So here is a guy that has learned to /think/ in APL over the years, sitting down to write some code in C to communicate a core idea to his friend and mentor, Iverson, who had /invented/ APL. It's not clear from  Hui's story whether he was also physically present that day, but in any case, Hui was also already a long time user of APL.
+
+In other words, these three men shared a way of thinking about programming, as well as a vocabulary for it, thanks to APL.
+
+So now, on the summer afternoon in question, Arthur Whitney sits down at the computer -- the [[http://en.wikipedia.org/wiki/3B1][AT&T 3B1]] looked a like an old IBM PC, but running Unix on a 16-bit Motorola CPU, with a bulky qwerty keyboard, a three-button mouse, and a green monochrome CRT monitor -- fires up an editor, and mentally prepares himself to write an APL-like interpreter in C.
+
+C is a far less expressive language than APL. It's going to feel rather cramped and constrained to him, and so the first thing he's going to want to do is make it feel more like APL.
+
+He already knows how to do this. He wrote the /A/ interpreter, and it probably wasn't his first attempt. In an [[http://queue.acm.org/detail.cfm?id=1531242][interview]], when asked about his coding habits, he said, "I've found the best thing is just to get something running, and then I'll redo it probably 10 or 20 times until I can't get it any smaller."
+
+So most likely, he's had /practice/ writing this program, or programs like it. He's not fumbling around figuring out how to do this. He's giving a /performance/.
+
+"Oh, that's an interesting idea," says Whitney, when Iverson explains his idea for the new language, "Let's try it out."
+
+"You mean right now?" says Iverson.
+
+"Sure," says Whitney. He nods toward the computer. "May I?"
+
+"Please," says Iverson. "I'll go get another chair."
+
+And it begins.
