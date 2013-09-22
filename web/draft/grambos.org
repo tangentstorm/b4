@@ -1,0 +1,36 @@
+#+title: grammar combinators
+
+the basic concepts are:
+
+- each operation is a function that both takes and returns a vorunati marker, which is the new parse state.
+- /vo/ indicates an unfinished computation. it allows a function to resume paused work.
+- /ru/ is never sent to the functions. it indicates that the system is waiting for more input.
+- /ti/ indicates that the input so far has been matched, and the procedure should try to match too.
+- /na/ indicates that the parser is bactracking, and the procedure should undo any side effects it performed in the /ti/ step (if possible).
+
+The vorunati symbols are used in two separate ways in implish: to describe the state of a worker process, and to describe the current state of a parse attempt. Therefore, a parser process has two separate vorunati values: one to describethe parse attempt (where ti indicates forward matching and na indicates backtracking) and one to indicate the state of the process as a whole (where ti indicates the parser has finished (sucessfully or with error conditions), and na indicates an internal error).
+
+- and ->
+- alt ->
+- fetch next input token
+- input token matches literal symbol?
+- input token in set of symbols?
+- logically negate tos
+- push input pointer
+- pop input pointer (backtrack)
+- gosub
+- return
+- new tag
+- end tag
+
+- token matchers
+
+function lit.ti( c : char ) : vor;
+  begin
+    if self.ch = c then result := na
+  end;
+
+function lit.na( c : char ) : vor;
+  begin
+    if self.ch = c then result := na
+  end;
