@@ -1,0 +1,528 @@
+#+title: The UpCase Saga: How I Learn New Programming Languages
+#+date: <2013-09-24 Tue> (code)
+#+date: <2013-09-25 Wed> (text)
+
+* Introduction
+
+J is so different from other programming languages that I might as well be a complete beginner, even though I've been programming for over 20 years.
+
+While my experience writing code doesn't help much with J, I've also accumulated experience about /how to learn/ new languages, and /how to solve programming problems/ in general.
+
+This is the story of how I tackled a small problem in an unfamilar language.
+
+*Note:* this article is about a /learning process/, not about the actual code. J is cryptic, and my "beginner J" code is probably terrible. I will explain the basic ideas as I go along, but try to focus on the general approach to problem solving and don't worry too much about understanding the code.
+
+* Problem Statement and Intermediate Solutions
+
+My goal was to implement a J verb (basically a function) to make all the lower-case letters in an ASCII string uppercase, while leaving other characters unchanged.
+
+It took me an hour to produce this:
+
+#+BEGIN_SRC j
+    
+  string =. '"Please, Sir, could you make this upper case?" said Pip.'
+  (chr=.{&a.) s -32&* e.&((ord 'a')+(i.26))  s=.(ord=.a.&i.) string
+
+#+END_SRC
+
+If you type that into the J terminal, you get:
+
+#+RESULTS:
+: "PLEASE, SIR, COULD YOU MAKE THIS UPPER CASE?" SAID PIP.
+
+The above code is just an expression, not a verb, but once I got that far, I used one of J's built-in routines to "simplify" it for me:
+
+#+BEGIN_SRC j
+
+  upcase =. [: ([: {&a. ] - [: 32&* e.&(97+i.26)) a.&i.
+
+#+END_SRC
+
+I /told/ you J was cryptic.
+
+I can't fully explain this line myself yet, but I /can/ tell you how I came up with it, starting almost from scratch.
+
+* Blank Slate : A Quick Taste of J
+
+Code in general is often unreadable to the untrained eye, and part of learning a language is adjusting to the visual shape of the code.
+
+For me, even python was difficult to read until I got used to looking at it, and I was coming from /perl/, another notoriously cryptic language.
+
+From a /learning to learn/ perspective, J has the advantage of a large vocabulary comprised almost entirely of ASCII punctuation characters, many of which have at least six different meanings -- so I have a tendency to forget what I've learned and have to re-learn it. :)
+
+For example, the character =\plus= can be used to form any of the following three verbs: { =\plus=  =\plus.=  =\plus:= }, each of which has separate meanings depending on whether it's used in a prefix ("monadic") or infix ("dyadic") context.
+
+Dyadic =1 \plus 1= means /one plus one/, and monadic =+ 1= means something like /positive one/ [fn:1]. In J, /every/ verb has two meanings like this.
+
+Further, J generalizes each verb to work with multi-dimensional arrays. For example, dyadic =x \plus. y= is the /greatest common denominator/ verb.
+
+The following transcript of an interactive J session shows how these concepts are combined.
+
+*Note*: J is available for free from http://jsoftware.com/ if you want to follow along.
+
+#+BEGIN_SRC j
+
+   NB. Input lines are indented in the J terminal.
+
+   8 +. 5 6 7 8 9 10 11 12     NB. GCD(8,5) GCD(8,6) ... GCD(8,12)
+1 2 1 8 1 2 1 4
+
+   12 11 10 9 8 7 6 +. 6 7 8 9 10 11 12  NB. GCD(12,6) GCD(11,7) ...
+6 1 2 9 2 1 6
+
+   NB. Ranges can be generated with monadic ' i. ' ('Integers')
+   NB. Dyadic ; composes values into an array (so an array of arrays below)
+   NB. The symbol '_7' is the literal value 'negative seven'
+   NB. So this line shows how to construct 4 different ranges:
+   (i. 7)  ;  (i. _7)  ;  (6 + i. 7) ;  (6 + i. _7)
+┌─────────────┬─────────────┬────────────────┬────────────────┐
+│0 1 2 3 4 5 6│6 5 4 3 2 1 0│6 7 8 9 10 11 12│12 11 10 9 8 7 6│
+└─────────────┴─────────────┴────────────────┴────────────────┘
+
+   NB. Now we can simplify our earlier expressions.
+   8 +. 5 + i.8   NB. Strict right-to-left evaluation: (8 +. (5 + (i. 8)))
+1 2 1 8 1 2 1 4
+
+   (6 + i. _7) +. 6 + i. 7
+6 1 2 9 2 1 6
+
+   NB. If that's too readable for you, you can skip the whitespace... :)
+   (6+i._7)+.6+i.7
+6 1 2 9 2 1 6
+
+#+END_SRC
+
+That's enough to get the basic idea of J code: very little syntax, just a lot of verbs to make things happen.
+
+* On to =upcase=
+
+I learned the basic concept of converting an ASCII string to upper case a /long/ time ago. Here's how I first implemented it in turbo pascal, probably around 1992 (again, you don't really need to understand the code):
+
+#+BEGIN_SRC pascal
+
+function upstr( s : string ) : string;
+    var count : byte;
+  begin
+    for count := 1 to length( s ) do
+      s[ count ] := upcase( s[ count ] );
+    upstr := s;
+  end;
+
+#+END_SRC
+
+Basically, in turbo pascal, =upcase(ch:char):char= was built-in, so I just had to loop through a string and apply =upcase= to each character.[fn:2]
+
+If I'd had to write =upcase= myself, though, it probably would have looked like this:
+
+#+BEGIN_SRC pascal
+
+  function upcase( ch : char ) : char;
+    begin
+      if ch in ['a'..'z'] then 
+        upcase := ord(ch) + (ord('A') - chr('a')) 
+      else
+        upcase := ch;   { Or in moden-day pascal, 'result := ...' }
+    end;
+
+#+END_SRC
+
+The functions =Ord= and =Chr= are primitives.[fn:3] =Ord(ch)= converts a character into a number and =Chr(x)= converts a number to the equivalent character.
+
+Eight bit characters are indistinguishable from any other bytes in memory[fn:4], and in languages like C, there is no distinction between a =byte= and a =character=.  Pascal made the distinction at compile time, for type safety, but there is no actual machine code required to perform the operations.
+
+J, on the other hand, is a dynamically typed language, where numbers and strings have different internal representations (probably differing at least by an extra byte encoding the type) and have to be explicitly converted.
+
+My hunch was that if I could figure out how to implement =Ord= and =Chr= in J, the rest of the problem would be easy.
+
+* =a.= is for Alphabet
+
+I knew J supported strings, but I didn't know exacly how they worked.
+
+The first rule of learning a programming language is to get familiar with its documentation.
+
+You don't have to memorize every word, or even read it all at once. Just know what resources are available, and remember where to find them.
+
+With J, I often start with the [[http://www.jsoftware.com/help/dictionary/vocabul.htm][vocabulary page]], because it lists all the symbols and their names. [fn:5] 
+
+There's nothing on the vocabulary page about strings, but there is an entry for [[http://www.jsoftware.com/help/dictionary/dadot.htm ][a. /Alphabet/ \frasl{} /Ace/ ]], and following the link confirmed that it was a predefined array representing the character set.
+
+I typed it in the J terminal, and saw a bunch of garbage:
+
+#+BEGIN_SRC j
+
+   a.    NB. output manually edited to reove many non-ascii characters
+\001\002\003\004\005\006\007\010	
+\013\014  ... \037!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNO
+PQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~....
+
+#+END_SRC
+
+Given this array, =chr(n)= would just mean retrieving the the /nth/ item, and =ord(ch)= would involve searching through the array to find the index of the given character.
+
+In the languages I'm used to, this would probably might mean typing =a[65]= and =a.index('a')=, but J has a completely different syntax that I can never remember.
+
+Often, when you're learning something, the documentation will explain something, but you won't have enough experience to really understand what you're reading.
+
+With J in particular, I have a bad tendency to gloss over examples in the docs because I often don't even understand the mathematical concepts they're trying to illustrate.
+
+In this case, the page for =a.= showed an example for displaying the printable ascii characters:
+
+#+BEGIN_SRC j
+
+   1 2 3 { 8 32 $ a.                    NB. From the J docs for a.
+ !"#$%&'()*+,-./0123456789:;<=>?
+@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+`abcdefghijklmnopqrstuvwxyz{|}~
+
+#+END_SRC
+
+I actually understand enough J that I should have known what this was doing:
+
+- Dyadic =x $ y= ([[http://www.jsoftware.com/help/dictionary/d210.htm][Shape]]) reshapes array =y= to the dimensions specified by =x=.
+- Dyadic =x { y= ([[http://www.jsoftware.com/help/dictionary/d520.htm][From]]) extracts the elements specified in =x= from array =y=. 
+
+So in this case, the  =8 32 $ a.= arranges the characters of =a.= into an 8 \times 32 grid, and then the =1 2 3 { ...= part extracts the second, third, and fourth rows (array indices start at 0).
+
+Had I paid more attention, I would have seen immediately that the way to write =chr(n)= (or at least =a[n])= in J is =n{a.= .
+
+I did look at the example, but the way I mentally chunked it, I just saw "here's a way to arrange the ascii characters" without considering how it worked (or even really noticing which characters were involved).
+
+In any case, I was thinking more about =Ord= than =Chr= anyway, and I had a few guesses about how I might implement it.
+
+* Hunting down =Ord=
+
+Back on the [[http://www.jsoftware.com/help/dictionary/vocabul.htm][J Vocabulary]] page, I did a quick search for the word "index" and saw [[http://www.jsoftware.com/help/dictionary/didot.htm][i. /Integers/ \frasl /Index Of/ ]].
+
+I happened to know that ~A~ is ASCII character #65 (confirmed by typing =ord('A')= into a python prompt) so here's what I expected to happen:
+
+#+BEGIN_SRC j
+
+   'a' i. a.      NB. What I expected:
+65
+
+#+END_SRC
+
+But instead:
+
+#+BEGIN_SRC j
+
+   'a' i. a.      NB. What really happened:
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ...
+
+#+END_SRC
+
+This bears very little correspondence to any notion I have of an index.
+
+The docs explain /what/ it's doing (sort of), but not /why/:
+
+#+BEGIN_QUOTE org
+
+If =rix= is the rank of an item of =x=, then the shape of the result of =x i. y= is =(-rix)}.$y= . Each atom of the result is either =#x= or the index of the first occurrence among the items of x of the corresponding =rix=-cell of =y=. 
+
+The comparison in =x i. y= is tolerant, and fit can be used to specify the tolerance, as in =i. !. t= . 
+
+#+END_QUOTE
+
+I don't know yet what tolerance means or how to interpret =(-rix)}.$y= -- clearly these docs are written for people who are already familiar with array languages, and perhaps when I have more experience dealing with multi-dimensional arrays, this seemingly strange behavior will make perfect sense.
+
+And yet, this operation is called /Index Of/, and the practical result in this particular case is that it produces an array with a bunch of ones and one zero. I didn't count at the time, but the 0 is in the 98th slot, because =Ord('a')= = 97 (lower case).
+
+At this point, I rejected =i.= as a path to =Ord=, but I remembered there's a verb called /Copy/.
+
+* Take a left on Nub Street (or how to find /Copy/ when what you want is /Select/)
+
+Usually, when I play around with J, I find myself searching for that =a[n]= syntax. We just saw that it's  =n{a=, but I usually forget this, and have to search for it again.
+
+What usually happens is that look through the vocabulary page for a word like "select" or "index", and, after trying:
+
+#+BEGIN_SRC j
+
+   0 i. 'abc'     NB. hoping for 'a', but that's not what 'Index Of' means
+1 1 1
+
+#+END_SRC
+
+I usually wind up looking at the definition of [[http://www.jsoftware.com/help/dictionary/d222.htm][~: /Nub Sieve/ \frasl /Not Equal/ ]], because the word "sieve" is the closest thing that matches my idea of selecting items from an array. That page says:
+
+#+BEGIN_QUOTE org
+
+=~:y= is the boolean list b such that =b#y= is the nub of =y=.
+
+#+END_QUOTE
+
+Apparently, /nub/ is their word for the unique value in an array:
+
+#+BEGIN_SRC j
+
+   ~: 'Mississippi'             NB. the example from the "nub sieve" docs
+1 1 1 0 0 0 0 0 1 0 0
+
+   (~: 'Mississippi') # 'Mississippi'   NB. not in docs, but should be. :)
+Misp
+
+#+END_SRC
+
+So a "nub sieve" isn't what I want, but it looks like this =#= thing is a bit like the generic "select" I'm looking for.
+
+This is line of searching is something I went through several times when I experimented casually with J in the past. How did I keep missing =#= when looking for my hypothetical /Select/ operator?
+
+I kept missing it because =#= is named [[http://www.jsoftware.com/help/dictionary/d400.htm][# /Tally/ \frasl /Copy/ ]].
+
+#+BEGIN_QUOTE org
+
+If the arguments have an equal number of items, then =x#y= copies =+/x= items from =y=, with =i{x= repetitions of item =i{y= . Otherwise, if one is an atom it is repeated to make the item count of the arguments equal. 
+
+The complex left argument =a j. b= copies =a= items followed by =b= fills. The fit conjunction provides specified fills, as in =#!.f=
+
+#+END_QUOTE
+
+Not knowing what =i{x= meant (again, =x[i]=, the thing I was usually searching for when I wound up here), the text above didn't usually make sense to me.
+
+As I sit here writing now, most of the documentation I read makes sense, but when I'm in "problem solving" mode, there just isn't time or room in my head to carefully analyze each page.
+
+Instead, I'm doing a broad search, attempting to find the pages that are most likely to answer my question, and glossing over anything that doesn't immediately match.
+
+This may seem like an inefficient and error-prone process compared to just working through a tutorial, but it works.
+
+Reading a tutorial is a bit like taking a guided tour of a city. You get to see some interesting things and travel in comfort, but everything you encounter has been prepared for you in advance.
+
+My approach is more like going to a new city and picking an arbitrary goal: /find the library/ or /find a nice park/.... and then just heading out to explore. I'll probably get lost a few times, and completely miss out on a few popular attractions at first, but eventually I get to know my way around the place, in a way a tourist probably never will.
+
+Anyway, in my wanderings through the "City of J", I kept setting out to /find the Select verb/ and instead found myself over on /Nub Sieve avenue/, which of course eventually would bring me back to /Copy/.
+
+So why on earth is /Select/ called /Copy/?
+
+Well of course, it /isn't/. What I thought of s /Select/ is just /From/ in J, and it's just the ={= symbol that keeps showing up: 
+
+#+BEGIN_SRC j
+
+   0 2 4 { 'abcdefg'
+ace
+
+#+END_SRC
+
+But /Copy/ can do the same thing in a pinch, if you also happen to find
+dyadic =e.= (called [[http://www.jsoftware.com/help/dictionary/dedot.htm][ /Member (In)/ ]] in the J docs, but I would have called it /Element Of/).
+
+#+BEGIN_SRC j
+
+   NB. Selecting values directly with 'Copy':
+   1 0 1 0 1 0 0 # 'abcdefg'
+ace
+
+   NB. For each integer 0..6, is it an element of the array 0 2 4 ?
+   (i.7) e. 0 2 4
+1 0 1 0 1 0 0
+
+   NB. Combining those two ideas:
+   ((i.7) e. 0 2 4) # 'abcdefg'
+ace
+
+#+END_SRC
+
+Obviously this so-called /Copy/ thing this is pretty terrible compared to ={= , because ={= doesn't require you to know the length or to fill in all those zeros, but at least we know "the long way" to get to /Select/.
+
+But why on earth is it called /Copy/?!?
+
+#+BEGIN_SRC j
+
+   0 1 2 3 # 'abcd' 
+bccddd
+
+#+END_SRC
+
+Oh.
+
+* From /Copy/ to /Chr/
+
+So there I was, looking at:
+
+#+BEGIN_SRC j
+
+   'a' i. a.
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ...
+
+#+END_SRC
+
+I remember my earlier discovery of /Copy/ and think to myself that if I could swap the zeros and ones, then perhaps it would bring me closer to =Ord= or =Chr=.
+
+I look up how to do /Not/ in the vocabulary. It's spelled =-.= in J, and it's really =1 - x=.[fn:6]
+
+So now I can do:
+
+#+BEGIN_SRC j
+
+   NB. Just using (8 32 $) here to reformat the results:
+
+   8 32 $        'a' i. a.      NB. My original data.
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+
+   8 32 $      -.'a' i. a.      NB. After applying not.
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+#+END_SRC
+
+
+I didn't really know where I was going with this, yet, but I figured I could use /Copy/ and the above pattern to get the letter 'a' back out of the alphabet. The first thing I tried happened to work:
+
+#+BEGIN_SRC j
+
+   NB. ~ swaps the arguments of a verb so that  a. #~ x   becomes  x # a.
+   a. #~  -. 'a' i. a.
+a
+
+#+end_src
+
+So at this point, I'd essentially implemented an identity function that was somewhere in the ballpark of =chr(ord(ch))=, but I needed to figure out how to extract the individual components.
+
+* Rummaging
+
+My next few attempts didn't work at all. I figured if I could put an 'a' in and get an 'a' out, maybe I could do the same thing for an entire string.
+
+First I tried just replacing the string, and I /got an error/. I tried the exact same thing again and /got an error/.
+
+
+#+begin_src j
+
+   a.#~-.'apples'i.a.
+|domain error
+|   a.    #~-.'apples'i.a.
+
+   a.#~-.'apples'i.a.
+|domain error
+|   a.    #~-.'apples'i.a.
+
+#+end_src
+
+Next I /tried some other stuff/ and /some stuff happened/.
+
+#+begin_src j
+
+   'apples'i.a       NB. I forgot the . in a. but failed to notice
+'apples' i. a        NB. J is giving me back a symbolic expression,
+                     NB. presumably because 'a' is not defined. 
+                     NB. I wonder if maybe '' is for characters and
+                     NB. '"' is for strings, so try:
+
+   "apples"i.a       NB. but " is a verb in J, not part of a string.
+|syntax error        NB. 'a' is a string. there is no "character" type
+|       "apples"i.a
+
+   'apples'i.a       NB. The J terminal makes it easy to duplicate input.
+'apples' i. a        NB. I cursored up and pressed enter to duplicate the
+                     NB. line, and probably just automatically ran it to
+                     NB. make sure it acted the same, in case I had 
+                     NB. accidentally changed the history.
+   
+   'apples'i./a      NB. / inserts a function between each element of a
+'apples' i./ a       NB. an array (so +/1 2 3 -> 1+2+3). I have no idea 
+                     NB. what I was thinking about here that would have
+   'apples'i.~/a     NB. caused me to type it.
+'apples' i.~/ a
+
+#+end_src
+
+It's hard to express my thought process at this point.
+
+The side comments I wrote above are things I'm observing as I write this document, but in the moment, I probably wasn't aware of any of it.
+
+In the moment, I had no idea why things weren't working, and was just trying lots of different things.
+
+This is basically /rummaging/ here. I didn't have a clear idea what I was looking for, but I had a sense that /something was wrong/, and was mostly typing on autopilot. I probably issued all of the above commands within the span of 30 seconds or so.
+
+Eventually, my brain caught up to my fingers, I noticed the missing period in =a.=, and  typed what I really wanted to type:
+
+#+begin_src j
+
+  'apples' i.a.      
+6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6
+6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6
+6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 0 6 6 6 4 6 6 6 6 6 6 3 6 6 6 1 6
+6 5 6 6 6 6 6 6 6 6 6 6 6 6 ...
+
+#+end_src
+
+This result is also completely unexpected to me. 
+
+Once again, here is the description of dyadic =i.= (/Index Of/):
+
+#+BEGIN_QUOTE org
+
+If =rix= is the rank of an item of =x=, then the shape of the result of =x i. y= is =(-rix)}.$y= . Each atom of the result is either =#x= or the index of the first occurrence among the items of x of the corresponding =rix=-cell of =y=. 
+
+The comparison in =x i. y= is tolerant, and fit can be used to specify the tolerance, as in =i. !. t= . 
+
+#+END_QUOTE
+
+I still don't understand why any of this would be useful, but I know =#x= means length (/Tally/) and 6 is the length of the string 'apples'.
+
+Siting here writing this, I can see that the indices of the string 'apples' are =0 1 2 3 4 5= and so =6= is a perfectly logical "not found".
+
+If you look closely, you can see that the numbers =0 1 3 4 5= all appear in that field of sixes, but =2= does not. That makes sense because:
+
+#+BEGIN_SRC j
+
+   1 2 { 'apples'
+pp
+
+#+END_SRC
+
+What's happening with the sixes is that given each ascii character, J is searching for its first position in the string 'apples'.
+
+In other words, I had the parameters backwards, and what I should have typed was this:
+
+#+begin_src j
+
+   a.i.'apples'
+97 112 112 108 101 115
+
+#+END_SRC
+
+And in fact, that is exactly the definition I eventually came up with for =Ord=:
+
+#+BEGIN_SRC j
+
+ord =. a. & i.    NB. The '&' is an operator that transforms dyadic i. into
+                  NB. a new verb (which I assigned to the variable 'ord')
+                  NB. Now: (ord x) = ((a.&i.) x) = (a. i. x)  
+                  NB. This transformation is called "partial application".
+
+   ord 'apples'
+97 112 112 108 101 115
+
+#+END_SRC
+
+However, /in the moment/, the giant pile of sixes made no sense to me, and I wasn't able to follow this train of thought.
+
+Instead, my failed attempt to use double quotes for a string reminded me of the concept of /rank/, and so I took a wrong turn.
+
+
+(*to be continued...*)
+
+* Footnotes
+
+[fn:1] the monadic verb =\plus x= actually produces the [[http://en.wikipedia.org/wiki/Complex_conjugate][complex conjugate]] of =x=.
+
+[fn:2] In turbo pascal, strings were always 256 bytes, with the first byte representing a length. This =upstr= function takes a string by value, meaning all 256 bytes are copied onto the stack. Changing the signature to =procedure upstr( var s : string );= would have modified the string in place without making a copy, but I generally preferred the functional style, even back then.
+
+[fn:3] Pascal is case-insensitive, so =ord=, =Ord=, =ORD=, etc. all refer to the same thing.
+
+[fn:4] Characters at the time were 8 bits. ASCII only specifies 128 ncharacters, 32 of which are invisible control codes. If you were an american writing code for DOS back in the day, you probably had several printouts of the [[http://www.ascii-codes.com/][CP437]] character set lying around.
+
+[fn:5] Looking back now, I wonder if the [[http://www.jsoftware.com/help/phrases/contents.htm][J phrasebook]] might have been a more helpful starting point.
+
+[fn:6] Over and over in J, I find that the verb I want is just a specific instance of some more general operation. I introduced =+.= earlier as /greatest common divisor/, but it's also the logical /OR/ operator. This might seem like some crazy operator overloading, but that's not the case: logical /OR/ just happens to be a special case of /GCD/. 
