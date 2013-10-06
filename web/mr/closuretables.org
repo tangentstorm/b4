@@ -1,0 +1,67 @@
+#+title: closure tables
+
+Closure tables are a method of storing tree structures in a relational database.
+
+* Notes from the Karwin Presentation
+
+These notes are based on the slides from [[http://www.slideshare.net/billkarwin/models-for-hierarchical-data][Models for Hierarchical Data]] by Bill Karwin.
+
+** query descendents of #4
+#+begin_src sql
+select c.* from comments c join treepaths t on (c.comment_id = t.descendant)
+where t.ancestor = 4
+#+end_src
+
+** ancestors of #6
+#+begin_src sql
+select c.* from comments c join treepaths t on (c.comment_id = t.ancestor)
+where t.descendant = 6
+#+end_src
+
+** insert new child of #5
+#+begin_src sql
+insert into comments values (8, 'Fran', 'I agree!');
+insert into treepaths (ancestor, descendant, depth)
+  select ancestor, 8, depth + 1 from treepaths
+  where decendant = 5
+  union all 
+  select 8,8,0;
+#+end_src
+
+** delete child #7
+#+begin_src sql
+delete from treepaths where descendant = 7
+#+end_src
+
+** delete subtree under #4
+#+begin_src sql
+delete from treepaths
+  where descendant in
+    (select descendant from treepaths where ancestor = 4)
+#+end_src
+
+
+** moving a node ([[http://karwin.blogspot.com/2009/04/sql-antipatterns-strike-back-slides.html?showComment=1248561738983#c125020058800490715][from the comments]])
+
+#+begin_quote org
+For the case you describe, I'd recommend creating a temp table that maps the node id's of the old subtree to the node id's of the cloned subtree.
+
+#+begin_src sql
+CREATE TEMPORARY TABLE NodeMap (
+  original_id BIGINT PRIMARY KEY,
+  clone_id BIGINT NOT NULL
+);
+#+end_src
+
+Then if you can query an original subtree (rooted at node #4 for instance), you can insert a clone subtree with equivalent structure but using the cloned nodes:
+
+#+begin_src sql
+INSERT INTO ClosureTable (ancestor, descendant)
+  SELECT n1.clone_id, n2.clone_id
+  FROM ClosureTable c
+    JOIN NodeMap n1 ON (c.ancestor = n1.original_id)
+    JOIN NodeMap n2 ON (c.descendant = n2.original_id)
+  WHERE c.ancestor = 4;
+#+end_src
+
+#+end_quote
