@@ -1,0 +1,75 @@
+#+title meta retro pascal
+
+* goal #1 : compile 'hello world'
+:PROPERTIES:
+:TS:       <2013-10-18 03:46AM>
+:ID:       7tn4ghc1s9g0
+:END:
+
+our goal is to implement a complete compiler for (at least) the following retro pascal program:
+
+#+begin_src pascal
+  program hello;
+  var s : string;
+  begin
+    writeln('hello world');
+  end.
+#+end_src
+
+* plan of attack : spike solution
+:PROPERTIES:
+:TS:       <2013-10-18 03:47AM>
+:ID:       1ui74jc1s9g0
+:END:
+
+- *self hosting* - everything we do gets translated to b4
+  - /so keep every step simple/
+
+- pipeline:
+  - a pascal grammar, implemented with grammar combinators
+    - grammar interpreter (incremental top-down recursive descent)
+        - algebraic type for structured imperative programming
+          - singly-typed intermediate language (basically pl/0)
+        - algebraic type for ALU + stack-based expressions
+          - opcode interpreter in sml for testing/prototyping
+          - output to string for assembly by pascal program
+        - imperative tree building routines (using tree + cursor)
+          - the tree builder is implemented in the b4 language
+      - algebraic type for grammars (using the vm language)
+      - parser routine for each combinator, compiled down to b4
+  - transformation rules for the pascal grammar
+  - code generator for the transformed tree
+    - templates
+
+* a simple tree type
+:PROPERTIES:
+:TS:       <2013-10-18 03:13AM>
+:ID:       fdk8tya1s9g0
+:END:
+
+#+begin_src sml
+datatype 'a tree = T of 'a * 'a tree list ;
+#+end_src
+
+
+* a variant type
+:PROPERTIES:
+:TS:       <2013-10-18 03:25AM>
+:ID:       7bgdvib1s9g0
+:END:
+
+Basically, i'm going to ignore the standard ml type system so we can implement our own.
+
+#+begin_src sml
+type kind = int ;
+datatype variant
+   = N                              (* null type *)
+   | K  of kind tree                (* type definitions *)
+   | V  of kind * int               (* value *)
+   | R  of kind * int               (* references *)
+   | A  of kind * variant array     (* array *)
+   | F0 of kind * variant tree      (* function with 0 args *)
+   | F1 of kind * variant tree * kind         (* ... 1 arg  *)
+   | F2 of kind * variant tree * kind * kind  (* ... 2 args *)
+   ;
+#+end_src
