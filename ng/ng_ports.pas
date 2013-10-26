@@ -2,17 +2,18 @@
 unit ng.ports; implementation
 {$ENDIF}
 
-  { the handlers in this file were mostly ported from ngaro.js, then broken into routines }
+{ the handlers in this file were mostly ported from ngaro.js,
+  then broken into routines }
 
 
-  { -- port 0 ------------------------------------------------- }
+{ -- port 0 ------------------------------------------------- }
 
-  function vm.waiting : boolean; inline;
+function TNgaroVM.waiting : boolean; inline;
   begin
     result := self.ports[ 0 ] = rxWAITING;
   end;
 
-  function vm.handle_syncport( msg :  int32 ): int32;
+function TNgaroVM.handle_syncport( msg :  int32 ): int32;
   begin
     { This is never actually called,
       because runio only looks at ports > 0 }
@@ -21,86 +22,92 @@ unit ng.ports; implementation
     Halt( msg );
   end;
 
-  { -- port 1 ------------------------------------------------- }
-  {
+{ -- port 1 ------------------------------------------------- }
+{
 
-    We implement two separate handlers for port 1.
+  We implement two separate handlers for port 1.
 
-    The default handler, handle_keyboard reads input from the keyboard.
+  The default handler, handle_keyboard reads input from the keyboard.
 
-    handle_input reads input from a text file in the input queue.
+  handle_input reads input from a text file in the input queue.
 
-    These are toggled dynamically by updating the pointer in the
-    vm.devices array.
+  These are toggled dynamically by updating the pointer in the
+  vm.devices array.
 
-    The switch happens whenever a file is pushed onto the input
-    the stack ( either via --with on the command line or by sending
-    msg 2 to port 4 ), and the switch back happens on EOF for the
-    last input file on the stack.
+  The switch happens whenever a file is pushed onto the input
+  the stack ( either via --with on the command line or by sending
+  msg 2 to port 4 ), and the switch back happens on EOF for the
+  last input file on the stack.
 
-    see also : ng.input.pas for managing the input stack
+  see also : ng.input.pas for managing the input stack
 
-  }
+}
 
-  { keyboard handler }
-  function vm.handle_keyboard( msg : int32 ) : int32;
+{ keyboard handler }
+function TNgaroVM.handle_keyboard( msg : int32 ) : int32;
   begin
     result := ord( kbd.readkey );
   end;
 
-  { input file handler }
-  function vm.handle_input( msg	: int32 ) : int32;
-    var ch : char;
+{ input file handler }
+function TNgaroVM.handle_input( msg     : int32 ) : int32;
+  var ch : char;
   begin
-    if eof( self.input^ ) then begin
-      self.next_input;
-      result := self.devices[ 1 ]( msg )
-    end else begin
-      read( self.input^, ch );
-      result := ord( ch );
-    end
+    if eof( self.input^ ) then
+      begin
+        self.next_input;
+        result := self.devices[ 1 ]( msg )
+      end
+    else
+      begin
+        read( self.input^, ch );
+        result := ord( ch );
+      end
   end;
 
-  { -- port 2 : simple text output ---------------------------- }
+{ -- port 2 : simple text output ---------------------------- }
 
-  procedure vm.clear;
+procedure TNgaroVM.clear;
   begin
     kvm.clrscr;
     kvm.gotoxy( 0, 0 );
   end;
 
-  function vm.handle_write( msg : int32 ) : int32;
-    var x : int32;
+function TNgaroVM.handle_write( msg : int32 ) : int32;
+  var x : int32;
   begin
-    if msg = 1 then begin
-      x := self.data.pop;
-      if x < 0 then clear
-      else if x < 32 then
-	case chr( x ) of
-	  ^H : write( ^H, ' ', ^H );
-	  ^J : writeln;
-	  ^M : ;
-	  else write( chr( x ))
-	end
-      else write( chr( x ))
-    end;
+    if msg = 1 then
+     begin
+       x := self.data.pop;
+       if x < 0 then
+         clear
+       else if x < 32 then
+         case chr( x ) of
+           ^H : write( ^H, ' ', ^H );
+           ^J : writeln;
+           ^M : ;
+           else write( chr( x ))
+         end
+       else write( chr( x ))
+     end;
     result := 0;
   end;
 
 
-  { -- port 3 : video refresh --------------------------------- }
+{ -- port 3 : video refresh --------------------------------- }
 
-  function vm.handle_refresh( msg : int32 ) : int32;
+function TNgaroVM.handle_refresh( msg : int32 ) : int32;
   begin
-    { Whether I need to do anything here depends on how I implement KVM stuff }
+    { Whether I need to do anything here depends on how
+      I implement KVM stuff }
     result := 0;
   end;
 
-  { -- port 4 : file i/o -------------------------------------- }
+{ -- port 4 : file i/o -------------------------------------- }
 
-  { see also ng.files.pas }
+{ see also ng.files.pas }
 
-  function vm.handle_files( msg : int32 ) : int32;
+function TNgaroVM.handle_files( msg : int32 ) : int32;
     var t, n : int32;
   begin
     result := 0;
@@ -108,20 +115,44 @@ unit ng.ports; implementation
       +1 : self.save;
       +2 : self.include( rx_getstring( data.pop ));
       { -- }
-      -1 : begin data.pop2( t, n );   ng.file_open( t, rx_getstring( n ), result )   end;
-      -2 : begin data.pop1( t );      ng.file_read( t, result )                      end;
-      -3 : begin data.pop2( t, n );   ng.file_write( t, chr( n ), result )           end;
-      -4 : begin data.pop1( t );      ng.file_close( t )                             end;
-      -5 : begin data.pop1( t );      ng.file_getpos( t, result )                    end;
-      -6 : begin data.pop2( t, n );   ng.file_setpos( t, n, result )                 end;
-      -7 : begin data.pop1( t );      ng.file_size( t, result )                      end;
-      -8 : begin data.pop1( t );      ng.file_delete( rx_getstring( t ), result )    end;
+      -1 : begin
+             data.pop2( t, n );
+             ng.file_open( t, rx_getstring( n ), result )
+           end;
+      -2 : begin
+             data.pop1( t );
+             ng.file_read( t, result )
+           end;
+      -3 : begin
+             data.pop2( t, n );
+             ng.file_write( t, chr( n ), result )
+           end;
+      -4 : begin
+             data.pop1( t );
+             ng.file_close( t )
+           end;
+      -5 : begin
+             data.pop1( t );
+             ng.file_getpos( t, result )
+           end;
+      -6 : begin
+             data.pop2( t, n );
+             ng.file_setpos( t, n, result )
+           end;
+      -7 : begin
+             data.pop1( t );
+             ng.file_size( t, result )
+           end;
+      -8 : begin
+             data.pop1( t );
+             ng.file_delete( rx_getstring( t ), result )
+           end;
     end; { case }
   end; { handle_files }
 
-  { -- port 5 : vm query -------------------------------------- }
+{ -- port 5 : vm query -------------------------------------- }
 
-  function vm.handle_vmquery( msg: int32 ) : int32;
+function TNgaroVM.handle_vmquery( msg: int32 ) : int32;
   begin
     result := 0;
     case msg of
@@ -148,23 +179,23 @@ unit ng.ports; implementation
       64  : self.debugmode := true;
 
       else
-	result := -1
+        result := -1
     end
   end;
 
 
-  { -- port 6 : graphic canvas -------------------------------- }
+{ -- port 6 : graphic canvas -------------------------------- }
 
-  function vm.handle_canvas( msg: int32 ) : int32;
+function TNgaroVM.handle_canvas( msg: int32 ) : int32;
   begin
     { see rt_ports.pas for a version that works better. }
     result := -1;
   end;
 
 
-  { -- port 7 : mouse ----------------------------------------- }
+{ -- port 7 : mouse ----------------------------------------- }
 
-  function vm.handle_mouse( msg : int32 ) : int32;
+function TNgaroVM.handle_mouse( msg : int32 ) : int32;
   begin
     result := 0;
 //    case msg of
@@ -174,9 +205,9 @@ unit ng.ports; implementation
 //    end;
   end;
 
-  { -- port 8 : enhanced terminal ----------------------------- }
+{ -- port 8 : enhanced terminal ----------------------------- }
 
-  function vm.handle_eterm( msg : int32 ) : int32;
+function TNgaroVM.handle_eterm( msg : int32 ) : int32;
   begin
     result := 0;
     case msg of
@@ -184,14 +215,14 @@ unit ng.ports; implementation
       2 : { n- } kvm.fg( data.pop );
       3 : { n- } kvm.bg( data.pop );
       else
-	result := -1;
+        result := -1;
     end;
   end;
 
 
-  { -- the port map ------------------------------------------- }
+{ -- the port map ------------------------------------------- }
 
-  procedure vm.init_porthandlers;
+procedure TNgaroVM.init_porthandlers;
     var i : integer;
     const portcount = 9;
   begin

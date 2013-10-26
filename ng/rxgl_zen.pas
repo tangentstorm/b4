@@ -15,16 +15,16 @@ interface uses xpc, ng, sysutils, rt_term,
   zgl_timers,
   zgl_utils;
 
-  procedure Main( rxvm : ng.TRetroVM );
+procedure Main( rxvm : ng.TRetroVM );
 
-  type
-    TZenGLVDP = class (rt_term.TRxConsole)
-      target : zglPRenderTarget;
-      constructor Create;
-      destructor Destroy; override;
-      procedure PlotPixel( offset : Int32; value: byte ); override;
-      procedure Display; override;
-    end;
+type
+  TZenGLVDP = class (rt_term.TRxConsole)
+    target : zglPRenderTarget;
+    constructor Create;
+    destructor Destroy; override;
+    procedure PlotPixel( offset : Int32; value: byte ); override;
+    procedure Display; override;
+  end;
 
 implementation
 
@@ -33,76 +33,78 @@ var
   vt : TZenGLVDP;
 
 constructor TZenGLVDP.Create;
-begin
-  inherited Create;
-  self.target := rtarget_Add( tex_CreateZero( canvas_w, canvas_h ), RT_DEFAULT );
-end;
+  begin
+    inherited Create;
+    self.target := rtarget_Add( tex_CreateZero( canvas_w, canvas_h ),
+                               RT_DEFAULT );
+  end;
 
 destructor TZenGLVDP.Destroy;
-begin
-  inherited Destroy;
-end;
+  begin
+    inherited Destroy;
+  end;
 
 procedure TZenGLVDP.PlotPixel( offset : Int32; value : byte );
   var x, y : int32;
-begin
-  DivMod( offset, canvas_w, y, x );
-  pr2d_Pixel( x, y, (value shl 16) + (value shl 8) + value, $FF );
-end;
+  begin
+    DivMod( offset, canvas_w, y, x );
+    pr2d_Pixel( x, y, (value shl 16) + (value shl 8) + value, $FF );
+  end;
 
 procedure TZenGLVDP.Display;
-begin
-end;
+  begin
+  end;
 
 procedure OnLoad;
-begin
-  vt := TZenGLVDP.Create;
-  vt.Attach( vm );
-  { Set up keyboard reporting. }
-  key_beginReadText({initial buffer:}'', {buffer size:} 32);
-end;
+  begin
+    vt := TZenGLVDP.Create;
+    vt.Attach( vm );
+    { Set up keyboard reporting. }
+    key_beginReadText({initial buffer:}'', {buffer size:} 32);
+  end;
 
 procedure OnStep;
   var i : cardinal = 1;
   const opsPerStep = 1 shl 19; { arbitrary number }
-begin
-  rtarget_Set( vt.target );
-  if vm.done then zgl_exit
-  else if vt.keyboard.needKey then pass
-  else
-    repeat inc(i); vm.step
-    until (i = opsPerStep) or vm.done or vt.keyboard.needKey;
-  rtarget_Set( nil );
-end;
+  begin
+    rtarget_Set( vt.target );
+    if vm.done then zgl_exit
+    else if vt.keyboard.needKey then pass
+    else
+      repeat inc(i); vm.step
+      until (i = opsPerStep) or vm.done or vt.keyboard.needKey;
+    rtarget_Set( nil );
+  end;
 
 procedure OnDraw;
   const x = 4; y = 20;
-begin
-//  divmod( cScnHLine, canvas_w, y, x );
-  ssprite2d_Draw( vt.target^.surface, x, y, canvas_w, canvas_h,
-		 {angle:} 0, {alpha:} $ff );
-end;
+  begin
+    //  divmod( cScnHLine, canvas_w, y, x );
+    ssprite2d_Draw( vt.target^.surface, x, y, canvas_w, canvas_h,
+                   {angle:} 0, {alpha:} $ff );
+  end;
 
 procedure OnChar( Symbol : UTF8String );
-begin
-  vt.keyboard.SendKey(Symbol[1]); {TODO : decode utf8. }
-end;
+  begin
+    vt.keyboard.SendKey(Symbol[1]); {TODO : decode utf8. }
+  end;
 
 procedure OnTick; { for the fps timer }
-begin
-  wnd_SetCaption( 'retrogl : ' + u_IntToStr( zgl_Get( RENDER_FPS )) + ' FPS');
-end;
+  begin
+    wnd_SetCaption( 'retrogl : ' +
+                   u_IntToStr( zgl_Get( RENDER_FPS )) + ' FPS');
+  end;
 
 procedure OnExit;
-begin
-  vt.Destroy;
-end;
+  begin
+    vt.Destroy;
+  end;
 
 procedure Main( rxvm : ng.TRetroVM );
-begin
-  vm := rxvm;
-  zgl_init;
-end;
+  begin
+    vm := rxvm;
+    zgl_init;
+  end;
 
 initialization
   zgl_Disable( APP_USE_LOG );
@@ -113,5 +115,6 @@ initialization
   zgl_reg( INPUT_KEY_CHAR, @OnChar );
   zgl_reg( SYS_EXIT,   @OnExit);
   timer_add( @OnTick, 1000 );
-  scr_SetOptions( 800, 600, REFRESH_MAXIMUM, {fullscreen=}false, {vsync=}true );
+  scr_SetOptions( 800, 600, REFRESH_MAXIMUM,
+                 {fullscreen=}false, {vsync=}true );
 end.

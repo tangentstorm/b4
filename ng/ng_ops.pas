@@ -4,143 +4,243 @@
 unit ng.ops; implementation
 {$ENDIF}
 
-  { TN : move data.tos and data.nos into t and n }
-  var t, n : integer;
-  {$MACRO ON}
-  {$DEFINE TN := t :=data.pop; n:=data.pop; }
+{ TN : move data.tos and data.nos into t and n }
+var t, n : integer;
 
-  procedure vm.oNOP; begin end;
+{$MACRO ON}
+{$DEFINE TN := t :=data.pop; n:=data.pop; }
+
+procedure TNgaroVM.oNOP;
+  begin
+  end;
 
-  { -- memory ops --------------------------------------------- }
+{ -- memory ops --------------------------------------------- }
 
-  procedure vm.oLIT;
+procedure TNgaroVM.oLIT;
   begin
     inc( ip );
     data.push( ram[ ip ])
   end;
 
-  procedure vm.oLOD;
+procedure TNgaroVM.oLOD;
   begin
     t := data.pop;
     if ( t < length( ram )) then data.push( ram[ t ])
-    else show_debugger( 'failed on [ ' + inttostr( t ) + ' @ ]: address out of bounds.' )
+    else show_debugger(
+           'failed on [ ' + IntToStr( t ) +
+           ' @ ]: address out of bounds.' )
   end;
 
-  { STORE : (na-) - put nos into ram at tos }
-  procedure vm.oSTO;
+{ STORE : (na-) - put nos into ram at tos }
+procedure TNgaroVM.oSTO;
   begin TN;
     if ( t >= 0 ) and ( t < length( ram )) then ram[ t ] := n
-    else show_debugger( 'failed on [ ' + inttostr( t ) + ' ! ]: address out of bounds.' )
+    else show_debugger( 'failed on [ ' + IntTosTr( t ) +
+                       ' ! ]: address out of bounds.' )
   end;
 
-  { -- stack ops ---------------------------------------------- }
+{ -- stack ops ---------------------------------------------- }
 
-  procedure vm.oDUP ; begin data.dup end;
-  procedure vm.oDROP; begin data.drop end;
-  procedure vm.oSWAP; begin data.swap end;
-  procedure vm.oPUSH; begin addr.push( data.pop ) end;
-  procedure vm.oPOP ; begin data.push( addr.pop ) end;
+procedure TNgaroVM.oDUP;
+  begin
+    data.dup
+  end;
+
+procedure TNgaroVM.oDROP;
+  begin
+    data.drop
+  end;
+
+procedure TNgaroVM.oSWAP;
+  begin
+    data.swap
+  end;
+
+procedure TNgaroVM.oPUSH;
+  begin
+    addr.push( data.pop )
+  end;
+
+procedure TNgaroVM.oPOP;
+  begin
+    data.push( addr.pop )
+  end;
 
-  { -- port ops ----------------------------------------------- }
+{ -- port ops ----------------------------------------------- }
 
-  procedure vm.oIN; { p-n }
+procedure TNgaroVM.oIN; { p-n }
   begin
     t := data.pop;
     data.push( ports[ t ] );
     ports[ t ] := 0;
   end;
-  procedure vm.oOUT ; { np- } begin TN; ports[ t ] := n; end;
-  procedure vm.oWAIT; { - } begin runio; end;
+
+procedure TNgaroVM.oOUT ; { np- }
+  begin
+    TN; ports[ t ] := n;
+  end;
+
+procedure TNgaroVM.oWAIT; { - }
+  begin
+    RunIO;
+  end;
+
 
-  { -- arithmetic --------------------------------------------- }
+{ -- arithmetic --------------------------------------------- }
 
-  procedure vm.oADD ; begin data.push(  data.pop + data.pop ) end;
-  procedure vm.oSUB ; begin data.push( -data.pop + data.pop ) end;
+procedure TNgaroVM.oADD;
+  begin
+    data.push(  data.pop + data.pop )
+  end;
 
-  {$PUSH}{$RANGECHECKS OFF}
-  procedure vm.oMUL ; begin data.push(data.pop * data.pop) end;
-  {$POP}
+procedure TNgaroVM.oSUB;
+  begin
+    data.push( -data.pop + data.pop )
+  end;
 
-  procedure vm.oDIVM;
+{$PUSH}{$RANGECHECKS OFF}
+procedure TNgaroVM.oMUL;
+  begin
+    data.push(data.pop * data.pop)
+  end;
+{$POP}
+
+procedure TNgaroVM.oDIVM;
   begin
     TN
     data.push( n mod t ); { yep. mod comes first }
     data.push( n div t );
   end;
-  procedure vm.oINC ; begin inc( data.cells[ data.count ] ) end;
-  procedure vm.oDEC ; begin dec( data.cells[ data.count ] ) end;
+
+procedure TNgaroVM.oINC;
+  begin
+    inc( data.cells[ data.count ] )
+  end;
+
+procedure TNgaroVM.oDEC;
+  begin
+    dec( data.cells[ data.count ] )
+  end;
 
-  { -- logic -------------------------------------------------- }
+{ -- logic -------------------------------------------------- }
 
-  procedure vm.oAND ; begin data.push( data.pop AND data.pop ) end;
-  procedure vm.oOR  ; begin data.push( data.pop OR data.pop ) end;
-  procedure vm.oXOR ; begin data.push( data.pop XOR data.pop ) end;
-  procedure vm.oSHL ; begin TN; data.push( n shl t ); end;
-  { shr in retro preserves the sign }
-  procedure vm.oSHR ; begin TN; data.push( sarlongint( n, t )); end;
+procedure TNgaroVM.oAND;
+  begin
+    data.push( data.pop AND data.pop )
+  end;
 
+procedure TNgaroVM.oOR;
+  begin
+    data.push( data.pop OR data.pop )
+  end;
+
+procedure TNgaroVM.oXOR;
+  begin
+    data.push( data.pop XOR data.pop )
+  end;
+
+procedure TNgaroVM.oSHL;
+  begin
+    TN; data.push( n shl t )
+  end;
+
+{ shr in retro preserves the sign }
+procedure TNgaroVM.oSHR;
+  begin
+    TN; data.push( sarlongint( n, t ))
+  end;
 
-  { -- jump and conditional jumps ----------------------------- }
+{ -- jump and conditional jumps ----------------------------- }
 
-  procedure jump_and_roll( var v : vm; dest : int32 );
+procedure jump_and_roll( var v : TNgaroVM; dest : int32 );
   begin
     v.ip := dest - 1; { compensate for ip++ }
     while ( v.ip < length( v.ram ) - 1 )
       and ( v.ram[ v.ip + 1 ] = 0 ) do inc( v.ip ); { skip over no-ops }
   end;
 
-  procedure vm.oJMP; begin jump_and_roll( self, ram[ ip + 1 ])  end;
-  procedure vm.oJLT; begin TN if t <  n then oJMP else inc( ip ) end;
-  procedure vm.oJGT; begin TN if t >  n then oJMP else inc( ip ) end;
-  procedure vm.oJNE; begin TN if t <> n then oJMP else inc( ip ) end;
-  procedure vm.oJEQ; begin TN if t =  n then oJMP else inc( ip ) end;
+procedure TNgaroVM.oJMP;
+  begin
+    jump_and_roll( self, ram[ ip + 1 ])
+  end;
 
-  { invoke / return }
-  procedure vm.oIVK; begin addr.push( ip ); jump_and_roll( self, ram[ ip ]); end;
-  procedure vm.oRET; begin ip := addr.pop end;
-  procedure vm.oLOOP;
+procedure TNgaroVM.oJLT;
+  begin
+    TN if t <  n then oJMP else inc( ip )
+  end;
+
+procedure TNgaroVM.oJGT;
+  begin
+    TN if t >  n then oJMP else inc( ip )
+  end;
+
+procedure TNgaroVM.oJNE;
+  begin
+    TN if t <> n then oJMP else inc( ip )
+  end;
+
+procedure TNgaroVM.oJEQ;
+  begin
+    TN if t =  n then oJMP else inc( ip )
+  end;
+
+{ invoke / return }
+procedure TNgaroVM.oIVK;
+  begin
+    addr.push( ip );
+    jump_and_roll( self, ram[ ip ]);
+  end;
+
+procedure TNgaroVM.oRET;
+  begin
+    ip := addr.pop
+  end;
+
+procedure TNgaroVM.oLOOP;
   begin
     dec( data.cells[ data.count ] );
     if data.cells[ data.count ] > 0 then
       jump_and_roll( self, ram[ ip + 1 ])
-    else begin
-      inc( ip );
-      data.pop;
-    end
+    else
+      begin
+        inc( ip );
+        data.pop;
+      end
   end;
 
-  { zex : exit (return) if TOS = 0 ( sort of like ~assert~ ) }
-  procedure vm.oZEX;
+{ zex : exit (return) if TOS = 0 ( sort of like ~assert~ ) }
+procedure TNgaroVM.oZEX;
   begin
-    if data.cells[ data.count ] = 0 then begin
-      data.pop;
-      ip := addr.pop;
-    end
+    if data.cells[ data.count ] = 0 then
+      begin
+        data.pop;
+        ip := addr.pop;
+      end
   end;
 
   { -- jump and conditional jumps ----------------------------- }
 
-  procedure vm.oDEBUG;
-    var ok : boolean = false;
+procedure TNgaroVM.oDEBUG;
+  var ok : boolean = false;
   begin
     writeln;
     writeln( '<< press enter to continue, or type "q" to quit >>' );
     repeat
       case kbd.readkey of
-	'q' : halt;
-	#13 : ok := true;
-      end;
-    until ok;
+        'q' : halt;
+        #13 : ok := true;
+      end
+    until ok
   end;
 
 
-  procedure vm.init_optable;
+procedure TNgaroVM.init_optable;
 
     procedure addop(
-		id	 : int32;
-		go	 : thunk;
-		tok, sig : token;
-		hasarg	 : boolean );
+                id       : int32;
+                go       : thunk;
+                tok, sig : token;
+                hasarg   : boolean );
       var rec : oprec;
     begin
       rec.go  := go;
@@ -153,7 +253,7 @@ unit ng.ops; implementation
 
     const _ = false; X = true;
   begin
-    setlength( self.optbl, 31 );
+    SetLength( self.optbl, 31 );
     addop( 00, @oNOP , 'nop' , '  -  ', _ );
     addop( 01, @oLIT , 'lit' , '  -  ', X );
     addop( 02, @oDUP , 'dup' , ' n-nn', _ );
