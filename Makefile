@@ -33,7 +33,7 @@ targets:
 	@echo 'available targets:'
 	@echo '--------------------------'
 	@echo 'make build   -> build ./gen/retro'
-	@echo 'make retrovm -> build and run ./gen/retrovm'
+	@echo 'make retro   -> build and run ./gen/retrovm'
 	@echo 'make retrogl -> build and run ./gen/retrogl'
 	@echo 'make test    -> run all tests'
 	@echo
