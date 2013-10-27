@@ -8,7 +8,7 @@
 ---------------------------------------------------------------- }
 {$mode objfpc}{$i xpc.inc }
 unit pre;
-interface uses xpc, stacks, ll, ascii, num, sysutils;
+interface uses xpc, stacks, ll, ascii, num, sysutils, classes;
 
  type
 
@@ -46,10 +46,10 @@ interface uses xpc, stacks, ll, ascii, num, sysutils;
       function ToString : string;
     end;
 
-    Pattern = class (TInterfacedObject, IPattern)
+    TPattern = class (TComponent, IPattern)
       function match( m : matcher )  : boolean; virtual; abstract;
       function matches( s : string ) : boolean; virtual; abstract;
-      function ToString : string; virtual; abstract;
+      function ToString : string; override; abstract;
     end;
 
     patterns = array of IPattern;

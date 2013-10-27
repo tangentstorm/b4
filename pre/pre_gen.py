@@ -153,28 +153,34 @@ def gen_code_for( line ):
         """
         // -- {name} -------------------------------
 
-        type {klass} = class ( pattern )
-          constructor create( {ctr_args} );
-          function match( m : matcher ) : boolean; override;
-          function matches( s : string ) : boolean; override;
-        private{decls}
-        end;
+        type {klass} = class ( TPattern )
+          published
+            constructor new( {ctr_args} );
+            function match( m : matcher ) : boolean; override;
+            function matches( s : string ) : boolean; override;
+            function tostring : string; override;
+          private{decls}
+          end;
 
-        constructor {klass}.create( {ctr_args} );
-        begin{assigns}
-        end;
+        constructor {klass}.new( {ctr_args} );
+          begin{assigns}
+          end;
 
         function {klass}.match( m : matcher ) : boolean;
-        begin result := m.{name}( {call} )
-        end;
+          begin result := m.{name}( {call} )
+          end;
 
         function {klass}.matches( s : string ) : boolean;
-        begin result := self.match( matcher.create( s ));
-        end;
+          begin result := self.match( matcher.create( s ));
+          end;
+
+        function {klass}.tostring: string;
+          begin result := '{name}'
+          end;
 
         function {name}( {fun_args} ) : IPattern;
-        begin result := {klass}.create( {call} )
-        end;
+          begin result := {klass}.new( {call} )
+          end;
 
         """).format( **locals( ))
 
