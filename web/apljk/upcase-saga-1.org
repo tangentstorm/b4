@@ -19,7 +19,7 @@ My goal was to implement a J verb (basically a function) to make all the lower-c
 It took me an hour to produce this:
 
 #+BEGIN_SRC j
-    
+
   string =. '"Please, Sir, could you make this upper case?" said Pip.'
   (chr=.{&a.) s -32&* e.&((ord 'a')+(i.26))  s=.(ord=.a.&i.) string
 
@@ -118,8 +118,8 @@ If I'd had to write =upcase= myself, though, it probably would have looked like 
 
   function upcase( ch : char ) : char;
     begin
-      if ch in ['a'..'z'] then 
-        upcase := ord(ch) + (ord('A') - chr('a')) 
+      if ch in ['a'..'z'] then
+        upcase := ord(ch) + (ord('A') - chr('a'))
       else
         upcase := ch;   { Or in moden-day pascal, 'result := ...' }
     end;
@@ -142,7 +142,7 @@ The first rule of learning a programming language is to get familiar with its do
 
 You don't have to memorize every word, or even read it all at once. Just know what resources are available, and remember where to find them.
 
-With J, I often start with the [[http://www.jsoftware.com/help/dictionary/vocabul.htm][vocabulary page]], because it lists all the symbols and their names. [fn:5] 
+With J, I often start with the [[http://www.jsoftware.com/help/dictionary/vocabul.htm][vocabulary page]], because it lists all the symbols and their names. [fn:5]
 
 There's nothing on the vocabulary page about strings, but there is an entry for [[http://www.jsoftware.com/help/dictionary/dadot.htm ][a. /Alphabet/ \frasl{} /Ace/ ]], and following the link confirmed that it was a predefined array representing the character set.
 
@@ -151,7 +151,7 @@ I typed it in the J terminal, and saw a bunch of garbage:
 #+BEGIN_SRC j
 
    a.    NB. output manually edited to reove many non-ascii characters
-\001\002\003\004\005\006\007\010	
+\001\002\003\004\005\006\007\010
 \013\014  ... \037!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNO
 PQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~....
 
@@ -179,7 +179,7 @@ In this case, the page for =a.= showed an example for displaying the printable a
 I actually understand enough J that I should have known what this was doing:
 
 - Dyadic =x $ y= ([[http://www.jsoftware.com/help/dictionary/d210.htm][Shape]]) reshapes array =y= to the dimensions specified by =x=.
-- Dyadic =x { y= ([[http://www.jsoftware.com/help/dictionary/d520.htm][From]]) extracts the elements specified in =x= from array =y=. 
+- Dyadic =x { y= ([[http://www.jsoftware.com/help/dictionary/d520.htm][From]]) extracts the elements specified in =x= from array =y=.
 
 So in this case, the  =8 32 $ a.= arranges the characters of =a.= into an 8 \times 32 grid, and then the =1 2 3 { ...= part extracts the second, third, and fourth rows (array indices start at 0).
 
@@ -217,9 +217,9 @@ The docs explain /what/ it's doing (sort of), but not /why/:
 
 #+BEGIN_QUOTE org
 
-If =rix= is the rank of an item of =x=, then the shape of the result of =x i. y= is =(-rix)}.$y= . Each atom of the result is either =#x= or the index of the first occurrence among the items of x of the corresponding =rix=-cell of =y=. 
+If =rix= is the rank of an item of =x=, then the shape of the result of =x i. y= is =(-rix)}.$y= . Each atom of the result is either =#x= or the index of the first occurrence among the items of x of the corresponding =rix=-cell of =y=.
 
-The comparison in =x i. y= is tolerant, and fit can be used to specify the tolerance, as in =i. !. t= . 
+The comparison in =x i. y= is tolerant, and fit can be used to specify the tolerance, as in =i. !. t= .
 
 #+END_QUOTE
 
@@ -270,7 +270,7 @@ I kept missing it because =#= is named [[http://www.jsoftware.com/help/dictionar
 
 #+BEGIN_QUOTE org
 
-If the arguments have an equal number of items, then =x#y= copies =+/x= items from =y=, with =i{x= repetitions of item =i{y= . Otherwise, if one is an atom it is repeated to make the item count of the arguments equal. 
+If the arguments have an equal number of items, then =x#y= copies =+/x= items from =y=, with =i{x= repetitions of item =i{y= . Otherwise, if one is an atom it is repeated to make the item count of the arguments equal.
 
 The complex left argument =a j. b= copies =a= items followed by =b= fills. The fit conjunction provides specified fills, as in =#!.f=
 
@@ -292,7 +292,7 @@ Anyway, in my wanderings through the "City of J", I kept setting out to /find th
 
 So why on earth is /Select/ called /Copy/?
 
-Well of course, it /isn't/. What I thought of s /Select/ is just /From/ in J, and it's just the ={= symbol that keeps showing up: 
+Well of course, it /isn't/. What I thought of s /Select/ is just /From/ in J, and it's just the ={= symbol that keeps showing up:
 
 #+BEGIN_SRC j
 
@@ -326,7 +326,7 @@ But why on earth is it called /Copy/?!?
 
 #+BEGIN_SRC j
 
-   0 1 2 3 # 'abcd' 
+   0 1 2 3 # 'abcd'
 bccddd
 
 #+END_SRC
@@ -414,7 +414,7 @@ Next I /tried some other stuff/ and /some stuff happened/.
 
    'apples'i.a       NB. I forgot the . in a. but failed to notice
 'apples' i. a        NB. J is giving me back a symbolic expression,
-                     NB. presumably because 'a' is not defined. 
+                     NB. presumably because 'a' is not defined.
                      NB. I wonder if maybe '' is for characters and
                      NB. '"' is for strings, so try:
 
@@ -425,11 +425,11 @@ Next I /tried some other stuff/ and /some stuff happened/.
    'apples'i.a       NB. The J terminal makes it easy to duplicate input.
 'apples' i. a        NB. I cursored up and pressed enter to duplicate the
                      NB. line, and probably just automatically ran it to
-                     NB. make sure it acted the same, in case I had 
+                     NB. make sure it acted the same, in case I had
                      NB. accidentally changed the history.
-   
+
    'apples'i./a      NB. / inserts a function between each element of a
-'apples' i./ a       NB. an array (so +/1 2 3 -> 1+2+3). I have no idea 
+'apples' i./ a       NB. an array (so +/1 2 3 -> 1+2+3). I have no idea
                      NB. what I was thinking about here that would have
    'apples'i.~/a     NB. caused me to type it.
 'apples' i.~/ a
@@ -448,7 +448,7 @@ Eventually, my brain caught up to my fingers, I noticed the missing period in =a
 
 #+begin_src j
 
-  'apples' i.a.      
+  'apples' i.a.
 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6
 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6
 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 0 6 6 6 4 6 6 6 6 6 6 3 6 6 6 1 6
@@ -456,15 +456,15 @@ Eventually, my brain caught up to my fingers, I noticed the missing period in =a
 
 #+end_src
 
-This result is also completely unexpected to me. 
+This result is also completely unexpected to me.
 
 Once again, here is the description of dyadic =i.= (/Index Of/):
 
 #+BEGIN_QUOTE org
 
-If =rix= is the rank of an item of =x=, then the shape of the result of =x i. y= is =(-rix)}.$y= . Each atom of the result is either =#x= or the index of the first occurrence among the items of x of the corresponding =rix=-cell of =y=. 
+If =rix= is the rank of an item of =x=, then the shape of the result of =x i. y= is =(-rix)}.$y= . Each atom of the result is either =#x= or the index of the first occurrence among the items of x of the corresponding =rix=-cell of =y=.
 
-The comparison in =x i. y= is tolerant, and fit can be used to specify the tolerance, as in =i. !. t= . 
+The comparison in =x i. y= is tolerant, and fit can be used to specify the tolerance, as in =i. !. t= .
 
 #+END_QUOTE
 
@@ -498,7 +498,7 @@ And in fact, that is exactly the definition I eventually came up with for =Ord=:
 
 ord =. a. & i.    NB. The '&' is an operator that transforms dyadic i. into
                   NB. a new verb (which I assigned to the variable 'ord')
-                  NB. Now: (ord x) = ((a.&i.) x) = (a. i. x)  
+                  NB. Now: (ord x) = ((a.&i.) x) = (a. i. x)
                   NB. This transformation is called "partial application".
 
    ord 'apples'
@@ -525,4 +525,20 @@ Instead, my failed attempt to use double quotes for a string reminded me of the 
 
 [fn:5] Looking back now, I wonder if the [[http://www.jsoftware.com/help/phrases/contents.htm][J phrasebook]] might have been a more helpful starting point.
 
-[fn:6] Over and over in J, I find that the verb I want is just a specific instance of some more general operation. I introduced =+.= earlier as /greatest common divisor/, but it's also the logical /OR/ operator. This might seem like some crazy operator overloading, but that's not the case: logical /OR/ just happens to be a special case of /GCD/. 
+[fn:6] Over and over in J, I find that the verb I want is just a specific instance of some more general operation. I introduced =+.= earlier as /greatest common divisor/, but it's also the logical /OR/ operator. This might seem like some crazy operator overloading, but that's not the case: logical /OR/ just happens to be a special case of /GCD/.
+
+
+* NOTE . epilogue : a built in function
+:PROPERTIES:
+:TS:       <2013-10-15 11:14PM>
+:ID:       1czgqo30q9g0
+:END:
+
+#+begin_src j
+   load 'convert'
+   toupper
+3 : 0
+x=. I. 26 > n=. ((97+i.26){a.) i. t=. ,y
+($y) $ ((x{n) { (65+i.26){a.) x}t
+)
+#+end_src
