@@ -9,7 +9,7 @@ My goal here is to get implish to compile 'hello world' down to ngaro instructio
 #+begin_src pascal
   program hello;
   begin
-    WriteLn('hello, world.')
+    WriteLn( 'hello, world.' )
   end.
 #+end_src
 * DONE grammar for the pascal subset
@@ -18,7 +18,8 @@ My goal here is to get implish to compile 'hello world' down to ngaro instructio
      (lexer
         (: .Alpha (| (- "a" "z") (- "A" "Z")))
         (: .Digit (- "0" "9"))
-        (: IDENT .Alpha (+ .Alpha .Digit))
+        (: IDENT .Alpha (+ (| .Alpha .Digit)))
+        (: NUMBER (+ .Digit))
         (: STRING
            (! "'")         ; drop leading quote
            (* (| "''"      ; escape quotes by doubling them
@@ -26,11 +27,12 @@ My goal here is to get implish to compile 'hello world' down to ngaro instructio
            (! "'")))       ; drop
      (rules
         (: program
-           'PROGRAM IDENT  ; quoted = case insensitive keyword
+           'PROGRAM IDENT ";" ; quoted = case insensitive keyword
            block "." )
+
         (: block
            'BEGIN
-              writeln      ; special syntactic form in pascal :/
+              writeln     ; special syntactic form in pascal :/
            'END)
         (: writeln 'WRITELN "(" STRING ")") ) )
 #+end_src
@@ -44,7 +46,7 @@ My goal here is to get implish to compile 'hello world' down to ngaro instructio
 * DONE template for pascal -> assembler
 #+begin_src lisp
   (template hellopas->b4asm
-  
+
     (% program (iden data* code* main)
        ".prog " {iden} ,
        ".data" ,
@@ -54,23 +56,23 @@ My goal here is to get implish to compile 'hello world' down to ngaro instructio
        ".main" ,
        (>> {main}) ,
        ".end" , )
-      
+
     (% block (stmt*)
        (>> (\ stmt* ";\n")) )
-    
+
     (% writeln (strid)
        "LIT $" {strid} ,
        "CALL puts" ,
        "CALL cr" , )
-    
+
     (% asm (label sym*)
        ":" {label} ,
        (>> (\ sym* "\n")) ) )
-  
+
 #+end_src
 
 * DONE expected assembler output
-#+begin_src asm
+#+begin_src asm :tangle "~/i/gen/hellopas.b4a" :noweb tangle
   .prog hello
   .data
   :$0 "hello, world."
@@ -90,7 +92,7 @@ My goal here is to get implish to compile 'hello world' down to ngaro instructio
       RUN wait
     RET
 
-  :(puts)                ; ( $ - a ) a points to end of string
+  :<puts>                ; ( $ - a ) a points to end of string
     .repeat
       DUP
       GET
@@ -101,7 +103,7 @@ My goal here is to get implish to compile 'hello world' down to ngaro instructio
     .again
 
   :puts                  ; ( $ - )
-      RUN (puts)
+      RUN <puts>
       DROP
     RET
 
@@ -118,43 +120,87 @@ My goal here is to get implish to compile 'hello world' down to ngaro instructio
 
 #+end_src
 
-* TODO [0/3] parser for the assembly language
-** TODO Expose the existing implish reader as a function.
+* TODO [2/4] parser for the assembly language
+** DONE Expose the existing implish reader as a function.
 All the tokens in the assembler syntax are already recognized by the implish reader, so they could be read from a file or just created directly as symbols.
-** TODO Create functions for sym->chars and chars->sym
+** DONE Create functions for sym->chars and chars->sym
 ** TODO extract prefix characters from the tokens in the assembly
+* TODO loop through and process assembler tokens to produce a binary
+#+begin_src picolisp
+(de assemble ASM
+#+end_src
+
 * TODO [0/7] assembler semantics
 ** TODO expose an [array of uint32] type
 ** TODO [0/7] macros ("." prefix)
 *** TODO .prog
 - Skip next symbol (ignore the program name).
 - Write two NOP (leaving space for a jump to .main)
+
+#+begin_src implish
+(.prog [tok> NOP NOP])
+#+end_src
+
 *** TODO .data
 No effect.
+#+begin_src implish
+(.data [])
+#+end_src
+
 *** TODO .code
 While the current location is <= 32, write NOPS (because the first 32 values are reserved for .
+
+#+begin_src implish
+(.code [ while: here > 32 do: NOP ])
+#+end_src
+
 *** TODO .repeat
 Push the current location to a stack so .again can jump back.
+
+#+begin_src implish
+(.repeat [here])
+#+end_src
+
 *** TODO .again
 Pop location (stored by repeat) and jump backward.a
+
+#+begin_src implish
+(.again [,])
+#+end_src
+
 *** TODO .main
 Update the first two instructions of the image (left blank by .prog) so they jump to this location.
+
+#+begin_src implish
+(.main [ 0 <- JMP 1 <- . ])
+#+end_src
+
 *** TODO .end
 Write the assembled file to disk and exit.
+
+#+begin_src implish
+(.end [ done: true ])
+#+end_src
 
 ** TODO labels and symbols (":" syntax)
 - Can contain any symbol, up to space
 - Store current location in a runtime list.
 - If the symbol starts with "$", increment address by 1 before recording. This is so we can skip over the length field in strings.
 
+#+begin_src implish
+((: label) [ here ; label .startswith: '$ ? inc ; label <- . ])
+#+end_src
+
 ** TODO instructions
 Syntactically, these can be treated like predefined labels, since they just emit numbers.
 
 ** TODO numeric literals
 Write directly to the image as 32-bit signed ints.
+
 ** TODO strings ('"' .. '"')
 - One character per 32-bit cell as in retro. (for now, anyway)
 - The assembler should store the length of the string, but also terminate it with a 0. (This is what free pascal does, too).
+
 ** TODO expose a blockwrite function to write the array to a file
 * TODO template combinators
 ** TODO default: emit each expression in turn
@@ -180,4 +226,3 @@ if sep is "\n" then indent
 ** TODO "+" -> rep([...])
 ** TODO "!" -> hide([...])
 ** TODO "~" -> neg([...])
-
