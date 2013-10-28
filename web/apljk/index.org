@@ -1,0 +1,7 @@
+misc j articles
+
+- file:verbarrays.org
+- file:strip-ws.org
+- file:rpn-in-j.org
+- file:upcase-saga-1.org
+- file:perfect-numbers.org

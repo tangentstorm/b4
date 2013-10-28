@@ -1,0 +1,81 @@
+* NOTE . rpn in j
+:PROPERTIES:
+:TS:       <2013-10-16 03:32AM>
+:ID:       uemaamf0q9g0
+:END:
+
+* the stacks
+:PROPERTIES:
+:TS:       <2013-10-16 03:33AM>
+:ID:       dcfhpnf0q9g0
+:END:
+
+: s=:r=:''
+
+
+*  LIT value ('v 0')
+:PROPERTIES:
+:TS:       <2013-10-16 03:32AM>
+:ID:       owrclmf0q9g0
+:END:
+
+: v=:3 :'s=:s,y'
+
+* t = top value on stack
+:PROPERTIES:
+:TS:       <2013-10-16 03:54AM>
+:ID:       n8l7ang0q9g0
+:END:
+
+: t=:3 :'{:s'
+
+
+* n = next value on stack
+:PROPERTIES:
+:TS:       <2013-10-16 03:58AM>
+:ID:       ebk4ntg0q9g0
+:END:
+
+: n=:3 :'{:}:s'
+
+s=:1 2 3
+n'' -> 2
+
+* T = take the top value (destructive t)
+:PROPERTIES:
+:TS:       <2013-10-16 03:59AM>
+:ID:       cdtc4wg0q9g0
+:END:
+
+: NB. bad, bc of missing parens: T=:3 :'(s=:}:s)]t _'
+
+: T=:3 :'(s=:}:s)](t _)'
+
+#+begin_src j
+   s=:i.9
+   s
+0 1 2 3 4 5 6 7 8
+   (s=:}:s)]t''
+7
+   s
+0 1 2 3 4 5 6 7
+#+end_src
+
+
+
+* 'p' = pop ( <r )
+:PROPERTIES:
+:TS:       <2013-10-16 03:35AM>
+:ID:       1xm00rf0q9g0
+:END:
+
+: p=:3 :'r=:}.r]s=:s,{.r'
+: NB. original: P=:3 :'s=:}.s[r=:r,{.s'
+
+* 'P' = push ( r> )
+:PROPERTIES:
+:TS:       <2013-10-16 04:10AM>
+:ID:       07h7ceh0q9g0
+:END:
+
+: P=:

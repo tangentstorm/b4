@@ -1,0 +1,78 @@
+* a messy attempt at 'strip'
+:PROPERTIES:
+:TS:       <2013-10-16 08:50AM>
+:ID:       hm0grcu0q9g0
+:END:
+here is what i came up with, and it does most of the job:
+
+#+begin_src j
+wrap =. '['&,,,&']'  NB. bad!! should be '['&,@,&']'
+ws =. (3 : '32<a.i.y')
+sh =. 3 : '}:"1 shr=.(sp,y),:(shl=.y,sp=.'' '')'
+strip =. [ #~ +./ @ws @sh
+#+end_src
+
+But it's really buggy on short strings and tends to leave a trailing space. :/
+
+The core idea was to try and use +. (or) on a table shifted one character so as to detect ranges of spaces.
+
+I kept running into bugs.... Only now I see that the bug is in wrap, which is what i was using to test the thing :). whoops.
+
+: wrap =. '['&,,,&']'  NB. wrap'a' -> [aa]   (not what i wanted!!)
+
+* why wrap '['&,,,&']'  duplicates data
+:PROPERTIES:
+:TS:       <2013-10-16 09:14AM>
+:ID:       dku5ngv0q9g0
+:END:
+
+let's see. it's a monadic train of three verbs =('['&, ) (,) (,&']')=
+
+so that's a monadic fork:
+
+unless i'm confused, monadic (f g h) y -> g(f(y),h(y))
+
+ah, of course in j notation, that's:
+
+: (f g h) y -> (f y) g (h y)
+
+I actually typed it wrong at first (swapping f and g) but it was a typo. i mentally had it right.
+
+Ah but of course. Each side makes a copy of the string. It should just be:
+
+: wrap=.'['&,@,&']' NB. wrap'a' -> [a]
+
+
+* NOTE . still a bug though - my boolean operator is wrong.
+:PROPERTIES:
+:TS:       <2013-10-16 09:42AM>
+:ID:       2p8krqw0q9g0
+:END:
+
+I don't want +/... i want any case where the previous character is a space /and/ the current character is a space. (emulating an initial ' ' simply by appending one.
+
+so my data shifting is fine but i need a different logical connector.
+
+I need this one:
+
+|   | 0 | 1 |
+|---+---+---|
+| 0 | 1 | 0 |
+| 1 | 0 | 0 |
+
+Which is ... NOR... or +: in j.
+
+Hrm. Whoops...
+
+:    +:/ws sh '  a b  c   '
+: 1 1 0 0 0 0 1 0 0 1 1
+
+
+I want the /inverse/ of that:
+
+|   | 0 | 1 |
+|---+---+---|
+| 0 | 0 | 1 |
+| 1 | 1 | 1 |
+
+Which is just plain OR.

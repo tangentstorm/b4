@@ -1,0 +1,37 @@
+* NOTE . verb arrays
+:PROPERTIES:
+:TS:       <2013-10-15 04:27PM>
+:ID:       g14j0fz0p9g0
+:END:
+
+Suppose we have an array of dyadic verbs, such as the arithmetic primitives:
+
+#+begin_src j
+       ( + , - , * , % )
+    + , - , * , %
+
+       5 (+ , - , * , % ) 5
+    10 0 25 1
+#+end_src
+
+... and we want to convert these to reflexive equivalents:
+
+#+begin_src j
+       ( +~ , -~ , *~ , %~ ) 5
+    10 0 25 1
+#+end_src
+
+It's easy enough to do this by applying the ~ adverb to the entire array:
+
+#+begin_src j
+       ( + , - , * , % )~ 5
+    10 0 25 1
+#+end_src
+
+But what is the general case?
+
+* NOTE . the boolean family
+:PROPERTIES:
+:TS:       <2013-10-15 05:22PM>
+:ID:       kgre3y11p9g0
+:END:
