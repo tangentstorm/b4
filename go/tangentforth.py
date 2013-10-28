@@ -1,7 +1,7 @@
+
 """
 tangentforth ...?
 """
-
 class VM( object ):
     """
     A small virtual machine inspired by ngaro.
@@ -23,10 +23,10 @@ class VM( object ):
     """
 
     language = (
-        ' NOP/0  LIT:0  DUP/2  DEL/1  SWP/1  PSH/0  POP/1  INC/1 '
-        ' DEC/2  ADD/2  SUB/2  MUL/2  DVM/2  SHL/2  SHR/1  NOT/1 '
+        ' NOP/0  LIT:0  DUP/1  DEL/1  SWP/2  PSH/0  POP/1  INC/1 '
+        ' DEC/1  ADD/2  SUB/2  MUL/2  DVM/2  SHL/2  SHR/1  NOT/1 '
         ' AND/2   OR/2  XOR/2   EQ/2   NE/2   LT/2   GT/2   LE/2 '
-        '  GE/2  RET/0  JMP:0  ELS:1  NXT:1  ZRT/1  GET/2  PUT/2 '
+        '  GE/2  RET/0  JMP:0  ELS:1  NXT:1  ZRT/1  GET/1  PUT/2 '
         ' IRQ/2 ' )
 
     def __init__( self ):
@@ -138,5 +138,3 @@ class VM( object ):
             if callback = 0 : self.IP += 1
             else : self.handle( callback )
         raise StopIteration
-
-
