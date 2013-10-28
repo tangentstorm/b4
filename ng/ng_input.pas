@@ -18,7 +18,7 @@ procedure TNgaroVM.include( path : string );
       self.input := @self.inputs[ length( self.inputs ) - 1 ];
 
       { open the file }
-      assign( self.input^, path );
+      system.assign( self.input^, path );
       reset( self.input^ );
 
       { make sure we're reading from the file, rather than keyboard }

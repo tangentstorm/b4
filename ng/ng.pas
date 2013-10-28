@@ -1,6 +1,6 @@
-{$mode objfpc}{$i xpc.inc }
+{$mode objfpc}{$i xpc.inc}{$M+}
 unit ng;
-interface uses xpc, stacks, kvm, kbd, posix, sysutils;
+interface uses xpc, stacks, kvm, kbd, posix, sysutils, classes;
 
 type
   token  = string[ 6 ];
@@ -11,88 +11,91 @@ type
     tok, sig    : token;
     hasarg      : boolean;
   end;
-  image  = file of int32;
   TInt32Stack = specialize GStack<Int32>;
 
 { interface > types }
 
-  TNgaroVM = class
-    data, addr : TInt32Stack;
-    ram, ports : array of int32;
-    devices    : array of device;
-    ip         : integer;              { instruction pointer }
-    done       : boolean;
-    inputs     : array of textfile;    { input files - see ng.input.pas }
-    input      : ^textfile;
-    optbl      : array of oprec;
-    imgfile    : image;
-    imgpath    : string;
-    debugmode  : boolean;
-    padsize    : int32;
+  TNgaroVM = class (TComponent)
+    private
+      data, addr : TInt32Stack;
+      ram, ports : array of int32;
+      devices    : array of device;
+      ip         : integer;           { instruction pointer }
+      done       : boolean;
+      inputs     : array of textfile; { input files - see ng.input.pas }
+      input      : ^textfile;
+      optbl      : array of oprec;
+      _debug     : boolean;
+      _imgpath   : string;
+      _imgsize   : cardinal;
+      _minsize   : cardinal;
+    public
+      constructor New(imagepath : string);
+      destructor Destroy;
+      { single-step instructions }
+      procedure Step;
+      procedure RunOp( op:int32 );
 
-    constructor Create( imagepath : string; debug : boolean; pad: int32 );
-    destructor Destroy;
+      { input/output }
+      procedure RunIO;
+      function Waiting : boolean;
 
-    { single-step instructions }
-    procedure Step;
-    procedure RunOp( op:int32 );
+      { main loop(s) }
+      procedure Loop;
 
-    { input/output }
-    procedure RunIO;
-    function Waiting : boolean;
-    // maybe later: (for now, the retry mechanism in oIN seems to work fine.)
-    // procedure send( msg : Int32 );
+      { input file loader }
+      procedure Include( path : string );
 
-    { main loop(s) }
-    procedure Loop;
+      { image routines }
+      procedure Load;
+      procedure Save;
+      procedure SetImgSize( newsize : cardinal );
+      procedure SetMinSize( newsize : cardinal );
 
-    { input file loader }
-    procedure Include( path : string );
-
-    { image routines }
-    procedure Load;
-    procedure Save;
-
-    { debug / inspect routines }
-    procedure Trace;
-    procedure Dump;
-    procedure Show_Debugger( msg : string );
+      { debug / inspect routines }
+      procedure Trace;
+      procedure Dump;
+      procedure Show_Debugger( msg : string );
+    published
+      property debugmode : boolean read _debug write _debug;
+      property imgpath : string read _imgpath write _imgpath;
+      property imgsize : cardinal read _imgsize;
+      property minsize : cardinal read _minsize write SetMinSize;
 
 { continued... }
 
 { interface > type vm = object ... }
-
+    public
   { opcodes, defined in ng.ops.pas }
-    procedure oNOP;  procedure oLIT;  procedure oDUP;  procedure oDROP;
-    procedure oSWAP; procedure OPUSH; procedure oPOP;  procedure oLOOP;
-    procedure oJMP;  procedure oRET;  procedure oJLT;  procedure oJGT;
-    procedure oJNE;  procedure oJEQ;  procedure oLOD;  procedure oSTO;
-    procedure oADD;  procedure oSUB;  procedure oMUL;  procedure oDIVM;
-    procedure oAND;  procedure oOR;   procedure oXOR;  procedure oSHL;
-    procedure oSHR;  procedure oZEX;  procedure oINC;  procedure oDEC;
-    procedure oIN;   procedure oOUT;  procedure oWAIT; procedure oIVK;
-    procedure oDEBUG; { custom opcode }
-    procedure init_optable;
+      procedure oNOP;  procedure oLIT;  procedure oDUP;  procedure oDROP;
+      procedure oSWAP; procedure OPUSH; procedure oPOP;  procedure oLOOP;
+      procedure oJMP;  procedure oRET;  procedure oJLT;  procedure oJGT;
+      procedure oJNE;  procedure oJEQ;  procedure oLOD;  procedure oSTO;
+      procedure oADD;  procedure oSUB;  procedure oMUL;  procedure oDIVM;
+      procedure oAND;  procedure oOR;   procedure oXOR;  procedure oSHL;
+      procedure oSHR;  procedure oZEX;  procedure oINC;  procedure oDEC;
+      procedure oIN;   procedure oOUT;  procedure oWAIT; procedure oIVK;
+      procedure oDEBUG; { custom opcode }
+      procedure init_optable;
 
   { port handlers, defined in ng.ports.pas }
-    procedure clear;
-    function handle_syncport( msg : int32 ) : int32;
-    function handle_keyboard( msg : int32 ) : int32;
-    function handle_input( msg : int32 ) : int32;
-    procedure next_input;
-    function handle_write( msg : int32 ) : int32;
-    function handle_refresh( msg : int32 ) : int32;
-    function handle_files( msg : int32 ) : int32;
-    function handle_vmquery( msg : int32 ) : int32;
-    function handle_canvas( msg : int32 ) : int32;
-    function handle_mouse( msg : int32 ) : int32;
-    function handle_eterm( msg : int32 ) : int32;
-    procedure init_porthandlers;
+      procedure clear;
+      function handle_syncport( msg : int32 ) : int32;
+      function handle_keyboard( msg : int32 ) : int32;
+      function handle_input( msg : int32 ) : int32;
+      procedure next_input;
+      function handle_write( msg : int32 ) : int32;
+      function handle_refresh( msg : int32 ) : int32;
+      function handle_files( msg : int32 ) : int32;
+      function handle_vmquery( msg : int32 ) : int32;
+      function handle_canvas( msg : int32 ) : int32;
+      function handle_mouse( msg : int32 ) : int32;
+      function handle_eterm( msg : int32 ) : int32;
+      procedure init_porthandlers;
 
-  { retro image layout conventions }
-    function rx_getstring( start : int32 ) : string;
-
-  end;
+   { retro image layout conventions }
+      function rx_getstring( start : int32 ) : string;
+    end;
   ENotFinished = class (Exception);
 
 const
@@ -109,9 +112,10 @@ implementation
   {$i ng_ports.pas }
   {$i ng_debug.pas }
 
-constructor TNgaroVM.Create( imagepath : string; debug : boolean; pad : int32 );
+constructor TNgaroVM.New( imagepath : string );
   begin
-    self.padsize := pad;
+    _imgsize := 0;
+    _minsize := 65536;
     self.init_optable;
     assert( length( self.optbl ) >= 31 );
     self.init_porthandlers;
@@ -119,9 +123,8 @@ constructor TNgaroVM.Create( imagepath : string; debug : boolean; pad : int32 );
     self.addr := TInt32Stack.Create( 128 );
     self.ip := 0;
     self.imgpath := imagepath;
-    assign( self.imgfile, imagepath );
     self.load;
-    self.debugmode := debug;
+    self.debugmode := false;
     self.ports[0] := rxACTIVE;
   end; { vm.init }
 
@@ -136,37 +139,46 @@ destructor TNgaroVM.Destroy;
 { load and save the vm }
 
 procedure TNgaroVM.Load;
-  var size, i : int32;
+  var size, i : int32; f : file of int32;
   begin
     {$i-}
-    reset( self.imgfile );
+    system.assign( f, imgpath );
+    reset( f );
     {$i+}
     if ioresult = 0 then begin
-      size := filesize( self.imgfile );
-      // log.debug([ 'image size = ', size, ' cells' ]);
-      setlength( self.ram, size );
-      // log.debug([ 'ram = array [', low( self.ram ),
-      //             '..', high( self.ram ), ']' ]);
-      for i := 0 to size - 1 do begin
-        read( self.imgfile, self.ram[ i ]);
+      SetImgSize(FileSize(f));
+      //  TODO: ReadBlock
+      for i := 0 to FileSize(f) - 1 do begin
+        read( f, self.ram[ i ]);
       end;
-      close( self.imgfile );
+      close( f );
     end else begin
       writeln( 'error: unable to open ', self.imgpath );
       halt;
     end;
-    if self.padsize > size then setlength( self.ram, self.padsize )
+  end;
+
+procedure TNgaroVM.SetImgSize( newsize : cardinal );
+  begin
+    _imgsize := max(_minsize, newsize);
+    setlength( self.ram, _imgsize );
+  end;
+
+procedure TNgaroVM.SetMinSize( newsize : cardinal );
+  begin
+    _minsize := newsize; setlength( self.ram, min(_imgsize, _minsize));
   end;
 
 procedure TNgaroVM.Save;
-  var size, i : int32;
+  var size, i : int32; f: file of int32;
   begin
     size := length( self.ram );
-    rewrite( self.imgfile, 1 );
+    system.assign( f, imgpath );
+    rewrite( f, 1 );
     for i := 0 to size - 1 do begin
-      write( self.imgfile, self.ram[ i ])
+      write( f, self.ram[ i ])
     end;
-    close( self.imgfile );
+    close( f );
   end;
 
 
@@ -185,7 +197,7 @@ procedure TNgaroVM.Step;
 procedure TNgaroVM.Trace;
   var log : text;
   begin
-    assign( log, 'pascal.log' );
+    system.assign( log, 'pascal.log' );
     rewrite( log );
     repeat
       writeln( log, ip, ^_, ram[ ip ], ^_, data.dumps, ^_, addr.dumps );

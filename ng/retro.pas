@@ -80,17 +80,22 @@ begin
   if imgpath = '' then imgpath := fallback;
   if ( imgpath = fallback ) and ( padsize = -1 ) then padsize := 100000;
 
-  if not init_failed then begin
-    {$i-} vm := TNgaroVM.Create( imgpath, debug, padsize ); {$i+}
-    if ioresult <> 0 then die( 'couldn''t open image file: ' + imgpath )
-    else begin
-      for p in inputs do vm.include( p );
-      {$IFDEF GL}
-      rxgl.Main(vm);
-      {$ELSE}
-      vm.Loop;
-      {$ENDIF}
-      if dump_after then vm.dump
+  if not init_failed then
+    begin
+      {$i-} vm := TNgaroVM.New( imgpath ); {$i+}
+      if ioresult <> 0 then
+        die( 'couldn''t open image file: ' + imgpath )
+      else
+        begin
+          vm.debugMode := debug;
+          vm.minsize := padsize;
+          for p in inputs do vm.include( p );
+          {$IFDEF GL}
+          rxgl.Main(vm);
+          {$ELSE}
+          vm.Loop;
+          {$ENDIF}
+          if dump_after then vm.dump
+        end
     end
-  end
 end.
