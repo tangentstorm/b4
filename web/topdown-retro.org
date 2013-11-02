@@ -3,7 +3,6 @@
 #+author: michal j wallace ( top-down commentary )
 #+author: charles childers, luke parrish, marc simpson, jay skeer ( code )
 #+author: charles childers (??) ( bottom-up commentary )
-#+INFOJS_OPT: view:info toc:nil
 
 * part 1 : overview
 ** quick intro to retro
