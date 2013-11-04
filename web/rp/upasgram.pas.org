@@ -1,0 +1,118 @@
+#+title: pascal grammar components
+#+date: <2013-11-04 Mon>
+
+* Retro Pascal Grammar Components
+
+In retro pascal, all code lives in some sort of module, which (at the very least) has a /name/, a list of /imports/, a number of /declarations/, and then a /block/ of code.
+
+This is an abstract description of the outermost part of the retro pascal grammar, and therefore the topmost node in a parse tree. It's "abstract" because it omits any details about the actual syntax used. It contains only the information relevant to a compiler or interpreter.
+
+We can specify this more formally by creating a class in object pascal:
+
+#+name: type:TModule
+#+begin_src pascal
+
+  type
+    TModule = class (TSyntaxNode, IModule)
+      protected
+        _imports : array of TImport; 
+        _decls   : array of IDecl;
+      published
+        property name    : IIdent;
+        property imports[ i : cardinal ] : TImport;
+        property decls[ i : cardinal ] : IDecl;
+        property block   : TBlock;
+      end;
+
+#+end_src
+
+None of the referenced types are peredefined -- we'll fill them in as we go along, through a process of stepwise refinement.
+
+We will put off defining =TSyntaxNode= (and its associated interface, =ISyntaxNode=) until the end. For now, we can use a pair of empty definitions:
+
+#+name: type:xSyntaxNode
+#+begin_src pascal
+
+  type { temporary definitions }
+    ISyntaxNode = interface end;
+    IModule = interface (ISyntaxNode) end;
+    TSyntaxNode = class (TComponent, ISyntaxNode);
+
+#+end_src
+
+Eventually we will add methods and properties to this interface, and all the nodes in the tree will implement it.
+
+#+name: type:TModuleDeps
+#+begin_src pascal
+  type
+  
+    IIdent = interface (ISyntaxNode)
+      function GetName : string;
+      property name : string read GetName;
+    end;
+  
+    IDecl = interface (IIdent)
+      function GetKind  : integer;
+      function GetDefn : ISyntaxNode;
+      property kind : integer read GetKind;
+      property defn : ISyntaxNode read GetDefn;
+    end;
+  
+    TDecl = class (TSyntaxNode, IDecl)
+      published
+        function GetName : String;
+        function GetKind : integer;
+        function GetDefn : ISyntaxNode;
+      end;
+  
+    { A module, with opitonal nickname. }
+    TImport = class (TDecl)
+      public
+        property abbrev : IIdent; { optional abbreviation }
+        property module : IModule;
+      end;
+  
+    IStmt = interface (ISyntaxNode)
+    end;
+  
+    TBlock = class (TComponent, ISyntaxNode)
+      published
+        stmts : GArray<IStmt>;
+      end;
+
+#+end_src
+
+* implementation
+
+#+name: @methods
+#+begin_src pascal
+  
+  function TDecl.GetKind : integer;
+    begin
+      result := 0
+    end;
+  
+  function TDecl.GetName : string;
+    begin
+      result := ''
+    end;
+
+  function TDecl.GetDefn : ISyntaxNode;
+    begin
+      result := nil
+    end;
+
+#+end_src
+
+
+#+begin_src pascal :tangle "~/r/retropas/upasgram.pas" :comments both :noweb tangle
+  {$mode delphi}
+  unit uPasGram;
+  interface uses classes, arrays;
+    <<type:xSyntaxNode>>
+    <<type:TModuleDeps>>
+    <<type:TModule>>
+  implementation
+    <<@methods>>
+  end.
+#+end_src
