@@ -15,12 +15,13 @@ We can specify this more formally by creating a class in object pascal:
   type
     TModule = class (TSyntaxNode, IModule)
       protected
-        _imports : array of TImport;
-        _decls   : array of IDecl;
+        _iden    : IIden;
+        _imports : GArray<TImport>;
+        _decls   : GArray<IDecl>;
       published
-        property name    : IIdent;
-        property imports[ i : cardinal ] : TImport;
-        property decls[ i : cardinal ] : IDecl;
+        property iden    : IIden read _iden;
+        property imports : GArray<TImport> read _imports;
+        property decls   : GArray<IDecl> read _decls;
         property block   : TBlock;
       end;
 
@@ -67,12 +68,12 @@ I'm making heavy use of properties here because I'd like to take advantage of ru
 #+begin_src pascal
   type
 
-    IIdent = interface (ISyntaxNode)
+    IIden = interface (ISyntaxNode)
       function GetName : string;
       property name : string read GetName;
     end;
 
-    IDecl = interface (IIdent)
+    IDecl = interface (IIden)
       function GetDefn : ISyntaxNode;
       property defn : ISyntaxNode read GetDefn;
     end;
@@ -86,7 +87,7 @@ I'm making heavy use of properties here because I'd like to take advantage of ru
     { A module name, with optional abbreviation. }
     TImport = class (TDecl)
       public
-        property abbrev : IIdent;
+        property abbrev : IIden;
         property module : IModule;
       end;
 
@@ -183,21 +184,234 @@ There are several kinds of =IStmt= besides =TBlock=.
         property direction : TForDirection read _dir;
       end;
 
-    { If we're doing ISO pascal, it should include GOTO. }
-    TLabel  = integer;
+    { In ISO pascal, LABEL and GOTO use numbers.
+      Borland-style dialects allow labels to be strings.
+
+      I think for the purposes of this component hierarchy tree,
+      I will just pretend that numbers are identifiers, even
+      though that's not true syntactically in pascal. }
+
+    TLabelDef = class (TDecl) end;
+
     TGotoStmt  = class (TSyntaxNode)
       protected
-        _target : TLabel;
+        _target : variant;
       published
-        property target : TLabel read _target;
+        property target : variant read _target;
       end;
 
 #+end_src
 
 ** Expression Nodes
 
+#+name: type:xExpression
 #+begin_src pascal
 
+  type
+    TDyadOp    = (opEQ, opLT, opGT, opNE, opLE, opGE, opIN, opOR, opAnd,
+                  opPlus, opMinus, opTimes, opRDiv, opMod, opDiv);
+    TMonadOp   = (opNot, opPos, opNeg, opAddr);
+
+    TDyadExpr  = class (TSyntaxNode, IExpr)
+      protected
+        _op : TDyadOp;
+        _x  : IExpr;
+        _y  : IExpr;
+      published
+        property op : TDyadOp read _op;
+        property x  : IExpr read _x;
+        property y  : IExpr read _y;
+      end;
+
+    TMonadExpr = class (TSyntaxNode, IExpr)
+      protected
+        _op : TMonadOp;
+        _y  : IExpr;
+      published
+        property op : TMonadOp read _op;
+        property y  : IExpr read _y;
+     end;
+
+    IValue = interface (IExpr) end;
+
+    TIdenRef = class (TSyntaxNode, IValue)
+      protected
+        _iden : IIden;
+      published
+        property iden : IIden read _iden;
+      end;
+
+    TLiteral = class (TSyntaxNode, IValue)
+      protected
+        _str : string; { Actual token used. (ex: '$FF' vs '255') }
+        _val : variant;
+      published
+        property text : string read _str;
+        property value : variant read _val;
+      end;
+
+    IRange = interface (IValue)
+      function GetLo : IOrdExpr;
+      function GetHi : IOrdExpr;
+      property lo : IOrdExpr read GetLo;
+      property hi : IOrdExpr read GetHi;
+    end;
+
+    TRange = class (TSyntaxNode, IRange)
+      protected
+        _lo : IOrdExpr;
+        _hi : IOrdExpr;
+      published
+        function GetLo : IOrdExpr;
+        function GetHi : IOrdExpr;
+        property lo : IOrdExpr read GetLo;
+        property hi : IOrdExpr read GetHi;
+      end;
+
+    TSet = class (TSyntaxNode, IValue)
+      protected
+        _members : GArray<IValue>;
+      published
+        property members : GArray<IValue> read _members;
+      end;
+
+#+end_src
+
+
+** type definitions
+
+#+name: type:xTypeDefs
+#+begin_src pascal
+
+  type
+    IType = interface (IDecl) end;
+    TTypeDef = class (TDecl, IType) end;
+
+    TTypeDecorator = class (TTypeDef)
+      protected
+        _base : IType;
+      published
+        property base : IType read _base;
+      end;
+
+    TAliasType = class (TTypeDecorator)
+      protected
+        { all this does is defines a new name for the base type. }
+      end;
+
+    TPointerType = class (TTypeDecorator)
+      protected
+      end;
+
+    { We'll use this for both arrays and records. }
+    IPackable = interface
+      function GetPacked : boolean;
+      procedure SetPacked(flag : boolean);
+      property isPacked : boolean read GetPacked write SetPacked;
+    end;
+
+    TArrayType = class (TTypeDecorator, IPackable)
+      protected
+        _ranges : GArray<IRange>;
+        _packable : IPackable;
+      published
+        property packinfo : IPackable read _packable implements IPackable;
+        property ranges : GArray<IRange> read _ranges;
+      end;
+
+    TRangeType = class (TTypeDef, IRange)
+      protected
+        _range : TRange;
+      published
+        property range : TRange read _range implements IRange;
+      end;
+
+#+end_src
+
+
+** grouped declarations (multiple symbols joined by ',')
+
+There are a number of places in the pascal grammar where you can declare a number of identifiers of the same type, separated by commas:
+
+- enumerated types
+- record definitions
+- =var= sections
+- parameter lists in procedure declarations
+
+#+name: type:xTypeDefs
+#+begin_src pascal
+  type
+
+    ITyped = interface
+      function GetTypeRef : IType;
+      property typeRef : IType read GetTypeRef;
+    end;
+
+    TTypedDecl = class (TDecl, ITyped)
+      protected
+        _typeRef : IType;
+      published
+        function GetTypeRef : IType;
+        property typeRef : IType read GetTypeRef;
+      end;
+
+    TGroupDecl = class (TTypedDecl)
+      protected
+        _decls : GArray<ITyped>;
+      published
+        property decls : GArray<ITyped> read _decls;
+      end;
+
+#+end_src
+
+** record and procedure types
+
+#+name: type:xTypeDefs
+#+begin_src pascal
+  type
+
+    TEnumType = class (TGroupDecl) end;
+
+    TRecordType = class (TTypeDef)
+       protected
+         _groups   : GArray<TGroupDecl>;
+         _tagField : TDecl;
+         _variants : GArray<TGroupDecl>;
+         { !! The tagField/variants properties are very rough here.
+              I will probably refine them when it comes time to
+              actually implement variant records. }
+       published
+         property groups   : GArray<TGroupDecl> read _groups;
+         property tagField : TDecl read _tagField;
+         property variants : GArray<TGroupDecl> read _variants;
+       end;
+
+#+end_src
+
+** variable, constant, and label definitions
+
+#+name: type:xValueDefs
+#+begin_src pascal
+
+  type
+
+    TValDef = class (TTypedDecl)
+    end;
+
+    TVarDef = class (TTypedDecl)
+    end;
+
+    TConstDef = class (TTypedDecl)
+    end;
+
+#+end_src
+
+
+** procedure and function definitions
+
+#+name: type:xProcDefs
+#+begin_src pascal
+{ todo : procedure and function defs }
 #+end_src
 
 
@@ -211,6 +425,11 @@ There are several kinds of =IStmt= besides =TBlock=.
       result := 0
     end;
 
+  function TTypedDecl.GetTypeRef : IType;
+    begin
+      result := _typeRef
+    end;
+
   function TDecl.GetName : string;
     begin
       result := ''
@@ -220,6 +439,19 @@ There are several kinds of =IStmt= besides =TBlock=.
     begin
       result := nil
     end;
+
+{ -- ranges -- }
+
+  function TRange.GetLo : IOrdExpr;
+    begin
+      result := _lo
+    end;
+
+  function TRange.GetHi : IOrdExpr;
+    begin
+      result := _hi
+    end;
+
 
 #+end_src
 
@@ -234,6 +466,10 @@ There are several kinds of =IStmt= besides =TBlock=.
     <<type:TModuleDeps>>
     <<type:TModule>>
     <<type:xStatement>>
+    <<type:xExpression>>
+    <<type:xTypeDefs>>
+    <<type:xValueDefs>>
+    <<type:xProcDefs>>
   implementation
     <<@methods>>
   end.
