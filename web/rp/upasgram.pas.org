@@ -15,7 +15,7 @@ We can specify this more formally by creating a class in object pascal:
   type
     TModule = class (TSyntaxNode, IModule)
       protected
-        _imports : array of TImport; 
+        _imports : array of TImport;
         _decls   : array of IDecl;
       published
         property name    : IIdent;
@@ -28,70 +28,189 @@ We can specify this more formally by creating a class in object pascal:
 
 None of the referenced types are peredefined -- we'll fill them in as we go along, through a process of stepwise refinement.
 
-We will put off defining =TSyntaxNode= (and its associated interface, =ISyntaxNode=) until the end. For now, we can use a pair of empty definitions:
+We will put off defining =TSyntaxNode= (and its associated interface, =ISyntaxNode=) until the end. For now, we can use a pair definitions that do nothing bu define a =kind= property. This is basically a way to implement
 
 #+name: type:xSyntaxNode
 #+begin_src pascal
 
   type { temporary definitions }
-    ISyntaxNode = interface end;
-    IModule = interface (ISyntaxNode) end;
-    TSyntaxNode = class (TComponent, ISyntaxNode);
+
+    ISyntaxNode = interface
+      function GetKind : integer;
+      property kind : integer read GetKind;
+    end;
+
+    TSyntaxNode = class (TComponent, ISyntaxNode)
+      public
+        function GetKind : integer;
+      published
+        property kind : integer read GetKind;
+      end;
 
 #+end_src
 
 Eventually we will add methods and properties to this interface, and all the nodes in the tree will implement it.
 
+The =IModule= interface is mostly just so we can refer to it from the definition for the =TImport= class below. In general, when we need to create cyclic relationships between types, we will use interfaces to break the cycle. (We could also use forward class declarations. This is just my personal preference.)
+
+#+name: type:IModule
+#+begin_src pascal
+  type
+    IModule = interface (ISyntaxNode) end;
+#+end_src
+
+With these in place, we can now fill in the next few declarations.
+
+I'm making heavy use of properties here because I'd like to take advantage of runtime type information. And possibly even provide some design time components for working with these nodes in Lazarus.
+
 #+name: type:TModuleDeps
 #+begin_src pascal
   type
-  
+
     IIdent = interface (ISyntaxNode)
       function GetName : string;
       property name : string read GetName;
     end;
-  
+
     IDecl = interface (IIdent)
-      function GetKind  : integer;
       function GetDefn : ISyntaxNode;
-      property kind : integer read GetKind;
       property defn : ISyntaxNode read GetDefn;
     end;
-  
+
     TDecl = class (TSyntaxNode, IDecl)
       published
         function GetName : String;
-        function GetKind : integer;
         function GetDefn : ISyntaxNode;
       end;
-  
-    { A module, with opitonal nickname. }
+
+    { A module name, with optional abbreviation. }
     TImport = class (TDecl)
       public
-        property abbrev : IIdent; { optional abbreviation }
+        property abbrev : IIdent;
         property module : IModule;
       end;
-  
+
     IStmt = interface (ISyntaxNode)
     end;
-  
-    TBlock = class (TComponent, ISyntaxNode)
+
+    TBlock = class (TSyntaxNode, IStmt)
       published
         stmts : GArray<IStmt>;
       end;
 
 #+end_src
 
+** Statement Nodes
+
+There are several kinds of =IStmt= besides =TBlock=.
+
+#+name: type:xStatement
+#+begin_src pascal
+
+  type
+
+    IExpr = interface end;
+    ILhsExpr = interface (IExpr) end;
+    IOrdExpr = interface (IExpr) end;
+    IBoolExpr = interface (IExpr) end;
+
+    TAssignStmt = class
+      protected
+        _lhs : ILhsExpr;
+        _rhs : IExpr;
+      published
+        property lhs : ILhsExpr read _lhs;
+        property rhs : IExpr read _rhs;
+      end;
+
+    TIfThenStmt = class
+      protected
+        _cond : IBoolExpr;
+        _then,
+        _else : IStmt;
+      published
+        property cond     : IBoolExpr read _cond;
+        property thenPart : IStmt read _then;
+        property elsePart : IStmt read _else;
+      end;
+
+    TCasePair   = class (TSyntaxNode)
+      protected
+        _expr : IExpr;
+        _stmt : IStmt;
+      published
+        property expr : IExpr read _expr;
+        property stmt : IStmt read _stmt;
+     end;
+
+    TCaseStmt   = class (TSyntaxNode)
+      protected
+        _expr  : IStmt;
+        _cases : GArray<TCasePair>;
+      published
+        property expr : IExpr;
+        property cases : GArray<TCasePair> read _cases;
+      end;
+
+    TWhileDoStmt  = class (TSyntaxNode)
+      protected
+        _cond : IBoolExpr;
+        _stmt : IStmt;
+      published
+        property cond : IBoolExpr read _cond;
+        property stmt : IStmt read _stmt;
+      end;
+
+    TRepeatUntilStmt  = class (TSyntaxNode)
+      protected
+        _stmt : IStmt;
+        _cond : IBoolExpr;
+      published
+        property stmt : IStmt read _stmt;
+        property cond : IBoolExpr read _cond;
+      end;
+
+    TForDirection = (forUpTo, forDnTo);
+
+    TForToStmt  = class (TSyntaxNode)
+      protected
+        _stmt : IStmt;
+        _cond : IBoolExpr;
+        _dir  : TForDirection;
+      published
+        property stmt : IStmt read _stmt;
+        property cond : IBoolExpr read _cond;
+        property direction : TForDirection read _dir;
+      end;
+
+    { If we're doing ISO pascal, it should include GOTO. }
+    TLabel  = integer;
+    TGotoStmt  = class (TSyntaxNode)
+      protected
+        _target : TLabel;
+      published
+        property target : TLabel read _target;
+      end;
+
+#+end_src
+
+** Expression Nodes
+
+#+begin_src pascal
+
+#+end_src
+
+
 * implementation
 
 #+name: @methods
 #+begin_src pascal
-  
-  function TDecl.GetKind : integer;
+
+  function TSyntaxNode.GetKind : integer;
     begin
       result := 0
     end;
-  
+
   function TDecl.GetName : string;
     begin
       result := ''
@@ -104,14 +223,17 @@ Eventually we will add methods and properties to this interface, and all the nod
 
 #+end_src
 
+* ouput ( upasgram.pas )
 
 #+begin_src pascal :tangle "~/r/retropas/upasgram.pas" :comments both :noweb tangle
   {$mode delphi}
   unit uPasGram;
   interface uses classes, arrays;
     <<type:xSyntaxNode>>
+    <<type:IModule>>
     <<type:TModuleDeps>>
     <<type:TModule>>
+    <<type:xStatement>>
   implementation
     <<@methods>>
   end.
