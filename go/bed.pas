@@ -1,5 +1,5 @@
 {
-| b4 editor
+| block editor
 |
 |   a colorforth - style editor
 |
@@ -7,62 +7,88 @@
 | copyright (c) 2012 michal j. wallace
 | see LICENSE.org for usage information
 }
-{$i xpc.inc }
+{$mode delphi}{$i xpc.inc}
 program bed;
-uses xpc, kvm, sd, log, kbd, ascii {$ifdef gpc}, gpcutil{$endif};
+uses xpc, classes, kvm, sd, log, kbd, ascii, cw;
 
 const
   kw = 64;
   kh = 16;
   ks = kw * kh;
 
-var
-  gDrive     : sd.tDrive;
-  gBuf	     : sd.tBlock;
-  gBlockNum  : word = 0;
-  gx, gy     : byte;
-  gDone	     : boolean;
-  brightFlag : boolean = false;
-  color	     : char;
+type
+  TBlockEditor = class (TComponent)
+  private
+    _drive     : TDrive;
+    _block     : TBlock;
+    _blockNum  : word;
+    _x, _y     : byte;
+    _done      : boolean;
+    _isBright : boolean;
+    _color      : char;
+  public
+    constructor Create(aOwner : TComponent); override;
+    procedure MakeBlock;
+    procedure LoadData;
+    procedure SaveData;
+    procedure Fg(ch : char );
+    procedure ToggleBright;
+    procedure Emit(ch : char);
+    procedure AddChar(ch : char);
+    procedure HandleKey;
+    procedure WriteLine( lineno : integer );
+    procedure InitView;
+    procedure Run;
+  published
+    property curx : byte read _x;
+    property cury : byte read _y;
+    property isdone : boolean read _done;
+  end;
 
-  const infoColumn = 67;
+const infoColumn = 67;
 
 
-procedure make_block;
+constructor TBlockEditor.Create(aOwner : TComponent);
   begin
-    gDrive.grow( 1 );
-    fillchar(gBuf, sizeOf(gBuf), $87);
+    inherited Create(aOwner);
+    _blockNum := 0;
+    _isBright := false;
+  end;
+
+procedure TBlockEditor.MakeBlock;
+  begin
+    _drive.grow( 1 );
+    fillchar(_block, sizeOf(_block), $87);
     // go back and make first line reversed:
-    fillchar(gBuf, 64, $88);
+    fillchar(_block, 64, $88);
   end;
 
-procedure load_data;
+procedure TBlockEditor.LoadData;
   begin
-    gDrive.init( 'blocks.sd' );
-    if gDrive.block_count = 0 then
-      make_block
-    else gDrive.load( 0, gBuf );
+    _drive.init( 'blocks.sd' );
+    if _drive.block_count = 0 then MakeBlock
+    else _drive.load( 0, _block );
   end;
 
-procedure save_data;
+procedure TBlockEditor.SaveData;
   begin
-    gDrive.save( 0, gBuf );
-    write('SAVING');
+    _drive.save( 0, _block );
+    cw.cxy(7, infoColumn, 2, 'SAVING');
   end;
 
-procedure fg( ch : char );
+procedure TBlockEditor.fg( ch : char );
   begin
-    color := ch; kvm.fg( ch );
+    _color := ch; kvm.fg( ch );
   end;
 
-procedure ToggleBright;
+procedure TBlockEditor.ToggleBright;
   begin
-    if brightFlag then Fg( LowerCase( color ))
-    else Fg( UpCase( color ));
-    brightFlag := not brightFlag;
+    if _isBright then Fg( LowerCase( _color ))
+    else Fg( UpCase( _color ));
+    _isBright := not _isBright;
   end;
 
-procedure emit( ch : char );
+procedure TBlockEditor.Emit( ch : char );
   begin
     if ch = #$88 then
       begin
@@ -78,14 +104,14 @@ procedure emit( ch : char );
     else write( ch )
   end;
 
-procedure addChar( ch : char );
+procedure TBlockEditor.AddChar( ch : char );
   begin
-    gBuf[ gy * 64 + gx ] := ord( ch );
+    _block[ _y * 64 + _x ] := ord( ch );
     emit( ch );
-    inc( gx );
+    inc( _x );
   end;
 
-procedure handle_key;
+procedure TBlockEditor.HandleKey;
 var
   key : char;
 begin
@@ -97,12 +123,12 @@ begin
       begin
         key := kbd.readkey;
         case key of
-	  kbd.LEFT  : if gx > 0 then dec( gx );
-	  kbd.UP    : if gy > 0 then dec( gy );
-	  kbd.DOWN  : inc( gy );
-	  kbd.RIGHT : inc( gx );
+	  kbd.LEFT  : if _x > 0 then dec( _x );
+	  kbd.UP    : if _y > 0 then dec( _y );
+	  kbd.DOWN  : inc( _y );
+	  kbd.RIGHT : inc( _x );
 
-          { colors }
+          { _colors }
 	  kbd.F1 : fg('r');
 	  kbd.F2 : fg('g');
 	  kbd.F3 : fg('y');
@@ -116,27 +142,27 @@ begin
 	  kbd.F9 : ToggleBright;
 	end;
         { black text is dark gray, OR black on gray, depending on bit 8 }
-	if color = 'k' then kvm.bg( 'w' ) else kvm.bg( 'k' );
+	if _color = 'k' then kvm.bg( 'w' ) else kvm.bg( 'k' );
       end;
 
-    ^A : gx := 0;
+    ^A : _x := 0;
     ^C,
-    ascii.ESC  : gdone := true;
-    ^E : gx := 63;
-    ^B : if gx > 0 then dec( gx );
-    ^P : if gy > 0 then dec( gy );
-    ^N : inc( gy );
-    ^F : inc( gx );
-    ^S : save_data;
+    ascii.ESC  : _done := true;
+    ^E : _x := 63;
+    ^B : if _x > 0 then dec( _x );
+    ^P : if _y > 0 then dec( _y );
+    ^N : inc( _y );
+    ^F : inc( _x );
+    ^S : SaveData;
     ascii.CR   : begin
-                   gx := 0; inc( gy );
+                   _x := 0; inc( _y );
                  end;
-    ascii.BS   : if gx > 0 then
+    ascii.BS   : if _x > 0 then
 		   begin
-		     dec( gx );
-		     kvm.gotoxy( gx, gy );
+		     dec( _x );
+		     kvm.gotoxy( _x, _y );
 		     write(' ');
-		     gBuf[ gy * 64 + gx ] := 32;
+		     _block[ _y * 64 + _x ] := 32;
 		   end;
   else if key in [ #32 .. #127 ] then
     addchar( key )
@@ -149,23 +175,23 @@ begin
   write( ord( key ));
 
   { bounds checking }
-  gx := min( kw-1, max( gx, 0 ));
-  gy := min( kh-1, max( gy, 0 ));
+  _x := min( kw-1, max( _x, 0 ));
+  _y := min( kh-1, max( _y, 0 ));
 end;
 
 
-procedure write_line( lineno : integer );
+procedure TBlockEditor.WriteLine( lineno : integer );
 var x, b : byte;
 begin
   for x := 0 to kw-1 do
   begin
-    b := gBuf[ ( lineno * kw ) + x ];
+    b := _block[ ( lineno * kw ) + x ];
     emit( chr( b ));
   end;
 end;
 
 
-procedure init_view;
+procedure TBlockEditor.InitView;
 var y : byte;
 begin
 
@@ -178,22 +204,30 @@ begin
       if y = 0 then begin fg('k'); bg('w') end
       else begin bg('k'); fg('w') end;
       kvm.gotoxy( 0, y );
-      write_line( y );
+      WriteLine( y );
       kvm.fg( 'b' ); bg('k'); write( '|' );
       kvm.clreol;
     end;
   kvm.fg( $07 );
-  gx := 0; gy := 1;
+  _x := 0; _y := 1;
 end;
 
 
+procedure TBlockEditor.Run;
+  begin
+    LoadData;
+    InitView;
+    repeat
+      kvm.gotoxy( curx, cury );
+      if kbd.keypressed then HandleKey;
+    until isDone;
+    SaveData;
+  end;
+
+var ed : TBlockEditor;
 begin
   log.level := log.lvl_debug;
-  load_data;
-  init_view;
-  repeat
-     kvm.gotoxy( gx, gy );
-     if kbd.keypressed then handle_key;
-  until gdone;
-  save_data;
+  ed := TBlockEditor.Create(Nil);
+  ed.Run;
+  ed.Free;
 end.
