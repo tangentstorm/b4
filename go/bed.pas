@@ -9,7 +9,7 @@
 }
 {$mode delphi}{$i xpc.inc}
 program bed;
-uses xpc, classes, kvm, sd, log, kbd, ascii, cw;
+uses xpc, classes, kvm, ublockdrive, log, kbd, ascii, cw;
 
 const
   kw = 64;
@@ -19,7 +19,7 @@ const
 type
   TBlockEditor = class (TComponent)
   private
-    _drive     : TDrive;
+    _drive     : TBlockDrive;
     _block     : TBlock;
     _blockNum  : word;
     _x, _y     : byte;
@@ -65,8 +65,8 @@ procedure TBlockEditor.MakeBlock;
 
 procedure TBlockEditor.LoadData;
   begin
-    _drive.init( 'blocks.sd' );
-    if _drive.block_count = 0 then MakeBlock
+    _drive := TBlockDrive.Create( 'blocks.sd' );
+    if _drive.BlockCount = 0 then MakeBlock
     else _drive.load( 0, _block );
   end;
 
