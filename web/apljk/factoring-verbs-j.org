@@ -1,0 +1,239 @@
+#+title: factoring out verbs in J
+#+date: <2013-12-10 Tue>
+
+* bottom up programming
+
+Often it's convenient to construct a J program from the 'bottom up', starting with an input value and applying transformations one at a time, interactively in the REPL.
+
+For example, if we wanted to construct a function to calculate the calculate the sum of the first ~y~ square numbers, our session might look like this:
+
+#+begin_src j
+     i.10                        NB. first 10 non-negative integers
+  0 1 2 3 4 5 6 7 8 9
+     >: i.10                     NB. first 10 positive integers
+  1 2 3 4 5 6 7 8 9 10
+     *: >: i.10                  NB. first 10 square numbers.
+  1 4 9 16 25 36 49 64 81 100
+     +/ *: >: i.10               NB. sum of first 10 squares.
+  385
+     +/ *: >: i. y=.10           NB. explicit named paremeter
+  385
+     (3 : '+/ *: >: i. y') 10    NB. explicit definition.
+  385
+     (3 : '+/ *: >: i. y')       NB. discard the parameter.
+  3 : '+/ *: >: i. y'
+     (13 : '+/ *: >: i. y')      NB. (optionally) convert to tacit form.
+  [: +/ [: *: [: >: i.
+     sumsq=:13 :'+/ *: >: i. y'  NB. give it a name.
+     sumsq 10                    NB. double check that it worked.
+  385
+#+end_src
+
+Surrounding a phrase with ~(3 : '...')~ is a simple way to extract a new verb. Of course, if the verb in question contains a string, its quote characters will have to be doubled:
+
+#+begin_src j
+     'a,b,c'             NB. a string of comma separated values
+  a,b,c
+     ',', 'a,b,c'        NB. append to leading comma
+  ,a,b,c
+  
+     <;._1',', 'a,b,c'   NB. cut and box on comma characters.
+  ┌─┬─┬─┐
+  │a│b│c│
+  └─┴─┴─┘
+                         NB. quoting here gets a bit messy:
+     (3 : '<;._1 '','' , y') 'a,b,c'
+  ┌─┬─┬─┐
+  │a│b│c│
+  └─┴─┴─┘
+#+end_src
+
+In this /particular/ case, it's cleaner to surround the target phrase with ~([: ... ])~ :
+
+#+begin_src j
+     ([: <;._1 ',' , ]) 'a,b,c'
+  ┌─┬─┬─┐
+  │a│b│c│
+  └─┴─┴─┘
+#+end_src
+
+Note, however, that ~[:~ and ~]~ are not magical tacit function delimeters. They are just normal verbs, that to form the train we want in /this/ particular case. Applying them blindly often leads to disaster:
+
+#+begin_src j
+     +/ *: >: i. 10           NB. sum of first y squares (derived above)
+  385
+     ([: +/ *: >: i. ]) 10    NB. here, ([: ... ]) changes the meaning.
+  |domain error
+  |       ([:+/*:>:i.])10
+#+end_src
+
+In this article we'll explore tools for factoring out verbs in a number of different situations.
+
+* leftmost nouns
+
+Suppose we want to construct the first ~y~ odd numbers:
+
+#+begin_src j
+              i. y =. 5       NB. take the first y cardinals.
+  0 1 2 3 4
+          2 * i. y =. 5       NB. double them
+  0 2 4 6 8
+      1 + 2 * i. y =. 5       NB. and add one.
+  1 3 5 7 9
+#+end_src
+
+This can be written more concisely as:
+
+#+begin_src j
+        >: +: i. y =. 5   NB. one more than double first y cardinals
+  1 3 5 7 9
+#+end_src
+
+We can ask J to convert this to tacit form for us:
+
+#+begin_src j
+     13 : '>: +: i. y'    NB. explicit to tacit conversion.
+[: >: [: +: i.
+     ([: >: [: +: i.) 5   NB. usage requires parens.
+  1 3 5 7 9
+#+end_src
+
+Alternatively, we can insert the ~@:~ conjunction between each item of our shortened form:
+
+#+begin_src j
+     >: +: i. 5              NB. shown above.
+  1 3 5 7 9
+     >: (+: @: i.) 5         NB. @: ('at') is function composition
+  1 3 5 7 9
+     (>: @: +: @: i.) 5      NB. @: applied again.
+  1 3 5 7 9
+     (>:@:+:@:i.) 5          NB. The spaces can be removed.
+  1 3 5 7 9
+#+end_src
+
+The phrase ~(f @: g) y~ serves more or less the same purpose as ~([: f g) y~, but it doesn't require parentheses. It has a small advantage when extracting a function from a phrase because the transformation can be made by introducing only one new symbol at a time:
+
+#+begin_src j
+     >: +: i. 5              NB. shown above.
+  1 3 5 7 9
+     >: +: @: i. 5           NB. @: works even without parens
+  1 3 5 7 9
+     >: @: +: @: i. 5        NB. @: applied again.
+  1 3 5 7 9
+     >:@:+:@:i. 5            NB. (Optionally) remove spaces.
+  1 3 5 7 9
+     (>:@:+:@:i.) 5          NB. Extract the function.
+  1 3 5 7 9
+#+end_src
+
+However, what happens if we simply ask J to translate our original, longer sentence?
+
+#+begin_src j                NB. original, longer formulation
+   1 + 2 * i. y=. 5
+1 3 5 7 9
+   13 : '1 + 2 * i. y'       NB. explicit to tacit
+  1 + 2 * i.
+    (1 + 2 * i.) 5           NB. shortened form.
+  1 3 5 7 9
+#+end_src
+
+To me, this seems much clearer than either of the previous tacit forms.
+
+It works because of the following equivalences when x and y are nouns:
+
+:  (x f g) y  <-->   x f (g y)
+
+We can derive this tacit form ourselves by applying this rule twice to our original sentence.
+
+#+begin_src j
+     1 + 2 * i. y=. 5
+  1 3 5 7 9
+     1 + 2 * (i. y)       NB. because j executes right to left
+  1 3 5 7 9
+     1 + (2 * i.) y       NB. apply rule where (k=2 f=* g =i.)
+  1 3 5 7 9
+     (1 + (2 * i.)) y     NB. and again where (k=1 f=+ g=(2 * i.))
+  1 3 5 7 9
+     (1 + 2 * i.) y       NB. the inner parens can be removed.
+  1 3 5 7 9
+#+end_src
+
+To summarize, whenever you want to extract a verb from an alternating sequence of nouns and verbs that starting with a noun and ending with a double verb, you can simply surround the whole thing with parentheses.
+
+: n0 v0 n1 v1 .. ni vi v(i+1) y <--> (n0 v0 n1 v1 .. ni vi v(i+1)) y
+
+* extracting a noun-verb trains without a final extra verb.
+
+If the phrase follows this pattern but doesn't end with two verbs, you can simply add ~]~ to the end of the sequence:
+
+For example:
+
+#+begin_src j
+     2 * 1 + y =. 5        NB. follows the pattern, but no trailing verb.
+  12
+     2 * 1 + y =. 5        NB. adding parens here will not work.
+|syntax error
+|   (2   *1+)y=.5
+     2 * 1 + ] y =. 5      NB. but if we insert a placeholder verb...
+  12
+     (2 * 1 + ]) y =. 5    NB. then we can extract the train easily.
+  12
+#+end_src
+
+There are many simple identities between the verbs in J,  so you often have the choice of expressing the same idea in multiple ways.
+
+: >: y <--> (1 +  y)               one more
+: <: y <--> (1 +  y)               one less
+: +: y <--> (2 *  y)               double
+: -: y <--> (2 %~ y)               half
+: *: y <--> (2 ^~ y) <--> *~ y     square
+: %: y <--> (2 ^. y)               square root
+
+If the final noun and verb together hav a shorter representation, then you can simply replace it with the shorter form:
+
+
+#+begin_src j
+     2 * 1 + y =. 5        NB. Need one more verb... or one /less/.
+12
+     2 * >: y =. 5         NB. >: y <--> (1 +  y)
+12
+   (2 * >:) y =. 5         NB. Now it can be cleanly parenthesized.
+12
+#+end_src
+
+If the final noun-verb combination doesn't have a simple form, you can bond the noun to the verb using the ~&~ adverb.
+
+#+begin_src j
+   2 * 3 + y =. 5         NB. No builtin for 3 + y
+16
+   2 * 3 & + y            NB. '&' bonds the '3' to the '+'
+16
+   (2 * 3 & +) y          NB. Now the phrase can be extracted.
+16
+#+end_src
+
+
+* extending the chain on the left.
+
+What if we need to do further processing to the left?
+
+For example, what if we want a function that finds the first ~y~ odd numbers, but returns them in reversed order?
+
+#+begin_src j
+     (1 + 2 * i.) y       NB. our solution so far...
+  1 3 5 7 9
+     |. (1 + 2 * i.) y    NB. but reversed.
+  9 7 5 3 1
+     (|. 1 + 2 * i.) y    NB. not what we want. :/
+  1 3 5 7 9
+     ((|. 1) + 2 * i.) y  NB. (it applied the |. to the first noun.)
+  1 3 5 7 9
+#+end_src
+
+Fortunately, this is also an easy fix. We can extend the parentheses to the left by first prepending a cap (~[:~).
+
+#+begin_src j
+     ([: |. 1 + 2 * i.) y
+  9 7 5 3 1
+#+end_src
+
