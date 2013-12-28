@@ -49,15 +49,18 @@ gen =: dyad : 0
   NB. generate text from template x with data from y
   NB. ----------------------------------------------
   r =. ''              NB. ]] echo ;: x return.
-  for_token. ;: x do.  NB. ]] for_yi. y do. echo yi_index; >yi end. return.
-    tok =. > token     NB. ]] echo (lexT > tok);>tok=.>token
+  tokens =: ;: x       NB. ]] echo (lexT > tok);>tok=.>token
+  i =. 0               NB. ]] for_yi. y do. echo yi_index; >yi end. return.
+  while. i < # tokens do.
+    tok =. > i { tokens
     select. tokT tok
       case. tnil do. r=.r, LF
       case. tstr do. r=.r, }.}: tok
       case. tint do.
-         if. (# y) > i=. ". tok    do. r=.r, > (".tok) { y
+         if. (# y) > ".tok   do. r=.r, > (".tok) { y
          else. echo 'no argument ', tok, ' given!' throw.  end.
     end.
+    i =. >: i
   end.
   r return.
 )
