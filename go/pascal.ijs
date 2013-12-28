@@ -1,17 +1,18 @@
+#!/usr/bin/env j
 NB. pascal compiler/generator for j
-
+require 'task'
 
 hello =: noun : 0
-program hello;
+{$mode delphi}{$i xpc.inc}
+program helloj;
 uses kvm,cw;
 
 procedure say(msg:string);
-  var cx, cy, i : byte;
   begin
-    cx - kvm.xmax div 2;
-    cy - kvm.ymax div 2;
-    cwxy(cx - length(msg div 2)-4, cy,
-      '|b-|B-|K[ |w' + msg + ' |K]|B-|b-');
+    ccenterxy(
+      kvm.xmax div 2, kvm.ymax div 2 - 5,
+      '|b-|B=|K[ |W' + msg + ' |K]|B=|b-');
+    gotoxy(0,kvm.ymax-8);
   end;
 
 begin
@@ -19,3 +20,9 @@ begin
   say('hello world');
 end.
 )
+
+
+hello fwrite 'gen/helloj.pas'
+shell 'fpc gen/helloj.pas'
+echo  'generated and compiled gen/helloj'
+exit''
