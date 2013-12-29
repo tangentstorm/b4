@@ -35,8 +35,8 @@ The =tok= verb splits a scheme code string to tokens, but doesn't actually decod
 #+begin_src j
 
 spcp =: e.&(9 10 11 12 13 32{a.)
-
 tok1 =: (((~:1&|.)@:spcp+.(+.1&|.)@:(e.&'()'))<;.2])
+
 tok =: ((#~-.@:spcp@:{.@:>"0)@:tok1@:(,&' ')) ::[:
 
 #+end_src
@@ -101,7 +101,180 @@ rdr =: (rdr1 @: tok) ::[:
 
 #+end_src
 
-: echo rdr '(lambda (x) (+ 1 (* x x) x))'
+Here we see the mysterious =::[:= again. More importantly, it's just composing =rdr1= with =tok=.
+
+This is a simple a recursive descent parser. Let's follow the call chain, starting with =rdr=:
+
+ - =rdr= applies =tok= to the input, then applies =rdr1= to the result
+ - =rdr1= appends a boxed right paren to the chain of tokens, then calls =rdrs= and takes the head of the result.
+ - =rdrs= selects the first token and then, based on the result of =rdrc=, calls either =rdrb=, =rdre=, or =rdra=.
+ - =rdrc= simply unboxes a token and returns the index of its first character in the string '()':
+    - '(' yields 0, so the 'b' in =rdrb= stands for /begin/.
+    - ')' yields 1, so the 'e' in =rdre= stands for /end/.
+    - anything else yields 2 so the 'a' in =rdra= means /any/
+
+Presumably the input is a well-formed s-expression, so the first token is going to be an opening paren. So let's look at =rdrb=:
+
+: rdrb =: (<@:}: , rdrs@:>@:{:) @: rdrs@:}.
+
+This is a pipeline. From right to left, behead the input (so remove the opening paren token), then call =rdrs= on the rest of the tokens.
+
+Let's trace it through with a specific example:
+
+:    ]ts =: '(';'a';'(';'b';'c';')';')'
+: ┌─┬─┬─┬─┬─┬─┬─┐
+: │(│a│(│b│c│)│)│
+: └─┴─┴─┴─┴─┴─┴─┘
+
+So far, we've chopped off the first '(' and are now looking at an 'a'. So we need to push =rdrb= onto a mental stack for a moment, and look at =rdra=, since that's what =rdrs= is going to call when it sees an 'a'.
+
+: rdra =: {. , rdrs@:}.
+
+This is a fork. It's going to append the head of the list (the boxed 'a') to the result of running =rdrs= on the tail. So we're recursing again. Since the tail starts with '(', we're doing another =rdrb=, then two =rdra= calls for the 'b' and 'c'. All of these cases are recursive, so at this point we're several levels deep into the call stack for each token. We only start to unwind the stack once we hit the first ')'.
+
+Calling =rdrs= with ')' as the first token invokes =rdre=:
+
+: rdre =: <@:}.
+
+This will behead the token stream (removing the leading ')' token) and then put the entire rest of the token stream inside a new box.
+
+So in our example, we're looking at:
+
+:    ')';')';')'
+: ┌─┬─┬─┐
+: │)│)│)│
+: └─┴─┴─┘
+
+(The extra ')' would have been appended by =rdr1=)
+
+And the result will be:
+
+:    rdre ')';')';')'
+: ┌─────┐
+: │┌─┬─┐│
+: ││)│)││
+: │└─┴─┘│
+: └─────┘
+
+This is returned up the chain to the innermost call of =rdra= for the 'c' token, where =rdra= simply appends it to the 'c'.
+
+:    (<'c') , rdre ')';')';')'
+: ┌─┬─────┐
+: │c│┌─┬─┐│
+: │ ││)│)││
+: │ │└─┴─┘│
+: └─┴─────┘
+
+Same thing happens for 'b':
+
+:    ] sofar =. (<'b'), (<'c'), rdre ')';')';')'
+: ┌─┬─┬─────┐
+: │b│c│┌─┬─┐│
+: │ │ ││)│)││
+: │ │ │└─┴─┘│
+: └─┴─┴─────┘
+
+And now we're back at the innermost call of =rdrb=.
+
+: rdrb =: (<@:}: , rdrs@:>@:{:) @: rdrs@:}.
+:                               ^^^^^^^^^^^ this part is done.
+
+This leaves us with the fork, which we'll apply to the structure above.
+
+:         (<@:}: , rdrs@:>@:{:)
+
+The left side curtails and boxes:
+
+:    <@:}: sofar
+: ┌─────┐
+: │┌─┬─┐│
+: ││b│c││
+: │└─┴─┘│
+: └─────┘
+
+The right side takes the tail of the array, unboxes it, and calls =rdrs= on that recursively.
+
+Note that f you're used to thinking of the head and tail of a /list/, remember that in J, the tail is the last item in the array, /not/ a chain of nested cons cells.
+
+So, we can build up the result from right to left ourselves:
+
+:    {: sofar
+: ┌─────┐
+: │┌─┬─┐│
+: ││)│)││
+: │└─┴─┘│
+: └─────┘
+
+:    >@:{: sofar
+: ┌─┬─┐
+: │)│)│
+: └─┴─┘
+
+:    rdrs@:>@:{: sofar
+: ┌───┐
+: │┌─┐│
+: ││)││
+: │└─┘│
+: └───┘
+
+Now we can complete the fork by appending this value to the the result on the left side:
+
+:    ] sofar2 =. (<@:}: , rdrs@:>@:{:) sofar
+: ┌─────┬───┐
+: │┌─┬─┐│┌─┐│
+: ││b│c│││)││
+: │└─┴─┘│└─┘│
+: └─────┴───┘
+
+So this is the result of the inner call to =rdrb= and now we climb back up the call stack to =rdra=, which simply appends this value to the 'a' token:
+
+:    ] sofar3 =. (<'a'), sofar2
+: ┌─┬─────┬───┐
+: │a│┌─┬─┐│┌─┐│
+: │ ││b│c│││)││
+: │ │└─┴─┘│└─┘│
+: └─┴─────┴───┘
+
+And now we're back where we started with =rdrb=. 
+
+: rdrb =: (<@:}: , rdrs@:>@:{:) @: rdrs@:}.
+:                               ^^^^^^^^^^^ here again but at top level
+
+:    (<@:}: , rdrs@:>@:{:) sofar3
+: ┌─────────┬┐
+: │┌─┬─────┐││
+: ││a│┌─┬─┐│││
+: ││ ││b│c││││
+: ││ │└─┴─┘│││
+: │└─┴─────┘││
+: └─────────┴┘
+
+Finally, we walk back up to =rdr1=, which returns the head.
+
+:    {. (<@:}: , rdrs@:>@:{:) sofar3
+: ┌─────────┐
+: │┌─┬─────┐│
+: ││a│┌─┬─┐││
+: ││ ││b│c│││
+: ││ │└─┴─┘││
+: │└─┴─────┘│
+: └─────────┘
+
+
+The following test string was commented out in the code:
+
+:    echo rdr '(lambda (x) (+ 1 (* x x) x))'
+: ┌────────────────────────────┐
+: │┌──────┬───┬───────────────┐│
+: ││lambda│┌─┐│┌─┬─┬───────┬─┐││
+: ││      ││x│││+│1│┌─┬─┬─┐│x│││
+: ││      │└─┘││ │ ││*│x│x││ │││
+: ││      │   ││ │ │└─┴─┴─┘│ │││
+: ││      │   │└─┴─┴───────┴─┘││
+: │└──────┴───┴───────────────┘│
+: └────────────────────────────┘
+
+So now we have the recursive descent parser.
 
 * mutable places
 
