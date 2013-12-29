@@ -2,8 +2,8 @@
 NB. pascal compiler/generator for j
 require 'task'
 type =: 3!:0
-'tnil tbit tstr tint tnum tcpx'=: 0 1 2 4 8 16
-'tbox tbig trat tsym tuni'=: 32 64 128 65536 131072
+'tNil tBit tStr tInt tNum tCpx'=: 0 1 2 4 8 16
+'tBox tBig tRat tSym tUni'=: 32 64 128 65536 131072
 'tname tlist targv' =: ->:i.3
 rule =: noun
 
@@ -33,12 +33,12 @@ tokT =: monad : 0
   NB. return the type of a template language token
   NB. ----------------------------------------------
   h =: {. y
-  if. h e. '0123456789_' do. tint
+  if. h e. '0123456789_' do. tInt
   elseif. h e. 'abcdefghijklmnopqrstuvwxyz' do. tname
   elseif. _ do.
     select. h
-      case. 39{a. do. tstr   NB. quote
-      case. 10{a. do. tnil   NB. linefeed
+      case. 39{a. do. tStr   NB. quote
+      case. 10{a. do. tNil   NB. linefeed
       case. '@' do. tlist
       case. '$' do. targv
     end.
@@ -60,7 +60,7 @@ gen =: dyad : 0
     (tok =. > i { tokens) [ (arg =. '') [ (next =. state)
     NB. echo 'i=' , (":i) , ' | tok=', tok, ' | state=', (":state)
     NB. -- ints in template set arg to item in y ---
-    if. tint = tokT tok do.
+    if. tInt = tokT tok do.
       NB. echo 'loading item ',tok
       if. (# y) > ".tok   do. arg =. > (".tok) { y
       else. echo 'no argument ', tok, ' given!' throw. end.
@@ -70,9 +70,9 @@ gen =: dyad : 0
     case. 0 do. NB. ---- handle simple tokens ------
       select. tokT tok
       case. tlist do. next =. 1
-      case. tnil do. r=.r, LF
-      case. tstr do. r=.r, }.}: tok
-      case. tint do. r=.r, arg
+      case. tNil do. r=.r, LF
+      case. tStr do. r=.r, }.}: tok
+      case. tInt do. r=.r, arg
       end.
     case. 1 do. NB. ---- handle lists of nodes -----
       NB. echo 'state: 1  arg:'; 0: L:0 arg
