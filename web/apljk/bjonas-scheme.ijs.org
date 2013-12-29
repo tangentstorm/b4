@@ -1,0 +1,184 @@
+#+title: code review : BJonas' Interpreter Experiment in J
+
+* code review : BJonas' Interpreter Experiment in J
+
+This is an attempt to understand the small interpreter created by BJonas and posted to the J wiki. (It's at [[http://www.jsoftware.com/jwiki/Scripts/Scheme][jwiki/Scripts/Scheme]], but the full text of that page has been reproduced here.
+
+
+Quoted text and the actual code belong to BJonas. Each section is quoted verbatim, but I re-arranged the sections themselves so they were juxtaposed with the original code. His code and text sections look like this:
+
+#+begin_src j
+NB. interpreter experiment in J by zsban
+#+end_src
+
+#+begin_quote
+This is a simple interpreter that can evaluate basic scheme expressions.
+
+Currently the following expressions exist: lambdas, function calls, variables, =if=, =set!=, numeric literals.
+
+The library has a few simple arithmetic functions bounded. Proper lambdas seem to work (now really, after I've fixed =envfind=), except that varargs are not supported.
+
+Most library functions and types like lists and vectors are missing. There's also no type distinctness or quote. These, however, could be easy to implement. Macros would be harder, but also possible; though some derived expression types could be coded directly in J. =call/cc= would be impossible to implement this way, and a garbage collector would be very difficult as well.
+
+The interpreter has the following parts. [...]
+#+end_quote
+
+
+* tokenizer and reader
+
+#+begin_quote org
+
+The =tok= verb splits a scheme code string to tokens, but doesn't actually decode those tokens.
+
+#+end_quote
+
+#+begin_src j
+
+spcp =: e.&(9 10 11 12 13 32{a.)
+
+tok1 =: (((~:1&|.)@:spcp+.(+.1&|.)@:(e.&'()'))<;.2])
+tok =: ((#~-.@:spcp@:{.@:>"0)@:tok1@:(,&' ')) ::[:
+
+#+end_src
+
+
+Ok. =spcp= is a monad that simply checks whether its =y= argument corresponds to any of the numbered ascii characters (all of which represent whitespace). My guess is the name is a mnemonic for 'space predicate', following the lisp tradition.
+
+As for the other two, my eyes still aren't used to looking at code packed this densely, so I'm going to try to expand them a bit. First, =tok1=:
+
+: tok1 =: (((~: 1&|.)@:spcp +. (+. 1&|.)@:(e.&'()'))  <;.2  ])
+
+The overall structure is:
+
+:  ((a b)@:c  d  (d b)@:e) f ]
+
+And this is what it does:
+
+:    tok1 '(one ((two) three) four) '
+: ┌─┬───┬─┬─┬─┬───┬─┬─┬─────┬─┬─┬────┬─┬─┐
+: │(│one│ │(│(│two│)│ │three│)│ │four│)│ │
+: └─┴───┴─┴─┴─┴───┴─┴─┴─────┴─┴─┴────┴─┴─┘
+
+
+
+
+
+#+begin_quote org
+
+The =rdr= verb reads a scheme code string to a tree, but the leafs of the tree are still the undecoded tokens.
+
+#+end_quote
+
+#+begin_src j
+
+rdrc =: ('()'i.{.@:>)
+rdrs =: rdrb`rdre`rdra@.(rdrc@:{.)
+rdrb =: (<@:}: , rdrs@:>@:{:) @: rdrs@:}.
+rdre =: <@:}.
+rdra =: {. , rdrs@:}.
+rdr1 =: {.@:rdrs@:(,&(<')'))
+
+rdr =: (rdr1 @: tok) ::[:
+
+#+end_src
+
+: echo rdr '(lambda (x) (+ 1 (* x x) x))'
+
+* mutable places
+
+#+begin_quote org
+
+The =placmak=, =placref=, and =placset= functions create, get, and set the contents of mutable cells: these cells are used to implement =set!=. The cells are indexed by integers, and are never destroyed, so we don't have garbage-collection.
+
+#+end_quote
+
+#+begin_src j
+
+placv =: i.0
+placmak =: 3 :'<:#placv=:placv,<y'
+placref =: 3 :'>y{placv'
+placset =: 4 :'0:placv=:(<y) x}placv'
+
+#+end_src
+
+* default environment
+
+#+begin_quote org
+
+The environment is a rank 2 array whose first column contains the boxed names of variables in the environment, and second column has the boxed indices of the cell in the cell vector that will always contain the contents of that variable.
+#+end_quote
+
+#+begin_src j
+
+denv =: i.0 2
+denvadd =: 4 :'0:denv=:denv,(,x);placmak y'
+'+' denvadd +/@:>`''
+'-' denvadd ({.-+/@:}.)`(-@:{.)@.(1=#)@:>`''
+'*' denvadd */@:>`''
+'/' denvadd ({.%*/@:}.)`(%@:{.)@.(1=#)@:>`''
+'floor' denvadd <.@:{.@:>`''
+'exp' denvadd ^@:{.@:>`''
+'log' denvadd ^.@:{.@:>`''
+'<' denvadd ([:*./2</\])@:>`''
+'=' denvadd ([:*./2=/\])@:>`''
+'<=' denvadd ([:*./2<:/\])@:>`''
+'not' denvadd -.@:{.@:>`''
+'g0' denvadd 0
+
+#+end_src
+
+* evaluator
+
+
+
+#+begin_quote org
+
+Scheme procedures are represented as J gerunds of monadic functions that accept a list of boxed scheme arguments as its argument. The =lambda= verb creates such a function from the environment and the function body.
+
+#+end_quote
+
+#+begin_src j
+runl =: [ <@:run"_ 0 >@:]
+envfind =: ([:>[:{:[{~{."1@:[i:])
+match =: ([ , <@:placmak@:>@:])"0
+lambda1 =: 2 :'>@:{: (u , (>@:{.v)match y) runl (<@:}.v)'
+NB.lambda1 =: 2 :'(u , (>@:{.v)match y) ; (<@:}.v) ; 9'
+
+lambda =: 4 :'(x lambda1 y)`(i.0)'
+#+end_src
+
+
+#+begin_quote org
+
+The =run= verb runs a scheme source tree (returned by =rdr=) in an environment.
+
+This function dispatches to one of the six functions =runnum=, =runsym=, =runset=, =runcall=, =runif=, =runlambda= depending on the type of the expression.
+
+#+end_quote
+
+#+begin_src j
+runnum =: {.@:,@:(_.&".)@:>@:]
+runsym =: placref @: envfind
+runset =: [: 0: ([envfind 1{>@:]) placset ([run 2{>@:])
+runcall =: [: (>@:{. 4 :'x@.0 y' }.) runl
+runif =: [ run ([:-.[run 1{>@:]) { ((<'0'),~2}.>@:])
+runlambda =: [ lambda }.@:>@:]
+
+keywd =: ('lambda';'if';'set!')&i.
+runo =: runlambda`runif`runset`runcall@.(keywd@:{.@:>@:])
+runa =: runsym`runnum@.(((e.&'0123456789+-'@:{.@:>)>(e.&(+`-)))@:])
+
+run =: runo`runa@.(1=L.@:])
+#+end_src
+
+* putting it together
+
+#+begin_src j
+eval =: denv&run @: rdr ::[:
+
+echo eval 0 :0
+        (((lambda (fact) (set! fact
+                (lambda (n) (if (< n 1) 1 (* n (fact (- n 1)))))) fact) 0) 5)
+)
+echo eval '((lambda (a) ((lambda (a) a) 2)) 5)' NB. must give 2
+#+end_src
