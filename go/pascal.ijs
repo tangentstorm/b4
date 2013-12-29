@@ -52,12 +52,9 @@ gen =: dyad : 0
   NB. ----------------------------------------------
   NB. generate text from template x with data from y
   NB. ----------------------------------------------
-  r =. ''              NB. ]] echo 'x:'; x NB. return.
-  tokens =. ;: x~      NB. ]] echo (lexT > tok);>tok=.>token
-  i =. 0               NB. ]] for_yi. y do. echo yi_index; >yi end. return.
-  state =. 0
-  while. i < # tokens do.
-    (tok =. > i { tokens) [ (arg =. '') [ (next =. state)
+  r=.'' [ i =. 0 [ state =. 0 [ argp =. 0 [ toks =. ;: x~
+  while. i < # toks do.
+    (typ =. type tok =. > i { toks) [ arg =. '' [ next =. state
     NB. echo 'i=' , (":i) , ' | tok=', tok, ' | state=', (":state)
     NB. -- ints in template set arg to item in y ---
     if. tInt = tokT tok do.
@@ -76,10 +73,10 @@ gen =: dyad : 0
       end.
     case. 1 do. NB. ---- handle lists of nodes -----
       NB. echo 'state: 1  arg:'; 0: L:0 arg
-      for_box. arg do. r =.r, (gen &: >) / >box end.
+      for_box. arg do. r =.r, (gen &: >)/ >box end.
       next =. 0
     end.
-    (i =. >: i) [ (state =. next)
+    i=. i + 1 [ state =. next
   end.
   r return.
 )
