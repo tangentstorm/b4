@@ -1,7 +1,7 @@
 #!/usr/bin/env j
 NB. pascal compiler/generator for j
 require 'task'
-type =: 3!:0
+ntyp =: 3!:0
 'tNil tBit tStr tInt tNum tCpx'=: 0 1 2 4 8 16
 'tBox tBig tRat tSym tUni'=: 32 64 128 65536 131072
 'tname tlist targv' =: ->:i.3
@@ -54,10 +54,10 @@ gen =: dyad : 0
   NB. ----------------------------------------------
   r=.'' [ i =. 0 [ state =. 0 [ argp =. 0 [ toks =. ;: x~
   while. i < # toks do.
-    (typ =. type tok =. > i { toks) [ arg =. '' [ next =. state
+    typ =. tokT tok =. > i { toks [ arg =. '' [ next =. state
     NB. echo 'i=' , (":i) , ' | tok=', tok, ' | state=', (":state)
     NB. -- ints in template set arg to item in y ---
-    if. tInt = tokT tok do.
+    if. typ = tInt do.
       NB. echo 'loading item ',tok
       if. (# y) > ".tok   do. arg =. > (".tok) { y
       else. echo 'no argument ', tok, ' given!' throw. end.
@@ -65,14 +65,13 @@ gen =: dyad : 0
     NB. -- state machine ---------------------------
     select. state
     case. 0 do. NB. ---- handle simple tokens ------
-      select. tokT tok
+      select. typ
       case. tlist do. next =. 1
       case. tNil do. r=.r, LF
       case. tStr do. r=.r, }.}: tok
       case. tInt do. r=.r, arg
       end.
     case. 1 do. NB. ---- handle lists of nodes -----
-      NB. echo 'state: 1  arg:'; 0: L:0 arg
       for_box. arg do. r =.r, (gen &: >)/ >box end.
       next =. 0
     end.
