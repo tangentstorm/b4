@@ -52,21 +52,40 @@ The overall structure is:
 
 :  ((a b)@:c  d  (d b)@:e) f ]
 
-And this is what it does:
+It's used as a monad, and this is what it does:
 
-:    tok1 '(one ((two) three) four) '
-: ┌─┬───┬─┬─┬─┬───┬─┬─┬─────┬─┬─┬────┬─┬─┐
-: │(│one│ │(│(│two│)│ │three│)│ │four│)│ │
-: └─┴───┴─┴─┴─┴───┴─┴─┴─────┴─┴─┴────┴─┴─┘
-
-
+:    tok1 '(one  ((  two)     three) (four))'
+: ┌─┬───┬──┬─┬─┬──┬───┬─┬─────┬─────┬─┬─┬─┬────┬─┬─┐
+: │(│one│  │(│(│  │two│)│     │three│)│ │(│four│)│)│
+: └─┴───┴──┴─┴─┴──┴───┴─┴─────┴─────┴─┴─┴─┴────┴─┴─┘
 
 
+The primary verb here is  =<;.2=, where =;.= is the ([[http://www.jsoftware.com/help/dictionary/d331.htm][dyadic cut conjunction]]). With a verb on the left (monadic =<=, meaning [[http://www.jsoftware.com/help/dictionary/d010.htm][box]]), and the number 2 on the right, =;.= produces a new verb that takes an array of values on the right and an array of booleans on the left. The booleans indicate where to cut the values before applying the verb.
+
+So the fork on the left (the a...e slots) is just checking for spaces and parentheses (in /its/ left and right sides, respectively). Dyadic =+.= is boolean 'or', =~:= is xor/not-equal, and =1&|.= is shifting the input one character to the left. So the right side says cut before and after each paren character, and the left side says cut on whitespace, but only if we're not /already in/ whitespace.
+
+So now this gets used in =tok=, which I'll expand for readability here:
+
+: tok =: ((  #~    -.@: spcp@: {.@: >   "0  ) @: tok1 @: (,&' ')) :: [:
+
+The use of the =::= conjunction (/adverse/) is surprising to me. It's purpose is to specify what to do when the verb on the left throws an error. Since =[:= itself throws an error, I don't yet understand why he's doing this.
+
+The rest is one long pipeline. Reading right to left: 
+
+  - append a space to the input and run =tok1=
+  - let =tok1= cut the string into boxes
+  - for each box:
+    - open the box
+    - ignore the first character
+    - check the rest to see if they're spaces
+    - invert the result (=-.= means boolean 'not')
+    - strip the spaces (make 1 copy for nonspaces, 0 copies for spaces)
+
+Fair enough!
 
 #+begin_quote org
 
 The =rdr= verb reads a scheme code string to a tree, but the leafs of the tree are still the undecoded tokens.
-
 #+end_quote
 
 #+begin_src j
