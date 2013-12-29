@@ -46,7 +46,7 @@ tokT =: monad : 0
 )
 assert tlist = tokT '@'
 
-node =: <@:[ <@:, <@:] NB. manually construct an AST node
+node =: < @: , &: <   NB. eg: 'tag' node 'arg1';'arg2';...
 
 gen =: dyad : 0
   NB. ----------------------------------------------
