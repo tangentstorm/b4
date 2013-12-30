@@ -1,11 +1,17 @@
 #!/usr/bin/env j
 NB. pascal compiler/generator for j
 require 'task'
+require 'debug'
+(loglev =: 5:) [ dbr 0 [ dbss 'gen *:*'
+trace =: 4 : 'if. (loglev _) <: x do. echo y end.' ]
+
 ntyp =: 3!:0
 'tNil tBit tStr tInt tNum tCpx'=: 0 1 2 4 8 16
 'tBox tBig tRat tSym tUni'=: 32 64 128 65536 131072
-'tname tlist targv' =: ->:i.3
+'kName kList kArgv' =: ->:i.3
 rule =: noun
+
+
 
 NB. ----------------------------------------------
 NB. patterns to describe pascal syntax
@@ -34,17 +40,17 @@ tokT =: monad : 0
   NB. ----------------------------------------------
   h =: {. y
   if. h e. '0123456789_' do. tInt
-  elseif. h e. 'abcdefghijklmnopqrstuvwxyz' do. tname
+  elseif. h e. 'abcdefghijklmnopqrstuvwxyz' do. kName
   elseif. _ do.
     select. h
       case. 39{a. do. tStr   NB. quote
       case. 10{a. do. tNil   NB. linefeed
-      case. '@' do. tlist
-      case. '$' do. targv
+      case. '@' do. kList
+      case. '$' do. kArgv
     end.
   end.
 )
-assert tlist = tokT '@'
+assert kList = tokT '@'
 
 node =: < @: , &: <   NB. eg: 'tag' node 'arg1';'arg2';...
 
@@ -55,18 +61,19 @@ gen =: dyad : 0
   r=.'' [ i =. 0 [ state =. 0 [ argp =. 0 [ toks =. ;: x~
   while. i < # toks do.
     typ =. tokT tok =. > i { toks [ arg =. '' [ next =. state
-    NB. echo 'i=' , (":i) , ' | tok=', tok, ' | state=', (":state)
+    2 trace 'i=',(":i),' | tok=', tok,' | state=',(":state)
     NB. -- ints in template set arg to item in y ---
     if. typ = tInt do.
-      NB. echo 'loading item ',tok
-      if. (# y) > ".tok   do. arg =. > (".tok) { y
+      1 trace 'loading item ',tok
+      argp =. ".tok NB. argument pointer (index in y)
+      if. (# y) > argp do. arg =. > argp { y
       else. echo 'no argument ', tok, ' given!' throw. end.
     end.
     NB. -- state machine ---------------------------
     select. state
     case. 0 do. NB. ---- handle simple tokens ------
       select. typ
-      case. tlist do. next =. 1
+      case. kList do. next =. 1
       case. tNil do. r=.r, LF
       case. tStr do. r=.r, }.}: tok
       case. tInt do. r=.r, arg
@@ -75,7 +82,7 @@ gen =: dyad : 0
       for_box. arg do. r =.r, (gen &: >)/ >box end.
       next =. 0
     end.
-    i=. i + 1 [ state =. next
+    i =. i + 1 [ state =. next
   end.
   r return.
 )
