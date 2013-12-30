@@ -70,13 +70,13 @@ NB. a global queue for holding generated output
 NB. ----------------------------------------------
 Q =: a:    NB. initialize the empty global queue.
 q =: 3 : 0 NB. q y adds y to the queue
-  if. Q = a: do. Q =: < y else. Q =: Q , < y end.
+  if. Q = a: do. Q =: y else. Q =: Q , y end.
   # Q return.
 )
 d =: 3 : 0 NB. d drains y items from the queue.
   r =. y {. Q
-  Q =: (y - # Q) {. Q
-  if. 0 = # Q do. Q =: a: end.
+  if. y >: # Q do. Q =: a:
+  else. Q =: (y - # Q) {. Q end.
   r return.
 )
 
@@ -159,7 +159,6 @@ NB. exit '' ]] echo 0: L:0 say, sayit
 hello =: 'program' gen 'helloj'; 'kvm,cw'; (say , sayit); read 1
   clrscr; sayit
 )
-
 
 path =: 'gen/helloj.pas'
 ferase path
