@@ -64,6 +64,22 @@ node =: < @: , &: <
 NB. ntag :: Node -> Str       TODO: symbols
 ntag =: > {.
 
+
+NB. ----------------------------------------------
+NB. a global queue for holding generated output
+NB. ----------------------------------------------
+Q =: a:    NB. initialize the empty global queue.
+q =: 3 : 0 NB. q y adds y to the queue
+  if. Q = a: do. Q =: < y else. Q =: Q , < y end.
+  # Q return.
+)
+d =: 3 : 0 NB. d drains y items from the queue.
+  r =. y {. Q
+  Q =: (y - # Q) {. Q
+  if. 0 = # Q do. Q =: a: end.
+  r return.
+)
+
 gen =: dyad : 0
   NB. ----------------------------------------------
   NB. generate text from template x with data from y
