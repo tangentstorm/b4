@@ -123,27 +123,26 @@ gen =: dyad : 0
   NB. ----------------------------------------------
   NB. generate text from template x with data from y
   NB. ----------------------------------------------
-  i =. 0 [ state =. 0 [ argp =. 0 [ toks =. ;: x~
-  cg =. ((<toks);<y) conew 'CodeGen'
-  while. i < # toks do.
-    typ =. tokT tok =. > i { toks [ arg =. '' [ next =. state
-    2 trace 'i=',(":i),' | tok=', tok,' | state=',(":state)
+  cg =. ((< ;: x~);<y) conew 'CodeGen'
+  while. tokp__cg < # toks__cg do.
+    typ__cg =: tokT tok__cg =: > tokp__cg { toks__cg [ arg__cg =: '' [ next__cg =: state__cg
+    2 trace 'tokp=',(":tokp__cg),' | tok=', tok__cg,' | state=',(":state__cg)
     NB. -- ints in template set arg to item in y ---
-    if. typ = tInt do. arg =. y get argp =. ".tok end.
+    if. typ__cg = tInt do. arg__cg =: y get ".tok__cg end.
     NB. -- state machine ---------------------------
-    select. state
+    select. state__cg
     case. 0 do. NB. ---- handle simple tokens ------
-      select. typ
-      case. kList do. next =. 1
+      select. typ__cg
+      case. kList do. next__cg =: 1
       case. tNil do. q LF
-      case. tStr do. q }.}: tok
-      case. tInt do. q arg
+      case. tStr do. q }.}: tok__cg
+      case. tInt do. q arg__cg
       end.
     case. 1 do. NB. ---- handle lists of nodes -----
-      for_box. arg do. q (gen &: >)/ >box end.
-      next =. 0
+      for_box. arg__cg do. q (gen &: >)/ >box end.
+      next__cg =: 0
     end.
-    i =. i + 1 [ state =. next
+    tokp__cg =: tokp__cg + 1 [ state__cg =: next__cg
   end.
   destroy__cg''
   d _ return.
