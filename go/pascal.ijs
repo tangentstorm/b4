@@ -145,7 +145,9 @@ hello =: 'program' gen 'helloj'; 'kvm,cw'; (say , sayit); read 1
 )
 
 
-hello fwrite 'gen/helloj.pas'
-shell 'fpc gen/helloj.pas'
-echo  'generated and compiled gen/helloj'
+path =: 'gen/helloj.pas'
+ferase path
+hello fwrite path
+shell 'fpc ',path
+echo  'generated and compiled ',path
 exit''
