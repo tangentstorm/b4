@@ -84,7 +84,7 @@ gen =: dyad : 0
   NB. ----------------------------------------------
   NB. generate text from template x with data from y
   NB. ----------------------------------------------
-  r=.'' [ i =. 0 [ state =. 0 [ argp =. 0 [ toks =. ;: x~
+  i =. 0 [ state =. 0 [ argp =. 0 [ toks =. ;: x~
   while. i < # toks do.
     typ =. tokT tok =. > i { toks [ arg =. '' [ next =. state
     2 trace 'i=',(":i),' | tok=', tok,' | state=',(":state)
@@ -100,17 +100,17 @@ gen =: dyad : 0
     case. 0 do. NB. ---- handle simple tokens ------
       select. typ
       case. kList do. next =. 1
-      case. tNil do. r=.r, LF
-      case. tStr do. r=.r, }.}: tok
-      case. tInt do. r=.r, arg
+      case. tNil do. q LF
+      case. tStr do. q }.}: tok
+      case. tInt do. q arg
       end.
     case. 1 do. NB. ---- handle lists of nodes -----
-      for_box. arg do. r =.r, (gen &: >)/ >box end.
+      for_box. arg do. q (gen &: >)/ >box end.
       next =. 0
     end.
     i =. i + 1 [ state =. next
   end.
-  r return.
+  d _ return.
 )
 
 
