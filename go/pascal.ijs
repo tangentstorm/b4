@@ -6,12 +6,7 @@ require 'debug'
 trace =: 4 : 'if. (loglev _) <: x do. echo y end.' ]
 
 ntyp =: 3!:0
-'tNil tBit tStr tInt tNum tCpx'=: 0 1 2 4 8 16
-'tBox tBig tRat tSym tUni'=: 32 64 128 65536 131072
-'kName kList kArgv' =: ->:i.3
 rule =: noun
-
-
 
 NB. ----------------------------------------------
 NB. patterns to describe pascal syntax
@@ -34,6 +29,13 @@ procedure =: rule : 0
   'end;'
 )
 
+NB. ----------------------------------------------
+NB. tokenizer
+NB. ----------------------------------------------
+cocurrent'tokens'
+'kName kList kArgv' =: ->:i.3
+'tNil tBit tStr tInt tNum tCpx'=: 0 1 2 4 8 16
+'tBox tBig tRat tSym tUni'=: 32 64 128 65536 131072
 tokT =: monad : 0
   NB. ----------------------------------------------
   NB. return the type of a template language token
@@ -51,6 +53,7 @@ tokT =: monad : 0
   end.
 )
 assert kList = tokT '@'
+coinsert 'tokens' [ cocurrent'base'
 
 NB. ----------------------------------------------
 NB. nodes
@@ -91,12 +94,28 @@ NB. This part parses the templates and generates
 NB. a sequence of opcode;item records.
 NB. --------------------------------------------
 coclass 'CodeGen'
+coinsert 'tokens'
 destroy =: codestroy
+
 create  =: verb : 0  NB. cg =: (toks;args) conew 'CodeGen'
-  toks =: > {. y
+  toks =: >> {. y
   args =: }. y
-  argp =: 0
-  tokp =: 0
+  argp =: 0 [ tokp =: 0 [ tok =: '' [ state =: 0 [ next =: 0
+)
+
+status =: verb : 0
+  'tokp=',(":tokp),' | tok=', tok,' | state=',(":state)
+)
+
+more =: verb : 0
+  tokp < # toks
+)
+
+step =: verb : 0
+  arg =: ''
+  next =: state
+  typ =: tokT tok =: > tokp { toks
+  tokp =: tokp + 1 [ state =: next
 )
 cocurrent 'base'
 
