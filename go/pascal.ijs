@@ -52,7 +52,17 @@ tokT =: monad : 0
 )
 assert kList = tokT '@'
 
-node =: < @: , &: <   NB. eg: 'tag' node 'arg1';'arg2';...
+NB. ----------------------------------------------
+NB. nodes
+NB. ----------------------------------------------
+NB. A node is a boxed array with two cells.
+NB. The left cell contains the tag (a string)
+
+NB. 'tag' node 'arg1';'arg2','...' -> Node
+node =: < @: , &: <
+
+NB. ntag :: Node -> Str       TODO: symbols
+ntag =: > {.
 
 gen =: dyad : 0
   NB. ----------------------------------------------
