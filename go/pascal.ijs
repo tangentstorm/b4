@@ -80,6 +80,12 @@ d =: 3 : 0 NB. d drains y items from the queue.
   r return.
 )
 
+get =: dyad : 0  NB. x get y -> x[y]
+  1 trace 'loading item ', ":y
+  if. (0 <: y) *. y < # x do. > y { x return.
+  else. echo 'index error: ', (":y), '!' throw. end.
+)
+
 gen =: dyad : 0
   NB. ----------------------------------------------
   NB. generate text from template x with data from y
@@ -89,12 +95,7 @@ gen =: dyad : 0
     typ =. tokT tok =. > i { toks [ arg =. '' [ next =. state
     2 trace 'i=',(":i),' | tok=', tok,' | state=',(":state)
     NB. -- ints in template set arg to item in y ---
-    if. typ = tInt do.
-      1 trace 'loading item ',tok
-      argp =. ".tok NB. argument pointer (index in y)
-      if. (# y) > argp do. arg =. > argp { y
-      else. echo 'no argument ', tok, ' given!' throw. end.
-    end.
+    if. typ = tInt do. arg =. y get argp =. ".tok end.
     NB. -- state machine ---------------------------
     select. state
     case. 0 do. NB. ---- handle simple tokens ------
