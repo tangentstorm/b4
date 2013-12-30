@@ -86,11 +86,26 @@ get =: dyad : 0  NB. x get y -> x[y]
   else. echo 'index error: ', (":y), '!' throw. end.
 )
 
+NB. -- state machine ---------------------------
+NB. This part parses the templates and generates
+NB. a sequence of opcode;item records.
+NB. --------------------------------------------
+coclass 'CodeGen'
+destroy =: codestroy
+create  =: verb : 0  NB. cg =: (toks;args) conew 'CodeGen'
+  toks =: > {. y
+  args =: }. y
+  argp =: 0
+  tokp =: 0
+)
+cocurrent 'base'
+
 gen =: dyad : 0
   NB. ----------------------------------------------
   NB. generate text from template x with data from y
   NB. ----------------------------------------------
   i =. 0 [ state =. 0 [ argp =. 0 [ toks =. ;: x~
+  cg =. ((<toks);<y) conew 'CodeGen'
   while. i < # toks do.
     typ =. tokT tok =. > i { toks [ arg =. '' [ next =. state
     2 trace 'i=',(":i),' | tok=', tok,' | state=',(":state)
@@ -111,6 +126,7 @@ gen =: dyad : 0
     end.
     i =. i + 1 [ state =. next
   end.
+  destroy__cg''
   d _ return.
 )
 
