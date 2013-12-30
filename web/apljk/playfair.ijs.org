@@ -1,0 +1,449 @@
+#+title: playfair cipher
+
+* a message to encrypt
+:PROPERTIES:
+:TS:       <2014-03-10 03:05AM>
+:ID:       jm888lm01fg0
+:END:
+#+begin_src j
+  msg=.'Tell J I said "hello, j!"'
+#+end_src
+
+* 0. helper that converts to uppercase, replaces J->I and discards non-letters
+:PROPERTIES:
+:TS:       <2014-03-10 02:11AM>
+:ID:       srice2k01fg0
+:END:
+Here are the upper and lowercase letters:
+#+begin_src j
+       a.{~65 97+/i.26
+  ABCDEFGHIJKLMNOPQRSTUVWXYZ
+  abcdefghijklmnopqrstuvwxyz
+#+end_src
+
+Move the letter j to the front:
+#+begin_src j
+     a.{~65 97+/~.9,i.26
+  JABCDEFGHIKLMNOPQRSTUVWXYZ
+  jabcdefghiklmnopqrstuvwxyz
+#+end_src
+
+Ravel this and store it in a variable called 'A'.
+
+#+begin_src j
+     ]A=.,a.{~65 97+/~.9,i.26
+  JABCDEFGHIKLMNOPQRSTUVWXYZjabcdefghiklmnopqrstuvwxyz
+#+end_src
+
+We can use this to strip out junk characters and convert to upper case:
+
+#+begin_src j
+     A{~   A(e.~#26|i.)msg
+  TELLJISAIDHELLOJ
+#+end_src
+
+We can replace the letter J with I using some simple arithmetic:
+
+#+begin_src j
+     A{~(+9*0&=)A(e.~#26|i.)msg
+  TELLIISAIDHELLOI
+#+end_src
+
+Here is our code so far:
+
+#+begin_src j
+   A=.,a.{~65 97+/~.9,i.26
+   A{~(+9*0&=)A(e.~#26|i.)msg
+TELLIISAIDHELLOI
+#+end_src
+
+* 0(b) golfing
+:PROPERTIES:
+:TS:       <2014-03-10 03:51AM>
+:ID:       jkzjkpo01fg0
+:END:
+
+Actually, it looks like there's no particular need to move the j to the front, but before we fix it, let's extract a tacit function:
+
+#+begin_src j
+  
+     NB. the original
+     A{~(+9*0&=)A(e.~#26|i.)msg
+  TELLIISAIDHELLOI
+  
+     NB. replace A->x, msg->y, and wrap in 13 :''
+     A(13 :'x{~(+9*0&=)x(e.~#26|i.)y')msg
+  TELLIISAIDHELLOI
+  
+     NB. replace A with full definition
+     (,a.{~65 97+/~.9,i.26)(13 :'x{~(+9*0&=)x(e.~#26|i.)y')msg
+  TELLIISAIDHELLOI
+
+     NB. move J back to its proper place (introducing a bug)
+     (,a.{~65 97+/i.26)(13 :'x{~(+9*0&=)x(e.~#26|i.)y')msg
+  TELLJISJIDHELLOJ
+
+     NB. fix the arithmetic to fix the bug
+     (,a.{~65 97+/i.26)(13 :'x{~(-9&=)x(e.~#26|i.)y')msg
+  TELLIISAIDHELLOI
+
+     NB. reveal the tacit definition.
+     13 :'x{~(-9&=)x(e.~#26|i.)y'
+  [ {~ [: (- 9&=) e.~ # 26 | i.
+
+     NB. inline the tacit definition.
+     (A=.,a.{~65 97+/i.26)([ {~ [: (- 9&=)e.~#26|i.)msg
+  TELLIISAIDHELLOI
+
+     NB. remove extra spaces
+     (A=.,a.{~65 97+/i.26)([{~[:(-9&=)e.~#26|i.)msg
+  TELLIISAIDHELLOI
+
+#+end_src
+
+This is pretty good so far, if we flip the arguments, we can remove the parens around the definition of A.
+
+#+begin_src j
+     msg(]{~[:(-9&=)e.#26|i.~)A=.,a.{~65 97+/i.26
+  TELLIISAIDHELLOI
+#+end_src
+
+* 1. preparing the key
+:PROPERTIES:
+:TS:       <2014-03-10 04:12AM>
+:ID:       o32eqnp01fg0
+:END:
+We need to perform the same transformation on the key that we performed on the message itself, so it makes sense to extract it as a function.
+
+#+begin_src j
+   p=.(]{~[:(-9&=)e.#26|i.~)&A=.,a.{~65 97+/i.26
+   p msg
+TELLIISAIDHELLOI
+#+end_src
+
+Preparing the key is just a matter of reshaping the nub of this function applied to the plaintext key with the rest of the alphabet appended.
+
+#+begin_src j
+     ] k=. 5 5 $ ~. p 'this is my key',A
+  THISM
+  YKEAB
+  CDFGL
+  NOPQR
+  UVWXZ
+#+end_src
+
+* 2. preparing the text
+:PROPERTIES:
+:TS:       <2014-03-10 04:19AM>
+:ID:       q8ldjzp01fg0
+:END:
+Breaking the text into pairs is easy with '\', the 'infix' conjunction:
+#+begin_src j
+     _2 <\ p msg
+  ┌──┬──┬──┬──┬──┬──┬──┬──┐
+  │TE│LL│II│SA│ID│HE│LL│OI│
+  └──┴──┴──┴──┴──┴──┴──┴──┘
+#+end_src
+
+We also need to replace duplicate letters with X.
+
+#+begin_src j
+     (4$'X',~{.)^:(=/)L:0 ] _2<\p msg
+  ┌──┬────┬────┬──┬──┬──┬────┬──┐
+  │TE│LXLX│IXIX│SA│ID│HE│LXLX│OI│
+  └──┴────┴────┴──┴──┴──┴────┴──┘
+#+end_src
+
+We can ignore the possibility of 'XX' appearing in the input string.
+
+* Keeping the pairs the same length: 
+:PROPERTIES:
+:TS:       <2014-03-10 05:15AM>
+:ID:       4xhhcls01fg0
+:END:
+
+Sadly this introduces quite a bit of duplication
+
+#+begin_src j
+  <"1((1+=/"1)#('X',~/{.)^:(=/)"1)_2]\p msg
+#+end_src
+
+Simpler:
+#+begin_src j
+     _2(4$'X',~{.)^:(=/)"1\p msg
+  TE
+  LXLX
+  IXIX
+  SA
+  ID
+  HE
+  LXLX
+  OI
+#+end_src
+
+Unfortunately this introduces a bunch of spaces:
+
+#+begin_src j
+     ,_2(4$'X',~{.)^:(=/)"1\p msg
+  TE  LXLXIXIXSA  ID  HE  LXLXOI
+#+end_src
+
+But we already have a function that can strip those out. We'll store the result in a variable called 'P', for 'pairs'.
+
+#+begin_src j
+     ]P=._2]\p,_2(4$'X',~{.)^:(=/)"1\p msg
+  TE
+  LX
+  LX
+  IX
+  IX
+  SA
+  ID
+  HE
+  LX
+  LX
+  OI
+#+end_src
+
+* encrypting the text
+:PROPERTIES:
+:TS:       <2014-03-10 05:30AM>
+:ID:       zknju9t01fg0
+:END:
+Now, for each letter in each pair, we need to find the row and column of the letter in the key.
+
+#+begin_src j
+     header=:('k';'P';'row';'col')&,:
+     header k;P;(P&f|:k);P(f=.[:<./i."1 0/~)k
+  ┌─────┬──┬───┬───┐
+  │k    │P │row│col│
+  ├─────┼──┼───┼───┤
+  │THISM│TE│0 1│0 2│
+  │YKEAB│LX│2 4│4 3│
+  │CDFGL│LX│2 4│4 3│
+  │NOPQR│IX│0 4│2 3│
+  │UVWXZ│IX│0 4│2 3│
+  │     │SA│0 1│3 3│
+  │     │ID│0 2│2 1│
+  │     │HE│0 1│1 2│
+  │     │LX│2 4│4 3│
+  │     │LX│2 4│4 3│
+  │     │OI│3 0│1 2│
+  └─────┴──┴───┴───┘
+#+end_src
+
+But if the letters are in the same row or column, we add 1 and wrap around. (For exmple, the columns for 'SA'.)
+
+#+begin_src j
+     header k;P;(P&f|:k);P(f=.[: (5&|)@>:^:(=/)"1 [:<./i."1 0/~)k
+  ┌─────┬──┬───┬───┐
+  │k    │P │row│col│
+  ├─────┼──┼───┼───┤
+  │THISM│TE│0 1│0 2│
+  │YKEAB│LX│2 4│4 3│
+  │CDFGL│LX│2 4│4 3│
+  │NOPQR│IX│0 4│2 3│
+  │UVWXZ│IX│0 4│2 3│
+  │     │SA│0 1│4 4│
+  │     │ID│0 2│2 1│
+  │     │HE│0 1│1 2│
+  │     │LX│2 4│4 3│
+  │     │LX│2 4│4 3│
+  │     │OI│3 0│1 2│
+  └─────┴──┴───┴───┘
+#+end_src
+
+* NOTE . final step
+:PROPERTIES:
+:TS:       <2014-03-10 06:25AM>
+:ID:       5enditv01fg0
+:END:
+
+Now we want to swap the rows columns, and use these to retrieve values from the key.
+
+#+begin_src j
+     (P&f|:k),.P f k
+  0 1 0 2
+  2 4 4 3
+  2 4 4 3
+  0 4 2 3
+  0 4 2 3
+  0 1 4 4
+  0 2 2 1
+  0 1 1 2
+  2 4 4 3
+  2 4 4 3
+  3 0 1 2
+#+end_src
+
+
+If we want to map these values back to the values in k, we'd have to rearrange them so that we're looking up coordinates in k using values in columns 0 2 and 1 3 in our table:
+
+#+begin_src j
+     k{~((0 2 & { "1);"1(1 3 & { "1)) (P f |:k),.( P f k )
+  TE
+  LX
+  LX
+  IX
+  IX
+  MB
+  ID
+  HE
+  LX
+  LX
+  OI
+#+end_src
+
+Note that this is the same as P, except for the one pair that had the same column:
+
+#+begin_src j
+     P = k{~((0 2 & { "1);"1(1 3 & { "1)) (P f |:k),.( P f k )
+  1 1
+  1 1
+  1 1
+  1 1
+  1 1
+  0 0
+  1 1
+  1 1
+  1 1
+  1 1
+  1 1
+#+end_src
+
+It would be nice if we could just re-arrange the columns and reshape, though. Luckily, we can use J's 'A' verb to do just that:
+
+#+begin_src j
+     ('old';'new'),:((A. 0 2 1 3)&A."1 ; ]) (P f |:k),.( P f k )
+  ┌───────┬───────┐
+  │old    │new    │
+  ├───────┼───────┤
+  │0 0 1 2│0 1 0 2│
+  │2 4 4 3│2 4 4 3│
+  │2 4 4 3│2 4 4 3│
+  │0 2 4 3│0 4 2 3│
+  │0 2 4 3│0 4 2 3│
+  │0 4 1 4│0 1 4 4│
+  │0 2 2 1│0 2 2 1│
+  │0 1 1 2│0 1 1 2│
+  │2 4 4 3│2 4 4 3│
+  │2 4 4 3│2 4 4 3│
+  │3 1 0 2│3 0 1 2│
+  └───────┴───────┘
+#+end_src
+
+Here's a closer look at how 'A.' works. Basically, the monadic form assigns a number to each anagram of 'i.n' for some positive integer n, and the dyadic form rearranges an arbitrary array of length n using one of those anagrams.
+
+#+begin_src j
+
+     (A. 3 2 1 0) A. '<[>]'
+  ]>[<
+
+     (A. 3 2 1 0)
+  23
+
+     23 A. '<[>]'
+  ]>[<
+
+#+end_src
+
+so now:
+
+#+begin_src j
+     2 A."1 (P&f|:k),.P f k
+  0 0 1 2
+  2 4 4 3
+  2 4 4 3
+  0 2 4 3
+  0 2 4 3
+  0 4 1 4
+  0 2 2 1
+  0 1 1 2
+  2 4 4 3
+  2 4 4 3
+  3 1 0 2
+#+end_src
+
+We could have also used '{', which is probably clearer but also somewhat longer:
+
+#+begin_src j
+     0 2 1 3 {"1 (P&f|:k),.P f k
+  0 0 1 2
+  2 4 4 3
+  2 4 4 3
+  0 2 4 3
+  0 2 4 3
+  0 4 1 4
+  0 2 2 1
+  0 1 1 2
+  2 4 4 3
+  2 4 4 3
+  3 1 0 2
+#+end_src
+
+Anyway, this only gets us the original coordinates. To perform the cypher, we want to swap the columns of the letters in the pair:
+
+#+begin_src j
+     0 3 1 2 {"1 (P&f|:k),.P f k
+  0 2 1 0
+  2 3 4 4
+  2 3 4 4
+  0 3 4 2
+  0 3 4 2
+  0 4 1 4
+  0 1 2 2
+  0 2 1 1
+  2 3 4 4
+  2 3 4 4
+  3 2 0 1
+#+end_src
+
+If we then reshape this to two columns (using ravel (,) and infix (\)), we get the cypher text:
+
+#+begin_src j
+    k {~ _2<\ , 0 3 1 2 {"1 (P&f|:k),.P f k
+  IYGZGZSWSWMBHFIKGZGZPH
+#+end_src
+
+* all together now
+:PROPERTIES:
+:TS:       <2014-03-10 07:15AM>
+:ID:       wiqbo5y01fg0
+:END:
+
+We will put the whole thing together as a dyadic verb:
+
+#+begin_src j
+  NB. usage: (key c msg) -- c is for cypher :)
+  c =: 4 : 0
+    p=.(]{~[:(-9&=)e.#26|i.~)&A=.,a.{~65 97+/i.26
+    k=. 5 5 $ ~. p x,A
+    P=._2]\p,_2(4$'X',~{.)^:(=/)"1\p y
+    f=.[: (5&|)@>:^:(=/)"1 [:<./i."1 0/~
+    k {~ _2<\ , 0 3 1 2 {"1 (P&f|:k),.P f k
+  )
+#+end_src
+
+
+* TODO a bug :/ 
+:PROPERTIES:
+:TS:       <2014-03-10 07:35AM>
+:ID:       4nb7q2z01fg0
+:END:
+
+Sadly, it doesn't match the test case:
+
+#+begin_src j
+   'stack overflow' c 'The cat crept into the crypt, crapped, and crept out again','X'
+SIRAVEKFFMAMICVSMOKFZNRVECMZMZRBCMGKBDIKVQEVBKYUCCCC
+#+end_src
+
+It looks like I'm misunderstanding the rule when the row/column matches:
+
+#+begin_src j
+     NB. these should be 'EI GQ VR KP'
+     'stack overflow' & c each 'VM';'LZ';'OE';'ZG'
+  ┌──┬──┬──┬──┐
+  │EI│GQ│BL│QL│
+  └──┴──┴──┴──┘
+#+end_src
