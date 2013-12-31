@@ -100,31 +100,27 @@ NB. -- templates -------------------------------
 NB. parser class for templates
 NB. --------------------------------------------
 coclass'Template'
-coinsert 'tokens trace pascal'
+coinsert 'tokens trace'
 destroy =: codestroy
 create =: verb : 0
   toks =: ;: y
-  tokp =: 0 [ tok =: '' [ state =: 0 [ next =: 0
+  tokp =: 0 [ tok =: ''
 )
 status =: verb : 0
-  'tokp=',(":tokp),' | tok=', tok,' | state=',(":state)
+  'tokp=',(":tokp),' | tok=', tok
 )
 more =: verb : 0
   tokp < # toks
 )
 step =: verb : 0
-  next =: state
   typ =: tokT tok =: > tokp { toks
   if. typ e. kArg, kSub do.
     tokp =: tokp + 1
     tok =: > tokp { toks
   end.
   2 trace status''
+  tokp =: tokp + 1
 )
-end_step =: verb : 0
-  tokp =: tokp + 1 [ state =: next
-)
-set_next =: verb : 'next =: y'
 cocurrent'base'
 
 
@@ -135,6 +131,7 @@ NB. of templates to generate the finished code.
 NB. --------------------------------------------
 coclass 'CodeGen'
 coinsert 'tokens trace pascal'
+
 destroy =: codestroy
   create  =: verb : 0  NB. cg =: (tpname;args) conew 'CodeGen'
   tp =: '' [ tstack =: a:
@@ -165,9 +162,7 @@ step =: verb : 0
     case. kArg do. emit arg
     case. kSub do. for_box. arg do. (gen &: >)/ >box end.
   end.
-  end_step__tp''
 )
-emit  =: verb : 'addto__q y'
 gen =: dyad : 0
   push_state''
   args =: y
@@ -176,6 +171,7 @@ gen =: dyad : 0
   destroy__tp''
   pop_state''
 )
+emit  =: verb : 'addto__q y'
 result =: verb : 'drain__q _'
 cocurrent 'base'
 
@@ -189,7 +185,6 @@ gen =: dyad : 0
   destroy__cg''
   r return.
 )
-
 
 read =: monad : 0
   NB. ----------------------------------------------
