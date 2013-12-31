@@ -35,7 +35,7 @@ NB. ----------------------------------------------
 NB. tokenizer
 NB. ----------------------------------------------
 cocurrent'tokens'
-'kName kList kArgv' =: ->:i.3
+'kName kSub kArg kInt' =: ->:i.4
 'tNil tBit tStr tInt tNum tCpx'=: 0 1 2 4 8 16
 'tBox tBig tRat tSym tUni'=: 32 64 128 65536 131072
 tokT =: monad : 0
@@ -43,18 +43,18 @@ tokT =: monad : 0
   NB. return the type of a template language token
   NB. ----------------------------------------------
   h =: {. y
-  if. h e. '0123456789_' do. tInt
+  if. h e. '0123456789_' do. kInt
   elseif. h e. 'abcdefghijklmnopqrstuvwxyz' do. kName
   elseif. _ do.
     select. h
       case. 39{a. do. tStr   NB. quote
       case. 10{a. do. tNil   NB. linefeed
-      case. '@' do. kList
-      case. '$' do. kArgv
+      case. '@' do. kSub
+      case. '$' do. kArg
     end.
   end.
 )
-assert kList = tokT '@'
+assert kSub = tokT '@'
 cocurrent'base'
 
 NB. ----------------------------------------------
@@ -111,6 +111,10 @@ more =: verb : 0
 step =: verb : 0
   next =: state
   typ =: tokT tok =: > tokp { toks
+  if. typ e. kArg, kSub do.
+    tokp =: tokp + 1
+    tok =: > tokp { toks
+  end.
   2 trace status''
 )
 end_step =: verb : 0
@@ -130,7 +134,6 @@ coinsert 'tokens trace'
 destroy =: codestroy
 create  =: verb : 0  NB. cg =: (toks;args) conew 'CodeGen'
   tp   =: > {. y
-  toks =: toks__tp
   args =: }. y
   argp =: 0
   q =: ''conew'Queue'
@@ -142,7 +145,7 @@ get =: dyad : 0  NB. x get y -> x[y]
 step =: verb : 0
   arg =: ''
   step__tp''
-  if. typ__tp = tInt do. arg =: args get ".tok__tp end.
+  if. typ__tp e. kArg, kSub do. arg =: args get ".tok__tp end.
 )
 end_step =: verb : 0
   end_step__tp''
@@ -164,18 +167,11 @@ gen =: dyad : 0
   cg =. (tp;y) conew 'CodeGen'
   while. more__tp'' do.
     step__cg''
-    NB. -- state machine ---------------------------
-    select. state__tp
-     case. 0 do. NB. ---- handle simple tokens ------
-      select. typ__tp
-      case. kList do. set_next__tp 1
+    select. typ__tp
       case. tNil do. endl__cg''
       case. tStr do. literal__cg''
-      case. tInt do. argument__cg''
-      end.
-    case. 1 do. NB. ---- handle lists of nodes -----
-      for_box. arg__cg do. emit__cg (gen &: >)/ >box end.
-      set_next__tp 0
+      case. kArg do. argument__cg''
+      case. kSub do. for_box. arg__cg do. emit__cg (gen &: >)/ >box end.
     end.
     end_step__cg''
   end.
