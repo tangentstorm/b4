@@ -133,10 +133,22 @@ coclass 'CodeGen'
 coinsert 'tokens trace pascal'
 destroy =: codestroy
 create  =: verb : 0  NB. cg =: (tpname;args) conew 'CodeGen'
-  tpname =. > {. y
-  tp =: (tpname,'_pascal_')~ conew 'Template'
-  args =: }. y
+  tp =: ''
+  args =: ''
+  ctx =: ''
   q =: ''conew'Queue'
+)
+prepare =: 4 : 0
+  tpname =. x
+  tp =: (tpname,'_pascal_')~ conew 'Template'
+  args =: y
+)
+push_state =: 3 : 0
+  ctx =: ctx ; < tp ; args
+)
+pop_state =: 3 : 0
+  'tp args' =: {. ctx
+  ctx =: }: ctx
 )
 get =: dyad : 0  NB. x get y -> x[y]
   if. (0 <: y) *. y < # x do. > y { x return.
@@ -162,11 +174,12 @@ gen =: dyad : 0
   NB. ----------------------------------------------
   NB. generate text from template x with data from y
   NB. ----------------------------------------------
-  cg =. (x;y) conew 'CodeGen'
-
+  cg =. '' conew 'CodeGen'
   NB. ------------------------------------------
   NB. TODO: move this section to CodeGen class.
   NB. ------------------------------------------
+  push_state__cg''
+  x prepare__cg y
   tp =. tp__cg
   while. more__tp'' do.
     step_init__cg''
@@ -180,6 +193,7 @@ gen =: dyad : 0
     end.
     end_step__tp''
   end.
+  pop_state__cg''
   destroy__tp''
   NB. ------------------------------------------
 
