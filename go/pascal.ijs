@@ -83,12 +83,6 @@ d =: 3 : 0 NB. d drains y items from the queue.
   r return.
 )
 
-get =: dyad : 0  NB. x get y -> x[y]
-  1 trace 'loading item ', ":y
-  if. (0 <: y) *. y < # x do. > y { x return.
-  else. echo 'index error: ', (":y), '!' throw. end.
-)
-
 NB. -- state machine ---------------------------
 NB. This part parses the templates and generates
 NB. a sequence of opcode;item records.
@@ -111,10 +105,20 @@ more =: verb : 0
   tokp < # toks
 )
 
+get =: dyad : 0  NB. x get y -> x[y]
+  if. (0 <: y) *. y < # x do. > y { x return.
+  else. echo 'index error: ', (":y), '!' throw. end.
+)
+
 step =: verb : 0
   arg =: ''
   next =: state
   typ =: tokT tok =: > tokp { toks
+  NB. -- ints in template set arg to item in y ---
+  if. typ = tInt do. arg =: args get ".tok end.
+)
+
+end_step =: verb : 0
   tokp =: tokp + 1 [ state =: next
 )
 cocurrent 'base'
@@ -123,12 +127,10 @@ gen =: dyad : 0
   NB. ----------------------------------------------
   NB. generate text from template x with data from y
   NB. ----------------------------------------------
-  cg =. ((< ;: x~);<y) conew 'CodeGen'
-  while. tokp__cg < # toks__cg do.
-    typ__cg =: tokT tok__cg =: > tokp__cg { toks__cg [ arg__cg =: '' [ next__cg =: state__cg
-    2 trace 'tokp=',(":tokp__cg),' | tok=', tok__cg,' | state=',(":state__cg)
-    NB. -- ints in template set arg to item in y ---
-    if. typ__cg = tInt do. arg__cg =: y get ".tok__cg end.
+  cg =. ((< ;: x~);y) conew 'CodeGen'
+  while. more__cg'' do.
+    step__cg''
+    2 trace status__cg''
     NB. -- state machine ---------------------------
     select. state__cg
     case. 0 do. NB. ---- handle simple tokens ------
@@ -142,7 +144,7 @@ gen =: dyad : 0
       for_box. arg__cg do. q (gen &: >)/ >box end.
       next__cg =: 0
     end.
-    tokp__cg =: tokp__cg + 1 [ state__cg =: next__cg
+    end_step__cg''
   end.
   destroy__cg''
   d _ return.
