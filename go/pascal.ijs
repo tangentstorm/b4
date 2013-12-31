@@ -3,17 +3,19 @@ NB. pascal compiler/generator for j
 require 'task'
 require 'debug'
 coinsert 'tokens trace' NB. defined herein
+
 cocurrent'trace'
 (loglev =: 5:) [ dbr 0 [ dbss 'gen *:*'
 trace =: 4 : 'if. (loglev _) <: x do. echo y end.' ]
-cocurrent'base'
 
-ntyp =: 3!:0
+cocurrent'grammar'
 rule =: noun
 
 NB. ----------------------------------------------
 NB. patterns to describe pascal syntax
 NB. ----------------------------------------------
+cocurrent 'pascal'
+coinsert 'grammar'
 program =: rule : 0
   '{$mode delphi}{$i xpc.inc}'
   'program ' $0 ';'
@@ -88,15 +90,13 @@ drain =: 3 : 0 NB. d drains y items from the queue.
   else. Q =: (y - # Q) {. Q end.
   r return.
 )
-cocurrent'base'
-
 
 
 NB. -- templates -------------------------------
 NB. parser class for templates
 NB. --------------------------------------------
 coclass'Template'
-coinsert 'tokens trace'
+coinsert 'tokens trace pascal'
 destroy =: codestroy
 create =: verb : 0
   toks =: ;: y
@@ -130,7 +130,7 @@ NB. this class merges a tree of nodes with a set
 NB. of templates to generate the finished code.
 NB. --------------------------------------------
 coclass 'CodeGen'
-coinsert 'tokens trace'
+coinsert 'tokens trace pascal'
 destroy =: codestroy
 create  =: verb : 0  NB. cg =: (toks;args) conew 'CodeGen'
   tp   =: > {. y
@@ -147,9 +147,6 @@ step =: verb : 0
   step__tp''
   if. typ__tp e. kArg, kSub do. arg =: args get ".tok__tp end.
 )
-end_step =: verb : 0
-  end_step__tp''
-)
 endl =: verb : 0
   emit LF
 )
@@ -163,23 +160,33 @@ gen =: dyad : 0
   NB. ----------------------------------------------
   NB. generate text from template x with data from y
   NB. ----------------------------------------------
-  tp =. x~ conew 'Template'
-  cg =. (tp;y) conew 'CodeGen'
+  cg =. (_;y) conew 'CodeGen'
+
+  NB. ------------------------------------------
+  NB. TODO: move this section to CodeGen class.
+  NB. ------------------------------------------
+  tp__cg =: tp =. (x,'_pascal_')~ conew 'Template'
   while. more__tp'' do.
     step__cg''
     select. typ__tp
       case. tNil do. endl__cg''
       case. tStr do. literal__cg''
       case. kArg do. argument__cg''
+      NB. the recursive call to gen here is holding up the refactoring.
+      NB. the problem is that we need to step into a new template, so
+      NB. the entire current state needs to be saved on a stack.
       case. kSub do. for_box. arg__cg do. emit__cg (gen &: >)/ >box end.
     end.
-    end_step__cg''
+    end_step__tp''
   end.
+  destroy__tp''
+  NB. ------------------------------------------
+
   r =. result__cg''
   destroy__cg''
-  destroy__tp''
   r return.
 )
+
 
 read =: monad : 0
   NB. ----------------------------------------------
