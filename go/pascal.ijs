@@ -81,7 +81,11 @@ create =: 3 : 0
   Q =: a:    NB. initialize the empty queue.
 )
 addto =: 3 : 0 NB. q y adds y to the queue
-  if. Q = a: do. Q =: y else. Q =: Q , y end.
+  try.
+    if. Q = a: do. Q =: y else. Q =: Q , y end.
+  catch.
+    echo 'warning: failed to add this to queue:'; y
+  end.
   # Q return.
 )
 drain =: 3 : 0 NB. d drains y items from the queue.
@@ -132,10 +136,9 @@ NB. --------------------------------------------
 coclass 'CodeGen'
 coinsert 'tokens trace pascal'
 destroy =: codestroy
-create  =: verb : 0  NB. cg =: (tpname;args) conew 'CodeGen'
-  tp =: ''
-  args =: ''
-  ctx =: ''
+  create  =: verb : 0  NB. cg =: (tpname;args) conew 'CodeGen'
+  tp =: '' [ tstack =: a:
+  args =: ''[ astack =: a:
   q =: ''conew'Queue'
 )
 prepare =: 4 : 0
@@ -144,11 +147,14 @@ prepare =: 4 : 0
   args =: y
 )
 push_state =: 3 : 0
-  ctx =: ctx ; < tp ; args
+  astack =: args; astack
+  tstack =: tp ; tstack
 )
 pop_state =: 3 : 0
-  'tp args' =: {. ctx
-  ctx =: }: ctx
+  args =: >{. astack
+  tp   =: >{. tstack
+  astack =: }. astack
+  tstack =: }. tstack
 )
 get =: dyad : 0  NB. x get y -> x[y]
   if. (0 <: y) *. y < # x do. > y { x return.
@@ -168,6 +174,24 @@ step_main =: verb : 0
 )
 emit  =: verb : 'addto__q y'
 result =: verb : 'drain__q _'
+gen =: dyad : 0
+  NB. ------------------------------------------
+  NB. TODO: move this section to CodeGen class.
+  NB. ------------------------------------------
+  push_state''
+  x prepare y
+  while. more__tp'' do.
+    step_init''
+    if. typ__tp = kSub do.
+      for_box. arg do. (gen &: >)/ >box end.
+    else.
+      step_main''
+    end.
+    end_step__tp''
+  end.
+  destroy__tp''
+  pop_state''
+)
 cocurrent 'base'
 
 gen =: dyad : 0
@@ -175,28 +199,7 @@ gen =: dyad : 0
   NB. generate text from template x with data from y
   NB. ----------------------------------------------
   cg =. '' conew 'CodeGen'
-  NB. ------------------------------------------
-  NB. TODO: move this section to CodeGen class.
-  NB. ------------------------------------------
-  push_state__cg''
-  x prepare__cg y
-  tp =. tp__cg
-  while. more__tp'' do.
-    step_init__cg''
-    if. typ__tp = kSub do.
-      NB. the recursive call to gen here is holding up the refactoring.
-      NB. the problem is that we need to step into a new template, so
-      NB. the entire current state needs to be saved on a stack.
-      for_box. arg__cg do. emit__cg (gen &: >)/ >box end.
-    else.
-      step_main__cg''
-    end.
-    end_step__tp''
-  end.
-  pop_state__cg''
-  destroy__tp''
-  NB. ------------------------------------------
-
+  x gen__cg y
   r =. result__cg''
   destroy__cg''
   r return.
