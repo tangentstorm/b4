@@ -141,11 +141,6 @@ destroy =: codestroy
   args =: ''[ astack =: a:
   q =: ''conew'Queue'
 )
-prepare =: 4 : 0
-  tpname =. x
-  tp =: (tpname,'_pascal_')~ conew 'Template'
-  args =: y
-)
 push_state =: 3 : 0
   astack =: args; astack
   tstack =: tp ; tstack
@@ -160,38 +155,28 @@ get =: dyad : 0  NB. x get y -> x[y]
   if. (0 <: y) *. y < # x do. > y { x return.
   else. echo 'index error: ', (":y), '!' throw. end.
 )
-step_init =: verb : 0
+step =: verb : 0
   step__tp''
   if. typ__tp e. kArg, kSub do. arg =: args get ".tok__tp
   else. arg =: '' end.
-)
-step_main =: verb : 0
   select. typ__tp
     case. tNil do. emit LF
     case. tStr do. emit }.}: tok__tp
     case. kArg do. emit arg
+    case. kSub do. for_box. arg do. (gen &: >)/ >box end.
   end.
+  end_step__tp''
 )
 emit  =: verb : 'addto__q y'
-result =: verb : 'drain__q _'
 gen =: dyad : 0
-  NB. ------------------------------------------
-  NB. TODO: move this section to CodeGen class.
-  NB. ------------------------------------------
   push_state''
-  x prepare y
-  while. more__tp'' do.
-    step_init''
-    if. typ__tp = kSub do.
-      for_box. arg do. (gen &: >)/ >box end.
-    else.
-      step_main''
-    end.
-    end_step__tp''
-  end.
+  args =: y
+  tp =: (x,'_pascal_')~ conew 'Template'
+  while. more__tp'' do. step'' end.
   destroy__tp''
   pop_state''
 )
+result =: verb : 'drain__q _'
 cocurrent 'base'
 
 gen =: dyad : 0
