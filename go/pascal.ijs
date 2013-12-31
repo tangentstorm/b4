@@ -23,7 +23,6 @@ program =: rule : 0
      $3
   'end.'
 )
-
 procedure =: rule : 0
   'procedure ' $0 $1 ';'
      $2
@@ -104,20 +103,16 @@ create  =: verb : 0  NB. cg =: (toks;args) conew 'CodeGen'
   argp =: 0 [ tokp =: 0 [ tok =: '' [ state =: 0 [ next =: 0
   q =: ''conew'Queue'
 )
-
 status =: verb : 0
   'tokp=',(":tokp),' | tok=', tok,' | state=',(":state)
 )
-
 more =: verb : 0
   tokp < # toks
 )
-
 get =: dyad : 0  NB. x get y -> x[y]
   if. (0 <: y) *. y < # x do. > y { x return.
   else. echo 'index error: ', (":y), '!' throw. end.
 )
-
 step =: verb : 0
   arg =: ''
   next =: state
@@ -125,22 +120,17 @@ step =: verb : 0
   if. typ = tInt do. arg =: args get ".tok end.
   2 trace status''
 )
-
 end_step =: verb : 0
   tokp =: tokp + 1 [ state =: next
 )
-
 endl =: verb : 0
   emit LF
 )
-
 set_next =: verb : 'next =: y'
-
 emit  =: verb : 'addto__q y'
 literal =: verb : 'emit }.}: tok'
 argument =: verb : 'emit arg'
 result =: verb : 'drain__q _'
-
 cocurrent 'base'
 
 gen =: dyad : 0
@@ -170,14 +160,12 @@ gen =: dyad : 0
   r return.
 )
 
-
 read =: monad : 0
   NB. ----------------------------------------------
   NB. read y noun defs from the script and box them.
   NB. ----------------------------------------------
   r=.'' for. i.y do. r=.r ;~ (0 : 0) end. }.|. r return.
 )
-
 
 NB. -----------------------------------
 NB. construct a simple pascal program
@@ -188,7 +176,6 @@ say =: 'procedure' node 'say'; '(msg:string)'; ''; read 1
     '|b-|B=|K[ |W' + msg + ' |K]|B=|b-');
   gotoxy(0,kvm.ymax-8);
 )
-
 sayit =: 'procedure' node 'sayit'; ''; ''; read 1
   // testing multiple procedure defs (also one with no arguments)
   say('hello world');
