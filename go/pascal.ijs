@@ -133,7 +133,8 @@ coclass 'CodeGen'
 coinsert 'tokens trace pascal'
 destroy =: codestroy
 create  =: verb : 0  NB. cg =: (toks;args) conew 'CodeGen'
-  tp   =: > {. y
+  tpname =. > {. y
+  tp =: (tpname,'_pascal_')~ conew 'Template'
   args =: }. y
   argp =: 0
   q =: ''conew'Queue'
@@ -142,10 +143,17 @@ get =: dyad : 0  NB. x get y -> x[y]
   if. (0 <: y) *. y < # x do. > y { x return.
   else. echo 'index error: ', (":y), '!' throw. end.
 )
-step =: verb : 0
+step_init =: verb : 0
   arg =: ''
   step__tp''
   if. typ__tp e. kArg, kSub do. arg =: args get ".tok__tp end.
+)
+step_main =: verb : 0
+  select. typ__tp
+    case. tNil do. endl''
+    case. tStr do. literal''
+    case. kArg do. argument''
+  end.
 )
 endl =: verb : 0
   emit LF
@@ -160,22 +168,21 @@ gen =: dyad : 0
   NB. ----------------------------------------------
   NB. generate text from template x with data from y
   NB. ----------------------------------------------
-  cg =. (_;y) conew 'CodeGen'
+  cg =. (x;y) conew 'CodeGen'
 
   NB. ------------------------------------------
   NB. TODO: move this section to CodeGen class.
   NB. ------------------------------------------
-  tp__cg =: tp =. (x,'_pascal_')~ conew 'Template'
+  tp =. tp__cg
   while. more__tp'' do.
-    step__cg''
-    select. typ__tp
-      case. tNil do. endl__cg''
-      case. tStr do. literal__cg''
-      case. kArg do. argument__cg''
+    step_init__cg''
+    if. typ__tp = kSub do.
       NB. the recursive call to gen here is holding up the refactoring.
       NB. the problem is that we need to step into a new template, so
       NB. the entire current state needs to be saved on a stack.
-      case. kSub do. for_box. arg__cg do. emit__cg (gen &: >)/ >box end.
+      for_box. arg__cg do. emit__cg (gen &: >)/ >box end.
+    else.
+      step_main__cg''
     end.
     end_step__tp''
   end.
