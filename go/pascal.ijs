@@ -132,11 +132,10 @@ NB. --------------------------------------------
 coclass 'CodeGen'
 coinsert 'tokens trace pascal'
 destroy =: codestroy
-create  =: verb : 0  NB. cg =: (toks;args) conew 'CodeGen'
+create  =: verb : 0  NB. cg =: (tpname;args) conew 'CodeGen'
   tpname =. > {. y
   tp =: (tpname,'_pascal_')~ conew 'Template'
   args =: }. y
-  argp =: 0
   q =: ''conew'Queue'
 )
 get =: dyad : 0  NB. x get y -> x[y]
@@ -144,23 +143,18 @@ get =: dyad : 0  NB. x get y -> x[y]
   else. echo 'index error: ', (":y), '!' throw. end.
 )
 step_init =: verb : 0
-  arg =: ''
   step__tp''
-  if. typ__tp e. kArg, kSub do. arg =: args get ".tok__tp end.
+  if. typ__tp e. kArg, kSub do. arg =: args get ".tok__tp
+  else. arg =: '' end.
 )
 step_main =: verb : 0
   select. typ__tp
-    case. tNil do. endl''
-    case. tStr do. literal''
-    case. kArg do. argument''
+    case. tNil do. emit LF
+    case. tStr do. emit }.}: tok__tp
+    case. kArg do. emit arg
   end.
 )
-endl =: verb : 0
-  emit LF
-)
 emit  =: verb : 'addto__q y'
-literal =: verb : 'emit }.}: tok__tp'
-argument =: verb : 'emit arg'
 result =: verb : 'drain__q _'
 cocurrent 'base'
 
