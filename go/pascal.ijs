@@ -90,18 +90,17 @@ drain =: 3 : 0 NB. d drains y items from the queue.
 )
 cocurrent'base'
 
-NB. -- state machine ---------------------------
-NB. This part parses the templates and generates
-NB. a sequence of opcode;item records.
+
+
+NB. -- templates -------------------------------
+NB. parser class for templates
 NB. --------------------------------------------
-coclass 'CodeGen'
+coclass'Template'
 coinsert 'tokens trace'
 destroy =: codestroy
-create  =: verb : 0  NB. cg =: (toks;args) conew 'CodeGen'
-  toks =: >> {. y
-  args =: }. y
-  argp =: 0 [ tokp =: 0 [ tok =: '' [ state =: 0 [ next =: 0
-  q =: ''conew'Queue'
+create =: verb : 0
+  toks =: ;: y
+  tokp =: 0 [ tok =: '' [ state =: 0 [ next =: 0
 )
 status =: verb : 0
   'tokp=',(":tokp),' | tok=', tok,' | state=',(":state)
@@ -109,26 +108,50 @@ status =: verb : 0
 more =: verb : 0
   tokp < # toks
 )
+step =: verb : 0
+  next =: state
+  typ =: tokT tok =: > tokp { toks
+  2 trace status''
+)
+end_step =: verb : 0
+  tokp =: tokp + 1 [ state =: next
+)
+set_next =: verb : 'next =: y'
+cocurrent'base'
+
+
+
+NB. -- codegen----------------------------------
+NB. this class merges a tree of nodes with a set
+NB. of templates to generate the finished code.
+NB. --------------------------------------------
+coclass 'CodeGen'
+coinsert 'tokens trace'
+destroy =: codestroy
+create  =: verb : 0  NB. cg =: (toks;args) conew 'CodeGen'
+  tp   =: > {. y
+  toks =: toks__tp
+  args =: }. y
+  argp =: 0
+  q =: ''conew'Queue'
+)
 get =: dyad : 0  NB. x get y -> x[y]
   if. (0 <: y) *. y < # x do. > y { x return.
   else. echo 'index error: ', (":y), '!' throw. end.
 )
 step =: verb : 0
   arg =: ''
-  next =: state
-  typ =: tokT tok =: > tokp { toks
-  if. typ = tInt do. arg =: args get ".tok end.
-  2 trace status''
+  step__tp''
+  if. typ__tp = tInt do. arg =: args get ".tok__tp end.
 )
 end_step =: verb : 0
-  tokp =: tokp + 1 [ state =: next
+  end_step__tp''
 )
 endl =: verb : 0
   emit LF
 )
-set_next =: verb : 'next =: y'
 emit  =: verb : 'addto__q y'
-literal =: verb : 'emit }.}: tok'
+literal =: verb : 'emit }.}: tok__tp'
 argument =: verb : 'emit arg'
 result =: verb : 'drain__q _'
 cocurrent 'base'
@@ -137,26 +160,28 @@ gen =: dyad : 0
   NB. ----------------------------------------------
   NB. generate text from template x with data from y
   NB. ----------------------------------------------
-  cg =. ((< ;: x~);y) conew 'CodeGen'
-  while. more__cg'' do.
+  tp =. x~ conew 'Template'
+  cg =. (tp;y) conew 'CodeGen'
+  while. more__tp'' do.
     step__cg''
     NB. -- state machine ---------------------------
-    select. state__cg
+    select. state__tp
      case. 0 do. NB. ---- handle simple tokens ------
-      select. typ__cg
-      case. kList do. set_next__cg 1
+      select. typ__tp
+      case. kList do. set_next__tp 1
       case. tNil do. endl__cg''
       case. tStr do. literal__cg''
       case. tInt do. argument__cg''
       end.
     case. 1 do. NB. ---- handle lists of nodes -----
       for_box. arg__cg do. emit__cg (gen &: >)/ >box end.
-      set_next__cg 0
+      set_next__tp 0
     end.
     end_step__cg''
   end.
   r =. result__cg''
   destroy__cg''
+  destroy__tp''
   r return.
 )
 
