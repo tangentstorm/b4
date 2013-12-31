@@ -2,8 +2,11 @@
 NB. pascal compiler/generator for j
 require 'task'
 require 'debug'
+coinsert 'tokens trace' NB. defined herein
+cocurrent'trace'
 (loglev =: 5:) [ dbr 0 [ dbss 'gen *:*'
 trace =: 4 : 'if. (loglev _) <: x do. echo y end.' ]
+cocurrent'base'
 
 ntyp =: 3!:0
 rule =: noun
@@ -53,7 +56,7 @@ tokT =: monad : 0
   end.
 )
 assert kList = tokT '@'
-coinsert 'tokens' [ cocurrent'base'
+cocurrent'base'
 
 NB. ----------------------------------------------
 NB. nodes
@@ -69,32 +72,37 @@ ntag =: > {.
 
 
 NB. ----------------------------------------------
-NB. a global queue for holding generated output
+NB. a queue class for holding generated output
 NB. ----------------------------------------------
-Q =: a:    NB. initialize the empty global queue.
-q =: 3 : 0 NB. q y adds y to the queue
+coclass 'Queue'
+destroy =: codestroy
+create =: 3 : 0
+  Q =: a:    NB. initialize the empty queue.
+)
+addto =: 3 : 0 NB. q y adds y to the queue
   if. Q = a: do. Q =: y else. Q =: Q , y end.
   # Q return.
 )
-d =: 3 : 0 NB. d drains y items from the queue.
+drain =: 3 : 0 NB. d drains y items from the queue.
   r =. y {. Q
   if. y >: # Q do. Q =: a:
   else. Q =: (y - # Q) {. Q end.
   r return.
 )
+cocurrent'base'
 
 NB. -- state machine ---------------------------
 NB. This part parses the templates and generates
 NB. a sequence of opcode;item records.
 NB. --------------------------------------------
 coclass 'CodeGen'
-coinsert 'tokens'
+coinsert 'tokens trace'
 destroy =: codestroy
-
 create  =: verb : 0  NB. cg =: (toks;args) conew 'CodeGen'
   toks =: >> {. y
   args =: }. y
   argp =: 0 [ tokp =: 0 [ tok =: '' [ state =: 0 [ next =: 0
+  q =: ''conew'Queue'
 )
 
 status =: verb : 0
@@ -114,13 +122,25 @@ step =: verb : 0
   arg =: ''
   next =: state
   typ =: tokT tok =: > tokp { toks
-  NB. -- ints in template set arg to item in y ---
   if. typ = tInt do. arg =: args get ".tok end.
+  2 trace status''
 )
 
 end_step =: verb : 0
   tokp =: tokp + 1 [ state =: next
 )
+
+endl =: verb : 0
+  emit LF
+)
+
+set_next =: verb : 'next =: y'
+
+emit  =: verb : 'addto__q y'
+literal =: verb : 'emit }.}: tok'
+argument =: verb : 'emit arg'
+result =: verb : 'drain__q _'
+
 cocurrent 'base'
 
 gen =: dyad : 0
@@ -130,24 +150,24 @@ gen =: dyad : 0
   cg =. ((< ;: x~);y) conew 'CodeGen'
   while. more__cg'' do.
     step__cg''
-    2 trace status__cg''
     NB. -- state machine ---------------------------
     select. state__cg
-    case. 0 do. NB. ---- handle simple tokens ------
+     case. 0 do. NB. ---- handle simple tokens ------
       select. typ__cg
-      case. kList do. next__cg =: 1
-      case. tNil do. q LF
-      case. tStr do. q }.}: tok__cg
-      case. tInt do. q arg__cg
+      case. kList do. set_next__cg 1
+      case. tNil do. endl__cg''
+      case. tStr do. literal__cg''
+      case. tInt do. argument__cg''
       end.
     case. 1 do. NB. ---- handle lists of nodes -----
-      for_box. arg__cg do. q (gen &: >)/ >box end.
-      next__cg =: 0
+      for_box. arg__cg do. emit__cg (gen &: >)/ >box end.
+      set_next__cg 0
     end.
     end_step__cg''
   end.
+  r =. result__cg''
   destroy__cg''
-  d _ return.
+  r return.
 )
 
 
