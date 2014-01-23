@@ -1,0 +1,88 @@
+#+title: wordwrap in j
+
+* step : create some random token lengeths
+
+:    ] toklens =: >:?.32$10    NB. ?. uses a fixed seed rng
+: 7 6 10 3 5 10 1 8 1 5 7 9 4 9 2 3 9 1 1 3 2 7 1 5 5 2 4 4 7 7 6 8
+
+the / adverb inserts a verb between each item of an array
+
+* step: introduce the width parameter
+
+okay so here's a stub for our function:
+
+:   toklens = 32 ([:,]) toklens
+: 1
+
+The '[:' forces the verb in parens to evaluate as a monad, so the 32 is ignored and the whole thing is equivalent to ','.
+
+
+* monadic train with hard coded width
+
+:    (</.~ ([: <. 32 %~ +/\)) toklens
+: +-------+-------+------------+-------------+--------+-----------+---+
+: |5 7 9 7|6 9 7 7|7 10 4 3 4 2|10 3 8 1 10 6|8 8 10 8|5 9 8 5 3 2|2 1|
+: +-------+-------+------------+-------------+--------+-----------+---+
+
+
+* final form : dyadic train
+
+refactor to dyadic train
+
+:   32 (] </.~ [: <. +/\@:] % [) toklens
+: +-------+-------+------------+-------------+--------+-----------+---+
+: |5 7 9 7|6 9 7 7|7 10 4 3 4 2|10 3 8 1 10 6|8 8 10 8|5 9 8 5 3 2|2 1|
+: +-------+-------+------------+-------------+--------+-----------+---+
+
+
+* --- false starts  ---
+
+** step : introduce gerund
+
+This is a refactoring step.
+
+#+begin_src j
+   32 ([: (,`[:) @.0: ]) toklens
+7 6 10 3 5 10 1 8 1 5 7 9 4 9 2 3 9 1 1 3 2 7 1 5 5 2 4 4 7 7 6 8
+#+end_src
+
+The ',`[:' is a /gerund/, which is similar to an array of function pointers. 
+
+This one is composed of two verbs: ',' (which joins two arrays), and '[:' (which throws an exception when invoked)
+
+The @. conjunction selects a verb from the gerund on its left based on the result of the verb its right. In this case, the verb on the right is '0:' which is the constant function to produce 0, so the ',' is selected, and this entire thing is just a fancy way to write ','.
+
+The point of this step was just to introduce the agenda structure without breaking anything.
+
+
+** step : boxing
+
+Now we can replace the '[:' with another verb, and conditionally select it instead.
+
+#+begin_src j
+   32 ([: ,`< @. 0:  ]) toklens
+7 6 10 3 5 10 1 8 1 5 7 9 4 9 2 3 9 1 1 3 2 7 1 5 5 2 4 4 7 7 6 8
+   32 ([: ,`< @. 1:  ]) toklens
+   NB. (j shows the same thing, but boxed)
+#+end_src
+
+*** TODO fix the paste :/ 
+/for some reason i suddenly can't copy and paste the box drawing characters. :(/
+
+** step : hold or wrap
+
+We now want to replace the ',' and '<' verbs with more sophisticated versions. I will break them out into two verbs:
+
+: hold =: ,
+: wrap =: <
+: 32 ([: hold`wrap @. 1:  ]) toklens
+
+
+** junk:
+
+(as if wrapping into one long line
+
+
+(4 : 'x ,&.> y')/ 1 2 3 4 5
+
+   (4 : ('t=.>{:x'; 'echo x;_;t;_;y'; 'if. (+/t,y) > 32 do. x;;y else. (}:x);t,y end.'))/ 1 2 3 4 5
