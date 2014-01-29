@@ -1,3 +1,4 @@
+{$mode tp}
 program testb4a;
 uses tptester, ub4, ub4asm, crt;
 

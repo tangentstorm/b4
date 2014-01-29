@@ -1,3 +1,4 @@
+{$mode tp}
 unit ub4asm;
 interface uses ub4ops, ub4;
 

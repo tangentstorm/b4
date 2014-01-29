@@ -1,5 +1,6 @@
+{$mode tp}
 unit ub4;
-interface uses crt;
+interface uses kvm, kbd;
 {
   this contains the virtual machine
   and the code to load and save blocks.
@@ -66,7 +67,6 @@ procedure boot;
 
 procedure halt;
   begin
-    normvideo;
     system.halt;
   end;
 
@@ -146,19 +146,21 @@ procedure swap;
     tmp := dpop; rput(dpop); dput(tmp); dput(rpop);
   end;
 
-function maxx : byte;
+{$IFDEF TURBO}
+function xmax : byte;
   begin
-    maxx := lo( crt.windmax ) - lo( crt.windmin )
+    xmax := lo( kvm.windmax ) - lo( kvm.windmin )
   end;
 
 function maxy : byte;
   begin
-    maxy := hi( crt.windmax ) - hi( crt.windmin )
+    ymax := hi( kvm.windmax ) - hi( kvm.windmin )
   end;
+{$ENDIF}
 
 procedure goxy( x, y : byte );
   begin
-    crt.gotoxy( x+1, y+1 )
+    kvm.gotoxy( x+1, y+1 )
   end;
 
 procedure blok( n : value );
@@ -169,7 +171,7 @@ procedure blok( n : value );
   end;
 
 procedure load;
-  var i : word; tmp : block;
+  var tmp : block;
   begin
     read(disk, tmp);
     move(tmp, ram[minbuff], 1024);
@@ -182,14 +184,15 @@ function size : word;
   end;
 
 function grow : word;
-  var i : word; tmp : block;
+  var i : word;
   begin
     i := size;
-    if i + 1 < maxblok then seek(disk, i + 1)
+    if i + 1 < maxblok then begin inc(i); seek(disk, i) end;
+    grow := i;
   end;
 
 procedure save;
-  var i : word; tmp : block;
+  var tmp : block;
   begin
     move(ram[minbuff], tmp, 1024);
     write(disk, tmp);
@@ -247,20 +250,20 @@ function step : value;
       30 : {over} dput(nos);
       31 : {goxy} begin
                    swap;
-                   crt.gotoxy(dpop mod (maxY + 1),
-                              dpop mod (maxY + 1))
+                   kvm.gotoxy(dpop mod (xMax + 1),
+                              dpop mod (yMax + 1))
                  end;
-      32 : {attr} crt.textattr := dpop;
+      32 : {attr} kvm.textattr := dpop;
       33 : {putc} write(chr(dpop));
       34 : {getc} begin
-                   dput(value(crt.readkey));
+                   dput(value(kbd.readkey));
                    { we have 32 bits and only need 16,
                      so we can store extended keys in
                      one cell }
                    if tos = 0 then
                      begin
                        zap(dpop);
-                       dput(value(crt.readkey) shl 8)
+                       dput(value(kbd.readkey) shl 8)
                      end
                  end;
       35 : {halt} halt;
@@ -268,9 +271,9 @@ function step : value;
       37 : {load} load;
       38 : {save} save;
       39 : {keyp} if keypressed then dput(-1) else dput(0);
-      40 : {cscr} crt.clrscr;
-      41 : {ceol} crt.clreol;
-      45 : {crxy} begin dput(crt.wherex); dput(crt.wherey) end;
+      40 : {cscr} kvm.clrscr;
+      41 : {ceol} kvm.clreol;
+      42 : {crxy} begin dput(kvm.wherex); dput(kvm.wherey) end;
       { reserved: } 43 .. 63 : begin end;
       else
         rput(ram[ip]);

@@ -1,3 +1,4 @@
+{$mode tp}
 unit tptester;
 interface uses crt;
 {
