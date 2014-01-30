@@ -24,7 +24,7 @@ ZENGLAGG  = -Fu$(AGG) -Fu$(ZGL)/src \
 ROOT      = ../
 
 # compiler paths
-FPC       = fpc -gl -B -Sgic -Fu$(XPL) -Fu$(LNPAS) -Fi$(XPL) -FE$(GEN)
+FPC       = fpc -gl -B -vnw -Fu$(XPL) -Fu$(LNPAS) -Fi$(XPL) -FE$(GEN)
 PYTHON    = python
 
 #------------------------------------------------------

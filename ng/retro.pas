@@ -1,6 +1,14 @@
+//
+// This is the main entry point for the pascal implementation
+// of the ngaro virtual machine. It's called retro because that's
+// the "operating system" that runs on it.
+//
+// see: http://retroforth.org/
+//
+{$i xpc.inc}
 program retro;
 uses
-  xpc, sysutils,
+  xpc, sysutils, classes, lined, kvm,
   {$IFDEF GL}
     {$IFDEF SDL}
        rxgl in 'ng/rxgl_sdl.pas',
@@ -9,93 +17,122 @@ uses
     {$ENDIF}
   {$ENDIF}
   ng;
-
-var
-  inputs      : array of string;
-  vm          : ng.TNgaroVM;
-  init_failed : boolean = false;
 
-{ helper routine for startup errors }
+{ configuration / startup  helpers }
+type
+  TRetroConfig = record
+		   minSize   : int32;
+		   imgPath   : string;
+		   debug     : boolean;
+		   dumpAfter : boolean;
+		   lineEdit  : boolean;
+		   inputs    : array of string;
+		 end;
 
-procedure die( msg : string );
+procedure fail( msg : string );
   begin
-    writeln;
-    writeln( msg );
-    init_failed := true;
-  end; { die }
-
+    writeln; writeln( msg ); halt;
+  end; { fail }
+  
 { if file exists, add to array of inputs to include }
-procedure with_file( const path : string );
+  procedure include( var cfg : TRetroConfig;  const path : string );
   begin
     if sysutils.fileexists( path ) then begin
-      { we can't just call include until we initialize the vm, and
-        we can'd do that until we're done with args, so we use the
-        inputs array as a buffer. }
-      setlength( inputs, length( inputs ) + 1 );
-      inputs[ length( inputs ) - 1 ] := path;
-    end else die( '"' + path + '" not found' );
-  end; { with_file }
+      // we can't just call include until we initialize the vm, and
+      // we can'd do that until we're done with args, so we use the
+      // inputs array as a buffer.
+      setlength( cfg.inputs, length( cfg.inputs ) + 1 );
+      cfg.inputs[ length( cfg.inputs ) - 1 ] := path;
+    end else fail( '"' + path + '" not found' );
+  end; { include }
+
+{ load configuration (from command line parameters) }
 
+function configure( var cfg : TRetroConfig ) : boolean;
+  var p : string; i : integer = 1;
+  function haveparam:boolean; begin haveparam := i <= paramcount end;
+  function nextparam:string; begin result := paramstr(i); inc(i) end;
+  begin
+    result := true; { false will indicate failure }
+    cfg.imgPath := ''; cfg.minSize := -1;
+    cfg.dumpAfter := false; cfg.lineEdit := false; cfg.debug := false;
+    { parse the command line parameters }
+    while result and haveparam do begin
+      p := nextparam;
+      if (p = '--debug') or (p = '-d') then cfg.debug := true
+      else if p = '--dump' then cfg.dumpAfter := true
+      else if (p = '--editline') or (p = '-e') then cfg.lineEdit := true
+      else if p = '--with' then
+	if haveparam then include( cfg, nextparam )
+	else fail( 'no filename given for --with' )
+      else if p = '--pad' then
+	if haveparam then cfg.minsize := strtoint( nextparam )
+	else fail( 'expected a number after --pad' )
+      else if p = '--image' then cfg.imgPath := nextparam
+      else begin { no prefix, so expect image name }
+	if cfg.imgpath = '' then cfg.imgpath := p
+	else fail( 'error: more than one image path given.' )
+      end;
+    end;
+    if cfg.imgPath = '' then cfg.imgPath := 'retroImage';
+    if ( cfg.minSize = -1 ) then cfg.minSize := 100000;
+  end; { configure }
+
+{ optional line editor (replaces ng.vm.handle_keyboard) }
+type
+  TEdlnDevice = class (TComponent)
+    public
+      edln : lined.LineEditor;
+      buff : string;
+      constructor Create(aOwner :TComponent); override;
+      function handle ( msg : int32 ) : int32;
+      procedure step;
+    end;
+
+constructor TEdlnDevice.Create(aOwner :TComponent);
+  begin
+    inherited Create(aOwner);
+    edln := lined.ed;
+    edln.prompt := '|Gok|g>|w '
+  end;
+
+procedure TEdlnDevice.step;
+  begin
+    edln.step;
+  end;
+
+function TEdlnDevice.handle ( msg : int32 ) : int32;
+  begin
+    while length( buff ) = 0 do begin
+      while not edln.done do edln.step;
+      buff := edln.flush + #10;
+      writeln;
+    end;
+    result := ord( buff[ 1 ]);
+    delete( buff, 1, 1 );
+  end; { handle_keyboard_buffer }
 
 { main code }
 var
-  i          : integer;
-  p          : string;
-  imgpath    : string = '';
-  fallback   : string = 'retroImage';
-  debug      : boolean;
-  dump_after : boolean = false;
-  padsize    : int32   = -1;
-
+  cfg	: TRetroConfig;
+  path : string;
+  ed : TEdlnDevice;
+  vm   : ng.TNgaroVM;
 begin
-  i := 1;
-  while ( i <= paramcount ) and not init_failed do begin
-    p := paramstr( i );
-    if p = '-d' then  debug := true
-    else if p = '--dump' then dump_after := true
-    else if p = '--with' then
-      if i + 1 <= paramcount then begin
-        inc( i );
-        with_file( paramstr( i ))
-      end else die( 'no filename given for --with' )
-    else if p = '--pad' then
-      if i + 1 <= paramcount then
-        begin
-          inc( i );
-          padsize := strtoint( paramstr( i ))
-        end else die( 'expected a number after --pad' )
-    else if p = '--image' then
-      begin { do nothing. this is for ngarotest }
-      end
-    else begin { no prefix, so expect image name }
-      if imgpath = '' then imgpath := paramstr( i )
-      else die( 'error: more than one image path given.' )
-    end;
-    inc( i )
-  end;
-
-
-{ main code , continued }
-
-  if imgpath = '' then imgpath := fallback;
-  if ( imgpath = fallback ) and ( padsize = -1 ) then padsize := 100000;
-
-  if not init_failed then
-    begin
-      {$i-} vm := TNgaroVM.New( imgpath ); {$i+}
-      if ioresult <> 0 then
-        die( 'couldn''t open image file: ' + imgpath )
-      else
-        begin
-          vm.debugMode := debug;
-          vm.minsize := padsize;
-          for p in inputs do vm.include( p );
-          {$IFDEF GL}
-          rxgl.Main(vm);
-          {$ELSE}
-          vm.Loop;
-          {$ENDIF}
-          if dump_after then vm.dump
-        end
+  if configure( cfg ) then begin
+    {$i-} vm := TNgaroVM.New( cfg.imgpath ); {$i+}
+    if IOResult <> 0 then die( 'couldn''t open image file: ' + cfg.imgpath )
+    else begin
+      vm.debugMode := cfg.debug;
+      vm.minsize := cfg.minsize;
+      for path in cfg.inputs do vm.include( path );
+      if cfg.lineEdit then begin // replace ngaro's keyboard driver
+	ed := TEdlnDevice.Create(vm);
+	vm.devices[1] := ed.handle;
+      end;
+      {$IFDEF GL} rxgl.Main(vm); {$ELSE} vm.Loop; {$ENDIF}
+      if cfg.dumpAfter then vm.dump;
+      vm.free;
     end
+  end
 end.

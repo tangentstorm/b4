@@ -19,7 +19,6 @@ type
     private
       data, addr : TInt32Stack;
       ram, ports : array of int32;
-      devices    : array of device;
       ip         : integer;           { instruction pointer }
       done       : boolean;
       inputs     : array of textfile; { input files - see ng.input.pas }
@@ -30,6 +29,7 @@ type
       _imgsize   : cardinal;
       _minsize   : cardinal;
     public
+      devices    : array of device;
       constructor New(imagepath : string);
       destructor Destroy;
       { single-step instructions }
@@ -139,7 +139,7 @@ destructor TNgaroVM.Destroy;
 { load and save the vm }
 
 procedure TNgaroVM.Load;
-  var size, i : int32; f : file of int32;
+  var i : int32; f : file of int32;
   begin
     {$i-}
     system.assign( f, imgpath );

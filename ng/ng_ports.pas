@@ -50,7 +50,7 @@ function TNgaroVM.handle_keyboard( msg : int32 ) : int32;
   end;
 
 { input file handler }
-function TNgaroVM.handle_input( msg     : int32 ) : int32;
+function TNgaroVM.handle_input( msg : int32 ) : int32;
   var ch : char;
   begin
     if eof( self.input^ ) then
