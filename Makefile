@@ -35,6 +35,7 @@ targets:
 	@echo 'make build   -> build ./gen/retro'
 	@echo 'make retro   -> build and run ./gen/retrovm'
 	@echo 'make retrogl -> build and run ./gen/retrogl'
+	@echo 'make shrx    -> build and run ./gen/shrx'
 	@echo 'make test    -> run all tests'
 	@echo
 	@echo for grammar engine, cd ./pre
@@ -42,8 +43,7 @@ targets:
 retro : build
 	cd $(GEN); ./retro $(args)
 
-build : init  ng/*.pas
-	@$(FPC) -Mdelphi ng/retro.pas
+build : init any.ng
 
 rxsdl :
 	@$(FPC) -Mdelphi -dGL -dSDL $(ZENGLAGG) ng/retro.pas -oretrogl
@@ -62,6 +62,16 @@ init    :
 	@git submodule update
 	@ln -s ../$(RETROPATH)/library $(GEN)/library
 	@ln -n $(RETROPATH)/retroImage $(GEN)/retroImage
+
+
+any.xpl : lib/xpl/code/*.pas lib/xpl/code/*.pas
+any.ng  : ng/*.pas ng/*.inc
+	@$(FPC) ng/retro.pas
+
+shrx : any.xpl any.ng shrx/*.pas
+	@$(FPC) shrx/shrx.pas
+	cd $(GEN); ./shrx $(args)
+
 
 test: test.ngaro test.core test.files. test.clean
 
