@@ -5,7 +5,7 @@
 //
 // see: http://retroforth.org/
 //
-{$i xpc.inc}
+{$i xpc.inc}{$mode delphi}
 program retro;
 uses
   xpc, sysutils, classes, lined, kvm,
