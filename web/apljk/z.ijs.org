@@ -1,0 +1,71 @@
+#+title: j : names in the 'z' locale
+
+#+begin_src j
+    list nl''[cocurrent'z'
+  AND             ARGV            BINPATH         CR              CRLF
+  DEL             Debug           EAV             EMPTY           Endian
+  FF              FHS             IF64            IFBROADWAY      IFDEF
+  IFGTK           IFIOS           IFJ6            IFJCDROID       IFJHS
+  IFQT            IFRASPI         IFUNIX          IFWIN           IFWINCE
+  IFWINE          IFWOW64         JB01            JBOXED          JCHAR
+  JCMPX           JFL             JINT            JPTR            JSIZES
+  JSTR            JTYPES          JVERSION        LF              LF2
+  Note            OR              TAB             UNAME           UNXLIB
+  XOR             adverb          anddf           andunzip        andurl
+  apply           assert          bind            boxopen         boxxopen
+  break           calendar        cd              cdcb            cder
+  cderx           cdf             charsub         chopstring      clear
+  cleartags       coclass         cocreate        cocurrent       codestroy
+  coerase         cofind          cofindv         cofullname      coinfo
+  coinsert        compare         coname          conames         conew
+  conjunction     conl            conouns         conounsx        copath
+  copathnl        copathnlx       coreset         coselect_result costate
+  cut             cutLF           cutopen         cutpara         cuts
+  datatype        dbctx           dberm           dberr           dbg
+  dbhelp          dbjmp           dblocals        dblxq           dblxs
+  dbnxt           dbq             dbr             dbret           dbrr
+  dbrrx           dbrun           dbs             dbsig           dbsq
+  dbss            dbst            dbstack         dbstk           dbstop
+  dbstopme        dbstopnext      dbstops         dbtrace         dbview
+  deb             debc            def             define          delstring
+  detab           dfh             dir             dircompare      dircompares
+  dirfind         dirpath         dirss           dirssrplc       dirtree
+  dirused         dlb             dltb            dltbs           do
+  dquote          drop            dropafter       dropto          dtb
+  dtbs            dyad            each            echo            empty
+  endian          erase           every           evtloop         exit
+  expand          f2utf8          fappend         fappends        fapplylines
+  fboxname        fc              fcompare        fcompares       fcopynew
+  fdir            ferase          fetch           fexist          fexists
+  fgets           fixdotdot       fliprgb         fmakex          foldpara
+  foldtext        fpathcreate     fpathname       fputs           fread
+  freadblock      freadr          freads          frename         freplace
+  fsize           fss             fssrplc         fstamp          fstring
+  fstringreplace  ftostring       ftype           fview           fwrite
+  fwritenew       fwrites         getargs         getdate         getenv
+  getgtkbin       getqtbin        hfd             hostpathsep     ic
+  install         inv             inverse         iospath         isatty
+  isotimestamp    isutf8          items           jcwdpath        joinstring
+  jpath           jpathsep        jsystemdefs     launch          leaf
+  libjqt          list            ljust           load            loadd
+  loadtags        mema            memf            memr            memw
+  monad           nameclass       namelist        names           nc
+  nl              noun            on              pick            quote
+  require         rjust           rows            rplc            rxE
+  rxall           rxapply         rxcomp          rxcut           rxeq
+  rxerror         rxfirst         rxfree          rxfrom          rxhandles
+  rxin            rxindex         rxinfo          rxmatch         rxmatches
+  rxmerge         rxrplc          rxutf8          script          scriptd
+  scripts         setbreak        shell           show            sign
+  sminfo          smoutput        sort            split           splitnostring
+  splitstring     ss              startupconsole  startupide      stderr
+  stdin           stdout          stringreplace   symdat          symget
+  symset          ta              table           tagcp           tagopen
+  tagselect       take            takeafter       taketo          timespacex
+  timestamp       timex           tmoutput        toCRLF          toHOST
+  toJ             todate          todayno         tolower         topara
+  toupper         tsdiff          tsrep           tstamp          type
+  ucp             ucpcount        unxlib          usleep          utf8
+  uucp            valdate         verb            wcsize          weekday
+  weeknumber      weeksinyear     winpathsep      xedit
+#+end_src

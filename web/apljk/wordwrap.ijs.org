@@ -1,5 +1,7 @@
 #+title: formal methods in j : wordwrap
 
+(this is completely unorganized)
+
 * word wrap : a formal specification
 
 *inputs*:

@@ -1,5 +1,4 @@
 #+title: minrel : a small relational graph database
-#+INFOJS_OPT: view:plain toc:nil up:/ home:/
 
 * [0/4] Block Array Layers
 Next, we will build up a series of layers, all of which implement =IArray<TBlock>=:

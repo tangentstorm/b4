@@ -1,9 +1,14 @@
-misc j articles
+misc j articles (mostly unorganized drafts)
 
 - file:verbarrays.org
-- file:strip-ws.org
-- file:rpn-in-j.org
-- file:upcase-saga-1.org
-- file:perfect-numbers.org
+- file:bjonas-scheme.ijs.org
 - file:factoring-verbs-j.org
+- file:perfect-numbers.org
+- file:rpn-in-j.org
+- file:strip-ws.org
+- file:upcase-saga-1.org
+- file:verbarrays.org
+- file:z.ijs.org
+
+
 

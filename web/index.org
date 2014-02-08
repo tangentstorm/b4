@@ -1,5 +1,5 @@
 #+title: tangentstorm's github page
-#+INFOJS_OPT: view:showall toc:nil
+
 * about
 These are my some of the notes and semi-literate programs I've been working on.
 

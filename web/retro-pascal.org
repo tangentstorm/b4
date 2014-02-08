@@ -1,6 +1,5 @@
 #+TITLE: retro pascal
 #+DATE: 2012-12-05
-#+INFOJS_OPT: view:info toc:nil
 
 * DRAFT retro pascal
 A small pascal implementation that works with retro and runs on the ngaro virtual machine.

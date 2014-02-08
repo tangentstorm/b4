@@ -1,5 +1,4 @@
 #+title: mr : a tiny relational database for minneron
-#+INFOJS_OPT: view:info toc:nil
 
 * overview
 ** GOAL a simple graph database with a strong relational bias.
