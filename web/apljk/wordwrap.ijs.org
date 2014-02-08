@@ -1,13 +1,44 @@
-#+title: wordwrap in j
+#+title: formal methods in j : wordwrap
 
-* step : create some random token lengeths
+* word wrap : a formal specification
+
+*inputs*:
+
+- /t/ is an array of token lengths (all positive integers)
+- /w/ is the length at which to wrap a line
+
+#+begin_src j
+assert *./ t > 0         NB. all tokens have length > 0
+assert w > 0             NB. the line wrap length is > 0
+assert t <: w            NB. no individual token is longer than w
+#+end_src
+
+*outputs:*
+
+- /r/ is a 2d array where each row contains the lengths of the tokens to put on each line. Rows can be padded with 0 to make them the same length.
+
+#+begin_src j
+assert t -: (,r) -. 0    NB. r is same as t, except with zeros
+assert w >: +/"1 r       NB. sum of each row in r is <: w
+
+hds=. (}.{."1 r),0
+assert w < +/"1 hds,. r  NB.
+#+end_src
+
+
+
+* bad implementation
+
+this looked promising but it can produce lines that are too long because it doesn't reset the sum after a wrap.
+
+** step : create some random token lengeths
 
 :    ] toklens =: >:?.32$10    NB. ?. uses a fixed seed rng
 : 7 6 10 3 5 10 1 8 1 5 7 9 4 9 2 3 9 1 1 3 2 7 1 5 5 2 4 4 7 7 6 8
 
 the / adverb inserts a verb between each item of an array
 
-* step: introduce the width parameter
+** step: introduce the width parameter
 
 okay so here's a stub for our function:
 
@@ -17,7 +48,7 @@ okay so here's a stub for our function:
 The '[:' forces the verb in parens to evaluate as a monad, so the 32 is ignored and the whole thing is equivalent to ','.
 
 
-* monadic train with hard coded width
+** monadic train with hard coded width
 
 :    (</.~ ([: <. 32 %~ +/\)) toklens
 : +-------+-------+------------+-------------+--------+-----------+---+
@@ -25,7 +56,7 @@ The '[:' forces the verb in parens to evaluate as a monad, so the 32 is ignored 
 : +-------+-------+------------+-------------+--------+-----------+---+
 
 
-* final form : dyadic train
+** final form : dyadic train
 
 refactor to dyadic train
 
@@ -35,9 +66,9 @@ refactor to dyadic train
 : +-------+-------+------------+-------------+--------+-----------+---+
 
 
-* --- false starts  ---
+** --- false starts  ---
 
-** step : introduce gerund
+*** step : introduce gerund
 
 This is a refactoring step.
 
@@ -55,7 +86,7 @@ The @. conjunction selects a verb from the gerund on its left based on the resul
 The point of this step was just to introduce the agenda structure without breaking anything.
 
 
-** step : boxing
+*** step : boxing
 
 Now we can replace the '[:' with another verb, and conditionally select it instead.
 
@@ -66,10 +97,10 @@ Now we can replace the '[:' with another verb, and conditionally select it inste
    NB. (j shows the same thing, but boxed)
 #+end_src
 
-*** TODO fix the paste :/ 
+**** TODO fix the paste :/ 
 /for some reason i suddenly can't copy and paste the box drawing characters. :(/
 
-** step : hold or wrap
+*** step : hold or wrap
 
 We now want to replace the ',' and '<' verbs with more sophisticated versions. I will break them out into two verbs:
 
@@ -78,7 +109,7 @@ We now want to replace the ',' and '<' verbs with more sophisticated versions. I
 : 32 ([: hold`wrap @. 1:  ]) toklens
 
 
-** junk:
+*** junk:
 
 (as if wrapping into one long line
 
@@ -86,3 +117,4 @@ We now want to replace the ',' and '<' verbs with more sophisticated versions. I
 (4 : 'x ,&.> y')/ 1 2 3 4 5
 
    (4 : ('t=.>{:x'; 'echo x;_;t;_;y'; 'if. (+/t,y) > 32 do. x;;y else. (}:x);t,y end.'))/ 1 2 3 4 5
+
