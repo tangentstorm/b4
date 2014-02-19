@@ -1,46 +1,47 @@
-#+title: parsing in j
+#+title: building trees in j
 
 * basic tree building operations
 
-- emit :: splice some data into the current node
+- emit :: splice some items into the current node
 - node :: start a new node
 - done :: finish a node (returning to the previous one)
-- drop :: remove the last item (and all its children)
+- drop :: remove the last item
 - goto :: go back to a node created earlier
 
 * a simple tree-builder implementation
 
-The tree is a rank 1 array of parent indices (where =__= indicates root/null)
+The tree is a rank 1 array of parent indices (where =_1= indicates root/null)
 
 Here is a straightforward imperative definition of our primitives:
 
+#+name: builder
 #+begin_src j
-  
+
   tree =: $0   NB. stores the links to parents.
   data =: $0   NB. stores the actual data items.
   path =: $0   NB. the stack of parent nodes.
   here =: _1   NB. the current parent node.
-  
+
   emit =: monad define "0
     tree =: tree, here
     data =: data, y
   )
-  
+
   node =: monad define "_
     path =: path, here
     here =: <: # tree
   )
-  
+
   done =: monad define "_
     here =: {: path
     path =: }: path
   )
-  
+
   drop =: monad define "_
     data =: }: data
     tree =: }: tree
   )
-  
+
   goto =: monad define "_
     path =: path, here
     here =: y
@@ -50,6 +51,7 @@ Here is a straightforward imperative definition of our primitives:
 
 * queries
 
+#+name: queries
 #+begin_src j
   upfrom =: 3 : 'if. y=_1 do. _1 else. y{tree end.'"0
   dnfrom =: 3 : 'if. 0=#y do. $0 else. I. +./"2 tree ="1 0 ;y end.'"1
@@ -62,6 +64,7 @@ Here is a straightforward imperative definition of our primitives:
 
 * an example tree
 
+#+name: example
 #+begin_src j
   reset =: verb define
     tree =: path =: data =: $ >: here =: _1
@@ -85,6 +88,77 @@ Here is a straightforward imperative definition of our primitives:
 #+end_src
 
 
+* in action
+
+#+begin_src j
+
+     reset''
+
+     tree0''
+
+     treet''
+   0 _1   0
+   1 _1   1
+   2 _1   2
+   3 _1   3
+   4 _1   4
+   5  4  44
+   6  4  45
+   7  4  46
+   8 _1   5
+   9 _1   6
+  10  9  60
+  11  9  61
+  12  9  62
+  13  4  44
+  14 11 610
+  15 11 611
+
+     upfrom data i. 610
+  11
+     data {~ upfrom data i. 610
+  61
+     data {~ upfrom data i. 610 61
+  61 6
+     data {~ above data i. 610
+  61 6
+     data {~ below 4
+  44 45 46 44
+
+#+end_src
+
+
+* TODO s-expression parser
+
+This works well, except it throws a domain error at the end. :/
+
+#+begin_src j
+
+     reset''
+
+     (node`done`emit)@.('()'&i.)"0  ' (banana (creme) (pie))'
+  |domain error
+  |       (node`done`emit)@.('()'&i.)"0' (banana (creme) (pie))'
+
+     tree
+  _1 0 0 0 0 0 0 0 7 7 7 7 7 0 13 13 13
+
+     data
+   banana creme pie
+
+     tree </. data
+  ┌─┬────────┬─────┬───┐
+  │ │banana  │creme│pie│
+  └─┴────────┴─────┴───┘
+
+     |:(data ,~"0 1  '_' #~ "0 ]) depth index''
+   ________________
+          _____ ___
+   banana creme pie
+
+#+end_src
+
+
 * maybe later
 
 #+begin_src j
@@ -92,11 +166,20 @@ Here is a straightforward imperative definition of our primitives:
   tags =: $.$0 NB. sparse array holding meta data about nodes.
 #+end_src
 
+
+* outline
+
+#+begin_src j :tangle "treebuild.ijs" :comments both :padline yes :noweb tangle
+  <<builder>>
+  <<queries>>
+  <<example>>
+#+end_src
+
 * references
 
 Tree structure is based on:
-http://www.jsoftware.com/jwiki/DevonMcCormick/Trees
+- http://www.jsoftware.com/jwiki/DevonMcCormick/Trees
 
 Other helpful links:
-http://www.jsoftware.com/jwiki/AlexMikhailov/Parsing
-http://www.jsoftware.com/jwiki/Scripts/Scheme
+- http://www.jsoftware.com/jwiki/AlexMikhailov/Parsing
+- http://www.jsoftware.com/jwiki/Scripts/Scheme
