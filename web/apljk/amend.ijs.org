@@ -1,0 +1,53 @@
+#+title: using 'amend' in j
+
+
+* replacing values that match a predicate:
+
+#+begin_src j
+     'i' ([:I.'a'=]) } 'bananas'
+  bininis
+     'o' ][@.('a'=])"0 'bananas'
+  bononos
+#+end_src
+
+
+* sort some elements, leaving the rest in place
+
+The idea here is we want to sort the small numbers, while leaving the =_= items  in place. (The '=_=' means "infinity".)
+
+Here's one way to do it:
+
+#+begin_src j
+
+       y =. _ 2 _ _ _ 3 _ 1 _ _ 0 _
+       (/:~ k { y) (;/ k=. I. _ ~: y ) } y
+    _ 0 _ _ _ 1 _ 3 _ _ 2 _
+
+#+end_src
+
+Here's the same thing, with the filtering and aggregate verbs extracted:
+
+#+begin_src j
+  
+     filter =. [: I. _ ~: ]
+     filter y
+  1 5 7 10
+  
+     sort =. /:~
+     sort y
+  0 1 2 3 _ _ _ _ _ _ _ _
+  
+
+    (sort k { y) (;/ k =. filter y) } y
+  _ 0 _ _ _ 1 _ 2 _ _ 3 _
+  
+#+end_src
+
+This version extracts the basic pattern into a conjunction (=2 : ...=) and an adverb (=1 : ...=).
+
+#+begin_src j
+      aw =. 2 : '(u k { y) (;/ k =. v y) } y'  NB. aw for 'apply where'
+      ne =. 1 : 'I. m ~: y'                    NB. ne for 'not equal'
+      /:~ aw ('-' ne) '--c--a--b--'
+  --a--b--c--
+#+end_src

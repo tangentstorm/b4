@@ -1,6 +1,8 @@
 misc j articles (mostly unorganized drafts)
 
-- file:verbarrays.org
+- file:amend.ijs.org
+- file:treebuild.ijs.org
+
 - file:bjonas-scheme.ijs.org
 - file:factoring-verbs-j.org
 - file:perfect-numbers.org
@@ -9,6 +11,3 @@ misc j articles (mostly unorganized drafts)
 - file:upcase-saga-1.org
 - file:verbarrays.org
 - file:z.ijs.org
-
-
-
