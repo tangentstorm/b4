@@ -16,34 +16,36 @@ Here is a straightforward imperative definition of our primitives:
 
 #+name: builder
 #+begin_src j
-
+  
   tree =: $0   NB. stores the links to parents.
   data =: $0   NB. stores the actual data items.
   path =: $0   NB. the stack of parent nodes.
   here =: _1   NB. the current parent node.
-
+  
   emit =: monad define "0
     tree =: tree, here
     data =: data, y
+    tree
   )
-
+  
   node =: monad define "_
+    emit y
     path =: path, here
     here =: <: # tree
     tree
   )
-
+  
   done =: monad define "_
     here =: {: path
     path =: }: path
     tree
   )
-
+  
   drop =: monad define "_
     data =: }: data
     tree =: }: tree
   )
-
+  
   goto =: monad define "_
     path =: path, here
     here =: y
@@ -141,33 +143,39 @@ Parsing lisp-style s-expressions is simply a matter of mapping each character to
 
 #+name: rsx
 #+begin_src j
+  
   rsx =: (node`done`emit)@.('()' & i.)"0  NB. 'read s-expression'
+  
 #+end_src
 
-This works well, except it throws a domain error at the end. :/
+In this version, every character is mapped to its own node, but it should be easy to update this to use j's sequential machine primitive to break the input into tokens first. (*TODO*)
 
 #+begin_src j
-
-     rsx'(banana (creme) pie)' [ reset''
-  |domain error: rsx
-  |       rsx'(banana (creme) pie)'[reset''
+  
+     NB. the trace is a large ugly matrix that shows the
+     NB. tree at each step of the parse.
+     trace =. rsx'(banana (creme (pie)))' [ reset''
 
      tree
-  _1 _1 _1 _1 _1 _1 _1 6 6 6 6 6 _1 _1 _1 _1
-
+  _1 0 0 0 0 0 0 0 0 8 8 8 8 8 8 8 15 15 15 8 0 _1
+  
      data
-  banana creme pie
-
-     tree</.data  NB. grouped by parent
-  ┌───────────┬─────┐
-  │banana  pie│creme│
-  └───────────┴─────┘
-
-   |:(data ,~"0 1  '_' #~ "0 >:) depth index''
-  ________________
-         _____
-  banana creme pie
-
+  (banana (creme (pie)))
+  
+     NB. the characters grouped by parent:
+     tree</.data
+  ┌──┬─────────┬────────┬───┐
+  │()│banana ()│creme ()│pie│
+  └──┴─────────┴────────┴───┘
+  
+     NB. show depth of each character node graphically:
+     |:(data ,~"0 1  '_' #~ "0 >:) depth index''
+  ______________________
+   ____________________
+           ___________
+                  ___
+  (banana (creme (pie)))
+  
 #+end_src
 
 
@@ -189,10 +197,12 @@ You can retrieve it in any of three formats:
 - [[https://github.com/tangentstorm/tangentlabs/blob/master/j/treebuild.ijs][the generated j source code]]
 
 #+begin_src j :tangle "~/l/j/treebuild.ijs" :comments both :padline yes :noweb tangle
+
   <<builder>>
   <<queries>>
   <<example>>
   <<rsx>>
+
 #+end_src
 
 * references
