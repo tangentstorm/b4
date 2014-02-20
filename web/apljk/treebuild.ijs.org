@@ -186,7 +186,7 @@ You can retrieve it in any of three formats:
 
 - [[http://tangentstorm.github.io/apljk/treebuild.ijs.html][a readable html version]]
 - [[https://github.com/sabren/b4/blob/master/web/apljk/treebuild.ijs.org][the literate ~.org~ file]]
-- [[https://github.com/tangentstorm/b4/blob/master/j/treebuild.ijs][the generated j source code]]
+- [[https://github.com/tangentstorm/tangentlabs/blob/master/j/treebuild.ijs][the generated j source code]]
 
 #+begin_src j :tangle "~/l/j/treebuild.ijs" :comments both :padline yes :noweb tangle
   <<builder>>
