@@ -30,11 +30,13 @@ Here is a straightforward imperative definition of our primitives:
   node =: monad define "_
     path =: path, here
     here =: <: # tree
+    tree
   )
 
   done =: monad define "_
     here =: {: path
     path =: }: path
+    tree
   )
 
   drop =: monad define "_
@@ -45,9 +47,11 @@ Here is a straightforward imperative definition of our primitives:
   goto =: monad define "_
     path =: path, here
     here =: y
+    tree
   )
 #+end_src
 
+These verbs all return the tree as a convention, both to to make tracing simpler and to allow easy use in gerunds. (See [[id:uorjh9t0deg0][s-expression parser]], below).
 
 * queries
 
@@ -129,32 +133,40 @@ Here is a straightforward imperative definition of our primitives:
 
 
 * TODO s-expression parser
+:PROPERTIES:
+:ID:       uorjh9t0deg0
+:END:
+
+Parsing lisp-style s-expressions is simply a matter of mapping each character to a corresponding tree builder routine:
+
+#+name: rsx
+#+begin_src j
+  rsx =: (node`done`emit)@.('()' & i.)"0  NB. 'read s-expression'
+#+end_src
 
 This works well, except it throws a domain error at the end. :/
 
 #+begin_src j
 
-     reset''
-
-     (node`done`emit)@.('()'&i.)"0  ' (banana (creme) (pie))'
-  |domain error
-  |       (node`done`emit)@.('()'&i.)"0' (banana (creme) (pie))'
+     rsx'(banana (creme) pie)' [ reset''
+  |domain error: rsx
+  |       rsx'(banana (creme) pie)'[reset''
 
      tree
-  _1 0 0 0 0 0 0 0 7 7 7 7 7 0 13 13 13
+  _1 _1 _1 _1 _1 _1 _1 6 6 6 6 6 _1 _1 _1 _1
 
      data
-   banana creme pie
+  banana creme pie
 
-     tree </. data
-  ┌─┬────────┬─────┬───┐
-  │ │banana  │creme│pie│
-  └─┴────────┴─────┴───┘
+     tree</.data  NB. grouped by parent
+  ┌───────────┬─────┐
+  │banana  pie│creme│
+  └───────────┴─────┘
 
-     |:(data ,~"0 1  '_' #~ "0 ]) depth index''
-   ________________
-          _____ ___
-   banana creme pie
+   |:(data ,~"0 1  '_' #~ "0 >:) depth index''
+  ________________
+         _____
+  banana creme pie
 
 #+end_src
 
@@ -167,12 +179,20 @@ This works well, except it throws a domain error at the end. :/
 #+end_src
 
 
-* outline
+* =treebuild.ijs=
 
-#+begin_src j :tangle "treebuild.ijs" :comments both :padline yes :noweb tangle
+This code is maintained as a literate program with org-babel for emacs.
+You can retrieve it in any of three formats:
+
+- [[http://tangentstorm.github.io/apljk/treebuild.ijs.html][a readable html version]]
+- [[https://github.com/sabren/b4/blob/master/web/apljk/treebuild.ijs.org][the literate ~.org~ file]]
+- [[https://github.com/tangentstorm/b4/blob/master/j/treebuild.ijs][the generated j source code]]
+
+#+begin_src j :tangle "~/l/j/treebuild.ijs" :comments both :padline yes :noweb tangle
   <<builder>>
   <<queries>>
   <<example>>
+  <<rsx>>
 #+end_src
 
 * references
