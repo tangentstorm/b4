@@ -92,3 +92,62 @@ We walk the input and return the next state.
 * what happens when the input does not match?
 
 -
+
+
+
+* one possible general approach
+
+- represent grammars as a set of instructions for a virtual machine
+- basic instructions for:
+  - matching strings
+  - building trees
+  - managing the parser state
+  - assigning variables
+
+enter rule: 
+  create node if attributes are set.
+  allocate storage for data
+
+stack frames
+for each item in sequence:
+  - attempt to match
+  - if match fails, 
+
+
+* metagrammar (inspired by antlr)
+#+begin_src antlr
+grammar meta;
+
+tokens OPT, REP, ORP, SEP, TAG ;
+
+gram [$name:tok; $super:tok?; $rules:def*]
+: 'grammar'^ $name=IDEN $super=super? ';'!
+  $rules=def* ;
+
+def [$name:tok; $rule:$seq ]
+: $name=IDEN attrs? ':'! $alts=alt ';'! ;
+
+alt : seq / '|' > ALT ^ ;
+seq : ( ( grp | lit | sub | var )
+        ( '?' > OPT  ^
+        | '*' > REP  ^
+        | '+' > ORP  ^
+        | '^' > LIFT ^
+        | '>' > VIRT ^
+        | '!' > DROP ^
+        )^*
+      )* ;
+grp : > GRP ^ '('! alt ')'! ;
+var : ( grp | lit | sub )
+
+IDEN : (Under|Alpha) (Under|Alpha|Digit)* ;
+
+Alpha fragment : 'a'..'z' | 'A' ..'Z' ;
+Digit fragment : '0'..'9' ;
+Under fragment : '_' ;
+
+todo: 'super ^ [$name,name:type;] /sep
+
+#+end_src
+
+
