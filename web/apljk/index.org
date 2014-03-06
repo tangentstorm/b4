@@ -11,3 +11,8 @@ misc j articles (mostly unorganized drafts)
 - file:upcase-saga-1.org
 - file:verbarrays.org
 - file:z.ijs.org
+
+
+drafts:
+- file:bintree.ijs.org
+- file:adder.ijs.org
