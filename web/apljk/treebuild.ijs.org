@@ -38,6 +38,7 @@ Here is a straightforward imperative definition of our primitives:
   done =: monad define "_
     here =: {: path
     path =: }: path
+    emit y
     tree
   )
   
@@ -93,7 +94,6 @@ These verbs all return the tree as a convention, both to to make tracing simpler
   )
 #+end_src
 
-
 * in action
 
 #+begin_src j
@@ -132,7 +132,6 @@ These verbs all return the tree as a convention, both to to make tracing simpler
   44 45 46 44
 
 #+end_src
-
 
 * TODO s-expression parser
 :PROPERTIES:
@@ -178,14 +177,12 @@ In this version, every character is mapped to its own node, but it should be eas
   
 #+end_src
 
-
 * maybe later
 
 #+begin_src j
   type =: $0   NB. a type marker for each node in the tree.
   tags =: $.$0 NB. sparse array holding meta data about nodes.
 #+end_src
-
 
 * =treebuild.ijs=
 
