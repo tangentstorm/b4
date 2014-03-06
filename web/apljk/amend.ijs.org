@@ -6,9 +6,80 @@
 #+begin_src j
      'i' ([:I.'a'=]) } 'bananas'
   bininis
-     'o' ][@.('a'=])"0 'bananas'
+     'o' ]`[@.('a'=])"0 'bananas'
   bononos
 #+end_src
+
+#+begin_src j
+   'eiou'[^:('a'=])"0 0/  'apples & bananas'
+epples & benenes
+ipples & bininis
+opples & bononos
+upples & bununus
+#+end_src
+
+
+* replacing a substring with a larger substring.
+:PROPERTIES:
+:TS:       <2014-03-05 12:32AM>
+:ID:       sebkuw21ueg0
+:END:
+
+We're going to want to say:
+
+#+begin_src j
+  ('a' to 'oo') 'apples & bananas'
+#+end_src
+
+So 'to' will be a conjunction, and we can asign variables like so to prototype it:
+
+#+begin_src j
+  m=:'a' [ n=:'oo' [ y=:'apples & bananas'
+#+end_src
+
+The first step is to figure out the location(s) of m in y.
+
+#+begin_src j
+     m = y
+  1 0 0 0 0 0 0 0 0 0 1 0 1 0 1 0
+#+end_src
+
+We can replace those occurances like so:
+
+#+begin_src j
+    '_' (I. m=y) } y
+  _pples & b_n_n_s
+#+end_src
+
+What we /really/ want to do is put =n= in those slots, but since =n= is longer than =a=, it doesn't quite work out.
+
+#+begin_src j
+   n (I. m=y) } y
+|length error
+|   n    (I.m=y)}y
+#+end_src
+
+If we box each item of y, we can do it like so:
+
+#+begin_src j
+     ; n ][@.(m-:]) L:0 <"_1 y
+  oopples & boonoonoos
+#+end_src
+
+But how do it without boxing?
+
+
+
+
+
+(m=.'a') ((n=.'o') ( [: I. x=] ) } (>:@= # ]) ) y=.'apples and bananas'
+ooples and boonoonoos
+
+
+
+
+
+
 
 
 * sort some elements, leaving the rest in place
