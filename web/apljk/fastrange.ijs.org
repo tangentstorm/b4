@@ -1,0 +1,104 @@
+#+title: contiguous subsequences
+
+* the challenge : contiguous subsequences
+:PROPERTIES:
+:TS:       <2014-03-07 03:10AM>
+:ID:       212egvr0xeg0
+:END:
+
+http://topcoder.bgcoder.com/print.php?id=2019
+
+#+begin_quote text
+Given an integer sequence a[0], a[1], ..., a[N-1], find a contiguous subsequence a[i], a[i+1], ..., a[j] such that:
+
+- The length of the subsequence (j-i+1) is at least K.
+
+- The average value in the subsequence (a[i] + a[i+1] + ... + a[j])/(j-i+1) is maximized.
+
+You are given a int[] a containing the original sequence, and an int K. Return a int[] containing exactly two elements. The first element is the first index of the contiguous subsequence described above, and the second element is the last index. Both indices are 0-based. If there are multiple subsequences that satisfy the conditions above, return the longest one among them. If there are still multiple subsequences, return the one among them with the smallest first index.
+ 
+#+end_quote
+
+* data
+:PROPERTIES:
+:TS:       <2014-03-07 03:26AM>
+:ID:       dvv5ols0xeg0
+:END:
+
+Here are 50 random values between _1000 and 2000. I've reshaped them to a 5 * 10 grid just for formatting purposes, but the actual data is a vector of 50 ints.
+
+#+begin_src j
+  
+     y =: _1000 + ?. 50 $ 2000      NB.  semi random with fixed seed
+     k =: 10                        NB.  minimum span
+  
+     5 10 $ y
+  _854  755 _921 _148 _146 _561 _340 _743   60 _406
+  _754 _522  713 _682 _849 _908  178  260   90  862
+   631  116  960  564  364 _329  213 _797 _324 _974
+  _175  _23  668 _152 _358 _609 _301 _703  799 _391
+   681 _436  213   89  957  152  404  273  757  195
+
+#+end_src
+
+* algorithm
+:PROPERTIES:
+:TS:       <2014-03-07 03:45AM>
+:ID:       w36kxgt0xeg0
+:END:
+
+The idea is that we will have a binary tree, where the root node is the highest known peak, and the children are the highest peaks to the left and right.
+
+#+begin_src j
+  
+  search =: monad define
+    a =. b =. c =. 0       NB. b is root node, a and c are left and right peaks
+    min =. max =. 0, {. y  NB. (index, value) pairs of local min and max
+    slope =. 0 [ prev =. {. y
+    for_i. # y do.
+      n =. i { y
+      if. n <: }. min do. min =. n, i end.
+      if. n >: }. max do. max =. n, i end.
+    end.
+  )
+#+end_src
+
+
+#+begin_src j
+  
+     *@-/"1] 2[\ y  NB. sign of difference between each pair.
+  _1 1 _1 _1 1 _1 1 _1 1 1 _1 _1 1 1 1 _1 _1 1 _1 1 1 _1 1 1 1 _1 1 _1 1 _1 _1 _1 1 1 1 _1 1 _1 1 _1 1 _1 1 _1 1 _1 1 _1 1
+  
+#+end_src
+
+
+
+* NOTE . min and max of each prefix and suffix of y
+:PROPERTIES:
+:TS:       <2014-03-07 04:36AM>
+:ID:       d6qjztv0xeg0
+:END:
+
+#+begin_src j
+  
+  pfx =: (<./ , >./) \  y
+  sfx =: (<./ , >./) \. y
+  
+#+end_src
+
+
+* NOTE . the maximum span.
+:PROPERTIES:
+:TS:       <2014-03-07 04:51AM>
+:ID:       xe26ljw0xeg0
+:END:
+
+It's interesting that if we scan from left to right and right to left, tracking the min and max in both directions, there will be a point in either direction where you have seen both the global minimum and the global maximum.
+
+#+begin_src j
+
+     I.|: pfx = sfx
+  29
+  22
+
+#+end_src
