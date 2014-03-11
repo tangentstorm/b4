@@ -1,0 +1,32 @@
+
+* IMPORT file:treebuild.ijs.org
+:PROPERTIES:
+:TS:       <2014-03-05 08:17PM>
+:ID:       1vxia771veg0
+:END:
+
+
+2013-03-20 00:53:51     tangentstorm    expression ::=  number | string | ( expression <op> expression ) | expression (++|--) | expression ? expression : expression
+2013-03-20 00:54:15     tangentstorm    where <op> ::=  + | - | * | / ... etc
+2013-03-20 01:00:20     tangentstorm    expression ::= designator (tail)? .  or something.
+2013-03-20 01:01:58     tangentstorm    and tail ::=  binop expr  | ? expr : expr | ... etc
+
+-- pascal --
+2014-01-29 05:22:10     tangentstorm    program ::= 'PROGRAM' iden ';' declarations mainblock '.' .
+2014-01-29 05:23:11     tangentstorm    declarations ::= ( typedecls | constdecls | vardecls | procdecls )* .
+2014-01-29 05:23:54     tangentstorm    rulename '::=' pattern
+2014-01-29 05:26:38     tangentstorm    alpha ::= ['A'..'Z'] .   digit ::= ['0'..'9'] .   iden ::= alpha (alpha | digit)* .
+2014-01-29 05:43:35     tangentstorm    factor ::= value (('*'|'/') value)* .
+2014-01-29 05:43:53     tangentstorm    value ::= (iden | number)
+2014-01-29 05:53:21     tangentstorm    assignment ::= identifier '=' term ';' .
+2014-01-29 05:53:44     tangentstorm    assignment ::= identifier '=' term ';' .
+2014-01-29 06:04:31     tangentstorm    assignment ::= identifier '=' term ';' .
+
+* LINK see also
+:PROPERTIES:
+:TS:       <2014-03-05 08:02PM>
+:ID:       9zycli61veg0
+:END:
+http://www.jsoftware.com/jwiki/AlexMikhailov/Parsing
+http://www.jsoftware.com/jwiki/Essays/Tree%20Display
+

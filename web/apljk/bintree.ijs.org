@@ -36,7 +36,9 @@ This gives us a 16 bit address space to work with:
 
 
 
-
-
-( >:@:+: ,: +:@:>: ) i. 5
-( lf ,: rt ) i.5
+* LINK references
+:PROPERTIES:
+:TS:       <2014-03-05 08:00PM>
+:ID:       jja5ge61veg0
+:END:
+http://en.wikipedia.org/wiki/Binary_tree#Arrays

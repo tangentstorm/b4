@@ -1,0 +1,19 @@
+
+
+* LINK references
+:PROPERTIES:
+:TS:       <2014-03-05 08:01PM>
+:ID:       y5193g61veg0
+:END:
+
+- http://www.jsoftware.com/jwiki/Studio/Mapped%20Files
+  covers basic concept, a bit about how paging works, etc.
+
+- http://www.jsoftware.com/jwiki/Interfaces/MappingFilesBewteenCandJ
+  using mapped files to share data with other languages.
+
+- http://www.freepascal.org/docs-html/rtl/baseunix/fpmmap.html
+  mapped files for free pascal
+
+- http://www.jsoftware.com/papers/mmf.htm
+  a paper describing how they work

@@ -1,0 +1,23 @@
+#+title: SKI combinator calculus
+
+* =uses= [[file:bintree.ijs.org][bintree]]
+
+* lexer
+:PROPERTIES:
+:TS:       <2014-03-05 02:35AM>
+:ID:       b6b5al81ueg0
+:END:
+
+#+begin_src j
+  a (sk' ski ') -:
+#+end_src
+
+
+
+* TODO ref
+:PROPERTIES:
+:TS:       <2014-03-05 08:09PM>
+:ID:       o0s8bt61veg0
+:END:
+- [[http://en.wikipedia.org/wiki/SKI_combinator_calculus][wikipedia: SKI combinator calculus]]
+  

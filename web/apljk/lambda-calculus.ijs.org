@@ -1,0 +1,34 @@
+#+TITLE: the lambda calculus
+
+- lambda calculus (grammar) --
+2014-03-05 01:22:31     tangentstorm    S ::= bplus astar .
+2014-03-05 01:23:18     tangentstorm    X ::= .  -- empty patern
+2014-03-05 01:25:02     tangentstorm    bplus ::= b (bplus | null) .
+2014-03-05 01:25:28     tangentstorm    astar ::= (a astar) | null .
+2014-03-05 01:35:26     tangentstorm    term ::= name | ( '(' expr ')' ) | ('\' name '.' expr) .
+2014-03-05 01:36:41     tangentstorm    expr ::= terms .
+2014-03-05 01:36:54     tangentstorm    terms ::= term (null | terms) .
+2014-03-05 02:01:36     tangentstorm    expr ::= terms .
+
+
+-- lambda calculus evaluator (except for application) --
+2014-03-05 02:05:15     tangentstorm    eval x : [] = x
+2014-03-05 02:05:24     tangentstorm    eval (x : []) = x
+2014-03-05 02:05:54     tangentstorm    eval (x : y : zz) = eval (app x y)
+2014-03-05 02:06:04     tangentstorm    eval [] = []
+2014-03-05 02:06:21     tangentstorm    eval [] = []
+2014-03-05 02:06:48     tangentstorm    eval (x : []) = [x]
+2014-03-05 02:06:58     tangentstorm    eval (x : y : zz) = eval (app x y):zz
+2014-03-05 02:07:22     tangentstorm    eval (x : y : []) = [app x y]
+2014-03-05 02:10:46     tangentstorm    eval :: [Term] -> [Term]
+
+
+* LINK references
+:PROPERTIES:
+:TS:       <2014-03-05 08:18PM>
+:ID:       6e664971veg0
+:END:
+- [[http://classes.soe.ucsc.edu/cmps112/Spring03/readings/lambdacalculus/syntax.html][syntax of the lambda calculus]]
+- https://gist.github.com/darkf/9359785
+  darkf's lambda calculus interpreter (haskell)
+
