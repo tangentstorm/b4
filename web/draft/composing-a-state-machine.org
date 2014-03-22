@@ -1,0 +1,34 @@
+#+title: composing a state machine
+# this is specifically about state machines for parsers.
+
+* Goal is to derive a state machine from a grammar.
+:PROPERTIES:
+:TS:       <2014-03-22 01:44AM>
+:ID:       lc8bbq90hfg0
+:END:
+
+* TODO Keywords vs Identifiers
+:PROPERTIES:
+:TS:       <2014-03-22 01:46AM>
+:ID:       o1e4yt90hfg0
+:END:
+
+* TODO routine to map input characters to groups
+:PROPERTIES:
+:TS:       <2014-03-22 01:49AM>
+:ID:       4j6bfy90hfg0
+:END:
+Simplest solution would be an array of 256 bytes, like in j.
+
+* TODO Implementi =first= and =follow=.
+:PROPERTIES:
+:TS:       <2014-03-22 01:52AM>
+:ID:       zm12m4a0hfg0
+:END:
+
+| x   | first x     |
+|-----+-------------|
+| seq | first 0 { x |
+| rep | first 0 { x |
+| alt | first"0 x   |
+
