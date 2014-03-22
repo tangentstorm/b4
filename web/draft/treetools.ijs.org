@@ -1,0 +1,25 @@
+#+title: tree tools
+
+* Dependencies
+:PROPERTIES:
+:TS:       <2014-03-22 02:03AM>
+:ID:       8dzbxla0hfg0
+:END:
+This is a continuation of [[file:treebuild.ijs.org][building trees in j]].
+
+* Re-ordering a tree
+:PROPERTIES:
+:TS:       <2014-03-22 01:59AM>
+:ID:       8r6icfa0hfg0
+:END:
+We may want the children to be in some particular order, but it doesn't make sense to re-arrange items within the tree to achieve this, because identity is tied to the index, and if you re-ordered a node's children, you'd have to update all the child nodes because the parent's index would have changed.
+
+Instead, keep a separate array that maintains the relative order information, and just add new items as you go along.
+
+* tree rewriting (functional)
+:PROPERTIES:
+:TS:       <2014-03-22 02:29AM>
+:ID:       jo58cub0hfg0
+:END:
+This is really just building a new tree. There's no particular reason to modify the existing tree in place.
+
