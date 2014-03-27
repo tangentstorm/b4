@@ -1,0 +1,207 @@
+* noun =a.= contains the ascii character set.
+:PROPERTIES:
+:TS:       <2014-03-06 06:08PM>
+:ID:       vwjazq20xeg0
+:END:
+
+It's actually an array of 256 characters.
+
+#+begin_src j
+     }. 4 32 $ a.
+   !"#$%&'()*+,-./0123456789:;<=>?
+  @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+  `abcdefghijklmnopqrstuvwxyz{|}~
+#+end_src
+
+
+* helper tool to separate decimal values
+:PROPERTIES:
+:TS:       <2014-03-06 05:54PM>
+:ID:       xg0bg320xeg0
+:END:
+
+'<.' means 'floor'.
+
+so append the floor of the number to 10 * 1 mod the number. (thus separating the parts before and after the decimal point)
+
+#+begin_src j
+
+     sd =: ,@(<. ,. 10 * 1 | ])
+     sd 0.1 2.3 4.5
+  0 1 2 3 4 5
+
+#+end_src
+
+
+* the simplest state machine
+:PROPERTIES:
+:TS:       <2014-03-06 06:07PM>
+:ID:       m0eecp20xeg0
+:END:
+
+In j, a state machine is modelled as a table of pairs.
+
+Here's the simplest example of a state machine. It has only one state, and responds to all characters the same way (by ignoring them).
+
+#+begin_src j
+
+  (0 ; (1 1 2 $ sd 0.0 ) ; 0:"0 a.) ;: 'ok'   NB. no output
+
+#+end_src
+
+The input is the character literal 'ok', the verb ';:' executes the state machine, and the parenthesized expression describes the rules of the table.
+
+The rightmost part, '0:"0 a.' creates an array of 256 zeros. It might be more straightforward to write '256 $ 0' or '256 # 0', but I want it to serve as a template for more work, and the idea is that 'a.' is an array of 256 characters, and the 0:"0 just replaces each one with a 0.
+
+The purpose of this array is to map each character to a number. The numbers depend on the language you want to parse. For example, you might want to group all the letters into one group, all the numbers into another, and so on. You could do that by mapping each letter to the number 1 and each numeral to the number 2.
+
+The middle part is the actual transition table.
+
+
+We already saw that 'sd' splits decimals, so 'sd 0.0' returns '0 0'.
+The '1 1 2 $' just adds another two leading axes to this array, so (0 0) becomes (((0 0))).
+
+The idea is that it's a table of pairs that looks like this:
+
+| 0 0 |
+
+If we added some row and column headers, it might look like this:
+
+|         | any |
+|---------+-----|
+| state=0 | 0 0 |
+
+The row represents the transition table from state 0. This one says: for any character tha we encounter, transition to state 0 (that's the left '0') without outputting anything.
+
+The very leftmost '0' in the parenthesized description is the starting state.
+
+So this state machine is roughly equivalent to the following python code:
+
+#+begin_src python
+
+  state = 0
+  codes = [0] * 256
+  for char in string:
+      code = codes[ord(char)]
+      if state == 0:
+          if code == 0:
+              state = 0
+
+#+end_src
+
+Which of course just loops through the characters without producing a result.
+
+
+* capturing the input
+:PROPERTIES:
+:TS:       <2014-03-06 09:27PM>
+:ID:       8t5cdyb0xeg0
+:END:
+
+By changing the action code from 0 (do nothing) to 1 (start new token), we can start to capture the input text:
+
+#+begin_src j
+
+     (0 ; (1 1 2 $ sd 0.1 ) ; 0:"0 a.) ;: 'ok'   NB. changed 0.0 to 0.1
+  ┌─┐
+  │k│
+  └─┘
+
+#+end_src
+
+This is similar to this python code:
+
+#+begin_src python
+
+  state = 0
+  codes = [0] * 256
+  token = ''                       # the output token
+  for char in string:
+      code = codes[ord(char)]
+      if state == 0:
+          if code == 0:
+              state = 0
+              token = char         # start a new token
+
+#+end_src
+
+What if we want to capture more than just one letter?
+
+In that case we need a second state.
+
+
+#+begin_src j
+
+     (0 ; (1 1 2 $ ,sd 0.1 ) ; 0:"0 a.) ;: 'ok'   NB. changed 0.0 to 0.1
+  ┌─┐
+  │k│
+  └─┘
+
+#+end_src
+
+
+
+* 2-state examples on one symbol group
+:PROPERTIES:
+:TS:       <2014-03-06 10:25PM>
+:ID:       jdy70ne0xeg0
+:END:
+
+#+begin_src j
+
+   (0 ; (2 1 2 $ sd 0.0     ) ; 0:"0 a.) ;: 'abcd'  NB. no output
+
+   (0 ; (2 1 2 $ sd 0.1     ) ; 0:"0 a.) ;: 'abcd'  NB.
+┌─┐
+│d│
+└─┘
+
+#+end_src
+
+
+* predefined character classes
+:PROPERTIES:
+:TS:       <2014-03-06 11:45PM>
+:ID:       zhhfadi0xeg0
+:END:
+
+
+#+begin_src j
+     QUOTE =. ''''
+
+     ] DIGIT =. a. {~ 48 + i.10
+  0123456789
+
+     ] ALPHA =. , a. {~ 65 97 +/ i.26
+  ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+
+     ] PUNCT =. (33 }. 127 {. a.) -. alpha, digit, quote
+  !"#$%&()*+,-./:;<=>?@[\]^_{|}~
+#+end_src
+
+
+* NOTE .
+:PROPERTIES:
+:TS:       <2014-03-06 10:36PM>
+:ID:       p6v526f0xeg0
+:END:
+
+#+begin_src j
+  NB. ( u = char groups ) fsm ( v = transition table ) ( y = text ) -> tokens
+  
+  fsm =: conjunction define
+  
+     assert"0 -.(-:*:e.)S:0/~    m    NB. groups must be distinct
+     ng =. 1 + #                 m    NB. number of groups + 1 (0 is 'other')
+     lu =. +/ (i.ng) * >a.e.L:0  m    NB. ascii -> group lookup table
+  
+     da =. ".1 ;._2              n    NB. cut and eval n to get decimal array
+     ns =. >./ 1, >. ,da              NB. number of states = max(1,ceil(da))
+  
+     (0 ; (sd"0 da) ; lu) ;: y
+  )
+  
+  NB. (alpha;digit;quote) fsm  ( 0.0 1.1 2.1 3.1 )
+  fsm =:  2 : ''
+  
+#+end_src
