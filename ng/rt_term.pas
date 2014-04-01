@@ -16,7 +16,7 @@ unit rt_term;
   {$WARNING ## Disabling AggPas/Canvas Device (Requires fpc > 2.6.2 ) ## }
 {$ENDIF}
 
-interface uses xpc, grids, romFont, SysUtils, ng, ascii
+interface uses xpc, ugrid2d, romFont, SysUtils, ng, ascii
   {$IFDEF WITH_AGG}, agg2d{$ENDIF};
 
 const
@@ -41,7 +41,7 @@ type
     false : (val : word);
   end;
 
-  TCharGrid = class (specialize TGrid<TCharCell>)
+  TCharGrid = class (specialize GGrid2D<TCharCell>)
     procedure Clear;
     function GetAttr( const i : cardinal ) : TVDPAttrData;
     procedure SetAttr( const i : cardinal; const value : tVDPAttrData );
@@ -60,7 +60,7 @@ type
 
   TPalette = array[ byte ] of TRGBA;
 {$IFDEF WITH_AGG}
-  TRxCanvas = class( specialize TGrid<UInt32> )
+  TRxCanvas = class( specialize GGrid2D<UInt32> )
     agg     : TAgg2D;
     color   : TRGBA;
     palette : TPalette;
@@ -130,8 +130,8 @@ type
 
   TRxConsole = class( TConsole )
   protected
-    vm      : ng.TRetroVM;
-    procedure Attach( retrovm : ng.TRetroVM ); virtual;
+    vm      : ng.TNgaroVM;
+    procedure Attach( retrovm : ng.TNgaroVM ); virtual;
     function handle_keyboard( msg : int32 ) : int32;
     function handle_mouse (msg : int32 ) : int32;
     function handle_write (msg : int32 ) : int32;
@@ -475,7 +475,7 @@ function TKeyboard.ReadKey : WideChar;
 constructor TRxCanvas.Create( width, height : int32; bitmap : Pointer );
   begin
     if not Assigned(bitmap) then
-      raise EObjectCheck.Create( 'bitmap pointer is nil' );
+      raise EObjectCheck.Create( 'bitmap pointer is nil' )
     else
       begin
         inherited CreateAt( width, height, 0, bitmap );
@@ -539,7 +539,7 @@ procedure TRxCanvas.FillCircle( x, y, radius : int32 );
 
 { vm integration }
 
-procedure TRxConsole.Attach( retrovm : ng.TretroVM );
+procedure TRxConsole.Attach( retrovm : ng.TNgaroVM );
   begin
     self.vm := retrovm;
     self.vm.devices[1] := @self.handle_keyboard;
@@ -684,10 +684,12 @@ procedure setup_xterm_colors( var xtc : TPalette );
     end
   end;
 
-var i : byte;
+//var i : byte;
 initialization
   setup_xterm_colors( kXtPal );
+  {
   for i in byte do with kXtPal[ i ] do
     WriteLn( hex(i, 2), ' = rgba: $',
             hex(r,2), hex(g,2), hex(b,2), hex(a,2));
+  }
 end.
