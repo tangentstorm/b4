@@ -1,0 +1,12 @@
+#+title: grammar combinators
+
+* results
+
+The simplest patterns to match are /pass/ and /fail/.
+Neither actually looks at its input.
+
+#+begin_src retro
+: pass ( ) 1 matched? ! ;
+: fail ( ) 0 matched? ! ;
+#+end_src
+
