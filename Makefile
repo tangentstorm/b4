@@ -43,6 +43,9 @@ targets:
 retro : build
 	cd $(GEN); ./retro $(args)
 
+retro-e : build
+	cd $(GEN); ./retro -e $(args)
+
 build : init any.ng
 
 rxsdl :
@@ -65,7 +68,7 @@ init    :
 
 
 any.xpl : lib/xpl/code/*.pas lib/xpl/code/*.pas
-any.ng  : ng/*.pas ng/*.inc
+any.ng  : ng/*.pas
 	@$(FPC) ng/retro.pas
 
 shrx : any.xpl any.ng shrx/*.pas
