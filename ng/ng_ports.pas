@@ -158,9 +158,9 @@ function TNgaroVM.handle_vmquery( msg: int32 ) : int32;
     case msg of
 
       -1  : { memory size } result := length( self.ram );
-//      -2  : { canvas exists? } if kvm.hascanvas then result := 1;
-//      -3  : { canvas width } result := kvm.canvas.w;
-//      -4  : { canvas height } result := kvm.canvas.h;
+      -2  : { canvas exists? } result := 0;  // TODO: canvas.exists?
+      -3  : { canvas width } result := 0;    // TODO: canvas.w;
+      -4  : { canvas height } result := 0;   // TODO: canvas.h;
       -5  : { data stack depth } result := self.data.count;
       -6  : { address stack depth } result := self.addr.count;
       -7  : {  TODO: mouse exists? } result := 0;
