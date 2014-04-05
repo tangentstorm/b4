@@ -1,0 +1,321 @@
+#+title: wireworld in j
+
+#+begin_src j
+    
+      p =: (0 : 0)                NB. read multi-line character array
+             |
+      ..+..  |
+      . o .  |
+      +o.o+  |
+             |
+    )
+    
+       p =: p -. '|'              NB. strip the pipe character out. it was 
+                                  NB. only there to show the spacing.
+  
+       $ p =: ];._2 p             NB. split lines, leaving a 5 * 9 char array
+    5 9
+  
+       p                          NB. the end result.
+    
+      ..+..
+      . o .
+      +o.o+
+  
+  
+       box =. <"2                 NB. a verb to box rank 2 items (2d arrays)
+  
+       box p                      NB. our input, with a box around it.
+    ┌─────────┐
+    │         │
+    │  ..+..  │
+    │  . o .  │
+    │  +o.o+  │
+    │         │
+    └─────────┘
+  
+       c=.' o+.'                  NB. our character set for wireworld:
+                                  NB. --------------------------------
+                                  NB.   0 (' ') = empty
+                                  NB.   1 ('o') = electron head
+                                  NB.   2 ('+') = electron tail
+                                  NB.   3 ('.') = wire
+      
+       ,. 1 _1                    NB. ,.y leaves a rank 2 array.
+     1
+    _1
+    
+       0 ,. 1 _1                  NB. x,.y appends items of x to those of y
+    0  1
+    0 _1
+                                  NB. we will use these two expressions to shift
+                                  NB. p in in 8 directions, so we can
+                                  NB. collect the neighbors.
+    
+       box  (,. 1 0 _1) |. p      NB. rotate outermost axis by 1, 0, and _1
+    ┌─────────┬─────────┬─────────┐
+    │  ..+..  │         │         │
+    │  . o .  │  ..+..  │         │
+    │  +o.o+  │  . o .  │  ..+..  │
+    │         │  +o.o+  │  . o .  │
+    │         │         │  +o.o+  │
+    └─────────┴─────────┴─────────┘
+  
+       box (0 ,. 1 0 _1) |. p    NB. same for next outermost axis
+    ┌─────────┬─────────┬─────────┐
+    │         │         │         │
+    │ ..+..   │  ..+..  │   ..+.. │
+    │ . o .   │  . o .  │   . o . │
+    │ +o.o+   │  +o.o+  │   +o.o+ │
+    │         │         │         │
+    └─────────┴─────────┴─────────┘
+  
+                             NB. all together now
+       box (0 ,. 1 0 _1) |. (0 ,. 1 0 _1) |. p
+    ┌─────────┬─────────┬─────────┐
+    │ ..+..   │  ..+..  │   ..+.. │
+    │ . o .   │  . o .  │   . o . │
+    │ +o.o+   │  +o.o+  │   +o.o+ │
+    │         │         │         │
+    │         │         │         │
+    ├─────────┼─────────┼─────────┤
+    │         │         │         │
+    │ ..+..   │  ..+..  │   ..+.. │
+    │ . o .   │  . o .  │   . o . │
+    │ +o.o+   │  +o.o+  │   +o.o+ │
+    │         │         │         │
+    ├─────────┼─────────┼─────────┤
+    │         │         │         │
+    │         │         │         │
+    │ ..+..   │  ..+..  │   ..+.. │
+    │ . o .   │  . o .  │   . o . │
+    │ +o.o+   │  +o.o+  │   +o.o+ │
+    └─────────┴─────────┴─────────┘
+    
+                             NB. make that into a verb (without the boxes)
+                             NB. mn is for 'moore neighborhood'
+       mn =. monad : '(0 ,. 1 0 _1) |. (0 ,. 1 0 _1) |. y'
+    
+                             NB. We now want to examine the moore neighborhood
+                             NB. for each cell to find wires that are neighbors
+                             NB. with exactly 1 or 2 electron heads.
+  
+    
+       ] h =. 'o' = p        NB. electron heads in the input.
+    0 0 0 0 0 0 0 0 0
+    0 0 0 0 0 0 0 0 0
+    0 0 0 0 1 0 0 0 0
+    0 0 0 1 0 1 0 0 0
+    0 0 0 0 0 0 0 0 0
+                             NB. multiplying by infinity (_)
+       _* h                  NB. can make it easier to read
+    0 0 0 0 0 0 0 0 0
+    0 0 0 0 0 0 0 0 0
+    0 0 0 0 _ 0 0 0 0
+    0 0 0 _ 0 _ 0 0 0
+    0 0 0 0 0 0 0 0 0
+    
+                             NB. electron heads in the neighborhood.
+       box mn _* h
+    ┌─────────────────┬─────────────────┬─────────────────┐
+    │0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│
+    │0 0 0 _ 0 0 0 0 0│0 0 0 0 _ 0 0 0 0│0 0 0 0 0 _ 0 0 0│
+    │0 0 _ 0 _ 0 0 0 0│0 0 0 _ 0 _ 0 0 0│0 0 0 0 _ 0 _ 0 0│
+    │0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│
+    │0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│
+    ├─────────────────┼─────────────────┼─────────────────┤
+    │0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│
+    │0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│
+    │0 0 0 _ 0 0 0 0 0│0 0 0 0 _ 0 0 0 0│0 0 0 0 0 _ 0 0 0│
+    │0 0 _ 0 _ 0 0 0 0│0 0 0 _ 0 _ 0 0 0│0 0 0 0 _ 0 _ 0 0│
+    │0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│
+    ├─────────────────┼─────────────────┼─────────────────┤
+    │0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│
+    │0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│
+    │0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│0 0 0 0 0 0 0 0 0│
+    │0 0 0 _ 0 0 0 0 0│0 0 0 0 _ 0 0 0 0│0 0 0 0 0 _ 0 0 0│
+    │0 0 _ 0 _ 0 0 0 0│0 0 0 _ 0 _ 0 0 0│0 0 0 0 _ 0 _ 0 0│
+    └─────────────────┴─────────────────┴─────────────────┘
+    
+                             NB. instead of boxing, let's sum those 1 values
+                             NB. to get a count. we sum once for the
+                             NB. outer columns, and again for the outer
+                             NB. rows. the results should look just like
+                             NB. what you'd see in minesweeper. :)
+  
+       +/+/ mn h             NB. (remember to remove the '_*' !)
+    0 0 0 0 0 0 0 0 0
+    0 0 0 1 1 1 0 0 0
+    0 0 1 2 3 2 1 0 0
+    0 0 1 2 3 2 1 0 0
+    0 0 1 1 2 1 1 0 0
+                             NB. now, query for cells with exactly 1 or 2
+                             NB. electron head neighbors...
+       _* q =. 1 2 e.~ +/+/ mn h
+    0 0 0 0 0 0 0 0 0
+    0 0 0 _ _ _ 0 0 0
+    0 0 _ _ 0 _ _ 0 0
+    0 0 _ _ 0 _ _ 0 0
+    0 0 _ _ _ _ _ 0 0
+  
+                             NB. ... and which are also wires.
+       _* q =. q *. p ='.'
+    0 0 0 0 0 0 0 0 0
+    0 0 0 _ 0 _ 0 0 0
+    0 0 _ 0 0 0 _ 0 0
+    0 0 0 0 0 0 0 0 0
+    0 0 0 0 0 0 0 0 0
+                             NB. these will become the new electron heads.
+       newheads =: monad :'(''.''=y) *. 1 2 e.~ +/ +/ mn (''o''=y)'
+       _* newheads p
+    0 0 0 0 0 0 0 0 0
+    0 0 0 _ 0 _ 0 0 0
+    0 0 _ 0 0 0 _ 0 0
+    0 0 0 0 0 0 0 0 0
+    0 0 0 0 0 0 0 0 0
+  
+       box p              NB. So now, let us revisit our original input.
+    ┌─────────┐
+    │         │
+    │  ..+..  │
+    │  . o .  │
+    │  +o.o+  │
+    │         │
+    └─────────┘
+  
+       c i. p                NB. we can decode it using our character set.
+    0 0 0 0 0 0 0 0 0
+    0 0 3 3 2 3 3 0 0
+    0 0 3 0 1 0 3 0 0
+    0 0 2 1 3 1 2 0 0
+    0 0 0 0 0 0 0 0 0
+  
+                             NB. here is the first part of the
+                             NB. wireworld conversion step:
+                             NB. ------------------------------
+                             NB.  empty -> empty   ( 0 -> 0 )
+                             NB.  head -> tail     ( 1 -> 2 )
+                             NB.  tail -> wire     ( 2 -> 3 )
+                             NB.  wire -> wire     ( 3 -> 3 )
+       step0 =: [: (0:`2:`3:`3:)@.]"0 c i. ]
+       step0 p
+    0 0 0 0 0 0 0 0 0
+    0 0 3 3 3 3 3 0 0
+    0 0 3 0 2 0 3 0 0
+    0 0 3 2 3 2 3 0 0
+    0 0 0 0 0 0 0 0 0
+  
+                             NB. For the full step, we want to set the value
+                             NB. to 1 anywhere that newheads returned a 1.
+  
+                             NB. Since newheads only returns bits, we can simply
+                             NB. multiply it by 2 and subtract the results from
+                             NB. step0.
+  
+                             NB. It may seem strange to preform arithmetic on
+                             NB. booleans, but arithmetic is often faster than
+                             NB. branching in the CPU, and j is optimized for
+                             NB. working with large arrays of bits like this.
+     (step0 - 2 * newheads) p
+  0 0 0 0 0 0 0 0 0
+  0 0 3 1 3 1 3 0 0
+  0 0 1 0 2 0 1 0 0
+  0 0 3 2 3 2 3 0 0
+  0 0 0 0 0 0 0 0 0
+  
+                             NB. This completes the process of updating the cells.
+                             NB. all that remains is to re-encode the results:
+       step =: c {~ step0 - 2 * newheads
+       box step p
+  ┌─────────┐
+  │         │
+  │  .o.o.  │
+  │  o + o  │
+  │  .+.+.  │
+  │         │
+  └─────────┘
+
+                             NB. here it is in action.
+                             NB. (read it like a comic strip)
+   5 5 $ box step^:(<25) p
+┌─────────┬─────────┬─────────┬─────────┬─────────┐
+│         │         │         │         │         │
+│  ..+..  │  .o.o.  │  o+o+o  │  +.+.+  │  .o.o.  │
+│  . o .  │  o + o  │  + . +  │  . o .  │  o + o  │
+│  +o.o+  │  .+.+.  │  o...o  │  +o.o+  │  .+.+.  │
+│         │         │         │         │         │
+├─────────┼─────────┼─────────┼─────────┼─────────┤
+│         │         │         │         │         │
+│  o+o+o  │  +.+.+  │  .o.o.  │  o+o+o  │  +.+.+  │
+│  + . +  │  . o .  │  o + o  │  + . +  │  . o .  │
+│  o...o  │  +o.o+  │  .+.+.  │  o...o  │  +o.o+  │
+│         │         │         │         │         │
+├─────────┼─────────┼─────────┼─────────┼─────────┤
+│         │         │         │         │         │
+│  .o.o.  │  o+o+o  │  +.+.+  │  .o.o.  │  o+o+o  │
+│  o + o  │  + . +  │  . o .  │  o + o  │  + . +  │
+│  .+.+.  │  o...o  │  +o.o+  │  .+.+.  │  o...o  │
+│         │         │         │         │         │
+├─────────┼─────────┼─────────┼─────────┼─────────┤
+│         │         │         │         │         │
+│  +.+.+  │  .o.o.  │  o+o+o  │  +.+.+  │  .o.o.  │
+│  . o .  │  o + o  │  + . +  │  . o .  │  o + o  │
+│  +o.o+  │  .+.+.  │  o...o  │  +o.o+  │  .+.+.  │
+│         │         │         │         │         │
+├─────────┼─────────┼─────────┼─────────┼─────────┤
+│         │         │         │         │         │
+│  o+o+o  │  +.+.+  │  .o.o.  │  o+o+o  │  +.+.+  │
+│  + . +  │  . o .  │  o + o  │  + . +  │  . o .  │
+│  o...o  │  +o.o+  │  .+.+.  │  o...o  │  +o.o+  │
+│         │         │         │         │         │
+└─────────┴─────────┴─────────┴─────────┴─────────┘
+
+                           NB. and another example, from wikipedia:
+  p =: ];._2 (0 : 0) -. '|'
+                |
+         ..        |
+    .+o... ......  |
+         ..        |
+                |
+          ..       |
+    .+o... ....... |
+          ..       |
+                |
+  )
+  
+  
+  
+     3 3 $ box step^:(<9) p
+  ┌─────────────────┬─────────────────┬─────────────────┐
+  │                 │                 │                 │
+  │       ..        │       ..        │       ..        │
+  │  .+o... ......  │  ..+o.. ......  │  ...+o. ......  │
+  │       ..        │       ..        │       ..        │
+  │                 │                 │                 │
+  │        ..       │        ..       │        ..       │
+  │  .+o... ....... │  ..+o.. ....... │  ...+o. ....... │
+  │        ..       │        ..       │        ..       │
+  │                 │                 │                 │
+  ├─────────────────┼─────────────────┼─────────────────┤
+  │                 │                 │                 │
+  │       o.        │       +o        │       .+        │
+  │  ....+o ......  │  .....+ ......  │  ...... o.....  │
+  │       o.        │       +o        │       .+        │
+  │                 │                 │                 │
+  │        ..       │        o.       │        +o       │
+  │  ....+o ....... │  .....+ ....... │  ...... o...... │
+  │        ..       │        o.       │        +o       │
+  │                 │                 │                 │
+  ├─────────────────┼─────────────────┼─────────────────┤
+  │                 │                 │                 │
+  │       ..        │       ..        │       ..        │
+  │  ...... +o....  │  ...... .+o...  │  ...... ..+o..  │
+  │       ..        │       ..        │       ..        │
+  │                 │                 │                 │
+  │        .+       │        ..       │        ..       │
+  │  ...... +...... │  ...... ....... │  ...... ....... │
+  │        .+       │        ..       │        ..       │
+  │                 │                 │                 │
+  └─────────────────┴─────────────────┴─────────────────┘
+  
+#+end_src
