@@ -30,6 +30,9 @@ type
       _minsize   : cardinal;
     public
       devices    : array of device;
+      retroTerm  : kvm.ITerm;
+      debugTerm  : kvm.ITerm;
+
       constructor New(imagepath : string);
       destructor Destroy;
       { single-step instructions }
@@ -126,6 +129,8 @@ constructor TNgaroVM.New( imagepath : string );
     self.load;
     self.debugmode := false;
     self.ports[0] := rxACTIVE;
+    self.retroTerm := kvm.work;
+    self.debugTerm := kvm.work;
   end; { vm.init }
 
 destructor TNgaroVM.Destroy;

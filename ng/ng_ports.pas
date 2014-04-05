@@ -69,8 +69,8 @@ function TNgaroVM.handle_input( msg : int32 ) : int32;
 
 procedure TNgaroVM.clear;
   begin
-    kvm.clrscr;
-    kvm.gotoxy( 0, 0 );
+    retroTerm.clrscr;
+    retroTerm.gotoxy( 0, 0 );
   end;
 
 function TNgaroVM.handle_write( msg : int32 ) : int32;
@@ -167,8 +167,8 @@ function TNgaroVM.handle_vmquery( msg: int32 ) : int32;
       -8  : { current time } result := lo( posix.time );
       -9  : { exit the vm } self.ip := length( self.ram ) + 1;
       -10 : {  TODO: environ } result := 0;
-      -11 : { console width } result := kvm.width;
-      -12 : { console height } result := kvm.height;
+      -11 : { console width } result := retroTerm.width;
+      -12 : { console height } result := retroTerm.height;
       -13 : { num bits/cell } result := 32;
       -14 : {$IFDEF ENDIAN_BIG} result := 1; {$ELSE} result := 0; {$ENDIF}
       -15 : { extended console? } result := -1;
@@ -211,9 +211,9 @@ function TNgaroVM.handle_eterm( msg : int32 ) : int32;
   begin
     result := 0;
     case msg of
-      1 : { rc- } kvm.gotoxy( data.pop, data.pop );
-      2 : { n- } kvm.fg( data.pop );
-      3 : { n- } kvm.bg( data.pop );
+      1 : { rc- } retroTerm.gotoxy( data.pop, data.pop );
+      2 : { n- } retroTerm.fg( data.pop );
+      3 : { n- } retroTerm.bg( data.pop );
       else
         result := -1;
     end;

@@ -46,19 +46,20 @@ procedure TNgaroVM.show_debugger( msg : string );
   procedure show_opcode;
     begin
       r := optbl[ ram[ i ]];
-      write( r.tok );
+      emit( r.tok );
       if r.hasarg then begin
-        inc( i );
-        { show the argument }
-        kvm.fg( 'g' ); str( ram[ i ], s ); writeln( ' ', s );
-        { on next line, show where it was }
-        kvm.fg( 'K' ); show_addr; write( '...' );
-        kvm.fg( 'w' );
+	inc( i );
+	{ show the argument }
+	fg( 'g' ); str( ram[ i ], s ); emit( ' ' ); emit( s );
+	{ on next line, show where it was }
+	fg( 'K' ); show_addr; emit( '...' );
+	fg( 'w' );
       end;
-      writeln;
+      newline;
     end; { show_opcode }
 
   begin  {  show_debugger }
+    kvm.pushterm(debugTerm);
 
     if msg <> '' then begin
       writeln( msg );
@@ -77,11 +78,11 @@ procedure TNgaroVM.show_debugger( msg : string );
     write( 'addr : ' ); addr.dump;
     write( 'port : ' );
     for i:= 0 to length( ports ) - 1 do
-    begin
-      write( i , ':' );
-      str( ports[ i ], s );
-      write( s, ' ');
-    end;
+      begin
+	write( i , ':' );
+	str( ports[ i ], s );
+	write( s, ' ');
+      end;
     writeln;
 
     { try to keep the cursor near the middle of the 15-line screen }
@@ -104,6 +105,7 @@ procedure TNgaroVM.show_debugger( msg : string );
       inc( i );
     until i >= e; { can be greater if we read an argument in last cell }
     if kbd.readkey <> #13 then ip := high( ram ) + 1; { halt machine. }
+    kvm.popTerm;
   end; { show_debugger }
 
 {$IFDEF NESTUNITS}
