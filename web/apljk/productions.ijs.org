@@ -1,0 +1,159 @@
+#+title: grammar production in j
+#+date: <2014-04-07 10:55PM>
+
+* Grammar Productions in J
+
+Consider the following grammar in ANTLR notation:
+
+#+begin_src antlr
+
+  s : ('aa' | 'b')* ; // s expands to ('aa' or 'b'), repeated 0..n times.
+
+#+end_src
+
+How can we find the set of sentences produced by this grammar that are exactly 5 characters long?
+
+Since 'b' is the shortest alternative in the production (aside from the empty string), we know that we only need to consider applying the '*' operation a maximum of 5 times:
+
+#+begin_src antlr
+
+  s : ('a'|'b')*   ;             // antlr EBNF-style notation
+  s : () | ('a' s) | ('b' s) ;   // rewritten in traditional BNF-style
+
+  s                 // 0. <s> can expand to...
+  'b' s             // 1. which can expand to...
+  'bb' s            // 2. 
+  'bbb' s           // 3.
+  'bbbb' s          // 4.
+  'bbbbb' s         // 5.
+
+#+end_src
+
+Since there are two possibilities and we know the longest output will require ~5~ applications, we have a maximum of ~2^5=32~ choices to explore.
+
+To generate them, we can assign the numbers to the choices, so that (0='aa'; 1='b'), and then simply count in binary to enumerate all possibilities:
+
+#+begin_src j
+
+     NB. i.y    counts from 0..y
+     NB. #:y    converts y to binary
+     NB. <y     boxes y
+     NB. u@v    composes verbs u and v
+     NB. u"0 y  applies u to the items of y, rather than y as a whole
+     NB. x $ y  reshapes y to shape x
+
+     8 4 $    <@#:"0 i.32
+  ┌─────────┬─────────┬─────────┬─────────┐
+  │0        │1        │1 0      │1 1      │
+  ├─────────┼─────────┼─────────┼─────────┤
+  │1 0 0    │1 0 1    │1 1 0    │1 1 1    │
+  ├─────────┼─────────┼─────────┼─────────┤
+  │1 0 0 0  │1 0 0 1  │1 0 1 0  │1 0 1 1  │
+  ├─────────┼─────────┼─────────┼─────────┤
+  │1 1 0 0  │1 1 0 1  │1 1 1 0  │1 1 1 1  │
+  ├─────────┼─────────┼─────────┼─────────┤
+  │1 0 0 0 0│1 0 0 0 1│1 0 0 1 0│1 0 0 1 1│
+  ├─────────┼─────────┼─────────┼─────────┤
+  │1 0 1 0 0│1 0 1 0 1│1 0 1 1 0│1 0 1 1 1│
+  ├─────────┼─────────┼─────────┼─────────┤
+  │1 1 0 0 0│1 1 0 0 1│1 1 0 1 0│1 1 0 1 1│
+  ├─────────┼─────────┼─────────┼─────────┤
+  │1 1 1 0 0│1 1 1 0 1│1 1 1 1 0│1 1 1 1 1│
+  └─────────┴─────────┴─────────┴─────────┘
+
+#+end_src
+
+Unfortunately, if we don't box the results like this, J will pad the numbers with zeros so that they're all the same length.
+
+An alternative is to increment the binary digits by 1, so that when J pads the results with 0, it doesn't interfere with our generated strings.
+
+#+begin_src j
+
+     NB. >:y increments y by 1
+     NB. u"1 applies u to the rows of y, rather than y as a whole
+
+     NB. was: 8 4 $ <       <@#:"0 i.32
+              8 4 $ <"1    >:@#:"0 i.32
+  ┌─────────┬─────────┬─────────┬─────────┐
+  │1 0 0 0 0│2 0 0 0 0│2 1 0 0 0│2 2 0 0 0│
+  ├─────────┼─────────┼─────────┼─────────┤
+  │2 1 1 0 0│2 1 2 0 0│2 2 1 0 0│2 2 2 0 0│
+  ├─────────┼─────────┼─────────┼─────────┤
+  │2 1 1 1 0│2 1 1 2 0│2 1 2 1 0│2 1 2 2 0│
+  ├─────────┼─────────┼─────────┼─────────┤
+  │2 2 1 1 0│2 2 1 2 0│2 2 2 1 0│2 2 2 2 0│
+  ├─────────┼─────────┼─────────┼─────────┤
+  │2 1 1 1 1│2 1 1 1 2│2 1 1 2 1│2 1 1 2 2│
+  ├─────────┼─────────┼─────────┼─────────┤
+  │2 1 2 1 1│2 1 2 1 2│2 1 2 2 1│2 1 2 2 2│
+  ├─────────┼─────────┼─────────┼─────────┤
+  │2 2 1 1 1│2 2 1 1 2│2 2 1 2 1│2 2 1 2 2│
+  ├─────────┼─────────┼─────────┼─────────┤
+  │2 2 2 1 1│2 2 2 1 2│2 2 2 2 1│2 2 2 2 2│
+  └─────────┴─────────┴─────────┴─────────┘
+
+#+end_src
+
+Now can encode the productions like so:
+
+#+begin_src j
+               NB. 0   1     2
+       ] tokens =. ''; 'aa'; 'b'
+  ┌┬──┬─┐
+  ││aa│b│
+  └┴──┴─┘
+  
+#+end_src
+
+Now we can use ={= to produce the resulting strings:
+
+#+begin_src j
+  
+     NB. x{y     returns y[i] for i in x
+     NB. x u~ y  means y u x
+     NB. ;y      melds boxes together: (;(<'aa'),(<'b')) = (<'aab')
+  
+     NB. was:  <  "1           >:@#:"0 i.32
+     8 4 $     <@;"1 tokens {~ >:@#:"0 i.32
+  ┌─────────┬────────┬────────┬───────┐
+  │aa       │b       │baa     │bb     │
+  ├─────────┼────────┼────────┼───────┤
+  │baaaa    │baab    │bbaa    │bbb    │
+  ├─────────┼────────┼────────┼───────┤
+  │baaaaaa  │baaaab  │baabaa  │baabb  │
+  ├─────────┼────────┼────────┼───────┤
+  │bbaaaa   │bbaab   │bbbaa   │bbbb   │
+  ├─────────┼────────┼────────┼───────┤
+  │baaaaaaaa│baaaaaab│baaaabaa│baaaabb│
+  ├─────────┼────────┼────────┼───────┤
+  │baabaaaa │baabaab │baabbaa │baabbb │
+  ├─────────┼────────┼────────┼───────┤
+  │bbaaaaaa │bbaaaab │bbaabaa │bbaabb │
+  ├─────────┼────────┼────────┼───────┤
+  │bbbaaaa  │bbbaab  │bbbbaa  │bbbbb  │
+  └─────────┴────────┴────────┴───────┘
+  
+#+end_src
+
+Now, we can filter this list by finding the items where the length is equal to 5.
+
+#+begin_src j
+  
+    NB. #y      returns the length of y
+    NB. (5=#)y  returns 1 if the length is 5, 0 otherwise.
+    NB. u S:0 y applies u to the boxed items of y rather than y as a whole
+    NB. x#y     makes x[i] copies of y[i], where x and y are same length
+    NB. ]y      returns y
+  
+    NB.    (f        g h) y   means  (f        y) g (h y)
+    NB. so ((5=#)S:0 # ]) y   means  ((5=#)S:0 y) # (] y)
+    NB. which says: "make 1 copy of y[i] when length(unbox y[i]) = 5"
+    NB. (and 0 copies when the length is not 5)
+
+    NB. was:  8 4 $  <@;"1 tokens {~ >:@#:"0 i.32
+    ((5=#)S:0 # ])  <@;"1 tokens {~ >:@#:"0 i.32
+  ┌─────┬─────┬─────┬─────┬─────┐
+  │baaaa│baabb│bbaab│bbbaa│bbbbb│
+  └─────┴─────┴─────┴─────┴─────┘
+  
+#+end_src
