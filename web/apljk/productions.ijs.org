@@ -1,5 +1,8 @@
-#+title: grammar production in j
+#+title: Grammar Production in J
 #+date: <2014-04-07 10:55PM>
+
+
+
 
 * Grammar Productions in J
 
@@ -22,7 +25,7 @@ Since 'b' is the shortest alternative in the production (aside from the empty st
 
   s                 // 0. <s> can expand to...
   'b' s             // 1. which can expand to...
-  'bb' s            // 2. 
+  'bb' s            // 2.
   'bbb' s           // 3.
   'bbbb' s          // 4.
   'bbbbb' s         // 5.
@@ -31,7 +34,7 @@ Since 'b' is the shortest alternative in the production (aside from the empty st
 
 Since there are two possibilities and we know the longest output will require ~5~ applications, we have a maximum of ~2^5=32~ choices to explore.
 
-To generate them, we can assign the numbers to the choices, so that (0='aa'; 1='b'), and then simply count in binary to enumerate all possibilities:
+To produce them, we can the choices, so that (0='aa'; 1='b'), and then simply count in binary to generate all expansions.
 
 #+begin_src j
 
@@ -102,17 +105,17 @@ Now can encode the productions like so:
   ┌┬──┬─┐
   ││aa│b│
   └┴──┴─┘
-  
+
 #+end_src
 
-Now we can use ={= to produce the resulting strings:
+... and use ={= to produce the resulting strings:
 
 #+begin_src j
-  
+
      NB. x{y     returns y[i] for i in x
      NB. x u~ y  means y u x
      NB. ;y      melds boxes together: (;(<'aa'),(<'b')) = (<'aab')
-  
+
      NB. was:  <  "1           >:@#:"0 i.32
      8 4 $     <@;"1 tokens {~ >:@#:"0 i.32
   ┌─────────┬────────┬────────┬───────┐
@@ -132,28 +135,132 @@ Now we can use ={= to produce the resulting strings:
   ├─────────┼────────┼────────┼───────┤
   │bbbaaaa  │bbbaab  │bbbbaa  │bbbbb  │
   └─────────┴────────┴────────┴───────┘
-  
+
 #+end_src
 
-Now, we can filter this list by finding the items where the length is equal to 5.
+Finally, we can filter this list by finding the items where the length is equal to 5.
 
 #+begin_src j
-  
+
     NB. #y      returns the length of y
     NB. (5=#)y  returns 1 if the length is 5, 0 otherwise.
-    NB. u S:0 y applies u to the boxed items of y rather than y as a whole
+    NB. u S:0 y applies u to boxed items of y, rather than y as a whole
     NB. x#y     makes x[i] copies of y[i], where x and y are same length
     NB. ]y      returns y
-  
+
     NB.    (f        g h) y   means  (f        y) g (h y)
     NB. so ((5=#)S:0 # ]) y   means  ((5=#)S:0 y) # (] y)
     NB. which says: "make 1 copy of y[i] when length(unbox y[i]) = 5"
     NB. (and 0 copies when the length is not 5)
 
-    NB. was:  8 4 $  <@;"1 tokens {~ >:@#:"0 i.32
+    NB. was: 8 4 $  <@;"1 tokens {~ >:@#:"0 i.32
     ((5=#)S:0 # ])  <@;"1 tokens {~ >:@#:"0 i.32
   ┌─────┬─────┬─────┬─────┬─────┐
   │baaaa│baabb│bbaab│bbbaa│bbbbb│
   └─────┴─────┴─────┴─────┴─────┘
-  
+
+#+end_src
+
+* TODO corrections
+:PROPERTIES:
+:TS:       <2014-04-08 04:12AM>
+:ID:       rqt5te113gg0
+:END:
+
+This code above doesn't generate /all/ the patterns.
+
+This is becasue in binary, 1, 01, 001, etc all mean the same. So the first alternative is ignored.
+
+I need to count in trinary, not binary.
+
+#+begin_src j
+    trinary =. (3 #.^:_1 ])"0
+  0 0 0
+  1 0 0
+  2 0 0
+  1 0 0
+  1 1 0
+  1 2 0
+  2 0 0
+  2 1 0
+  2 2 0
+  1 0 0
+#+end_src
+
+To strip out items with embedded null strings, first shift the zeros to the left. We'll do this by removing the zeros, and then letting j add them back in when it pads the result. Note that this reduces our column count by 1, because we only needed three digits for (1 0 0) (trinary 9), which is reduced to (1) and then padded to become (1 0).
+
+#+begin_src j
+
+     0-.~"1 trinary i.10
+  0 0
+  1 0
+  2 0
+  1 0
+  1 1
+  1 2
+  2 0
+  2 1
+  2 2
+  1 0
+
+#+end_src
+
+To strip the duplicates, add we use (~.) ("nub").
+
+#+begin_src j
+
+     ~. 0-.~"1 trinary i.10
+  0 0
+  1 0
+  2 0
+  1 1
+  1 2
+  2 1
+  2 2
+
+#+end_src
+
+The complete solution is then:
+
+#+begin_src j
+
+    tokens  =. ''; 'aa'; 'b'
+    trinary =. (3 #.^:_1 ])"0
+    shift0s =. 0 -.~"1 ]
+    length5 =. (5=#)S:0 # ]
+    meld    =. <@;"1
+
+    length5 meld tokens {~ ~. shift0s  trinary i.243
+  ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+  │aaaab│aabaa│baaaa│aabbb│baabb│bbaab│bbbaa│bbbbb│
+  └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+
+  ((5 = #)S:0 # ]) <@;"1 ('';'aa';'b') {~ ~. 0 -.~"1 (3 #.^:_1 ])"0 i.3^5
+
+#+end_src
+
+
+* TODO direct calculating without enumerating.
+:PROPERTIES:
+:TS:       <2014-04-08 04:33AM>
+:ID:       t2hg0f213gg0
+:END:
+
+I posted this is the #learnprogramming IRC channel, and after a while, =_|x|_= figured out that rather than counting in trinary, you can calculate the number as:
+
+: fib(x-1) + fib(x-2)
+
+We haven't yet figured out why this works.
+
+#+begin_src j
+
+     NB. one implementation of fib in j:
+     fib =. (3 :'{: {."1 (}. , +/)^:(<1+y) [ 1 1')"0
+
+     fib i.10
+  1 1 2 3 5 8 13 21 34 55
+
+     +/ fib 5 - 1 2   NB. same as length of our answer
+  8
+
 #+end_src
