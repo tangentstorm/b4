@@ -1,0 +1,214 @@
+#+title: callables in free pascal
+
+* the goal: lift procedures written in pascal up into a scripting language
+:PROPERTIES:
+:TS:       <2014-04-09 06:29PM>
+:ID:       smo0om615gg0
+:END:
+
+Exposing procedures to a scripting layer is actually not terribly hard. The problem is that the procedures each have to be wrapped, and it would be nice if these wrappers could just be generated.
+
+But there are already several potential tools available to help:
+
+- The =ppudump= program that ships with free pascal can generate json or xml descriptions of unit interfaces
+
+- The [[http://www.freepascal.org/docs-html/rtl/typinfo/][typinfo]] unit provides some support for runtime type information, though it's rather low level and doesn't provide a means for dynamically invoking methods.
+
+- The [[http://www.freepascal.org/docs-html/rtl/system/idispatch.invoke.html][Invoke]] method on the [[http://www.freepascal.org/docs-html/rtl/system/idispatch.html][IDispatch]] interface can be used to call procedures dynamically, when working with interfaces. It appears that on windows the actual type information is accessed through the [[http://www.codeproject.com/Articles/5180/RunTime-COM-Object-Inspection][typelib system]] rather than through direct inspection of the component.
+
+- It's possible to create [[http://alex.ciobanu.org/?p=152][invokable custom variant types]], at least in delphi. Free pascal has at least some support for this concept, but it's not yet clear to me how much is implemented.
+
+- Since the calling conventions are known, it's possible that we could write a platform-specific routine that would load parameters into the right slots at runtime. This would probably be the most efficient method.
+
+
+* NOTE . the plan
+:PROPERTIES:
+:TS:       <2014-04-09 07:11PM>
+:ID:       sbo79l815gg0
+:END:
+
+As of right now, I think the easiest solution would be to just wrap each routine with a corresponding version that would take wrapped values (probably variants) from the stack and ram of our high level interpreter, perform the relevant typechecks and conversions, and then call the corresponding native functions.
+
+Also, if these are to be generated, then it might be nice to have one version for dynamic code that hasn't been typechecked, and another version for code that's already known to be typesafe.
+
+* NOTE . a manual example
+:PROPERTIES:
+:TS:       <2014-04-09 06:48PM>
+:ID:       sxi11i715gg0
+:END:
+
+The =kvm= unit I use for console work defines the following interface:
+
+#+begin_src pascal
+  type ITerm = interface
+    function  Width : word;
+    function  Height: word;
+    function  XMax  : word;
+    function  YMax  : word;
+    function  WhereX: word;
+    function  WhereY: word;
+    procedure ClrScr;
+    procedure ClrEol;
+    procedure NewLine;
+    procedure ScrollUp;
+    procedure Fg( color : byte );
+    procedure Bg( color : byte );
+    procedure Emit( s : TStr );
+    procedure GotoXY( x, y : word );
+    procedure InsLine;
+    procedure DelLine;
+    procedure SetTextAttr( value : word );
+    function  GetTextAttr : word;
+    property  TextAttr : word read GetTextAttr write SetTextAttr;
+    procedure ShowCursor;
+    procedure HideCursor;
+    procedure Resize( NewW, NewH : word );
+  end;
+#+end_src
+
+* NOTE . manual conversion
+:PROPERTIES:
+:TS:       <2014-04-09 07:36PM>
+:ID:       j2mj0q915gg0
+:END:
+
+#+begin_src pascal
+  
+  procedure TImpTerm.Width;  begin data.push(term.width)  end;
+  procedure TImpTerm.Height; begin data.push(term.height) end;
+  procedure TImpTerm.xMax;   begin data.push(term.xMax) end;
+  procedure TImpTerm.yMax;   begin data.push(term.yMax) end;
+  procedure TImpTerm.xCur;   begin data.push(term.xCur) end;
+  procedure TImpTerm.yCur;   begin data.push(term.yCur) end;
+  procedure TImpTerm.ClrScr; begin term.ClrScr end;
+  procedure TImpTerm.ClrEol; begin term.ClrEol end;
+  procedure TImpTerm.NewLine;begin term.NewLine end;
+  procedure TImpTerm.ScrollUp;begin term.ScrollUp end;
+  procedure TImpTerm.Fg;
+    var v : variant; // i suspect i'm going to have to test for types here,
+    begin            // since it could be fg(byte) or fg(char)
+      v := data.pop; term.Fg(v);
+    end;
+  procedure TImpTerm.Bg; begin term.Bg(data.pop) end;
+  procedure TImpTerm.Emit; begin term.emit(data.pop) end;
+  procedure TImpTerm.GotoXy;
+    var x,y : variant;
+    begin data.pop2(x,y); term.gotoxy(x,y) 
+    end;
+  procedure TImpTerm.InsLine; begin term.InsLine end;
+  procedure TImpTerm.DelLine; begin term.DelLine end;
+  procedure TImpTerm.SetTextAttr; begin term.attr := data.pop end;
+  procedure TImpTerm.GetTextAttr; begin data.push(term.attr) end;
+  procedure TimpTerm.ShowCursor; begin term.ShowCursor end;
+  procedure TimpTerm.HideCursor; begin term.HideCursor end;
+  procedure TimpTerm.Resize;
+    var x,y : variant;
+    begin data.pop2(x,y); term.gotoxy(x,y);
+    end;
+
+#+end_src
+
+Well that wasn't so bad.
+
+* NOTE . Telling the system about the wrapped types
+:PROPERTIES:
+:TS:       <2014-04-09 07:55PM>
+:ID:       fwohrla15gg0
+:END:
+
+#+begin_src pascal
+  
+  const vs = varstring; vw = varword;
+  begin
+    o := TImpTerm.Create(aOwner);
+    with impmodule('kvm') do begin
+  
+      // r(name : str; cp : TCodePointer; takes, gives : array of TVarType)
+      // -> register a routine
+      r('width',      @o.width,      [],       [vw]);
+      r('height',     @o.height,     [],       [vw]);
+      r('xMax',       @o.xMax,       [],       [vw]);
+      r('yMax',       @o.yMax,       [],       [vw]);
+      r('xCur',       @o.xCur,       [],       [vw]);
+      r('yCur',       @o.yCur,       [],       [vw]);
+      r('clrScr',     @o.clrScr,     [],       [vw]);
+      r('clrEol',     @o.clrEol,     [],       [vw]);
+      r('newLine',    @o.newLine,    [],       [vw]);
+      r('scrollUp',   @o.scrollUp,   [],       [vw]);
+      r('fg',         @o.fg,         [],       [vw]);
+      r('bg',         @o.bg,         [],       [vw]);
+      r('emit',       @o.emit,       [vs],     []);
+      r('gotoXY',     @o.gotoXY,     [vw, vw], []);
+      r('insLine',    @o.insLine,    [],       []);
+      r('delLine',    @o.delLine,    [],       []);
+      r('showCursor', @o.showCursor, [],       []);
+      r('hideCursor', @o.hideCursor, [],       []);
+      r('resize',     @o.resize,     [vw, vw], []);
+  
+      // this would register a property
+      p('textAttr',   @o.GetTextAttr, @o.SetTextAttr, vw );
+    end;
+  end;
+#+end_src
+
+
+* NOTE . actual code to use
+:PROPERTIES:
+:TS:       <2014-04-09 08:45PM>
+:ID:       jjs8fxc15gg0
+:END:
+
+* NOTE . =imp.module(name): TImpModule=
+:PROPERTIES:
+:TS:       <2014-04-09 08:47PM>
+:ID:       uhzc11d15gg0
+:END:
+
+* NOTE . =TImpModule.r= (register a method/routine)
+:PROPERTIES:
+:TS:       <2014-04-09 08:47PM>
+:ID:       ndu441d15gg0
+:END:
+
+* NOTE . =TImpModule.p= (register a property)
+:PROPERTIES:
+:TS:       <2014-04-09 08:47PM>
+:ID:       ndu441d15gg0
+:END:
+
+
+
+* NOTE . how do i represent the types?
+:PROPERTIES:
+:TS:       <2014-04-09 07:25PM>
+:ID:       rwo5u7915gg0
+:END:
+
+#+begin_src pascal
+
+  // input variables for each routine
+  var
+    name   : name of the routine;
+    params : array of variant;
+    rtype  : TType; // value of the return type (for functions)
+   
+  type
+    TPrim = class (TComponent)
+        typ : TType;
+        val : variant;
+      end;
+
+    TList<T> : class (TComponent)
+        members : GArray<T>;
+        constructor Create;
+      end;
+    TParams = class (TComponent)
+        
+      end;
+    TProcedure = class (TComponent)
+        name : string;
+        args : TList<TParams>;
+      end;
+  
+#+end_src
+
