@@ -1,0 +1,197 @@
+#+title: ufsm design
+
+* overview
+:PROPERTIES:
+:TS:       <2014-04-12 05:23PM>
+:ID:       2v7cja119gg0
+:END:
+This document describes the design of a module for generic state machines.
+
+* finite state machines
+:PROPERTIES:
+:TS:       <2014-04-12 12:57PM>
+:ID:       t7p260p09gg0
+:END:
+
+A finite state machine is device that, at any given time, is in one[fn:1] of /N/ states (where /N/ is a positive integer). The machine consumes symbols in some arbitrary input language, and transitions between states based on the input it receives.
+
+#+begin_src pascal
+
+  // (i)nterface for (f)inite (s)tate (m)achines
+  type IFSM<T> = interface
+    function State : cardinal;
+    function MaxState : cardinal;
+    procedure Take(symbol : T);
+    procedure Take(sequence : array of T);
+    procedure Reset;
+  end;
+
+#+end_src
+
+In particular, we are interested in state machines that work with strings of characters, so we might as well specialize this interface for strings:
+
+#+begin_src pascal
+  
+  type ICharFSM = interface (IFSM<char>)
+    procedure Take( s : string );
+  end;
+
+#+end_src
+
+* Use case: tokenization
+:PROPERTIES:
+:TS:       <2014-04-12 03:53PM>
+:ID:       hgtic5x09gg0
+:END:
+
+Although state machines on their own are interesting in a mathematical sense, we're interested in actually /using/ them, which means attaching specific behaviors to certain transitions.
+
+For example, if our input is source code in some programming language, we may want to break the input stream down into tokens so that we can colorize them. In this case, we'd want to know:
+
+  - the actual /text/ of the symbol
+  - what /kind/ of symbol it is
+
+For example, we might want to assign different colors to numbers, strings, keywords, type names, comments, and miscelanious characters like punctuation.
+
+With a syntax highlighter, we'd want to keep whitespace intact, and so we'd probably want to have tokens like =spaces= for a string of spaces, and perhaps a =newline= token.
+
+The /kind/ field can simply be another cardinal number.
+
+If we were writing a lexer that would feed tokens into a parser, on the other hand, we might want to ignore whitespace and comments, and only consider the tokens that affect the meaning of the program.
+
+One approach, used by the ANTLR parser generator, is to provide a second numeric tag called a channel.
+
+Adopting this approach, we might represent tokens like this:
+
+#+begin_src pascal
+
+  type TToken = record
+    kind, channel : cardinal;
+    data : string;
+  end;
+
+#+end_src
+
+We would then want to provide an interface for applications to receive the tokens as they are identified. We can do this by defining a callback procedure (often called a /delegate/ or /event handler type/):
+
+#+begin_src pascal
+
+  type TTokenHandler = procedure (token : TToken) of object;
+
+#+end_src
+
+
+* represeting a transition
+:PROPERTIES:
+:TS:       <2014-04-12 04:23PM>
+:ID:       3qqhtiy09gg0
+:END:
+
+At a minimum, our data structure to represent state machine transitions needs to include the destination state.
+
+The "from" state and the symbol that triggers the transition probably shouldn't be stored as part of the transition, but rather as keys used to look up the transition in some mapping structure.
+
+Since we're modeling states as cardinals, the simplest model of a transition would just be a cardinal representing the next state.
+
+We know already, though, that we want to perform various actions as tokens come in, and it's likely that we'll want to expand the set of possible actions in the future.
+
+A generic type for /describing/ state machines might look like this:
+
+#+begin_src pascal
+  type IFSMDescription<TState, TSymbol, TAction> = interface
+    procedure Transition(
+                fromState : TState;
+                onSymbol  : TSymbol;
+                respondBy : TAction );
+  end;
+#+end_src
+
+In practice, the =TAction= type might be =cardinal= (if we don't need those extra actions), or =array of byte=, or some more carefully defined type.
+
+Regardless of how we define =TAction=, the actual work would be carried out by some kind of simulator capable of interpreting the instructions:
+
+#+begin_src pascal
+  type IFSMSimulator<TAction> = interface
+    procedure Execute(TAction);
+  end;
+#+end_src
+
+
+* transitions between states
+:PROPERTIES:
+:TS:       <2014-04-12 01:59PM>
+:ID:       14v3dvr09gg0
+:END:
+
+If there are /N/ possible states and /M/ symbols in the input language, then we could choose to represent the automaton as a 2-dimensional array containing /M/ \times /N/ cells.
+
+Then, to decide what to do at any given point, the machine can simply inspect the cell at coordinates =[state][symbol]=, and adjust its state accordingly.
+
+#+begin_src pascal
+  
+  procedure TFSM<TState, TSymbol, TAction>.Take(sym : TSymbol);
+    begin execute(self[state, sym]);
+    end;
+
+#+end_src
+
+Of course, much of the time, there will be a great deal of redundancy in the lookup table, so we may want to choose a more space-friendly representation such as a sparse array. Regardless of how it's represented internally, the /M/ \times /N/ array metaphor is a sensible one, and we can provide it as an interface:
+
+#+begin_src pascal
+
+  type ITransitionTable<TState, TSymbol, TAction> = interface
+    function GetAction(state : TState; sym : TSymbol) : TAction;
+    procedure SetAction(state : TState; sym : TSymbol; action : TAction);
+    property actions[ state : TState; sym : TSymbol ] : TAction
+      read GetAction write SetAction; default;
+  end;
+    
+#+end_src
+
+
+* Grouping symbols
+:PROPERTIES:
+:TS:       <2014-04-12 05:22PM>
+:ID:       v2rd7a119gg0
+:END:
+
+In addition to changing the representation of the lookup table to something more space efficient, we could modify the representation of symbols so that we can treat them in groups.
+
+This is similar to the idea of specifying the type of each output token, and the approach is the same: we would simply add a tag to the input symbols so that we could deal with them in groups.
+
+For example, for ascii input, we might provide something like this:
+
+#+begin_src pascal
+  
+  type
+    TCharSet   = set of char;
+    TCharGroup = ( sgSpace, sgUpper, sgLower, sgNumber, sgSymbol, sgOther );
+    TGroupDefs = array [ TCharGroup ] of TCharSet;
+  var
+    def : TGroupDefs; ch : char; gr
+  begin
+    def[sgSpace]  := [ ' ', ^I {tab}, ^J {linefeed}, ^M {carriage return} ];
+    def[sgUpper]  := [ 'A' .. 'Z' ];
+    def[sgLower]  := [ 'a' .. 'z' ];
+    def[sgNumber] := [ '0' .. '9' ];
+    def[sgSymbol] := [ '!' .. '~' ] - def[sgUpper] - def[sgLower] - def[sgNumber];
+    def[sgOther] := ([ #0 .. ' ' ] - def[sgSpace]) + [ #128 .. #255 ];
+  end;
+
+#+end_src
+
+Then our language-specific =TSymbol= type might might look like this:
+
+#+begin_src pascal
+
+  type TSymbol = record
+    group : TCharGroup;
+    ch : char;
+  end;
+
+#+end_src
+
+
+* Footnotes
+
+[fn:1] In automata theory, there is a distinction between deterministic and non-deterministic state machines. A "non-deterministic finite automaton" (NFA) is a state machine that can exist in multiple states at once, or transition between states without requiring input. It turns out that any NFA can be reduced to an equivalent DFA (deterministic finite automaton), and in this article, I'm referring only to the latter.
