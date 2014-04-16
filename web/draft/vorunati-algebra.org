@@ -1,0 +1,84 @@
+#+title: (DRAFT) vorunati algebra
+
+* vorunati algebra
+:PROPERTIES:
+:TS:       <2014-04-16 01:53PM>
+:ID:       p1gfpe51egg0
+:END:
+
+Just as boolean algebra deals with the two values ~0~ and ~1~, also written as or ~T~ and ~F~ for /true/ and /false/, or ~⊤~ and ~⊥~ for /top/ and /bottom/), vorunati algebra deals with the four values ~0~, ~1~, ~2~, and ~3~, which can be written ~◱~, ~◰~, ~◳~, ~◲~  respectively, and pronounced /vo/, /ru/, /na/, and /ti/.
+
+#+begin_src haskell
+type Vor = Vo | Ru | Na | Ti
+#+end_src
+
+We will talk about two classes of functions on thes values: /monadic/ functions that take one value and produce one value, and /dyadic/ functions that take two values and produce one.
+
+#+begin_src haskell
+type MoVor = Vor -> Vor
+type DyVor = Vor -> Vor -> Vor
+#+end_src
+
+Since there are four possible inputs in our algebra, and each input can be mapped to one of four outputs, there are (256 = 4 ^ 4) possible monadic functions, and (65536 = (4 \times 4) ^ 4) possible dyadic functions.
+
+
+* mnemonics
+:PROPERTIES:
+:TS:       <2014-04-16 03:49PM>
+:ID:       w9j0nra1egg0
+:END:
+
+Several criteria were used in selecting the names.
+
+  - they should be short
+  - they should be distant from each other phonetically
+  - they should have some sort of mnemonic support
+
+Therefore:
+
+| symbol | pronunciation      | mnemonic                 |
+|--------+--------------------+--------------------------|
+| vo     | rhymes with /so/     | similar to the word /void/ |
+| ru     | rhymes with /sue/    | /resolve uncertainty/      |
+| na     | rhymes with /ma/, /pa/ | /not applicable/           |
+| ti     | sounds like /tee/    | /T/ for /terminate/          |
+
+
+* protocol interpretation
+:PROPERTIES:
+:TS:       <2014-04-16 01:53PM>
+:ID:       9sjjde51egg0
+:END:
+We can map the four symbols to four types of interaction with a program:
+
+- vo :: takes no input, gives no output
+- ru :: takes input, gives no output
+- na :: takes no input, gives output
+- ti :: takes input, gives output
+
+
+* state machine interpretation
+:PROPERTIES:
+:TS:       <2014-04-16 04:03PM>
+:ID:       ldd77fb1egg0
+:END:
+
+- vo :: means an infinite loop (for example, infinite left recursion)
+- ru :: means paused, pending input
+- na :: means error or failure
+- ti :: means successful termination
+  
+* halting question interpretation
+:PROPERTIES:
+:TS:       <2014-04-16 03:47PM>
+:ID:       dj3kopa1egg0
+:END:
+
+Suppose you write a program that attempts to answer the halting question.
+At any given time in the process, it will be in one of four states:
+
+- vo :: resolved : the subject clearly contains an infinite loop
+- ru :: unresolved : still calculating an answer
+- na :: unresolved : encountered a paradox
+- ti :: resolved : the subject clearly terminates
+

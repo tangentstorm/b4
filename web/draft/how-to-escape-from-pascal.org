@@ -1,0 +1,99 @@
+#+title: how to escape from pascal
+
+* part 1 : reconstructing pascal
+:PROPERTIES:
+:TS:       <2014-04-16 05:00PM>
+:ID:       954j92e1egg0
+:END:
+
+** a simple forth
+:PROPERTIES:
+:TS:       <2014-04-16 05:03PM>
+:ID:       4tfg27e1egg0
+:END:
+
+** pointers
+:PROPERTIES:
+:TS:       <2014-04-16 05:02PM>
+:ID:       uj77r6e1egg0
+:END:
+
+** basic control structures
+:PROPERTIES:
+:TS:       <2014-04-16 05:01PM>
+:ID:       tj3fu3e1egg0
+:END:
+
+** arrays from @/!
+:PROPERTIES:
+:TS:       <2014-04-16 05:01PM>
+:ID:       2uy2z4e1egg0
+:END:
+
+** records from arrays
+:PROPERTIES:
+:TS:       <2014-04-16 04:31PM>
+:ID:       9yminqc1egg0
+:END:
+
+** subroutines from records
+:PROPERTIES:
+:TS:       <2014-04-16 04:33PM>
+:ID:       b225mtc1egg0
+:END:
+
+#+begin_src pascal
+  type
+    tVoSub = procedure;
+    tRuSub = procedure( dat : pDat );
+    tNaSub = funtion : pDat;
+    tTiSub = funtion( dat : pDat ) : pDat;
+#+end_src
+
+* part 2 : the escape
+:PROPERTIES:
+:TS:       <2014-04-16 05:00PM>
+:ID:       ecrfw2e1egg0
+:END:
+
+** objects from records
+:PROPERTIES:
+:TS:       <2014-04-16 04:17PM>
+:ID:       ihwju2c1egg0
+:END:
+
+#+begin_src pascal
+  type
+    pDat = ^tDat;
+    tDat = array of byte;
+  
+    pStr = ^tStr;
+    tStr = array of char;
+  
+    pTyp = ^tTyp;
+    tTyp = record
+      sup : pTyp;
+      sym : pStr;
+    end;
+
+    tVal = record
+      typ : pTyp;
+      dat : pDat;
+    end;
+
+    { the four fundamental messaging patterns }
+    tVoMsg = procedure( obj : pObj );
+    tRuMsg = procedure( obj : pObj; msg : pMsg );
+    tNaMsg = funtion( obj : pObj ) : pMsg;
+    tTiMsg = funtion( obj : pObj; msg : pMsg ) : pMsg;
+  
+    pObj = ^tObj;
+    tObj = record
+      val : tVAL;
+       vo : tVO;
+       ru : tRU;
+       na : tNA;
+       ti : tTI;
+    end;
+
+#+end_src
