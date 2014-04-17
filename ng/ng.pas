@@ -129,8 +129,8 @@ constructor TNgaroVM.New( imagepath : string );
     self.load;
     self.debugmode := false;
     self.ports[0] := rxACTIVE;
-    self.retroTerm := kvm.work;
-    self.debugTerm := kvm.work;
+    self.retroTerm := kvm.asTerm;
+    self.debugTerm := kvm.asTerm;
   end; { vm.init }
 
 destructor TNgaroVM.Destroy;
