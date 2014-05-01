@@ -1,0 +1,114 @@
+#+title: lisp.rx : a tiny lisp in retro
+
+* a universal evaluator
+:PROPERTIES:
+:TS:       <2014-05-01 05:30AM>
+:ID:       p3cifs60ygg0
+:END:
+
+#+begin_src retro
+  ( sx -> s-expression: either an atom or a cons cell (list). )
+  ( al -> a-list: an sx consisting of (key . value) pairs. )
+  ( ctx -> environ: a-list holding variables defined in current scope )
+  
+  <<defs>>
+
+  : mEVAL ( revectored because mutually recursive with other functions )
+  ; "( c:al e:sx - sx ) evaluate expression e in context c" :doc
+  
+  : mAPPLY mAPPQ mCONS mEVAL
+  ; "( c:ctx f:sx args:sx - sx ) apply function f to quoted arguments" :doc
+  
+  : mEVAL2
+     2over ( -> a pq a pq )
+     mCDR mEVAL push
+     mCAR mEVAL pop
+  ; "( a:sx pq:sx -> p:sx q:sx ) eval sx pair (x . y) in context of alist a" :doc
+  
+  : mEVLIS mNULL? [ sNULL ] [ mCAR mEVAL mCDR mEVLIS mCONS ] if
+  ; "( a:sx l:sx ) eval each sx in l in context of alist a" :doc
+  
+  : mSPLIT dup mCDR [ mCAR ] dip
+  ; "( pq:sx - p:sx q:sx ) split cons cell into its parts"
+  
+  : mEV.form ( c:ctx pq:sx - sx )
+    mSPLIT swap ( -> c q p )
+    [ sQUOTE mEQ? ] [ mCADR ] whend
+    [ sATOM? mEQ? ] [ mCADR mEVAL mATOM? ] whend
+    [ sCOND  mEQ? ] [ mCDR mEVCOND ] whend
+    [ sCAR   mEQ? ] [ mCADR mEVAL mCAR ] whend
+    [ sCDR   mEQ? ] [ mCADR mEVAL mCDR ] whend
+    [ sCONS  mEQ? ] [ mEVAL2 mCONS ] whend
+    [ sDEF   mEQ? ] [ dup mCADR mCADDR bindFn ] whend
+    [ sCTX   mEQ? ] [] ( do nothing; leaving c ) whend
+    ( otherwise: try to treat as function application )
+      rot 2dup 2push 2rot    ( -> c q p | c c )
+      pop swap mASSOC push   ( -> c q   | P c ) ( P is mEVAL[ctx; p] )
+      mEVLIS pop swap        ( -> P Q   | c   )
+      mCONS pop swap mEVAL   ( -> v     |     )
+  ; "( c:sx p:sx q:sx - v:sx ) eval form (p . q) in context c" :doc
+  
+  : mEV.lambda            (    c l a )
+    rot swap over swap    ( -> l c c a )
+    mEVLIS push swap      ( -> c l | A )
+    mSPLIT nip mSPLIT     ( -> c p q | A  // p is arg names, q is body )
+    swap push swap pop    ( -> q c p | A )
+    pop mZIP swap mAPPEND ( -> q pAc  // pAc=new ctx with bound args )
+    swap mEVAL
+  ; "( ctx:sx lam:sx@(λ . pq) args:sx -> sx )" :doc
+  
+  ( : mEVAL - now we can define it for real. )
+  [ ( c:ctx e:sx -> sx )
+    dup mATOM?
+    [ ( if e is an atom, just look it up ) mASSOC ]
+    [ ( elif mCAR[e] is an atom... ) dup mCAR dup mATOM?
+      [ ( then evaluate as a form: ) mEV.form ]
+      [ ( else try to treat it as a lambda )
+        mSPLIT over mCAR ( c ((p . q) . args) -> c (p q) (args) p )
+        [ sLAMBDA mEQ? ] [ mEV.lambda ] whend
+        "can't apply " puts mPRINT " to arguments. " puts cr
+        2drop drop
+      ] if
+    ] if
+  ] is mEVAL
+  
+#+end_src
+
+* TODO [0/2] \laquo{}defs\raquo = words to define
+:PROPERTIES:
+:TS:       <2014-05-01 09:52AM>
+:ID:       di1h2wi0ygg0
+:END:
+
+** TODO [0/11] other meta functions
+:PROPERTIES:
+:TS:       <2014-05-01 09:53AM>
+:ID:       2l545yi0ygg0
+:END:
+- [ ] mASSOC :: c:al s:sx \rarr sx ; /lookup symbol s in context c/
+- [ ] mAPPQ :: s:sx \rarr sx ; /basically (map quote s)/
+- [ ] mCONS :: p q \rarr (p . q)
+- [ ] mCDR  :: (p . q) \rarr q
+- [ ] mEVLIS :: s:sx \rarr sx ; /basically (map eval s)/
+- [ ] mNULL? :: s \rarr bit
+- [ ] mCAR :: (p . q) -> p
+- [ ] mEQ? :: p q \rarr bit
+- [ ] mATOM? :: p \rarr bit
+- [ ] mEVCOND :: opts:sx \rarr sx ; /special branching/conditional statement/
+- [ ] bindFn :: key val -> key ; /associate key with value in current ctx/
+- [ ] mZIP :: [a] [b] -> [(a . b)]
+
+** TODO [0/8] symbols
+:PROPERTIES:
+:TS:       <2014-05-01 09:55AM>
+:ID:       ngggw0j0ygg0
+:END:
+
+- [ ] sQUOTE
+- [ ] sATOM?
+- [ ] sCOND
+- [ ] sCAR
+- [ ] sCDR
+- [ ] sCONS
+- [ ] sDEF
+- [ ] sCTX
