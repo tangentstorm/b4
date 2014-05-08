@@ -1,0 +1,74 @@
+#+title: parsers in b4 assembly language
+
+* a simple rule to parse
+:PROPERTIES:
+:TS:       <2014-05-08 02:39PM>
+:ID:       rdrj1r717hg0
+:END:
+
+#+begin_src antlr
+module : 'MODULE' $name=iden ';' imports? defs block $name '.' ;
+#+end_src
+
+* (hypothetical) high level code to parse the above rule.
+:PROPERTIES:
+:TS:       <2014-05-08 02:44PM>
+:ID:       4vyb8z717hg0
+:END:
+
+#+begin_src retro
+
+r: module [ name ] "MODULE" iden !name ";" imports ? defs block @name "." ;
+
+#+end_src
+
+
+* lower level code
+:PROPERTIES:
+:TS:       <2014-05-08 02:48PM>
+:ID:       vok386817hg0
+:END:
+
+#+begin_src retro
+needs forth' with forth'
+: parse-module word dup "MODULE" same?
+  ifso keep else "expected module" err end ;
+#+end_src
+
+
+* idea : start with a simple io pipe, but introduce commands.
+:PROPERTIES:
+:TS:       <2014-05-08 02:59PM>
+:ID:       cfn52o817hg0
+:END:
+- by default, the input is simply output unchanged.
+  - not like php, where the code and text are in the same stream.
+  - more like implementing 'cat' and then adding escapes.
+- next, introduce a buffering mechanism
+
+
+* i/o buffers and building trees
+:PROPERTIES:
+:TS:       <2014-05-08 03:57PM>
+:ID:       hnojfdb17hg0
+:END:
+- there should be a main 'work' buffer for building up the next token.
+- there should be a command to emit the token
+- when you emit a token, it is attached to a chain of tokens
+- tokens should be like atoms in lisp or symbols in j
+  - they should be stored in a simple array
+  - they should be indexed and their lengths should be known
+- now we can arrange tokens into nested structures
+
+
+* NOTE . final output from the program should be to flush the trees
+:PROPERTIES:
+:TS:       <2014-05-08 04:22PM>
+:ID:       xa522ic17hg0
+:END:
+
+* NOTE . should be an operation to replace the current chain with something else
+:PROPERTIES:
+:TS:       <2014-05-08 04:30PM>
+:ID:       893fyvc17hg0
+:END:
