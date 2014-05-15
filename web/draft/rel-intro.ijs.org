@@ -1,0 +1,145 @@
+#+title: relational programming in j
+
+* introduction
+:PROPERTIES:
+:TS:       <2014-05-15 02:27AM>
+:ID:       kmhghel0ghg0
+:header-args:  :exports both  :session
+:END:
+
+I've been reading through a series of old papers, written by a fellow named Bruce MacLennan during the 1980's
+
+MacLennan's work deals with binary relations, where a relation is something like a verb/function that may produce more than one result for a given input, and whose inverse is also a relation.
+
+For example, whereas ~*:~ represents the "square function" in J, ~(*: :. ((+,-)@%:))~ might represent the "square relation".
+
+In addition, a binary relation can be defined by creating an array of shape ~(n, 2)~.
+
+MacLennan's language is untyped, but allows restricting either side of a relation by a predicate (which is just a relation mapping objects to boolean values), so a relational array might actually contain any number of boxed columns.
+
+In my code, I've started to implement relations as objects, thinking I could use them as a common interface for both the formulaic and tabular varieties.
+
+I've also created some words that allow you to define relations as a normal table of values (like you might find in a relational database), plus an index at which to "split" the table vertically so it can function as a mapping.
+
+For example:
+
+#+begin_src J
+  require '~/d/syndir.ijs'
+  require '~/l/j/rel.ijs'
+#+end_src
+
+#+RESULTS:
+
+#+begin_src J
+  ] doubles =: (,. +:) i: 3 NB. dyadic relation y=2*x, restricted to i:3
+#+end_src
+
+#+RESULTS:
+: _3 _6
+: _2 _4
+: _1 _2
+:  0  0
+:  1  2
+:  2  4
+:  3  6
+
+#+begin_src J
+  ] squares =: (,. *:) i: 3 NB. dyadic relation y=x^2, restricted to i:3
+#+end_src
+
+#+RESULTS:
+: _3 9
+: _2 4
+: _1 1
+:  0 0
+:  1 1
+:  2 4
+:  3 9
+
+
+Monad ~ar~ [a]pplies a (tabular) [r]elation to an input:
+
+#+begin_src J
+  squares ar "0 ] 1 2 3
+#+end_src
+
+#+RESULTS:
+: 1
+: 
+: 4
+: 
+: 9
+
+
+The inverse of a tabular relation is formed by swapping the columns.
+
+#+begin_src J
+  iv squares
+#+end_src
+
+#+RESULTS:
+: 9 _3
+: 4 _2
+: 1 _1
+: 0  0
+: 1  1
+: 4  2
+: 9  3
+
+The monad ~ai~ [a]pplies the [i]nverse of a tabular relation.
+
+#+begin_src J
+  squares ai 9
+#+end_src
+
+#+RESULTS:
+: _3
+:  3
+
+Now we can join the two tables on column 0 from each:
+
+#+begin_src J
+  squares 0 0 J doubles
+#+end_src
+
+#+RESULTS:
+: _3 9 _6
+: _2 4 _4
+: _1 1 _2
+:  0 0  0
+:  1 1  2
+:  2 4  4
+:  3 9  6
+
+Applying the inverse of this result is something like solving the following algebra problem:
+
+#+begin_src J
+  NB. Solve for x, given ( 9 = x ^ 2 ) and ( _6 = 2 * x ).
+  2 (squares 0 0 J doubles) ai 9 _6
+#+end_src
+
+#+RESULTS:
+: _3
+
+
+* implementation
+:PROPERTIES:
+:TS:       <2014-05-15 02:17AM>
+:ID:       x6rifxk0ghg0
+:header-args:  :exports both  :session
+:END:
+
+* REFERENCES
+:PROPERTIES:
+:TS:       <2014-05-15 02:26AM>
+:ID:       10rancl0ghg0
+:END:
+
+All of these are written by Bruce J MacLennan:
+
+- [[https://archive.org/details/introductiontore00macl][Introduction to Relational Programming]] (Jun 1981)
+- [[https://archive.org/details/overviewofrelati00macl][Overview of relational programming]] (Nov 1981)
+- [[https://archive.org/details/relationalprogra00macl][A Relational Program for a Syntax Directed Editor]] (Apr 1982)
+- [[https://archive.org/details/relationalprogra83012macl][Relational Programming]] (Sep 1983)
+- [[https://archive.org/details/fourrelationalpr00macl][Four Relational Programs]] (Nov 1986)
+  
