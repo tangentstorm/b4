@@ -98,3 +98,4 @@ table.org-info-js_info-navigation {
 .org-keyword { color: cyan }
 .org-string { color: lime }
 .org-builtin { color:gold }
+pre.example { color: #99ccff; }
