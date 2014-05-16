@@ -1,0 +1,49 @@
+* k-style cuts in j
+:PROPERTIES:
+:TS:       <2014-03-06 02:24PM>
+:ID:       iyb7wx61weg0
+:END:
+
+#+begin_src j
+    
+    icut =: dyad define
+       (1 + j. }. ,&0 <: +/"1 = x) # (x e.~ i.  # y) <;.1 y
+    )
+  
+     0 1 3 3 ecut 'abcdefg'
+  ┌─┬──┬┬────┐
+  │a│bc││defg│
+  └─┴──┴┴────┘
+
+#+end_src
+
+* use the elements of x to create a bit vector of length y
+:PROPERTIES:
+:TS:       <2014-03-06 02:45PM>
+:ID:       0k5fax71weg0
+:END:
+
+#+begin_src j
+
+     x =: 0 1 3 3
+     y =: 'abcdefg'
+
+     ] b =: (x e.~ i. # y)
+  1 1 0 1 0 0 0
+
+#+end_src
+
+* use the bit vector to cut y
+:PROPERTIES:
+:TS:       <2014-03-06 02:45PM>
+:ID:       icbbcx71weg0
+:END:
+#+begin_src j
+
+     ] c =. b <;.1 y
+  ┌─┬──┬────┐
+  │a│bc│defg│
+  └─┴──┴────┘
+
+#+end_src
+
