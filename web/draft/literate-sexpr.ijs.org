@@ -1,0 +1,228 @@
+
+Dyad ~x E. y~ ([[http://www.jsoftware.com/help/dictionary/decapdot.htm][Member of Interval)]] returns an array marking the location of pattern =x= in =y=.
+
+#+begin_src J
+'x' E. '.x..x...x'
+#+end_src
+#+RESULTS:
+: 0 1 0 0 1 0 0 0 1
+
+By default, it applies to the outermost rank of each argument:
+
+#+begin_src J
+E. b. 0
+#+end_src
+#+RESULTS:
+: 0 _ _
+
+So, we can use it to mark occurrences of a substring:
+
+#+begin_src J
+'()' E. '(( () () ))'
+#+end_src
+#+RESULTS:
+: 0 0 0 1 0 0 1 0 0 0 0
+
+If we want to mark each character of =x= individually, we can use the rank conjunction:
+
+#+begin_src J
+'()' E."0 1 '(( () () ))'
+#+end_src
+#+RESULTS:
+: 1 1 0 1 0 0 1 0 0 0 0
+: 0 0 0 0 1 0 0 1 0 1 1
+
+Suppose we multiply the first row by =1= and the second row by =_1=...
+
+#+begin_src J
+1 _1 * '()' E."0 1 '(( () () ))'
+#+end_src
+#+RESULTS:
+: 1 1 0 1  0 0 1  0 0  0  0
+: 0 0 0 0 _1 0 0 _1 0 _1 _1
+
+If we add these rows together...
+
+#+begin_src J
++/ 1 _1 * '()' E."0 1 '(( () () ))'
+#+end_src
+#+RESULTS:
+: 1 1 0 1 _1 0 1 _1 0 _1 _1
+
+And then take a running total...
+
+#+begin_src J
++/\ +/ 1 _1 * '()' E."0 1 '(( () () ))'
+#+end_src
+#+RESULTS:
+: 1 2 2 3 2 2 3 2 2 1 0
+
+... then the result is the depth of each character within the nested parentheses.
+
+#+begin_src J :session
+depth =: monad define
+  +/\ +/ 1 _1 * '()' E."0 1 y
+)
+depth '(( () () ))'
+#+end_src
+#+RESULTS:
+: 1 2 2 3 2 2 3 2 2 1 0
+
+If the last item in this array is 0, we know the parentheses balance.
+
+#+begin_src J :session
+parensOk =: 0 = {: @ depth
+parensOk '('
+parensOk '()'
+parensOk S:0 ' '; ')'; '(';  '())';  '()()';  '(()'; 'ok';  '(ok)'
+#+end_src
+#+RESULTS:
+: 0
+: 
+: 1
+: 
+: 1 0 0 0 1 0 1 1
+
+We can combine this new function with the [[http://www.jsoftware.com/help/dictionary/d430.htm][prefix adverb]] ( =\= ) and the [[http://www.jsoftware.com/help/dictionary/d331.htm][cut dyad]] ( =;.= ) to isolate parenthesized s-expressions in an input string:
+
+#+begin_src J :session
+parensOk\ s =: 'a (lisp-s(t(y)l)e) (reader) ... or not.'
+(parensOk\ <;.2 ]) s
+#+end_src
+#+RESULTS:
+: 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1
+: 
+: ┌─┬─┬────────────────┬─┬────────┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+: │a│ │(lisp-s(t(y)l)e)│ │(reader)│ │.│.│.│ │o│r│ │n│o│t│.│
+: └─┴─┴────────────────┴─┴────────┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘
+
+To work around the bug at the outermost layer, we could just wrap the whole thing in an extra layer of parentheses:
+
+#+begin_src J :session
+around =: (0{[), ], (1{[)
+'()' around 'test'
+#+end_src
+#+RESULTS:
+: (test)
+
+But now we only get one box:
+
+#+begin_src J :session
+(parensOk\ <;.2 ]) '()' around s
+#+end_src
+#+RESULTS:
+: ┌─────────────────────────────────────────┐
+: │(a (lisp-s(t(y)l)e) (reader) ... or not.)│
+: └─────────────────────────────────────────┘
+
+Better would be to use dyadic =i.= and =i:= to find the first =(= and last =)=:
+
+#+begin_src J :session
+(i.&'(' , i:&')') s
+#+end_src
+#+RESULTS:
+: 2 26
+
+We can use those numbers to make a new cut, but it will need some adjusting:
+
+#+begin_src J :session
+         (i.@# e. i.&'(' , i:&')') s
+        ((i.@# e. i.&'(' , i:&')') <;.1 ]) s
+#+end_src
+#+RESULTS:
+: 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0
+: 
+: ┌────────────────────────┬─────────────┐
+: │(lisp-s(t(y)l)e) (reader│) ... or not.│
+: └────────────────────────┴─────────────┘
+
+There are two problems here.
+
+First, it cut off the first part of the string. We can fix that by toggling the first bit:
+
+#+begin_src J :session
+   (1(0)} i.@# e. i.&'(' , i:&')') s
+  ((1(0)} i.@# e. i.&'(' , i:&')') <;.1 ]) s
+#+end_src
+#+RESULTS:
+: 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0
+: 
+: ┌──┬────────────────────────┬─────────────┐
+: │a │(lisp-s(t(y)l)e) (reader│) ... or not.│
+: └──┴────────────────────────┴─────────────┘
+
+Second, the =)= is on the wrong side of the cut.
+
+To fix this, we just add 1 to the index:
+
+#+begin_src J :session
+   (1(0)} i.@# e. i.&'(' , 1 + i:&')') s
+  ((1(0)} i.@# e. i.&'(' , 1 + i:&')') <;. 1 ]) s
+#+end_src
+#+RESULTS:
+: 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0
+: 
+: ┌──┬─────────────────────────┬────────────┐
+: │a │(lisp-s(t(y)l)e) (reader)│ ... or not.│
+: └──┴─────────────────────────┴────────────┘
+
+We'll call this verb =segments=.
+
+#+begin_src J :session
+  segments =: ((1(0)} i.@# e. i.&'(' , 1 + i:&')') <;. 1 ])
+  segments s
+#+end_src
+#+RESULTS:
+: ┌──┬─────────────────────────┬────────────┐
+: │a │(lisp-s(t(y)l)e) (reader)│ ... or not.│
+: └──┴─────────────────────────┴────────────┘
+
+Since this verb only looks at the first and last parentheses, the resulting array could have between 1 and 3 segments.
+
+#+begin_src J :session
+segments each 'x'; 'x(o)'; '(o)x'; '(o)'; 'x(o)x'
+#+end_src
+#+RESULTS:
+: ┌───┬───────┬───────┬─────┬─────────┐
+: │┌─┐│┌─┬───┐│┌───┬─┐│┌───┐│┌─┬───┬─┐│
+: ││x│││x│(o)│││(o)│x│││(o)│││x│(o)│x││
+: │└─┘│└─┴───┘│└───┴─┘│└───┘│└─┴───┴─┘│
+: └───┴───────┴───────┴─────┴─────────┘
+
+We don't necessarily know the positions of the items, but it's easy to check by testing the first character for =(=.
+
+#+begin_src J :session
+nested =: '(' = {.
+nested L:0 segments each 'x'; 'x(o)'; '(o)x'; '(o)'; 'x(o)x'
+#+end_src
+#+RESULTS:
+: ┌───┬─────┬─────┬───┬───────┐
+: │┌─┐│┌─┬─┐│┌─┬─┐│┌─┐│┌─┬─┬─┐│
+: ││0│││0│1│││1│0│││1│││0│1│0││
+: │└─┘│└─┴─┘│└─┴─┘│└─┘│└─┴─┴─┘│
+: └───┴─────┴─────┴───┴───────┘
+
+
+Using this information, we can select whether to recurse or not:
+
+#+begin_src J :session
+(($:@}.@}:)^:nested L:0)@segments s
+#+end_src
+#+RESULTS:
+: ┌──┬──────────────────────────────┬────────────┐
+: │a │┌──────┬────────────┬────────┐│ ... or not.│
+: │  ││lisp-s│┌─┬──────┬─┐│ (reader││            │
+: │  ││      ││t│┌──┬─┐│e││        ││            │
+: │  ││      ││ ││y)│l││ ││        ││            │
+: │  ││      ││ │└──┴─┘│ ││        ││            │
+: │  ││      │└─┴──────┴─┘│        ││            │
+: │  │└──────┴────────────┴────────┘│            │
+: └──┴──────────────────────────────┴────────────┘
+
+
+* TODO urgh... so close. :)
+:PROPERTIES:
+:TS:       <2014-05-21 02:31AM>
+:ID:       e78if1h0ohg0
+:END:
+
