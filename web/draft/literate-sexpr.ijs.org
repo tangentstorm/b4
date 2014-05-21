@@ -1,7 +1,7 @@
 
 Dyad ~x E. y~ ([[http://www.jsoftware.com/help/dictionary/decapdot.htm][Member of Interval)]] returns an array marking the location of pattern =x= in =y=.
 
-#+begin_src J
+#+begin_src J :exports both
 'x' E. '.x..x...x'
 #+end_src
 #+RESULTS:
@@ -9,7 +9,7 @@ Dyad ~x E. y~ ([[http://www.jsoftware.com/help/dictionary/decapdot.htm][Member o
 
 By default, it applies to the outermost rank of each argument:
 
-#+begin_src J
+#+begin_src J :exports both
 E. b. 0
 #+end_src
 #+RESULTS:
@@ -17,7 +17,7 @@ E. b. 0
 
 So, we can use it to mark occurrences of a substring:
 
-#+begin_src J
+#+begin_src J :exports both
 '()' E. '(( () () ))'
 #+end_src
 #+RESULTS:
@@ -25,7 +25,7 @@ So, we can use it to mark occurrences of a substring:
 
 If we want to mark each character of =x= individually, we can use the rank conjunction:
 
-#+begin_src J
+#+begin_src J :exports both
 '()' E."0 1 '(( () () ))'
 #+end_src
 #+RESULTS:
@@ -34,7 +34,7 @@ If we want to mark each character of =x= individually, we can use the rank conju
 
 Suppose we multiply the first row by =1= and the second row by =_1=...
 
-#+begin_src J
+#+begin_src J :exports both
 1 _1 * '()' E."0 1 '(( () () ))'
 #+end_src
 #+RESULTS:
@@ -43,7 +43,7 @@ Suppose we multiply the first row by =1= and the second row by =_1=...
 
 If we add these rows together...
 
-#+begin_src J
+#+begin_src J :exports both
 +/ 1 _1 * '()' E."0 1 '(( () () ))'
 #+end_src
 #+RESULTS:
@@ -51,7 +51,7 @@ If we add these rows together...
 
 And then take a running total...
 
-#+begin_src J
+#+begin_src J :exports both
 +/\ +/ 1 _1 * '()' E."0 1 '(( () () ))'
 #+end_src
 #+RESULTS:
@@ -59,7 +59,7 @@ And then take a running total...
 
 ... then the result is the depth of each character within the nested parentheses.
 
-#+begin_src J :session
+#+begin_src J :session :exports both
 depth =: monad define
   +/\ +/ 1 _1 * '()' E."0 1 y
 )
@@ -70,7 +70,7 @@ depth '(( () () ))'
 
 If the last item in this array is 0, we know the parentheses balance.
 
-#+begin_src J :session
+#+begin_src J :session :exports both
 parensOk =: 0 = {: @ depth
 parensOk '('
 parensOk '()'
@@ -85,7 +85,7 @@ parensOk S:0 ' '; ')'; '(';  '())';  '()()';  '(()'; 'ok';  '(ok)'
 
 We can combine this new function with the [[http://www.jsoftware.com/help/dictionary/d430.htm][prefix adverb]] ( =\= ) and the [[http://www.jsoftware.com/help/dictionary/d331.htm][cut dyad]] ( =;.= ) to isolate parenthesized s-expressions in an input string:
 
-#+begin_src J :session
+#+begin_src J :session :exports both
 parensOk\ s =: 'a (lisp-s(t(y)l)e) (reader) ... or not.'
 (parensOk\ <;.2 ]) s
 #+end_src
@@ -98,7 +98,7 @@ parensOk\ s =: 'a (lisp-s(t(y)l)e) (reader) ... or not.'
 
 To work around the bug at the outermost layer, we could just wrap the whole thing in an extra layer of parentheses:
 
-#+begin_src J :session
+#+begin_src J :session :exports both
 around =: (0{[), ], (1{[)
 '()' around 'test'
 #+end_src
@@ -107,7 +107,7 @@ around =: (0{[), ], (1{[)
 
 But now we only get one box:
 
-#+begin_src J :session
+#+begin_src J :session :exports both
 (parensOk\ <;.2 ]) '()' around s
 #+end_src
 #+RESULTS:
@@ -117,7 +117,7 @@ But now we only get one box:
 
 Better would be to use dyadic =i.= and =i:= to find the first =(= and last =)=:
 
-#+begin_src J :session
+#+begin_src J :session :exports both
 (i.&'(' , i:&')') s
 #+end_src
 #+RESULTS:
@@ -125,7 +125,7 @@ Better would be to use dyadic =i.= and =i:= to find the first =(= and last =)=:
 
 We can use those numbers to make a new cut, but it will need some adjusting:
 
-#+begin_src J :session
+#+begin_src J :session :exports both
          (i.@# e. i.&'(' , i:&')') s
         ((i.@# e. i.&'(' , i:&')') <;.1 ]) s
 #+end_src
@@ -155,7 +155,7 @@ Second, the =)= is on the wrong side of the cut.
 
 To fix this, we just add 1 to the index:
 
-#+begin_src J :session
+#+begin_src J :session :exports both
    (1(0)} i.@# e. i.&'(' , 1 + i:&')') s
   ((1(0)} i.@# e. i.&'(' , 1 + i:&')') <;. 1 ]) s
 #+end_src
@@ -179,7 +179,7 @@ We'll call this verb =segments=.
 
 Since this verb only looks at the first and last parentheses, the resulting array could have between 1 and 3 segments.
 
-#+begin_src J :session
+#+begin_src J :session :exports both
 segments each 'x'; 'x(o)'; '(o)x'; '(o)'; 'x(o)x'
 #+end_src
 #+RESULTS:
@@ -191,7 +191,7 @@ segments each 'x'; 'x(o)'; '(o)x'; '(o)'; 'x(o)x'
 
 We don't necessarily know the positions of the items, but it's easy to check by testing the first character for =(=.
 
-#+begin_src J :session
+#+begin_src J :session :exports both
 nested =: '(' = {.
 nested L:0 segments each 'x'; 'x(o)'; '(o)x'; '(o)'; 'x(o)x'
 #+end_src
@@ -205,7 +205,7 @@ nested L:0 segments each 'x'; 'x(o)'; '(o)x'; '(o)'; 'x(o)x'
 
 Using this information, we can select whether to recurse or not:
 
-#+begin_src J :session
+#+begin_src J :session :exports both
 (($:@}.@}:)^:nested L:0)@segments s
 #+end_src
 #+RESULTS:
