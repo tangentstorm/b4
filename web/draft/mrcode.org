@@ -1,0 +1,684 @@
+\ne
+( most of these are from proofwiki.org )
+- power set :: X \times Y = { (x, y) : x \in X \land y \in Y }.
+- extensionality :: \forall{}A ∀B (∀X, (X \in A ⇔ X \in B) \Rightarrow A = B).
+- pairing :: ∀A ∀B ∃x ∀y (y∈x ⇔ y=A ∨ y=B).
+- infinity :: ∃x ((∃y y∈x ∧ ∀z ¬ (z∈y)) ∧ ∀u u∈x ⇒ u⁺∈x)
+- union :: ∀A.∃x.∀y.(y∈x ⇔ ∃z. (z∈A ∧ y∈z))
+- foundation :: ∀S.((∃x.x∈S) ⇒ ∃y∈S. ∀z∈S. ¬(z∈y))
+- existence :: ∃x.∀y.(¬(y∈x))
+- choice :: ∀s.((∅∉s ∧ ∀t,u∈s.t=u ∨ t∩u=∅) ⇒ ∃c.∀t∈s.∃x.t∩c={x})
+- specification :: ∀P:a → Bit. ∀z.∃x.∀y.(y∈x ⇒ (y∈z ∧ P(y)))
+- replacement :: (∀y.∃x.∀z.(P(y,z)⇒x=z))⇒∀w.∃x.∀y.(y∈w⇒∀z.(P(y,z)⇒z∈x))
+
+# this one comes from http://us.metamath.org/mpeuni/ax-groth.html
+- tarski :: ⊢ ∃y(x∈y ∧ ∀z∈y (∀w(w ⊆ z → w ∈ y) ∧ ∃w∈y ∀v(v ⊆ z → v ∈ w)) ∧ ∀z(z ⊆ y → (z ≈ y ∨ z ∈ y)))
+
+#+begin_src J
+,.a. i. L: 0 '∀';'∈';'⇔';'∧';'∪';'∩';'⊃';'⊂'
+#+end_src
+#+RESULTS:
+#+begin_example
+┌───────────┐
+│226 136 128│
+├───────────┤
+│226 136 136│
+├───────────┤
+│226 135 148│
+├───────────┤
+│226 136 167│
+├───────────┤
+│226 136 170│
+├───────────┤
+│226 136 169│
+├───────────┤
+│226 138 131│
+├───────────┤
+│226 138 130│
+└───────────┘
+#+end_example
+
+* OUTPUT =mr.cf= : minrel in coffeescript
+:PROPERTIES:
+:TS:       <2014-05-19 07:47PM>
+:ID:       h2za1uw0mhg0
+:END:
+#+begin_src coffee
+  module 'mr'
+  imports [ 'cur', 'seq' ], ->
+    <<cf.dump>>
+    <<cf.load>>
+    <<cf.sym>>
+    <<cf.nil>>
+    <<cf.Rel>>
+    # {{ cf.MinRelParser }}
+#+end_src
+
+* OUTPUT =mr.py= : minrel in python
+:PROPERTIES:
+:TS:       <2014-05-19 07:48PM>
+:ID:       dqm3vuw0mhg0
+:END:
+
+
+#+begin_src python
+  import check
+  import unittest
+  from functools import reduce
+
+#+end_src
+
+
+
+* [0/5] test suite for relational algebra
+:PROPERTIES:
+:TS:       <2014-05-20 01:32AM>
+:ID:       27ai3sc1mhg0
+:END:
+
+** TODO defining and populating a relation
+:PROPERTIES:
+:TS:       <2014-05-20 01:34AM>
+:ID:       buj6mvc1mhg0
+:END:
+
+#+begin_src mr
+langslangStrwhoStrexampleStrpythonGvRprint("hello, world")pascalNWprogram hw; begin writeln('hello, world') end.oberonNWMODULE hi; IMPORT Out; BEGIN Out.String("hi"); Out.Ln END hi.haskellSPJmain = print "hello world"JKEIecho 'hello world'
+#+end_src
+
+
+** TODO [0/4] set operations
+:PROPERTIES:
+:TS:       <2014-05-20 01:39AM>
+:ID:       75dbf4d1mhg0
+:END:
+*** TODO ~∪~ (union)
+:PROPERTIES:
+:TS:       <2014-05-20 01:35AM>
+:ID:       zgb3ywc1mhg0
+:END:
+#+begin_src python
+    def test_union(self):
+        """
+        The union of two relations a and b is just the set of tuples
+        that appear either in a or b or both.
+
+        The union is a relation if and only if a and b have the same columns.
+        Otherwise, it's just a set of rows.
+
+        Therefore, the union operation is not closed under composition
+        for relations, unless we put restrictions on its use.
+        """
+        hello = lambda **kw : Rel(dict(lang=Type.Str, who=Type.Str, src=Type.Str)).iden().append(kw)
+        py  = hello(lang='python', who='GvR', src='print "hello, world"')
+        pas = hello(lang='pascal', who='NW', src="program hw; begin writeln('hello, world') end.")
+        ob  = hello(lang='oberon', who='NW', src="Out.String('hello, world'); Out.Ln;")
+        has = hello(lang='haskell', who='SPJ', src='main = print "hello, world"')
+
+        self.assertIsInstance(py, Rel)
+        assert py.count() == 1, py
+
+        pypas = py.union(pas)
+        check.type(pas, Rel)
+        assert pypas.count() == 2, py.union(pas)
+
+        assert pypas.union(ob).count() == 3, py.union(pas).union(ob)
+        assert pypas.union(ob).union(has).count() == 4, py.union(pas).union(ob).union(has)
+#+end_src
+
+*** TODO ~∩~ intersection
+:PROPERTIES:
+:TS:       <2014-05-20 01:40AM>
+:ID:       goe2u5d1mhg0
+:END:
+
+*** TODO ~⊂~ (subset predicate)
+:PROPERTIES:
+:TS:       <2014-05-20 01:43AM>
+:ID:       9vvefad1mhg0
+:END:
+
+*** TODO ~⊃~ (superset predicate)
+:PROPERTIES:
+:TS:       <2014-05-20 01:44AM>
+:ID:       rvdjkbd1mhg0
+:END:
+
+
+** TODO [0/4] relational operators
+:PROPERTIES:
+:TS:       <2014-05-20 01:35AM>
+:ID:       6fn4kwc1mhg0
+:END:
+
+*** TODO ~π~ projection (permute and delete columns)
+:PROPERTIES:
+:TS:       <2014-05-20 01:36AM>
+:ID:       6lf9dyc1mhg0
+:END:
+
+*** TODO ~σ~ selection (restrictions on rows)
+:PROPERTIES:
+:TS:       <2014-05-20 01:36AM>
+:ID:       v9z4kyc1mhg0
+:END:
+
+*** TODO ~ρ~ rename
+:PROPERTIES:
+:TS:       <2014-05-20 01:45AM>
+:ID:       4mo32ed1mhg0
+:END:
+
+
+** TODO joins
+:PROPERTIES:
+:TS:       <2014-05-20 01:37AM>
+:ID:       s3t2h1d1mhg0
+:END:
+
+*** TODO natural join (composition)
+:PROPERTIES:
+:TS:       <2014-05-20 01:48AM>
+:ID:       p53gnid1mhg0
+:END:
+
+*** TODO cross join (cartesian product)
+:PROPERTIES:
+:TS:       <2014-05-20 01:47AM>
+:ID:       etqcphd1mhg0
+:END:
+
+*** TODO theta join (restricted join)
+:PROPERTIES:
+:TS:       <2014-05-20 01:48AM>
+:ID:       0swjtid1mhg0
+:END:
+
+*** TODO semijoin ('left' or 'right' joins in sql)
+:PROPERTIES:
+:TS:       <2014-05-20 01:50AM>
+:ID:       xsigxld1mhg0
+:END:
+
+
+** TODO extended operations
+:PROPERTIES:
+:TS:       <2014-05-20 01:35AM>
+:ID:       yzg5cxc1mhg0
+:END:
+
+*** TODO left outer join
+:PROPERTIES:
+:TS:       <2014-05-20 01:52AM>
+:ID:       zudbppd1mhg0
+:END:
+
+*** TODO right outer join
+:PROPERTIES:
+:TS:       <2014-05-20 01:52AM>
+:ID:       8lz3fqd1mhg0
+:END:
+
+*** TODO full outer join
+:PROPERTIES:
+:TS:       <2014-05-20 01:52AM>
+:ID:       fgdavpd1mhg0
+:END:
+
+*** TODO aggregation
+:PROPERTIES:
+:TS:       <2014-05-20 01:53AM>
+:ID:       guw7tqd1mhg0
+:END:
+
+*** TODO transitive closure
+:PROPERTIES:
+:TS:       <2014-05-20 01:53AM>
+:ID:       ee760rd1mhg0
+:END:
+
+
+
+
+
+* TODO ascii-encoded file format
+:PROPERTIES:
+:TS:       <2014-05-19 07:53PM>
+:ID:       mar033x0mhg0
+:END:
+** TODO ~sym~ (special characters)                               :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 07:54PM>
+:ID:       u37bn4x0mhg0
+:END:
+#+name: cf.sym
+#+begin_src coffee
+  sym =
+    tbl_sep:'\x1c'
+    grp_sep:'\x1d'
+    rec_sep:'\x1e'
+    val_sep:'\x1f'
+    eot    :'\x03'
+#+end_src
+
+** TODO ~dump~                                                   :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 07:53PM>
+:ID:       24p8u3x0mhg0
+:END:
+#+name: cf.dump
+#+begin_src coffee
+  dump =
+    row:(vals)-> vals.join '\x1f'
+    grp:(rows)-> rows.map(dump.row).join '\x1e'
+    tbl:(grps)-> grps.map(dump.grp).join '\x1d'
+#+end_src
+
+** TODO ~load~                                                   :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 07:49PM>
+:ID:       u7ecwvw0mhg0
+:END:
+#+name: cf.load
+#+begin_src coffee
+  load =  # exposed as loadB
+    # This is a super-simple, but naive parser implementation.
+    # The benefit is that string.split() is native code.
+    # But: with a large database, it's going to create a lot
+    # of large intermediate strings just so it can split them.
+    row:(text)-> text.split( '\x1f' )
+    grp:(text)-> text.split( '\x1e' ).map load.row
+    tbl:(text)->
+      [ head, rows ] = text.split( '\x1d' ).map load.grp
+      return new Rel( head, rows )
+#+end_src
+
+** TODO ~nil~                                                    :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 07:57PM>
+:ID:       fyo7a9x0mhg0
+:END:
+#+name: cf.nil
+#+begin_src coffee
+  nil     = 'None'  #TODO: true nulls for $mr fields
+#+end_src
+
+* TODO type system                                              :py:
+:PROPERTIES:
+:TS:       <2014-05-19 08:35PM>
+:ID:       cxka61z0mhg0
+:END:
+
+** TODO basic types                                            :py:
+:PROPERTIES:
+:TS:       <2014-05-19 08:36PM>
+:ID:       d3x963z0mhg0
+:END:
+#+name: py.Type
+#+begin_src python
+  class Type(object):
+      Int = int
+      Str = str
+      Bit = bool
+      Num = float
+      Nil = type(None)
+      Any = object
+      Row = dict
+      Lam = type(lambda x:x)
+      Val = list
+#+end_src
+
+** TODO identity elements                                      :py:
+:PROPERTIES:
+:TS:       <2014-05-19 08:36PM>
+:ID:       0flgi3z0mhg0
+:END:
+#+name: py.identity_el
+#+begin_src python
+  identity_el ={ # identity element
+      Type.Int     : lambda : 0,
+      Type.Str     : lambda : '',
+      Type.Bit     : lambda : False,
+      Type.Num     : lambda : 0.0,
+      Type.Nil     : lambda : None,
+      Type.Any     : lambda : object(),
+      Type.Row     : lambda : {},
+      Type.Lam     : lambda : lambda x : x,
+      Type.Val     : lambda : [],
+  }
+#+end_src
+
+* TODO the =Rec= class (=Tup=?)
+:PROPERTIES:
+:TS:       <2014-05-19 08:38PM>
+:ID:       ha1996z0mhg0
+:END:
+#+name: py.Rec
+#+begin_src python
+  class Rec(dict):
+      """
+      This is a bit like javascript or lua, where getattr and 
+      getitem behave the same. (it doesn't use javascript's 
+      prototyping features, though)
+      """
+      def __getattr__(self, item): return self[item]
+      def __setattr__(self, item, value): self[item] = value
+#+end_src
+
+* TODO the =Rel= class
+:PROPERTIES:
+:TS:       <2014-05-19 07:58PM>
+:ID:       lrc54cx0mhg0
+:END:
+** TODO template                                               :cf:py:
+:PROPERTIES:
+:TS:       <2014-05-19 08:31PM>
+:ID:       owc0puy0mhg0
+:END:
+
+#+name: cf.Rel
+#+begin_src coffee
+  class Rel
+    <<cf.Rel.constructor>>
+    <<cf.Rel.build_tree>>
+    <<cf.Rel.get_cursor>>
+    <<cf.Rel.push_key>>
+    <<cf.Rel.calc>>
+    <<cf.Rel.as>>
+    <<cf.Rel.show>>
+    <<cf.Rel.keep>>
+    <<cf.Rel.sort>>
+    <<cf.Rel.reverse>>
+    <<cf.Rel.to_org>>
+    <<cf.Rel.records>>
+    <<cf.Rel.clone>>
+    <<cf.Rel.update>>
+#+end_src
+
+#+name: py.Rel
+#+begin_src python
+  class Rel(object):
+      """
+      The class of relvars.
+      """
+      <<py.Rel.__init__>>
+      <<py.Rel.__iter__>>
+      <<py.Rel.__str__>>
+      <<py.Rel.__repr__>>
+      <<py.Rel.iden>>
+      <<py.Rel.newrel>>
+      <<py.Rel.sorted>>
+      <<py.Rel.identity_row>>
+      <<py.Rel.projected>>
+      <<py.Rel.union>>
+      <<py.Rel.count>>
+      <<py.Rel.append>>
+      <<py.Rel.append_all>>
+      <<py.Rel.restricted>>
+      <<py.Rel.matching>>
+      <<py.Rel.extend>>
+      <<py.Rel.recurse>>
+      <<py.Rel.as_rels>>
+      <<py.Rel.first_row>>
+#+end_src
+
+** TODO ~constructor~                                            :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 07:59PM>
+:ID:       0sxkrdx0mhg0
+:END:
+#+name: cf.Rel.constructor
+#+begin_src coffee
+  constructor:( head, @rows )->
+    @keys = head[ 0 ]
+    @typs = if head.length > 1 then head[ 1 ] else ('Any' for each in keys)
+#+end_src
+
+#+name: py.Rel.__init__
+#+begin_src python
+  def __init__(self, columns):
+      """
+      :: { Str : Typ } -> Rel
+      """
+      self.cols = columns
+      self.rows = []
+#+end_src
+
+** TODO iterator
+:PROPERTIES:
+:TS:       <2014-05-19 08:48PM>
+:ID:       jljiumz0mhg0
+:END:
+#+name: py.Rel.__iter__
+#+begin_src python
+  def __iter__(self):
+      """
+      :: Rel -> [Row] |%| .rows
+      """
+      return iter(self.rows)
+#+end_src
+
+** TODO (convert to string)
+:PROPERTIES:
+:TS:       <2014-05-19 08:48PM>
+:ID:       jljiumz0mhg0
+:END:
+#+name: py.Rel.__str__
+#+begin_src python
+    def __str__(self):
+        """
+        :: Rel -> Str |%| .__iter__
+        """
+        return '\n'.join(map(str, self))
+#+end_src
+
+#+name: py.Rel.__repr__
+#+begin_src python
+  def __repr__(self):
+      """
+      :: Rel -> Str
+      """
+      return 'Rel {0} with {1} {2}'.format(
+          self.cols, self.count(),
+          'row' if self.count() == 1 else 'rows')
+#+end_src
+
+** TODO ~build_tree~                                             :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:21PM>
+:ID:       xm85ody0mhg0
+:END:
+#+name: cf.Rel.build_tree
+#+begin_src coffee
+    build_tree:( node_key, parent_key, sort_key )=>
+      ###
+      This annotates the rows of the relation with hierarchy information,
+      by adding a .children attribute to each row array.
+
+      Return value is @root, a fake row whose .children
+      contains all the root nodes.
+      ###
+
+      nid_col = @keys.indexOf( node_key )
+      par_col = @keys.indexOf( parent_key )
+      ord_col = if sort_key? then @keys.indexOf( sort_key )
+
+      # On the first pass first, we collect the children of each row
+      # and identify the root nodes.
+      roots = []
+      children = {}
+      for row in @rows
+        parent = row[par_col]
+        children[ parent ] ?= []
+        children[ parent ].push( row )
+        if parent is nil
+          roots.push row
+
+      # On the second pass, we bind the children to the parents.
+      # The .children won't conflict with a field name because
+      # the row objects are arrays, not objects.
+      for row in @rows
+        row.children = children[row[nid_col]] or []
+
+      return @root = { children: roots }
+#+end_src
+
+** TODO ~get_cursor~                                             :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:28PM>
+:ID:       b4o3mpy0mhg0
+:END:
+#+name: cf.Rel.get_cursor
+#+begin_src coffee
+  get_cursor:()=>
+    return new $cur.Cursor(new $seq.IterSeq @rows)
+#+end_src
+
+** TODO ~push_key~                                               :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:28PM>
+:ID:       n2s72qy0mhg0
+:END:
+#+name: cf.Rel.push_key
+#+begin_src coffee
+  push_key:( )=>
+    @keys.push( "$#{@keys.length}" )
+    @typs.push( 'Dyn' )
+#+end_src
+
+** TODO ~calc~                                                   :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:28PM>
+:ID:       czvf7qy0mhg0
+:END:
+#+name: cf.Rel.calc
+#+begin_src coffee
+  calc:( f )=>
+    @push_key()
+    for row in @rows
+      obj = dict zip @keys, row
+      last = f.call( obj, last)
+      row.push last
+    @
+#+end_src
+
+** TODO ~as~                                                     :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:28PM>
+:ID:       5564dqy0mhg0
+:END:
+#+name: cf.Rel.as
+#+begin_src coffee
+  as:( name )=>
+    @keys[ @keys.length - 1 ] = name
+    @
+#+end_src
+
+** TODO ~show~                                                   :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:28PM>
+:ID:       ko0hhqy0mhg0
+:END:
+#+name: cf.Rel.show
+#+begin_src coffee
+  show:(cols)=>
+    new $tbl.RelVue '#rhs', @, cols
+    @
+#+end_src
+
+** TODO ~keep~                                                   :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:29PM>
+:ID:       pxj5oqy0mhg0
+:END:
+#+name: cf.Rel.keep
+#+begin_src coffee
+  keep:(cond)=>
+    @rows = (row for row in @rows when cond.call((dict zip @keys, row)))
+    @
+#+end_src
+
+** TODO ~sort~                                                   :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:29PM>
+:ID:       g65dtqy0mhg0
+:END:
+#+name: cf.Rel.sort
+#+begin_src coffee
+  sort:(key_or_func)=>
+    # if function, it should be (row , row )-> { -1, 0, 1 }
+    func =
+      if typeof key_or_func is 'function'
+      then key_or_func
+      else (a, b)=>
+        idx = @keys.indexOf key_or_func
+        if a[idx] is b[idx] then 0
+        else if (a[idx] < b[idx] or b[idx] is null) then +1
+        else -1
+
+    @rows = @rows.sort(func)
+    @
+#+end_src
+
+** TODO ~reverse~                                                :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:29PM>
+:ID:       6q5hzqy0mhg0
+:END:
+#+name: cf.Rel.reverse
+#+begin_src coffee
+  reverse:=>
+    @rows = @rows.reverse()
+    @
+#+end_src
+
+** TODO ~to_org~                                                 :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:29PM>
+:ID:       kyld3ry0mhg0
+:END:
+#+name: cf.Rel.to_org
+#+begin_src coffee
+  to_org:=>
+    orgline = (row)-> "|#{ row.join('|')  }|"
+    head = orgline(@keys)
+    body = (orgline row for row in @rows).join('\n')
+    return "#{ head }\n|-\n#{ body }"
+#+end_src
+
+** TODO ~records~                                                :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:29PM>
+:ID:       6jlf8ry0mhg0
+:END:
+#+name: cf.Rel.records
+#+begin_src coffee
+  records:=>
+    return (dict zip @keys, row for row in @rows)
+#+end_src
+
+** TODO ~clone~                                                  :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:29PM>
+:ID:       x5l2ery0mhg0
+:END:
+#+name: cf.Rel.clone
+#+begin_src coffee
+  clone:=>
+    deepcopy(@)
+#+end_src
+
+** TODO ~update~                                                 :cf:
+:PROPERTIES:
+:TS:       <2014-05-19 08:29PM>
+:ID:       vdjkiry0mhg0
+:END:
+#+name: cf.Rel.update
+#+begin_src coffee
+  update:(key, func)=>
+    idx = @keys.indexOf key
+    for row in @rows
+      obj = dict zip @keys, row
+      row[idx] = func.call(obj)
+    @
+#+end_src
