@@ -1,0 +1,61 @@
+
+* 1. any function can be reduced to the form =bit^x \rarr bit^y=.
+:PROPERTIES:
+:TS:       <2014-05-23 11:43PM>
+:ID:       ipf4bz60shg0
+:END:
+
+
+* 2. Number of functions from =bit^x \rarr bit^y=?
+:PROPERTIES:
+:TS:       <2014-05-23 11:44PM>
+:ID:       vwgh1270shg0
+:END:
+
+To find the answer, we need to construct a truth table.
+
+A function with no input is a constant, so its truth table contains one item.
+
+There are 2 functions of (0 bit -> 1 bit). (Niladic 0 and 1).
+
+There are 4 functions of (1 bit -> 1 bit). (Monadic 0: and 1:, -. (inversion/not), and ] (identity).
+
+There are 16 functions of (2 bit -> 1 bit). (The 16 boolean connectives.)
+
+The way to construct the table is to start with 2 cells to hold the outputs, and just keep doubling as you add each new input bit.
+
+So that's =2^x= cells in the table, and the input simply selects the cell.
+
+Likewise, the output bits selects between =2^y= possible outputs, and we have a choice of =2^y= outputs for /each/ of the =2^x= inputs.
+
+Thus, there are =(2^y)^(2^x)= possible functions of type =(bit^x \rarr bit^y)=.
+
+
+* 3. Number of bits required to represent =n= distinct functions.
+:PROPERTIES:
+:TS:       <2014-05-24 12:33AM>
+:ID:       kvwdeb90shg0
+:END:
+This is easy. It's just =log₂(n)=.
+
+
+* 4. number of bits required to identify a function in =bit^x \rarr bit^y=.
+:PROPERTIES:
+:TS:       <2014-05-24 12:37AM>
+:ID:       1y8gmh90shg0
+:END:
+We just combine the answers from steps 3 and 4:  =log₂(=(2^y)^(2^x))=.
+
+There is a law about logarithms: =log[n](a^b) \rarr b × log[n](a)=
+
+Therefore, our answer reduces to:   =(2^x) × log₂(2^y)=
+
+This reduces to =((2^x)×y)=.
+
+
+* NOTE . given a lookup table of the codomain, we can constrain these functions so that =y≤x=.
+:PROPERTIES:
+:TS:       <2014-05-24 12:29AM>
+:ID:       bc19y390shg0
+:END:
+We know (=x ≤ y=) because we can just enumerate the results for all (=2^x=) inputs. Since we're talking about functions, there can't be more distinct outputs than there are inputs. The only trick is mapping the outputs to the inputs.
