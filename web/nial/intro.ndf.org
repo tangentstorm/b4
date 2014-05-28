@@ -1,0 +1,231 @@
+#+title: a quick intro to nial
+
+* nial overview
+
+Nial is an array language, like APL, J, or K, but with a more english-like syntax:
+
+#+begin_src nial  :exports both
+  % first 10 non-negative integers;
+   tell 10
+#+end_src
+
+#+RESULTS:
+: 0 1 2 3 4 5 6 7 8 9
+
+Unlike conventional languages (or even other array languages), nial has a strict left-to right evaluation order:
+
+#+begin_src nial  :exports both
+  tell 10 * 2 + 1
+#+end_src
+
+#+RESULTS:
+: 1 3 5 7 9 11 13 15 17 19
+
+Of course, you can use parentheses to change the evaluation order:
+
+#+begin_src nial  :exports both
+  sum tell 10
+  sum tell 10 + 1
+  sum (tell 10 + 1)
+#+end_src
+
+#+RESULTS:
+: 45
+: 46
+: 55
+
+Nial's core data structure is the array. Individual items like strings and integers are treated as 0-dimensional arrays. Arrays can be nested, and individual items in the array needn't be the same type:
+
+#+begin_src nial  :exports both
+ 1 2 3 'a string' "a-symbol ['sub','array'] (tell 5)
+#+end_src
+
+#+RESULTS:
+: +-+-+-+--------+--------+-----------+---------+
+: |1|2|3|a string|a-symbol|+---+-----+|0 1 2 3 4|
+: | | | |        |        ||sub|array||         |
+: | | | |        |        |+---+-----+|         |
+: +-+-+-+--------+--------+-----------+---------+
+
+Arrays can be assigned to variables:
+
+#+begin_src nial  :exports both
+a := "a "cute "little "symbol "array
+#+end_src
+
+#+RESULTS:
+: a cute little symbol array
+
+And manipulated in various ways:
+
+#+begin_src nial  :exports both
+[tally a, min a, max a, first a, post a, post reverse a, last a]
+#+end_src
+
+#+RESULTS:
+: +-+-+------+-+------+------+-----+
+: |5|a|symbol|a|a     |array |array|
+: | | |      | |cute  |symbol|     |
+: | | |      | |little|little|     |
+: | | |      | |symbol|cute  |     |
+: | | |      | |array |a     |     |
+: +-+-+------+-+------+------+-----+
+
+You can even create arrays of functions:
+
+#+begin_src nial  :exports both
+% previous line again, but using an atlas;
+[tally, min, max, first, post, post reverse, last] a
+#+end_src
+
+#+RESULTS:
+: +-+-+------+-+------+------+-----+
+: |5|a|symbol|a|a     |array |array|
+: | | |      | |cute  |symbol|     |
+: | | |      | |little|little|     |
+: | | |      | |symbol|cute  |     |
+: | | |      | |array |a     |     |
+: +-+-+------+-+------+------+-----+
+
+
+The =reshape= operator can turn a list of numbers into a table (or even a higher dimensional array):
+
+#+begin_src nial  :exports both
+  i := 8 8 reshape tell 64
+#+end_src
+
+#+RESULTS:
+:  0  1  2  3  4  5  6  7
+:  8  9 10 11 12 13 14 15
+: 16 17 18 19 20 21 22 23
+: 24 25 26 27 28 29 30 31
+: 32 33 34 35 36 37 38 39
+: 40 41 42 43 44 45 46 47
+: 48 49 50 51 52 53 54 55
+: 56 57 58 59 60 61 62 63
+
+
+Comparisons on arrays return arrays of bits, shown as =o= and =l= in nial:
+
+#+begin_src nial  :exports both
+  j := i eachleft in 26 21 29 41 49 50 51 52 53
+#+end_src
+
+#+RESULTS:
+: oooooooo
+: oooooooo
+: oooooloo
+: oolooloo
+: oooooooo
+: oloooooo
+: ollllloo
+: oooooooo
+
+With a little work, this can be an array of symbols...
+
+#+begin_src nial  :exports both
+  f := each (op bit { if bit then phrase '▓' else phrase '░' endif }) j
+#+end_src
+
+#+RESULTS:
+: ░ ░ ░ ░ ░ ░ ░ ░
+: ░ ░ ░ ░ ░ ░ ░ ░
+: ░ ░ ░ ░ ░ ▓ ░ ░
+: ░ ░ ▓ ░ ░ ▓ ░ ░
+: ░ ░ ░ ░ ░ ░ ░ ░
+: ░ ▓ ░ ░ ░ ░ ░ ░
+: ░ ▓ ▓ ▓ ▓ ▓ ░ ░
+: ░ ░ ░ ░ ░ ░ ░ ░
+
+
+Reversing a 2d array works on the outermost axis:
+
+#+begin_src nial  :exports both
+  reverse f
+#+end_src
+
+#+RESULTS:
+: ░ ░ ░ ░ ░ ░ ░ ░
+: ░ ░ ▓ ▓ ▓ ▓ ▓ ░
+: ░ ░ ░ ░ ░ ░ ▓ ░
+: ░ ░ ░ ░ ░ ░ ░ ░
+: ░ ░ ▓ ░ ░ ▓ ░ ░
+: ░ ░ ▓ ░ ░ ░ ░ ░
+: ░ ░ ░ ░ ░ ░ ░ ░
+: ░ ░ ░ ░ ░ ░ ░ ░
+
+
+We can chose the x-axis instead with the help of the ~byrows~ transformer.
+
+#+begin_src nial  :exports both
+byrows reverse f
+#+end_src
+
+#+RESULTS:
+: ░ ░ ░ ░ ░ ░ ░ ░
+: ░ ░ ░ ░ ░ ░ ░ ░
+: ░ ░ ▓ ░ ░ ░ ░ ░
+: ░ ░ ▓ ░ ░ ▓ ░ ░
+: ░ ░ ░ ░ ░ ░ ░ ░
+: ░ ░ ░ ░ ░ ░ ▓ ░
+: ░ ░ ▓ ▓ ▓ ▓ ▓ ░
+: ░ ░ ░ ░ ░ ░ ░ ░
+
+
+We can also transpose an array:
+
+#+begin_src nial  :exports both
+  transpose f
+#+end_src
+
+#+RESULTS:
+: ░ ░ ░ ░ ░ ░ ░ ░
+: ░ ░ ░ ░ ░ ▓ ▓ ░
+: ░ ░ ░ ▓ ░ ░ ▓ ░
+: ░ ░ ░ ░ ░ ░ ▓ ░
+: ░ ░ ░ ░ ░ ░ ▓ ░
+: ░ ░ ▓ ▓ ░ ░ ▓ ░
+: ░ ░ ░ ░ ░ ░ ░ ░
+: ░ ░ ░ ░ ░ ░ ░ ░
+
+
+Which of course means they can be rotated:
+
+#+begin_src nial  :exports both
+[bycols reverse transpose, transpose (bycols reverse) ] f
+#+end_src
+
+#+RESULTS:
+#+begin_example
++-------------------------------+-------------------------------+
+|░ ░ ░ ░ ░ ░ ░ ░|░ ░ ░ ░ ░ ░ ░ ░|
+|░ ░ ░ ░ ░ ░ ░ ░|░ ▓ ▓ ░ ░ ░ ░ ░|
+|░ ░ ▓ ▓ ░ ░ ▓ ░|░ ▓ ░ ░ ▓ ░ ░ ░|
+|░ ░ ░ ░ ░ ░ ▓ ░|░ ▓ ░ ░ ░ ░ ░ ░|
+|░ ░ ░ ░ ░ ░ ▓ ░|░ ▓ ░ ░ ░ ░ ░ ░|
+|░ ░ ░ ▓ ░ ░ ▓ ░|░ ▓ ░ ░ ▓ ▓ ░ ░|
+|░ ░ ░ ░ ░ ▓ ▓ ░|░ ░ ░ ░ ░ ░ ░ ░|
+|░ ░ ░ ░ ░ ░ ░ ░|░ ░ ░ ░ ░ ░ ░ ░|
++-------------------------------+-------------------------------+
+#+end_example
+
+The misshapen boxes above reveal a lack of support for utf-8 in the Q'Nial interpreter.
+
+Q'Nial was developed at Queen's University in Kingston, Canada. It was marketed as a commercial product during the 1980's and 90's. It was released under an open source license in 2006, but doesn't appear to be actively maintained.
+
+The code is fairly clean and well documented, though, so I'm hoping to change that.
+
+This little page barely scratches the surface, obviously. I mostly just wrote it to test out my emacs integration.
+
+Stay tuned to http://www.reddit.com/r/apljk/ if you want to hear more!
+
+
+* links
+
+
+- emacs mode :: https://github.com/tangentstorm/nial-mode
+- q'nial source :: https://github.com/tangentstorm/qnial
+- q'nial website :: http://www.nial.com/AboutNial.html (seemingly unmaintained...)
+- dictionary :: file:dictionary.org (manually translated from an old word doc on the nial site. usable, but currently the ui is quite clunky)
+
+:
