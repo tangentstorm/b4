@@ -2,6 +2,7 @@
 META-II interpreter in python
 """
 import sys, shlex, logging
+from collections import namedtuple as nt
 
 def unq(s):
     """unquote. converts "'a'" to "a" """
@@ -15,9 +16,9 @@ class ParseError(BaseException):
 
 
 
-def interp(ops, labels, txt, emit):
+def interp(ops, labels, txt, emit, debug):
     """interpret meta-ii assembly language"""
-    nc, ok, cp, oldcp, tok, out = 0, 1, 0, 0, '', ''
+    nc, ok, cp, oldcp, tok, out = 1, 1, 0, 0, '', '\t'
     ops+=[('END','')]; txt+='/' # prevent bounds checking errors
     def run(ip, stack, gn1='',gn2=''): # borrow python's stack for calls/labels
         nonlocal nc, ok, cp, oldcp, out
@@ -26,14 +27,15 @@ def interp(ops, labels, txt, emit):
             op,arg=ops[ip]
 
             ## mini debugger
-            logging.debug('ip: %3i %3s %s'%(ip,op,arg))
-            input(repr(stack)+'>')
+            if debug:
+                logging.debug('ip: %3i %3s %s'%(ip,op,arg))
+                input(repr(stack)+'>')
 
 
 # interp > run > opcode handlers
 
             if op=='END': raise DoneParsing
-            elif op == 'R': return ok
+            elif op == 'R': return
             elif (op in['B','ADR']) or (op=='BT' and ok) or (op=='BF' and not ok):
                 ip=labels[arg]-1
             elif op=='BE':
@@ -64,15 +66,15 @@ def interp(ops, labels, txt, emit):
                         buf+=txt[cp]; cp+=1
                 if op=='SR': # match string
                     if txt[cp]=="'":
-                        while txt[cp]!="'":
+                        while cp==oldcp or txt[cp]!="'": # ugly. grabs the quotes.
                             buf+=txt[cp]; cp+=1
-                        cp+=1
+                        buf+=txt[cp]; cp+=1 # consume final "'"
                 else: # 'ID'
                     if txt[cp].isalpha():
                         while txt[cp].isalnum():
                             buf+=txt[cp]; cp+=1
                 if buf:
-                    ok,tok = 1,buf # consume token
+                    ok,tok = 1,buf  # consume token
                     logging.debug('consumed: %r', buf)
                 else: ok,cp = 0,oldcp  # backtrack
             elif op not in ['BF','BT']: print('unknown opcode:', op)
@@ -87,7 +89,7 @@ def interp(ops, labels, txt, emit):
         print("------------------------------")
 
 
-def main(src, txt, emit=lambda s:sys.stdout.write(s+'\n')):
+def main(src, txt, debug, emit=lambda s:sys.stdout.write(s+'\n')):
     """
     src is assembly language code for the meta-ii machine.
     txt is the input text on which to run the meta-ii code.
@@ -105,7 +107,7 @@ def main(src, txt, emit=lambda s:sys.stdout.write(s+'\n')):
         else: labels[line.strip()]=len(code)
 
     # second pass interprets the code to process the text
-    interp(code,labels,txt,emit)
+    interp(code,labels,txt,emit, debug)
 
 def read(path):
     return sys.stdin.read() if path=='-' else open(path).read()
@@ -119,10 +121,11 @@ def prep(s):                             # test case syntax:
         else '   '+line                  # no need to indent
         for line in s.split(';'))        # use ';' for '\n'
 
+T = TestCase = nt('TestCase', 'asm inp out')
 cases =[                                 # each test case is (src, txt, goal)
-    ("CL 'hello';OUT", '', 'hello'),
-    ("CL 'X';B SKIP;CL 'Y';:SKIP;OUT", '', 'X'),
-    (':bye;END', '', '')]
+    T(asm="CL 'hello';OUT", inp='', out='hello'),
+    T(asm="CL 'X';B SKIP;CL 'Y';:SKIP;OUT", inp='', out='X'),
+    T(asm=':bye;END', inp='', out='')]
 
 def test():
     for src,txt,goal in cases:
@@ -140,8 +143,9 @@ if __name__=="__main__":
     else:
         if '-d' in sys.argv:
             logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
-            sys.argv.remove('-d')
+            debug=1; sys.argv.remove('-d')
+        else: debug=0
         if len(sys.argv) == 3:
             src, txt = [read(f) for f in sys.argv[1:]]
-            main(src,txt)
-        else: print('usage: meta2.py srcfile txtfile')
+            main(src,txt, debug)
+        else: print('usage: meta2.py metacode.m2a (input.m2s|-)')
