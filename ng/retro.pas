@@ -22,20 +22,20 @@ uses
 type
   TRetroConfig = record
 		   minSize   : int32;
-		   imgPath   : string;
+		   imgPath   : TStr;
 		   debug     : boolean;
 		   dumpAfter : boolean;
 		   lineEdit  : boolean;
-		   inputs    : array of string;
+		   inputs    : array of TStr;
 		 end;
 
-procedure fail( msg : string );
+procedure fail( msg : TStr );
   begin
     writeln; writeln( msg ); halt;
   end; { fail }
   
 { if file exists, add to array of inputs to include }
-  procedure include( var cfg : TRetroConfig;  const path : string );
+  procedure include( var cfg : TRetroConfig;  const path : TStr );
   begin
     if sysutils.fileexists( path ) then begin
       // we can't just call include until we initialize the vm, and
@@ -43,15 +43,15 @@ procedure fail( msg : string );
       // inputs array as a buffer.
       setlength( cfg.inputs, length( cfg.inputs ) + 1 );
       cfg.inputs[ length( cfg.inputs ) - 1 ] := path;
-    end else fail( '"' + path + '" not found' );
+    end else fail( Format('"%s" not found', [path]));
   end; { include }
 
 { load configuration (from command line parameters) }
 
 function configure( var cfg : TRetroConfig ) : boolean;
-  var p : string; i : integer = 1;
+  var p : TStr; i : integer = 1;
   function haveparam:boolean; begin haveparam := i <= paramcount end;
-  function nextparam:string; begin result := paramstr(i); inc(i) end;
+  function nextparam:TStr; begin result := paramstr(i); inc(i) end;
   begin
     result := true; { false will indicate failure }
     cfg.imgPath := ''; cfg.minSize := -1;
@@ -83,7 +83,7 @@ type
   TEdlnDevice = class (TComponent)
     public
       edln : lined.LineEditor;
-      buff : string;
+      buff : TStr;
       constructor Create(aOwner :TComponent); override;
       function handle ( msg : int32 ) : int32;
       procedure step;
@@ -114,14 +114,15 @@ function TEdlnDevice.handle ( msg : int32 ) : int32;
 
 { main code }
 var
-  cfg	: TRetroConfig;
-  path : string;
-  ed : TEdlnDevice;
+  cfg  : TRetroConfig;
+  path : TStr;
+  ed   : TEdlnDevice;
   vm   : ng.TNgaroVM;
 begin
   if configure( cfg ) then begin
     {$i-} vm := TNgaroVM.New( cfg.imgpath ); {$i+}
-    if IOResult <> 0 then die( 'couldn''t open image file: ' + cfg.imgpath )
+    if IOResult <> 0 then
+      die(Format('couldn''t open image file: %s', [cfg.imgpath]))
     else begin
       vm.debugMode := cfg.debug;
       vm.minsize := cfg.minsize;

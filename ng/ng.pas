@@ -7,9 +7,9 @@ type
   thunk  = procedure of object;
   device = function( msg : int32 ) : int32 of object;
   oprec  = record
-    go  : thunk;
-    tok, sig    : token;
-    hasarg      : boolean;
+    go        : thunk;
+    tok, sig  : token;
+    hasarg    : boolean;
   end;
   TInt32Stack = specialize GStack<Int32>;
 
@@ -25,7 +25,7 @@ type
       input      : ^textfile;
       optbl      : array of oprec;
       _debug     : boolean;
-      _imgpath   : string;
+      _imgpath   : TStr;
       _imgsize   : cardinal;
       _minsize   : cardinal;
     public
@@ -33,8 +33,8 @@ type
       retroTerm  : kvm.ITerm;
       debugTerm  : kvm.ITerm;
 
-      constructor New(imagepath : string);
-      destructor Destroy;
+      constructor New(imagepath : TStr);
+      destructor Destroy; override;
       { single-step instructions }
       procedure Step;
       procedure RunOp( op:int32 );
@@ -47,7 +47,7 @@ type
       procedure Loop;
 
       { input file loader }
-      procedure Include( path : string );
+      procedure Include( path : TStr );
 
       { image routines }
       procedure Load;
@@ -58,10 +58,10 @@ type
       { debug / inspect routines }
       procedure Trace;
       procedure Dump;
-      procedure Show_Debugger( msg : string );
+      procedure Show_Debugger( msg : TStr );
     published
       property debugmode : boolean read _debug write _debug;
-      property imgpath : string read _imgpath write _imgpath;
+      property imgpath : TStr read _imgpath write _imgpath;
       property imgsize : cardinal read _imgsize;
       property minsize : cardinal read _minsize write SetMinSize;
 
@@ -97,7 +97,7 @@ type
       procedure init_porthandlers;
 
    { retro image layout conventions }
-      function rx_getstring( start : int32 ) : string;
+      function rx_getstring( start : int32 ) : TStr;
     end;
   ENotFinished = class (Exception);
 
@@ -115,7 +115,7 @@ implementation
   {$i ng_ports.pas }
   {$i ng_debug.pas }
 
-constructor TNgaroVM.New( imagepath : string );
+constructor TNgaroVM.New( imagepath : TStr );
   begin
     _imgsize := 0;
     _minsize := 65536;

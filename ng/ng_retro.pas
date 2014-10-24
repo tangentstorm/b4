@@ -2,7 +2,7 @@
 
 { -- read string from ram --------------------------------------- }
 
-function TNgaroVM.rx_getstring( start : int32 ) : string;
+function TNgaroVM.rx_getstring( start : int32 ) : TStr;
 var at, ch : int32;
 begin
   at := start;

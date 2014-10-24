@@ -5,7 +5,7 @@ unit ng.input; implementation   { input stack }
 
 { include pushes a new file onto the input stack }
 { we use a stack rather than a queue so that one file can import another }
-procedure TNgaroVM.include( path : string );
+procedure TNgaroVM.include( path : TStr );
   begin
     if not( sysutils.fileexists( path )) then begin
       writeln( '<< error: file "', path ,'" not found. press enter. >>' );

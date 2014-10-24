@@ -14,13 +14,13 @@ procedure TNgaroVM.dump;
     write( ram[ length( ram ) - 1 ] );
   end;
 
-procedure TNgaroVM.show_debugger( msg : string );
+procedure TNgaroVM.show_debugger( msg : TStr );
   var
-    s         : string[ 4 ];
-    r           : oprec;
-    b, e, i   : int32;  { begin, end, index }
+    s       : string[ 4 ];
+    r       : oprec;
+    b, e, i : int32;  { begin, end, index }
 
-  function reverse_lookup( xt : int32 ) : string;
+  function reverse_lookup( xt : int32 ) : TStr;
     var last : int32 = 2; jumps : int32 = 0; found : boolean = false;
     const xtofs = 2; helpofs = 3; tokenofs = 4;
     begin
@@ -48,12 +48,12 @@ procedure TNgaroVM.show_debugger( msg : string );
       r := optbl[ ram[ i ]];
       emit( r.tok );
       if r.hasarg then begin
-	inc( i );
-	{ show the argument }
-	fg( 'g' ); str( ram[ i ], s ); emit( ' ' ); emit( s );
-	{ on next line, show where it was }
-	fg( 'K' ); show_addr; emit( '...' );
-	fg( 'w' );
+        inc( i );
+        { show the argument }
+        fg( 'g' ); str( ram[ i ], s ); emit( ' ' ); emit( s );
+        { on next line, show where it was }
+        fg( 'K' ); show_addr; emit( '...' );
+        fg( 'w' );
       end;
       newline;
     end; { show_opcode }
@@ -79,9 +79,9 @@ procedure TNgaroVM.show_debugger( msg : string );
     write( 'port : ' );
     for i:= 0 to length( ports ) - 1 do
       begin
-	write( i , ':' );
-	str( ports[ i ], s );
-	write( s, ' ');
+        write( i , ':' );
+        str( ports[ i ], s );
+        write( s, ' ');
       end;
     writeln;
 

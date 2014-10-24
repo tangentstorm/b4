@@ -15,7 +15,7 @@ function valid_handle( var handle :  int32 ): boolean;
     dec( handle ); { we use base 0 but ngaro uses base 1 }
   end; { valid_handle }
 
-procedure file_open( const mode  : int32; const path : string;
+procedure file_open( const mode  : int32; const path : TStr;
                       var handle : int32 );
   var i : byte = 0;
   begin {$I-}
@@ -116,7 +116,7 @@ procedure file_size( handle : int32; var result : int32 );
     else result := -1
   end;
 
-procedure file_delete( path : string; var result : int32 );
+procedure file_delete( path : TStr; var result : int32 );
   begin
     result := 0; // failure in retro
     if sysutils.deletefile( path ) then result := -1; // success
