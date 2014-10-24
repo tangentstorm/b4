@@ -83,7 +83,7 @@ function TNgaroVM.handle_write( msg : int32 ) : int32;
          clear
        else if x < 32 then
          case chr( x ) of
-           ^H : write( ^H, ' ', ^H );
+           ^H : kvm.backspace;
            ^J : writeln;
            ^M : ;
            else write( chr( x ))
