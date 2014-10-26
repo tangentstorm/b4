@@ -113,15 +113,15 @@ function assemble( src ) {
       words = lines[ln].split(/\s/);
       for (wd=0; wd<words.length; ++wd) {
         word = words[wd];
-	if (word[0] == "#") break; 
-	if (word[0] == ":") labels[ word.substr( 1 )] = here; 
-	else {
-	  here++;
+        if (word[0] == "#") break;
+        if (word[0] == ":") labels[ word.substr( 1 )] = here;
+        else {
+          here++;
           if (/^-?\d+$/.exec( word )) {  // match int literal
             here++; // because of the implicit "LIT" opcode
             if (phase==2) res.push(ops['<LIT:>'], parseInt(word, 10));
           }
-	  else if (phase == 1) {} // phase 1 only for labels
+          else if (phase == 1) {} // phase 1 only for labels
           else if (word in labels) res.push( labels[ word ]);
           else if (word in ops) res.push( ops[ word ]);
           else throw "Unresolved symbol '" + word + "' on line " + ln + ".";
@@ -162,6 +162,7 @@ function test_assembler() {
 
 }
 
-console.clear(); // only in firebug
+if (console.clear !== undefined) console.clear(); // only in firebug
+console.log("running tests.");
 test_assembler();
-console.log("done");
+console.log("done.");
