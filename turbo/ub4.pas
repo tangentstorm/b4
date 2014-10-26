@@ -1,6 +1,6 @@
-{$mode tp}
+{$mode delphi}{$i xpc}
 unit ub4;
-interface uses kvm, kbd;
+interface uses xpc, kvm, kbd;
 {
   this contains the virtual machine
   and the code to load and save blocks.
@@ -33,13 +33,13 @@ var
   bytes: array[0..maxcell*sizeof(value)] of byte;
   disk : file of block;
 const {-- these are all offsets into the ram array --}
-  ip    = 0; { instruction pointer }
-  dp    = 1; { data stack pointer }
-  rp    = 2; { retn stack pointer }
-  hp    = 3; { heap pointer }
-  last  = 4; { last dictionary entry }
-  ap    = 5; { the 'a' register }
-  ep    = 6; { the editor pointer }
+  ip    =  0; { instruction pointer }
+  dp    =  1; { data stack pointer }
+  rp    =  2; { retn stack pointer }
+  hp    =  3; { heap pointer }
+  last  =  4; { last dictionary entry }
+  ap    =  5; { the 'a' register }
+  ep    =  6; { the editor pointer }
   ml    = 64; { main loop }
 
 
@@ -110,8 +110,7 @@ function nos : value;
   end;
 
 procedure zap( v : value );
-  begin
-    { discards a value }
+  begin { discards a value (for turbo pascal) }
   end;
 
 { the stacks are really rings, so no over/underflows }
@@ -206,25 +205,24 @@ function step : value;
       00 : {nop } begin end;
       01 : {lit } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
       02 : {jmp } ram[ip] := ram[ram[ip]+1];
-      03 : {jwz } if tos = 0 then
+      03 : {jw0 } if tos = 0 then
                     begin
                       zap(dpop);
                       ram[ip] := ram[ram[ip]+1];
                     end
-                  else
-                   inc(ram[ip]) { skip over the addres };
+                  else inc(ram[ip]) { skip over the addres };
       04 : {ret } ram[ip] := rpop;
-      05 : {rwz } if tos = 0 then
-                   begin
-                     zap(dpop);
-                     ram[ip] := rpop
-                   end;
+      05 : {rw0 } if tos = 0 then
+                    begin
+                      zap(dpop);
+                      ram[ip] := rpop
+                    end;
       06 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
       07 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
       08 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
       09 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
-      10 : {lte } if dpop <= dpop then dput(-1) else dput(0);
-      11 : {gte } if dpop >= dpop then dput(-1) else dput(0);
+      10 : {le  } if dpop <= dpop then dput(-1) else dput(0);
+      11 : {gt  } if dpop >= dpop then dput(-1) else dput(0);
       12 : {and } dput(dpop and dpop);
       13 : {or  } dput(dpop or dpop);
       14 : {xor } dput(dpop xor dpop);
@@ -235,7 +233,7 @@ function step : value;
                     rput(tos mod nos);
                     dput(dpop div dpop);
                     dput(rpop);
-                 end;
+                  end;
       19 : {shl } begin swap; dput(dpop shl dpop) end;
       20 : {shr } begin swap; dput(dpop shr dpop) end;
       21 : {push} rput(dpop);
@@ -249,23 +247,23 @@ function step : value;
       29 : {swap} swap;
       30 : {over} dput(nos);
       31 : {goxy} begin
-                   swap;
-                   kvm.gotoxy(dpop mod (xMax + 1),
-                              dpop mod (yMax + 1))
-                 end;
+                    swap;
+                    kvm.gotoxy(dpop mod (xMax + 1),
+                               dpop mod (yMax + 1))
+                  end;
       32 : {attr} kvm.textattr := dpop;
       33 : {putc} write(chr(dpop));
       34 : {getc} begin
-                   dput(value(kbd.readkey));
-                   { we have 32 bits and only need 16,
-                     so we can store extended keys in
-                     one cell }
-                   if tos = 0 then
-                     begin
-                       zap(dpop);
-                       dput(value(kbd.readkey) shl 8)
-                     end
-                 end;
+                    dput(value(kbd.readkey));
+                    { we have 32 bits and only need 16,
+                      so we can store extended keys in
+                      one cell }
+                    if tos = 0 then
+                      begin
+                        zap(dpop);
+                        dput(value(kbd.readkey) shl 8)
+                      end
+                  end;
       35 : {halt} halt;
       36 : {boot} boot;
       37 : {load} load;
@@ -284,4 +282,4 @@ function step : value;
   end;
 
 begin
-end.
+end.

@@ -1,3 +1,4 @@
+{$mode delphi}{$i xpc}
 {-- do not edit! regenerate with mkoptbl.pas --}
 unit ub4ops;
 interface

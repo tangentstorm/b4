@@ -1,17 +1,17 @@
-{$mode tp}
+{$mode delphi}{$i xpc}
 unit ub4asm;
-interface uses ub4ops, ub4;
+interface uses xpc, ub4ops, ub4;
 
   type chargen = function( var ch : char ) : char;
 
   var nextchar : chargen;
-  function b4op(code : opstring; var op:byte) : boolean;
+  function b4op(code : opstring; out op:byte) : boolean;
   function readnext( var ch : char ) : char;
   procedure b4as;
 
 implementation
 
-function b4op(code : opstring; var op:byte) : boolean;
+function b4op(code : opstring; out op:byte) : boolean;
   var found : boolean;
   begin
     op := 0; found := false;
@@ -24,9 +24,8 @@ function b4op(code : opstring; var op:byte) : boolean;
   end;
 
 function b4opc(code:opstring) : byte;
-  var result : byte;
   begin
-    if b4op(code, result) then b4opc := result
+    if b4op(code, result) then ok
     else begin writeln('invalid op: ', code); halt end;
   end;
 
@@ -46,7 +45,6 @@ function readnext( var ch : char ) : char;
   begin
     read(ch); readnext := ch;
   end;
-
 
 function next( var tok : token; var ch : char ) : boolean;
   procedure keep;
@@ -122,7 +120,7 @@ procedure b4as;
                   end
                 end;
           def : if ents > 31 then err := -12345
-   else
+                else
                   begin
                     dict[ents].key := tok.str;
                     dict[ents].val := here-1 ;
@@ -134,12 +132,10 @@ procedure b4as;
                     op := 0;
                     while op < ents do
                       begin
-                        if dict[op].key = tok.str then
-                          emit(dict[op].val);
+                        if dict[op].key = tok.str then emit(dict[op].val);
                         inc(op);
                       end
-
-                end;
+                  end;
           _wh : dput(here-1);
           _do : begin
                   emit(b4opc('jwz'));
@@ -163,13 +159,8 @@ procedure b4as;
   begin
     err := 0; ents := 0; here := ram[hp];
     read(ch);
-    while (err = 0) and not eof do
-      if next(tok, ch) then
-        compile;
-
-    if err <> 0
-      then dput(err)
-      else begin ram[hp] := here end
+    while (err = 0) and not eof do if next(tok, ch) then compile;
+    if err <> 0 then dput(err) else ram[hp] := here;
   end;
 
 begin
