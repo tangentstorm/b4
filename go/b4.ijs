@@ -29,21 +29,21 @@ sho=:3 :'({.,(sym _),}.)&.|:(;:''P T S Ds Rs I O E M''),:P;T;S;Ds;Rs;I;O;E;M'
 'gt  >' is (1 cell (3 :'dpush (ddrop > ddrop) _'))
 'dup :' is (1 cell (3 :'(dpush,dpush) ddrop _'))
 'eof $' is (1 cell (3 :'dpush 0=#I'))
+'hlt q' is (1 cell (3 :'P=:#M'))
 NB. -- assembler --
 isch =: 2=(3!:0)
-c2op =: 3 : 0
-  r=:0$0
-  for_c.y do.
-    if.c e.chs do.r=.r,chs i.c else. E=:c,'?' throw. end.
-  end.
-)
+c2op =: 3 :('r=:0$0';'for_c.y do. if.c e.chs do.r=.r,chs i.c else. E=:c,''?''throw. end. end.')
 b4a =: 3 :('new _';'try. ; c2op^:isch L:0 y catcht. 0$0 return. end.')
 NB. -- interpreter --
 b0=:3 :('new _';':';'''M I''=:x;y')
 b1=:3 :'if. P<#M do. syms@.(P{M) _ end.'
 b2=:3 :('while. P<#M do. b1 _ end.';'O')
 b4=:4 :('x b0 y';'if. -.#E do. b2 _ else. E end.')
+
 
 NB. -- tests --
 assert 'b?'-:".'E'[ b4a 'b is not a b4a token so error E should say "b?"'
 NB. echo sho [ (b4a '$t';10;'rn';32;'%+wj';0) b0 'HELLO WORLD'
+
+assert ((b4a'rrrwww') b4 'abc') = 'cba'
+assert ((b4a'rrrwwqw') b4 'abc') = 'cb' NB. q halts
