@@ -10,7 +10,7 @@ i want to implement the operation =rot= which would rotate the top three items o
 
 if =s0= is the stack at the start of the program, and =s1= is the stack at the end of the program. The input and output might look like this: 
 
-#+begin_src J :session j
+#+begin_src J :exports both :session j
   [ 0 1 2 { s0=:'abcd'
   [ 1 2 0 { s1=:'cabd'
 #+end_src
@@ -23,7 +23,7 @@ if =s0= is the stack at the start of the program, and =s1= is the stack at the e
 
 The precondition is that =s0= at least 3 items =(3<:#s0)= and the specification is that =s1= has the same number of items, and that the above pattern holds:
 
-#+begin_src J :session j
+#+begin_src J :exports both :session j
   [ (3 <: # s0) <: (s0 =&# s1) *. ((0 1 2 { s0) -: (1 2 0 { s1))
 #+end_src
 
@@ -42,7 +42,7 @@ What I've done here so far is provide a spec (a boolean expression) and some exa
 
 The next step will be to convert the spec into functions, but first I need to define some helpers:
 
-#+begin_src J :session j
+#+begin_src J :exports both :session j
 
   NB. x set y : verb. set variable with name x to value y
   NB. python:   exec x+"=y"
@@ -74,7 +74,7 @@ Now we can breaking the spec down into two specifications and a precondition.
 
 The capitalized names =S= and =S1= are the accessor functions for the lower-case variables, defined above.
 
-#+begin_src J :session j
+#+begin_src J :exports both :session j
 
   NB. accessor verbs. see above.
   '`S S1' =: ('s'get)`('s1'get)
@@ -88,7 +88,7 @@ The capitalized names =S= and =S1= are the accessor functions for the lower-case
 #+RESULTS:
 
 
-#+begin_src J :session j
+#+begin_src J :exports both :session j
   spec =: C0 <: R0 *. R1
   spec''
 #+end_src
@@ -108,7 +108,7 @@ So now we can try to refine the specification:
 
 =R0=, which says that the lengths of the two lists are equal can be refined just by assignment:
 
-#+begin_src J :session j
+#+begin_src J :exports both :session j
   R0 >: 's1'set s
 #+end_src
 
@@ -121,7 +121,7 @@ Since =R0= and all of the other specifications ignore their arguments and return
 
 =R1= specifies that the appropriate permutation took place:
 
-#+begin_src J :session j
+#+begin_src J :exports both :session j
   R1 >: 's1'set (0 1 2 { s) 1 2 0 } s
 #+end_src
 
@@ -139,7 +139,7 @@ Since =R0= and all of the other specifications ignore their arguments and return
 
 We can now actually execute the program and test that the conditions hold.
 
-#+begin_src J :session j
+#+begin_src J :exports both :session j
 
   s1=: (0 1 2 { s) 1 2 0 } s=: 'abcd'
   assert r=: C0 *. (R0 *. R1)''
@@ -160,7 +160,7 @@ We can now actually execute the program and test that the conditions hold.
 
 Actually there's an even simpler implementation of =rot= in J:
 
-#+begin_src J :session j
+#+begin_src J :exports both :session j
 
   s1=: 3 A.&.|. 'abcd'
   assert r=: C0 *. (R0 *. R1)''
@@ -196,7 +196,7 @@ The words =push=, =pop=, and =swap= are three of the 'axioms' of a forth system 
 
 In retro, =push= and =pop= use a secondary stack, but since it's only using it for one value, we can just use a variable in J. We'll call it =a=. For the others, we'll continue to use our stack variables =s= and =s1=
 
-#+begin_src J :session j
+#+begin_src J :exports both :session j
   push =: ('a';'s1') set L:0 ({. ; }.)@S0
   swap =: 's1'set 1 A.&.|. S1
   pop  =: 's1'set a, S1
