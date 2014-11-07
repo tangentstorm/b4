@@ -1,0 +1,226 @@
+
+* specification
+:PROPERTIES:
+:TS:       <2014-11-07 2:00AM>
+:ID:       lfzabjb1wng0
+:END:
+
+I'm working with a forth-like language, that uses a stack to store data.
+i want to implement the operation =rot= which would rotate the top three items on the stack.
+
+if =s0= is the stack at the start of the program, and =s1= is the stack at the end of the program. The input and output might look like this: 
+
+#+begin_src J :session j
+  [ 0 1 2 { s0=:'abcd'
+  [ 1 2 0 { s1=:'cabd'
+#+end_src
+
+#+RESULTS:
+: abc
+: 
+: abc
+
+
+The precondition is that =s0= at least 3 items =(3<:#s0)= and the specification is that =s1= has the same number of items, and that the above pattern holds:
+
+#+begin_src J :session j
+  [ (3 <: # s0) <: (s0 =&# s1) *. ((0 1 2 { s0) -: (1 2 0 { s1))
+#+end_src
+
+#+RESULTS:
+: 1
+
+What I've done here so far is provide a spec (a boolean expression) and some example input and output for which the spec evaluates to true. This provides a quick sanity check on the spec itself.
+
+
+* accesor words
+:PROPERTIES:
+:TS:       <2014-11-07 3:10AM>
+:ID:       u0idvkb1wng0
+:END:
+
+
+The next step will be to convert the spec into functions, but first I need to define some helpers:
+
+#+begin_src J :session j
+
+  NB. x set y : verb. set variable with name x to value y
+  NB. python:   exec x+"=y"
+  set =: 4 :'1[ ". x,''=: y'''
+
+  NB. x m put y : adverb. put val(s) x at key(s) m in var y
+  NB. python:   for xi,mi in zip(x,m): y[mi] = xi
+  put =: 1 :('[:';':'; '1[ y ] ". ''x y } m''')
+
+  NB. get m   : make new verb that evals m at call time.
+  NB. python: get = lambda m: lambda y: eval m
+  NB. I use it to create accessor verbs.
+  get =: 1 :'y ] ".m'
+
+#+end_src
+
+#+RESULTS:
+
+
+* functional specification
+:PROPERTIES:
+:TS:       <2014-11-07 4:19AM>
+:ID:       30ibrlb1wng0
+:END:
+
+
+Now we can breaking the spec down into two specifications and a precondition.
+
+
+The capitalized names =S= and =S1= are the accessor functions for the lower-case variables, defined above.
+
+#+begin_src J :session j
+
+  NB. accessor verbs. see above.
+  '`S S1' =: ('s'get)`('s1'get)
+
+  C0 =: 3 <: [: # S                  NB. precondition: a least 3 items
+  R0 =: S =&# S1                     NB. end length must be same
+  R1 =: (0 1 2 { S) -: (1 2 0 { S1)  NB. rotation pattern abcd... → cabd...
+
+#+end_src
+
+#+RESULTS:
+
+
+#+begin_src J :session j
+  spec =: C0 <: R0 *. R1
+  spec''
+#+end_src
+
+#+RESULTS:
+: 1
+
+
+* NOTE . refinement
+:PROPERTIES:
+:TS:       <2014-11-07 5:22AM>
+:ID:       iq3lgrb1wng0
+:END:
+
+
+So now we can try to refine the specification:
+
+=R0=, which says that the lengths of the two lists are equal can be refined just by assignment:
+
+#+begin_src J :session j
+  R0 >: 's1'set s
+#+end_src
+
+#+RESULTS:
+: 1
+
+In a boolean context, the =>:= symbol (less than or equal to) can also be interpreted to mean /is implied by/, or /refines/. So the above section says that setting =s1= to =s0= refines =R0=. We use =set= rather than normal assignment simply because of the side effect that it always returns =1=.
+
+Since =R0= and all of the other specifications ignore their arguments and return a boolean, we can chain them together.
+
+=R1= specifies that the appropriate permutation took place:
+
+#+begin_src J :session j
+  R1 >: 's1'set (0 1 2 { s) 1 2 0 } s
+#+end_src
+
+#+RESULTS:
+: 1
+
+
+* NOTE . implementation
+:PROPERTIES:
+:TS:       <2014-11-07 6:42AM>
+:ID:       cxsk8rb1wng0
+:END:
+
+
+
+We can now actually execute the program and test that the conditions hold.
+
+#+begin_src J :session j
+
+  s1=: (0 1 2 { s) 1 2 0 } s=: 'abcd'
+  assert r=: C0 *. (R0 *. R1)''
+  
+  (":;".) S:0 ;:'s s1 r'
+
+#+end_src
+
+#+RESULTS:
+: ┌──┬────┐
+: │s │abcd│
+: ├──┼────┤
+: │s1│cabd│
+: ├──┼────┤
+: │r │1   │
+: └──┴────┘
+
+
+Actually there's an even simpler implementation of =rot= in J:
+
+#+begin_src J :session j
+
+  s1=: 3 A.&.|. 'abcd'
+  assert r=: C0 *. (R0 *. R1)''
+  (":;".) S:0 ;:'s s1 r'
+
+#+end_src
+
+#+RESULTS:
+: ┌──┬────┐
+: │s │abcd│
+: ├──┼────┤
+: │s1│cabd│
+: ├──┼────┤
+: │r │1   │
+: └──┴────┘
+
+However, my goal here isn't just to implement =rot= and show off feaures of j, but rather to implement it on my forth-style virtual machine, treating the primitive forth operations as axioms in a logical system.
+
+
+* forth style primitives
+:PROPERTIES:
+:TS:       <2014-11-07 7:16AM>
+:ID:       k2mcghb1wng0
+:END:
+
+Here is a working forth-style implementation of =rot=, extracted from retroforth:
+
+#+begin_src retro
+ : rot ( xyz -- yzx ) push swap pop swap ;
+#+end_src
+
+The words =push=, =pop=, and =swap= are three of the 'axioms' of a forth system (ANSI forth uses the names =>R= and =R>= for =push= and =pop=, respectively). They're generally implemented in assembly language, and often correspond to a single machine code instruction. Since J isn't a stack-oriented language, none of these words are available, but they're not hard to implement.
+
+In retro, =push= and =pop= use a secondary stack, but since it's only using it for one value, we can just use a variable in J. We'll call it =a=. For the others, we'll continue to use our stack variables =s= and =s1=
+
+#+begin_src J :session j
+  push =: ('a';'s1') set L:0 ({. ; }.)@S0
+  swap =: 's1'set 1 A.&.|. S1
+  pop  =: 's1'set a, S1
+  joy  =: 1 : '(|. (1j1 $~ #m) #!.({.[:`a:) m)`]`:6 y'
+  rot=: (push`swap`pop`swap) joy
+  rot s=: 'abcd'
+  echo 'rot acbd → ',s1
+  assert r=: C0 *. (R0 *. R1)''
+  (":;".) S:0 ;:'s s1 r'
+#+end_src
+
+#+RESULTS:
+#+begin_example
+1
+
+rot acbd → cabd
+
+┌──┬────┐
+│s │abcd│
+├──┼────┤
+│s1│cabd│
+├──┼────┤
+│r │1   │
+└──┴────┘
+#+end_example
+
+So.. Great, now I have an implementation (=run=) that seems to work for this particular input value (since I don't get an assertion failure when I evaluate the spec), but this just shows that it works for that one input.

@@ -2,6 +2,7 @@ misc j articles (mostly unorganized drafts)
 
 - file:amend.ijs.org
 - file:treebuild.ijs.org
+- file:rotspec.ijs.org
 
 - file:bjonas-scheme.ijs.org
 - file:factoring-verbs-j.org
@@ -11,6 +12,7 @@ misc j articles (mostly unorganized drafts)
 - file:upcase-saga-1.org
 - file:verbarrays.org
 - file:z.ijs.org
+- file:factorial-base.ijs.org
 
 
 drafts:
