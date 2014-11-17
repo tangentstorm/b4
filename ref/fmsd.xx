@@ -1,0 +1,35 @@
+% formal methods of software development;
+
+# busy-wait loops
+define wait_until w
+  = t := max t w
+refine
+  ← t := if t ≥ w then ok else ( t:=t+1. wait_until w )
+proof by case
+  |  t ≥ w ∧ ( ok
+           = t:=t
+           = t:=max t w
+           → wait_until w )
+  |  t < w ∧ (t:=t+1. wait_until w)
+  =  t < w ∧ (t:=t+1. t:= max t w)
+  = t+1≤ w ∧ (t:= max(t+1) w)
+  =  t < w ∧ (t:= w)
+  =  t < w ∧ (t:= max t w)
+  →  wait_until w
+end
+
+# assertions
+define assert b msg
+  = if b then ok else (print msg. wait_until ∞)
+end
+.
+define ensure
+  % make b true without  doing anything;
+  % unimplementable alone but can be used for backtracking;
+  = if b then ok else b′ ∧ ok
+  = b′ ∧ ok
+end
+.
+define q or q
+ = p ∨ q
+end
