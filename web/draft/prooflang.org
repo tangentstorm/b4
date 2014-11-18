@@ -1,0 +1,116 @@
+* Formal Proofs
+:PROPERTIES:
+:TS:       <2014-04-28 11:33PM>
+:ID:       yed2lm80vgg0
+:END:
+
+Formal proofs are conducted symbolically. Each statement in a proof is either an axiom, or derived from earlier statements through the use of inference rules.
+
+* Proof Steps
+:PROPERTIES:
+:TS:       <2014-04-28 11:22PM>
+:ID:       aaj8i380vgg0
+:END:
+
+It's not sufficient that the individual steps of a proof be true statements. They must also be logically connected, preferably by equivalence or implication.
+
+The entire proof can be viewed as a single boolean expression.
+
+
+* Tracking proofs.
+:PROPERTIES:
+:TS:       <2014-04-28 11:47PM>
+:ID:       cue09990vgg0
+:END:
+
+- define a way to model the semantics of a statement
+- maintain a list of such models
+- for each step, require at least one of the following:
+  - /a./ it is an axiom of the system
+  - /b./ it follows from a previous step by one of these symbols:
+    - ~=~ (equality)
+    - ~!~ (implication)
+
+For case /b/, the 'follows' condition can be checked by comparing the two models.
+
+
+
+(* step 0)
+(^ step 1)
+(= step 2)
+
+
+*  a language for proofs about programs
+:PROPERTIES:
+:TS:       <2014-11-17 05:57AM>
+:ID:       upo9qr819og0
+:END:
+
+* a specification for behavior is just a logical predicate.
+:PROPERTIES:
+:TS:       <2014-11-17 05:58AM>
+:ID:       yj7fnt819og0
+:END:
+
+* all programs are specifications.
+:PROPERTIES:
+:TS:       <2014-11-17 05:59AM>
+:ID:       9u1lru819og0
+:END:
+
+* some specifications are programs.
+:PROPERTIES:
+:TS:       <2014-11-17 05:57AM>
+:ID:       imq48s819og0
+:END:
+
+* we are concerned with proving that a program implements a specification.
+:PROPERTIES:
+:TS:       <2014-11-17 06:00AM>
+:ID:       5eb34x819og0
+:END:
+
+A program implements a specification if the specification is implied by the program.
+
+* axiom and proof rules (fmsd, section 1.0.0)
+:PROPERTIES:
+:TS:       <2014-11-17 07:35AM>
+:ID:       ejvgcad19og0
+:END:
+
+- _axiom rule_ :: if a boolean expression is an axiom, then it is a theorem. if a boolean expression is an antiaxiom, then it is an antitheorem.
+- _evaluation rule_ :: if all subexpressions of a boolean expression are classified, then it is classified according to the truth tables.
+- _completion rule_ :: if a boolean expression contains unclassified boolean subexpressions, and all ways of classifying them place it in the same class, then it is in that class.
+- _consistency rule_ :: if a classified boolean expression contains boolean subexpressions, and only one way of classifying them is consistent, then they are all classified that way.
+- _instance rule_ :: if a boolean expression is classified, then all instances have that same classification.
+
+* which specifications are programs?  (fmsd, program theory, section 4.0.4, p 42)
+:PROPERTIES:
+:TS:       <2014-11-17 10:52AM>
+:ID:       5s7geu70aog0
+:END:
+
+- a :: /ok/ is a program
+- b :: if /x/ is any state variable and /e/ is an implemented expression of the initial values, then /x ≔ e/ is a program.
+- c :: if /b/ is an implemented boolean expression of the initial values, and /P/ and /Q/ are programs, then *if* /b/ *then* /P/ *else* /Q/ is a program.
+- d :: if /P/ and /Q/ are programs, then /P.Q/ is a program.
+- e :: an implementable specification that is refined by a program is a program.
+
+* TODO an interactive tool that tells which refinements are left to be proven
+:PROPERTIES:
+:TS:       <2014-11-17 10:42AM>
+:ID:       rkv4ud70aog0
+:END:
+
+* TODO create grammar and parser for the proof language
+:PROPERTIES:
+:TS:       <2014-11-17 09:13AM>
+:ID:       mrlbta30aog0
+:END:
+
+* informal spec: parsing steps
+:PROPERTIES:
+:TS:       <2014-11-17 08:55AM>
+:ID:       xs5fsg20aog0
+:END:
+A parsing step evaluates 0..1 characters of input, and produces a boolean result. If it tests a character, then it tests whether the character is a member of a particular bunch.
