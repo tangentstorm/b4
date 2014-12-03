@@ -15,38 +15,37 @@ The tree is a rank 1 array of parent indices (where =_1= indicates root/null)
 Here is a straightforward imperative definition of our primitives:
 
 #+name: builder
-#+begin_src j
-  
+#+begin_src J
+
   tree =: $0   NB. stores the links to parents.
   data =: $0   NB. stores the actual data items.
   path =: $0   NB. the stack of parent nodes.
   here =: _1   NB. the current parent node.
-  
+
   emit =: monad define "0
     tree =: tree, here
     data =: data, y
     tree
   )
-  
+
   node =: monad define "_
-    emit y
     path =: path, here
     here =: <: # tree
     tree
   )
-  
+
   done =: monad define "_
     here =: {: path
     path =: }: path
-    emit y
     tree
   )
-  
+
   drop =: monad define "_
     data =: }: data
     tree =: }: tree
+    tree
   )
-  
+
   goto =: monad define "_
     path =: path, here
     here =: y
@@ -59,7 +58,7 @@ These verbs all return the tree as a convention, both to to make tracing simpler
 * queries
 
 #+name: queries
-#+begin_src j
+#+begin_src J
   upfrom =: 3 : 'if. y=_1 do. _1 else. y{tree end.'"0
   dnfrom =: 3 : 'if. 0=#y do. $0 else. I. +./"2 tree ="1 0 ;y end.'"1
   above =: (_1 -.~ }.)&(upfrom f.^:a:)"0
@@ -72,7 +71,7 @@ These verbs all return the tree as a convention, both to to make tracing simpler
 * an example tree
 
 #+name: example
-#+begin_src j
+#+begin_src J
   reset =: verb define
     tree =: path =: data =: $ >: here =: _1
   )
@@ -96,7 +95,7 @@ These verbs all return the tree as a convention, both to to make tracing simpler
 
 * in action
 
-#+begin_src j
+#+begin_src J
 
      reset''
 
@@ -141,32 +140,32 @@ These verbs all return the tree as a convention, both to to make tracing simpler
 Parsing lisp-style s-expressions is simply a matter of mapping each character to a corresponding tree builder routine:
 
 #+name: rsx
-#+begin_src j
-  
+#+begin_src J
+
   rsx =: (node`done`emit)@.('()' & i.)"0  NB. 'read s-expression'
-  
+
 #+end_src
 
 In this version, every character is mapped to its own node, but it should be easy to update this to use j's sequential machine primitive to break the input into tokens first. (*TODO*)
 
-#+begin_src j
-  
+#+begin_src J
+
      NB. the trace is a large ugly matrix that shows the
      NB. tree at each step of the parse.
      trace =. rsx'(banana (creme (pie)))' [ reset''
 
      tree
   _1 0 0 0 0 0 0 0 0 8 8 8 8 8 8 8 15 15 15 8 0 _1
-  
+
      data
   (banana (creme (pie)))
-  
+
      NB. the characters grouped by parent:
      tree</.data
   ┌──┬─────────┬────────┬───┐
   │()│banana ()│creme ()│pie│
   └──┴─────────┴────────┴───┘
-  
+
      NB. show depth of each character node graphically:
      |:(data ,~"0 1  '_' #~ "0 >:) depth index''
   ______________________
@@ -174,12 +173,12 @@ In this version, every character is mapped to its own node, but it should be eas
            ___________
                   ___
   (banana (creme (pie)))
-  
+
 #+end_src
 
 * maybe later
 
-#+begin_src j
+#+begin_src J
   type =: $0   NB. a type marker for each node in the tree.
   tags =: $.$0 NB. sparse array holding meta data about nodes.
 #+end_src
@@ -193,7 +192,7 @@ You can retrieve it in any of three formats:
 - [[https://github.com/sabren/b4/blob/master/web/apljk/treebuild.ijs.org][the literate ~.org~ file]]
 - [[https://github.com/tangentstorm/tangentlabs/blob/master/j/treebuild.ijs][the generated j source code]]
 
-#+begin_src j :tangle "~/l/j/treebuild.ijs" :comments both :padline yes :noweb tangle
+#+begin_src J :tangle "~/l/j/treebuild.ijs" :padline yes :noweb tangle
 
   <<builder>>
   <<queries>>
