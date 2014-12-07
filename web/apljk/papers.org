@@ -1,0 +1,28 @@
+#+title: papers for array languages
+#+COLUMNS: %28ITEM %4year %4pub %8ID %TODO %3PRIORITY %TAGS
+
+* [[http://scholar.google.com/scholar?cluster=18271756533880344170&hl=en&as_sdt=0,44][Extending APL to Logic Programming]]
+:PROPERTIES:
+:TS:       <2014-10-22 11:02PM>
+:ID:       olj7ouo0cng0
+:pub:      qq
+:year:     1986
+:END:
+* [[http://dl.acm.org/citation.cfm?id=28337][Boolean array structures for  a rule-based forward chaining inference engine]]
+:PROPERTIES:
+:TS:       <2014-10-18 09:15AM>
+:ID:       ezsi1bn06ng0
+:END:
+* [[http://dl.acm.org/citation.cfm?id=75173][Inference planning using digraphs and Boolean arrays]]
+:PROPERTIES:
+:TS:       <2014-10-18 09:16AM>
+:ID:       ui4agcn06ng0
+:END:
+* [[http://dl.acm.org/citation.cfm?id=9322][A Boolean array based algorithm in APL]] (for forward chaining in rule-based production expert systems)
+:PROPERTIES:
+:TS:       <2014-10-18 09:17AM>
+:ID:       h1sehen06ng0
+:END:
+ACM SIGAPL APL Quote Quad, 1987
+"rent" for 2.99/24-hr at: [[http://www.deepdyve.com/lp/association-for-computing-machinery/a-boolean-array-based-algorithm-in-apl-mXnPGa0EY7][deepdyve]]
+
