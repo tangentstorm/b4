@@ -5,7 +5,7 @@
 
 Often it's convenient to construct a J program from the 'bottom up', starting with an input value and applying transformations one at a time, interactively in the REPL.
 
-For example, if we wanted to construct a function to calculate the calculate the sum of the first ~y~ square numbers, our session might look like this:
+For example, if we wanted to construct a function to calculate the sum of the first ~y~ square numbers, our session might look like this:
 
 #+begin_src j
      i.10                        NB. first 10 non-negative integers
@@ -34,9 +34,9 @@ Surrounding a phrase with ~(3 : '...')~ is a simple way to extract a new verb. O
 #+begin_src j
      'a,b,c'             NB. a string of comma separated values
   a,b,c
-     ',', 'a,b,c'        NB. append to leading comma
+     ',', 'a,b,c'        NB. append it to another comma
   ,a,b,c
-  
+
      <;._1',', 'a,b,c'   NB. cut and box on comma characters.
   ┌─┬─┬─┐
   │a│b│c│
@@ -57,7 +57,7 @@ In this /particular/ case, it's cleaner to surround the target phrase with ~([: 
   └─┴─┴─┘
 #+end_src
 
-Note, however, that ~[:~ and ~]~ are not magical tacit function delimeters. They are just normal verbs, that to form the train we want in /this/ particular case. Applying them blindly often leads to disaster:
+Note, however, that ~[:~ and ~]~ are not magical tacit function delimeters. They are just normal verbs, that happen to form the train we want in /this/ particular case. Applying them blindly often leads to disaster:
 
 #+begin_src j
      +/ *: >: i. 10           NB. sum of first y squares (derived above)
@@ -162,7 +162,7 @@ To summarize, whenever you want to extract a verb from an alternating sequence o
 
 : n0 v0 n1 v1 .. ni vi v(i+1) y <--> (n0 v0 n1 v1 .. ni vi v(i+1)) y
 
-* extracting a noun-verb trains without a final extra verb.
+* extracting noun-verb trains without a final extra verb.
 
 If the phrase follows this pattern but doesn't end with two verbs, you can simply add ~]~ to the end of the sequence:
 
@@ -189,7 +189,7 @@ There are many simple identities between the verbs in J,  so you often have the 
 : *: y <--> (2 ^~ y) <--> *~ y     square
 : %: y <--> (2 ^. y)               square root
 
-If the final noun and verb together hav a shorter representation, then you can simply replace it with the shorter form:
+If the final noun and verb together have a shorter representation, then you can simply replace it with the shorter form:
 
 
 #+begin_src j
@@ -236,4 +236,3 @@ Fortunately, this is also an easy fix. We can extend the parentheses to the left
      ([: |. 1 + 2 * i.) y
   9 7 5 3 1
 #+end_src
-
