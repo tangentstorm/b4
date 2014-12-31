@@ -5,3 +5,5 @@ misc j articles
 - file:rpn-in-j.org
 - file:upcase-saga-1.org
 - file:perfect-numbers.org
+- file:factoring-verbs-j.org
+
