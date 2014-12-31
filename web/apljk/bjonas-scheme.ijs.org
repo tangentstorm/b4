@@ -103,7 +103,7 @@ rdr =: (rdr1 @: tok) ::[:
 
 Here we see the mysterious =::[:= again. More importantly, it's just composing =rdr1= with =tok=.
 
-This is a simple a recursive descent parser. Let's follow the call chain, starting with =rdr=:
+This is simply a recursive descent parser. Let's follow the call chain, starting with =rdr=:
 
  - =rdr= applies =tok= to the input, then applies =rdr1= to the result
  - =rdr1= appends a boxed right paren to the chain of tokens, then calls =rdrs= and takes the head of the result.
@@ -293,6 +293,14 @@ placset =: 4 :'0:placv=:(<y) x}placv'
 
 #+end_src
 
+These are fairly straightforward.
+
+The noun =placv= is initialized as an empty array, to which boxed values are appended when =placmak= is called. The =<:#= symbols on the left of =placmak= cause it to return the index of the newly created cell.
+
+The other two functions simply get and set boxed values in this array.
+
+
+
 * default environment
 
 #+begin_quote org
@@ -319,9 +327,9 @@ denvadd =: 4 :'0:denv=:denv,(,x);placmak y'
 
 #+end_src
 
+These are also straightforward. The - and / verbs are longer than their + and * equivalents because they have special cases for one argument (producing negative values or an inverse).
+
 * evaluator
-
-
 
 #+begin_quote org
 
@@ -338,6 +346,9 @@ NB.lambda1 =: 2 :'(u , (>@:{.v)match y) ; (<@:}.v) ; 9'
 
 lambda =: 4 :'(x lambda1 y)`(i.0)'
 #+end_src
+
+Okay so it looks like =runl= is a dyad that applies the verb =run= to each item in a list.
+
 
 
 #+begin_quote org
@@ -374,3 +385,9 @@ echo eval 0 :0
 )
 echo eval '((lambda (a) ((lambda (a) a) 2)) 5)' NB. must give 2
 #+end_src
+
+
+
+
+* notes
+=runl= looks similar to  (=run &. >=)... how are they different?
