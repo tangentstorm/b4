@@ -20,18 +20,21 @@ Our first step is to define some types that we can use to tag the different part
 :TS:       <2015-01-18 07:56AM>
 :ID:       9906u111jqg0
 :END:
+#+name: @imports
 #+begin_src python :session :results none
   from collections import namedtuple
-
-  def T(tag, doc='', args=['data']):
+#+end_src
+#+name: @code
+#+begin_src python :session :results none
+  def T(tag, doc='', args=['body']):
       """Creates a new tuple type."""
       res = namedtuple(tag, args)
       if doc: res.__doc__+=' : '+doc
       return res
 
   Gram = T('Gram', 'contains grammar rules (may inherit from `base`).',
-           ['name', 'base', 'doc', 'defs'])
-  Def = T('Def', 'define a named rule.', ['name','data'])
+           ['name', 'base', 'doc', 'body'])
+  Def = T('Def', 'define a named rule.', ['name','body'])
   Ref = T('Ref', 'refer to (invoke) a named rule')
 
   Any = T('Any', 'match anything', [])
@@ -46,9 +49,9 @@ Our first step is to define some types that we can use to tag the different part
   Opt = T('Opt', 'match 0 or 1 repetitions.')
   Orp = T('Orp', 'match 0 or more repetitions.')
 
-  Var = T('Var', 'save matched string in a variable.', ['name','data'])
+  Var = T('Var', 'save matched string in a variable.', ['name','body'])
   Val = T('Val', 'match against the saved value.', ['name'])
-  New = T('New', 'build a new class/tuple instance', ['Class', 'data'])
+  New = T('New', 'build a new class/tuple instance', ['Class', 'body'])
   Arg = T('Arg', 'pass matched data as arg to containing "New"')
 
 #+end_src
@@ -58,9 +61,11 @@ Our first step is to define some types that we can use to tag the different part
 :TS:       <2015-01-18 10:10AM>
 :ID:       9d0f2971jqg0
 :END:
+#+name: @imports
 #+begin_src python :session :results none
   import string
 #+end_src
+#+name: @code
 #+begin_src python :session :results none
   ECHR, SQ, DQ = ['\\', "'", '"']
   base = Gram('ebnf', [], "rules common to all grammars", [
@@ -98,13 +103,14 @@ Our first step is to define some types that we can use to tag the different part
 :ID:       7o9j7i21jqg0
 :END:
 
+#+name: @code
 #+begin_src python :session :results none
   ebnf = Gram('ebnf', [base], "ebnf meta-grammar (for parsing grammars)", [
       Def('main', Orp(Ref('rule'))),
       Def('rule', Seq([Var('name', Ref('IDENT')),
                        Lit('='), Ref('expr'), Lit('.') ])),
       Def('expr', [ Ref('term'), Orp([Lit('|'), Ref('term') ]) ]),
-      Def('term', Rep(Ref('factor'))),
+      Def('term', [ Ref('factor'), Rep(Ref('factor')) ]),
       Def('factor', Alt([Ref('IDENT'), Ref('STRING'),
                          Ref('rep'), Ref('opt'), Ref('grp')])),
       Def('rep', ['{', New(Rep, Ref('expr')), '}']),  # 'x*'
@@ -113,3 +119,163 @@ Our first step is to define some types that we can use to tag the different part
   ])
 #+end_src
 
+* Generic dispatch:
+:PROPERTIES:
+:TS:       <2015-01-18 11:36AM>
+:ID:       w0bhd8b1jqg0
+:END:
+We need a way walk these trees and dispatch to an appropriate method for each type of node in our AST.
+
+#+name: @imports
+#+begin_src python :sesson :results none
+from warnings import warn
+#+end_src
+
+#+name: @code
+#+begin_src python :session :results none
+  class Dispatcher(object):
+      def __init__(self, tree):
+          self.root = tree
+          self.done = False
+          self.node = None
+          self.path = [] # stack of breadcrumbs from the root
+          
+      def unhandled(self, node):
+          yield warn('no handler for tag: %s' % node.__class__.__name__)
+          
+      def walk(self, node):
+          tag = node.__class__.__name__
+          meth = getattr(self, 'on'+tag, self.unhandled)
+          self.path.append(self.node); self.node = node
+          yield from meth(node)
+          self.node = self.path.pop()
+#+end_src
+
+* Worlds for backtracking.
+:PROPERTIES:
+:TS:       <2015-01-18 12:59PM>
+:ID:       u8s6vh00kqg0
+:END:
+
+A world is a context for holding changes, similar to a working copy in a version control system. The idea is that any time we might need to backtrack (any time an =Alt= node is encountered), we'll fork a new world, and changes we make are done to the world object. This way, if the match ultimately fails, we can rewind the side effects.
+
+This ability is common in prototype-based langugaes like Self and JavaScript (though it isn't necessarily commonly /used/). The name 'World' and the idea of applying it to parsing comes from Alex Warth's [[http://www.tinlizzie.org/ometa/][OMeta]] dissertation.
+
+It's easy to make a python class that works this way: we just override
+
+#+name: @code
+#+begin_src python :session :results none
+
+  HOME = {} # arbitrary dictionary object
+
+  class World(dict):
+      
+      def __init__(self, proto=HOME):
+          super(World, self).__init__()
+          self.proto = proto
+          
+      def __getattr__(self, name):
+          # called when attribute has no local definition.
+          return getattr(self.proto, name)
+      
+      def __getitem__(self, key):
+          if key in self.keys(): return super(World, self)[key]
+          else: return self.proto[key]
+          
+#+end_src
+
+
+* Grammar Interpreter
+:PROPERTIES:
+:TS:       <2015-01-18 12:28PM>
+:ID:       n0pcnnd1jqg0
+:END:
+
+We will assume for now that we have the entire string in memory.
+
+#+name: @code
+#+begin_src python :session :results none
+
+  class Grin(Dispatcher):
+      """Grammar Interpreter"""
+      
+      def match(self, src):
+          self.src, self.pos, self.ch = src, 0, ''
+          self.page, self.line, self.col = 0, 0, 0
+          self.wo = World(); self.worlds = []
+          for step in self.walk(self.root): pass
+          
+      <<@methods>>
+#+end_src
+
+* ebnf in ebnf
+:PROPERTIES:
+:TS:       <2015-01-18 12:51PM>
+:ID:       bd6hv400kqg0
+:END:
+Here's an grammar for EBNF written in EBNF, so we can test the parser.
+
+This text is adapted from [[http://www.inf.ethz.ch/personal/wirth/CompilerConstruction/index.html][Compiler Construction]] by Niklaus Wirth (who invented EBNF, as well as Pascal, Modula, Oberon, and a variety of other languages).
+
+#+name: ebnf
+#+begin_src prolog
+main = { rule } .
+rule = IDENT "=" expr "." .
+expr = term { "|" term } .
+term = factor { factor } .
+factor = IDENT | STRING | "{" expr "}" | "[" expr "]" | "(" expr ")" .
+#+end_src
+
+I placed that code in a block of its own so it would be syntax highlighted, but for python it should be inside a string.
+
+#+name: @code
+#+begin_src python :session :results none
+ebnf_src = '''
+<<ebnf>>
+'''
+#+end_src
+
+* OUTPUT wejalboot.py
+:PROPERTIES:
+:TS:       <2015-01-18 12:38PM>
+:ID:       npdbb4e1jqg0
+:END:
+
+And now we can put the whole thing together:
+
+#+begin_src python :session :tangle "wejalboot.py" :noweb yes
+  <<@imports>>
+  <<@code>>
+  if __name__=="__main__":
+      print(Grin(ebnf).match(ebnf_src))
+#+end_src
+
+If we try to run this now, here's what we'll get:
+
+#+begin_src org
+=wejalboot.py:82:= *UserWarning: no handler for tag: Gram*
+  ~yield warn('no handler for tag: %s' % node.__class__.__name__)~
+/None/
+#+end_src
+
+So now our job is to go back and fill in a handler method for each node until it's able to walk the whole tree.
+
+
+* Handler Methods for the Grammar Interpreter
+:PROPERTIES:
+:TS:       <2015-01-18 02:10PM>
+:ID:       ks01bt30kqg0
+:END:
+
+#+name: @methods
+#+begin_src python :session :results none
+
+  # (still inside  `class Grin`...)
+  def onGram(self, node):
+      self.defs = {}
+      for child in node.body: yield from self.walk(child)
+
+  def onDef(self, node):
+      raise NotImplementedError('TODO: onDef (and others)...')
+
+#+end_src
