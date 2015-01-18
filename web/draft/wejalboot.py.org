@@ -1,0 +1,115 @@
+#+title: wejal bootstrap
+
+
+* Strategy
+:PROPERTIES:
+:TS:       <2015-01-18 10:25AM>
+:ID:       nrogjy71jqg0
+:END:
+
+The idea here is to manually construct an a data structure (an abstract syntax tree) that describes a meta-grammar.
+
+The meta-grammar describes whatever nice clean syntax we'd /like/ to use for creating grammars in the future.
+
+Building these trees by hand can get messy, though, so we'll stick with a simple syntax for this first round, and then use /that/ to implement something better later.
+
+Our first step is to define some types that we can use to tag the different parts of the tree. Each type represents the some feature of our pattern matching system.
+
+* Some data types for modeling grammar definitions.
+:PROPERTIES:
+:TS:       <2015-01-18 07:56AM>
+:ID:       9906u111jqg0
+:END:
+#+begin_src python :session :results none
+  from collections import namedtuple
+
+  def T(tag, doc='', args=['data']):
+      """Creates a new tuple type."""
+      res = namedtuple(tag, args)
+      if doc: res.__doc__+=' : '+doc
+      return res
+
+  Gram = T('Gram', 'contains grammar rules (may inherit from `base`).',
+           ['name', 'base', 'doc', 'defs'])
+  Def = T('Def', 'define a named rule.', ['name','data'])
+  Ref = T('Ref', 'refer to (invoke) a named rule')
+
+  Any = T('Any', 'match anything', [])
+  Not = T('Not', 'fail if the pattern would match, but do not consume')
+  Skip = T('Skip', 'match the pattern, but hide it from other rules')
+
+  Lit = T('Lit', 'match literal item (using ==)')
+  Seq = T('Seq', 'match a sequence of patterns')
+  Grp = T('Grp', 'same as Seq, but renders in parentheses')
+  Alt = T('Alt', 'match any of the alternatives')
+  Rep = T('Rep', 'match 1 or more repetitions.')
+  Opt = T('Opt', 'match 0 or 1 repetitions.')
+  Orp = T('Orp', 'match 0 or more repetitions.')
+
+  Var = T('Var', 'save matched string in a variable.', ['name','data'])
+  Val = T('Val', 'match against the saved value.', ['name'])
+  New = T('New', 'build a new class/tuple instance', ['Class', 'data'])
+  Arg = T('Arg', 'pass matched data as arg to containing "New"')
+
+#+end_src
+
+* Manually build a base grammar to provide generic tokenization.
+:PROPERTIES:
+:TS:       <2015-01-18 10:10AM>
+:ID:       9d0f2971jqg0
+:END:
+#+begin_src python :session :results none
+  import string
+#+end_src
+#+begin_src python :session :results none
+  ECHR, SQ, DQ = ['\\', "'", '"']
+  base = Gram('ebnf', [], "rules common to all grammars", [
+      Def('main', Orp('token')),
+      Def('token', [Skip(Orp(Ref('space'))),
+                    Alt([Ref('STRING'), Ref('NUMBER'),
+                         Ref('IDENT'), Ref('DELIM'),
+                         Rep(Not(Ref('space')))])]),
+      Def('space', Orp('White')),
+      # character classes:
+      Def('White', Alt([chr(c) for c in range(33)])),
+      Def('Upper', Alt(list(string.ascii_uppercase))),
+      Def('Lower', Alt(list(string.ascii_lowercase))),
+      Def('Alpha', Alt([Ref('Lower'), Ref('Upper')])),
+      Def('Under', Lit('_')),
+      Def('Neg', Lit('-')),
+      Def('Digit', Alt([Lit(c) for c in string.digits])),
+      Def('Hexit', Alt([Ref('Digit')]+[Lit(c) for c in 'abcdefABCDEF'])),
+      Def('Alnum', Alt([Ref('Under'), Ref('Alpha'), Ref('Digit')])),
+      # simple patterns:
+      Def('IDENT', [Alt([Ref('Under'),Ref('Alpha')]), Orp(Ref('Alnum'))]),
+      Def('NUMBER', [Opt(Ref('Neg')), Rep(Ref('Digit')),
+                     Orp([Ref('Under'),
+                          Ref('Digit'),Ref('Digit'),Ref('Digit')])]),
+      Def('STRING', Alt([ [Lit(DQ), Rep(Ref('STRCHR')), Lit(DQ)]])),
+      Def('STRCHR', Alt([ [Lit(ECHR), Alt([ Lit(ECHR), Lit(DQ) ])],
+                          Not(DQ) ])),
+      Def('DELIM', Alt(list('(){}[]'))),
+  ])
+#+end_src
+
+* Now define the bootstrap grammar to parse EBNF grammar definitions.
+:PROPERTIES:
+:TS:       <2015-01-18 08:27AM>
+:ID:       7o9j7i21jqg0
+:END:
+
+#+begin_src python :session :results none
+  ebnf = Gram('ebnf', [base], "ebnf meta-grammar (for parsing grammars)", [
+      Def('main', Orp(Ref('rule'))),
+      Def('rule', Seq([Var('name', Ref('IDENT')),
+                       Lit('='), Ref('expr'), Lit('.') ])),
+      Def('expr', [ Ref('term'), Orp([Lit('|'), Ref('term') ]) ]),
+      Def('term', Rep(Ref('factor'))),
+      Def('factor', Alt([Ref('IDENT'), Ref('STRING'),
+                         Ref('rep'), Ref('opt'), Ref('grp')])),
+      Def('rep', ['{', New(Rep, Ref('expr')), '}']),  # 'x*'
+      Def('opt', ['[', New(Opt, Ref('expr')), ']']),  # 'x?'
+      Def('grp', ['(', New(Grp, Ref('expr')), ')']),  # '(x)'
+  ])
+#+end_src
+
