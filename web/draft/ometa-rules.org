@@ -1,0 +1,112 @@
+* pegs, from the ometa paper
+:PROPERTIES:
+:TS:       <2015-01-21 07:43AM>
+:ID:       x28cp6y0nqg0
+:END:
+
+#+begin_src antlr
+// language of parsing expressions
+e : ε           // empty
+  | a           // atom
+  | n           // nonterm
+  | e0=e e1=e   // sequence
+  | e '*'^      // iteration
+  | '!' e       // negation
+  | e ':' x     // binding
+  | '->' t      // semantic action
+  | '[' e ']'   // list pattern
+  ;
+
+// language of values
+v : a           // atomic value (e.g., a character)
+  | '[' v* ']'  // list of values
+  | 'none'      // no value
+  ;
+
+// term language (for semantic actions)
+t : a
+  | '[' t* ']'
+  | 'none'
+  | x           // a variable
+  ;
+#+end_src
+
+* inference rules
+:PROPERTIES:
+:TS:       <2015-01-21 07:51AM>
+:ID:       h78eejy0nqg0
+:END:
+
+#+begin_src logic
+
+empty:
+  ⊢ (ε, x, μ) ⇒ (NONE, x, μ).
+
+atom-success:
+  ⊢ (a, a x, μ) ⇒ (a, x, μ).
+atom-failure-1:
+  ⊢ a≠b ⊢ (a, b x, μ) ⇒ (FAIL, μ).
+atom-failure-2:
+  ⊢ (a, [x] y, μ) ⇒ (FAIL, μ).
+atom-failure-3:
+  ⊢ (a, none x, μ) ⇒  (FAIL, μ).
+atom-failure-4:
+  ⊢ |x|=0 ⊢ (a,x,μ) ⇒ (FAIL, μ).
+
+nonterminal-success:
+  A ← e ∈ G, (e, x y, ∅) ⇒ (v, y, μ′₁) ⊢ (A, x y, μ₀) ⇒ (v, y, μ₀).
+nonterminal-failure:
+  A ← e ∈ G, (e, x y, ∅) ⇒ (FAIL, μ′₁) ⊢ (A, x y, μ₀) ⇒ (FAIL, μ₀).
+
+sequence-next:
+  (e₀, x y, μ) ⇒ (v₀, y, μ′), (e₁, y, μ′) ⇒ ans ⊢ (e₀ e₁, x y, μ) ⇒ ans.
+sequence-failure:
+  (e₀, x y, μ) ⇒ (FAIL, μ′) ⊢ (e₀ e₁, x, μ) ⇒ (FAIL, μ′).
+
+alternation-success:
+  (e₀, x y, μ) ⇒ (v₀, y, μ′) ⊢ (e₀ / e₁, x y, μ) ⇒ (v₀₁, y, μ′).
+alternation-next:
+  (e₀, x, μ) ⇒ (FAIL, μ′), (e₁, x, μ′) ⇒ ans ⊢ (e₀ / e₁, x y, μ) ⇒ ans.
+
+iteration-repetition:
+  (e, x y z, μ)⇒(v, y z, μ′), (e*, y z, μ)⇒(v̅, z, μ″), v[ans]=append([v],v̅)
+  ⊢ (e*, x y z, μ) ⇒ (v[ans], z, μ″).
+iteration-termination:
+  (e, x, μ) ⇒ (FAIL, μ′) ⊢ (e*, x, μ) ⇒ ([], x, μ′).
+
+negation-success:
+  (e, x, μ) ⇒ (FAIL, μ′) ⊢ (!e, x, μ) ⇒ (NONE, x, μ′).
+negation-failure:
+  (e, x y, μ) ⇒ (v, y, μ′) ⊢ (!e, x y, μ) ⇒ (FAIL, μ′).
+
+binding-success:
+  (e, x y, μ) ⇒ (v, y, μ′) ⊢ (e:X, x y, μ) ⇒ (v, y, [x → v] μ′).
+binding-failure:
+  (e, x, μ) ⇒ (FAIL, μ′) ⊢ (e:X, x, μ) ⇒ (FAIL, μ′).
+
+eval-atom:
+  ⊢ eval(a, μ)=a.
+eval-none:
+  ⊢ eval(NONE,μ)=NONE.
+eval-var:
+  x → v ∈ μ ⊢ eval(X,μ)=v.
+eval-list:
+  eval(t₀, μ ,v₀) … eval(tₙ, μ ,vₙ)  ⊢ eval([t₀…tₙ],μ) = [v₀…vₙ].
+semantic-action:
+  eval(t, μ) = v ⊢ (→ t, x,  μ) ⇒ (v, x, μ).
+
+list-success:
+  (e, x y, μ) ⇒ (v, y, μ′), |y|=0 ⊢ ([e],[x y] z, μ) ⇒ ([x],z, μ′).
+list-failure-1:
+  (e, x y, μ) ⇒ (v, y, μ′), |y|>0 ⊢ ([e],[x y] z, μ) ⇒ (FAIL, μ′).
+list-failure-2:
+  (e, x, μ) ⇒ (FAIL, μ′) ⊢ ([e], [x]y, μ) ⇒ (FAIL, μ′).
+list-failure-3:
+  ⊢ ([e], a x, μ) ⇒ (FAIL, μ).
+list-failure-4:
+  ⊢ ([e], NONE x, μ) ⇒ (FAIL, μ).
+list-failure-5:
+  (|x|=0) ⊢ ([e], x, μ) ⇒ (FAIL, μ).
+
+
+#+end_src
