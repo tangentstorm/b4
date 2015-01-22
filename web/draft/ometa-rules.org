@@ -45,18 +45,20 @@ empty:
 atom-success:
   ⊢ (a, a x, μ) ⇒ (a, x, μ).
 atom-failure-1:
-  ⊢ a≠b ⊢ (a, b x, μ) ⇒ (FAIL, μ).
+  ⊢ a≠b, (a, b x, μ) ⇒ (FAIL, μ).
 atom-failure-2:
   ⊢ (a, [x] y, μ) ⇒ (FAIL, μ).
 atom-failure-3:
   ⊢ (a, none x, μ) ⇒  (FAIL, μ).
 atom-failure-4:
-  ⊢ |x|=0 ⊢ (a,x,μ) ⇒ (FAIL, μ).
+  ⊢ |x|=0, (a,x,μ) ⇒ (FAIL, μ).
 
 nonterminal-success:
-  A ← e ∈ G, (e, x y, ∅) ⇒ (v, y, μ′₁) ⊢ (A, x y, μ₀) ⇒ (v, y, μ₀).
+  A ← e ∈ G, (e, x y, ∅) ⇒ (v, y, μ′₁)
+  ⊢ (A, x y, μ₀) ⇒ (v, y, μ₀).
 nonterminal-failure:
-  A ← e ∈ G, (e, x y, ∅) ⇒ (FAIL, μ′₁) ⊢ (A, x y, μ₀) ⇒ (FAIL, μ₀).
+  A ← e ∈ G, (e, x y, ∅) ⇒ (FAIL, μ′₁)
+  ⊢ (A, x y, μ₀) ⇒ (FAIL, μ₀).
 
 sequence-next:
   (e₀, x y, μ) ⇒ (v₀, y, μ′), (e₁, y, μ′) ⇒ ans ⊢ (e₀ e₁, x y, μ) ⇒ ans.
