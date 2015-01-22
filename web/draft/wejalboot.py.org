@@ -7,7 +7,7 @@
 :ID:       nrogjy71jqg0
 :END:
 
-The idea here is to manually construct an a data structure (an abstract syntax tree) that describes a meta-grammar.
+The idea here is to manually construct a data structure (an abstract syntax tree) that describes a meta-grammar.
 
 The meta-grammar describes whatever nice clean syntax we'd /like/ to use for creating grammars in the future.
 
@@ -26,33 +26,38 @@ Our first step is to define some types that we can use to tag the different part
 #+end_src
 #+name: @code
 #+begin_src python :session :results none
-  def T(tag, doc='', args=['body']):
+  def T(tag, doc='', args)
       """Creates a new tuple type."""
       res = namedtuple(tag, args)
       if doc: res.__doc__+=' : '+doc
       return res
 
+  def TB(tag, doc, args=['body']): return T(tag, doc, args)
+  def TI(tag, doc, args=['item']): return T(tag, doc, args)
+  def TN(tag, doc, args=['name']): return T(tag, doc, args)
+  def T2(tag, doc, args=['name','body']): return T(tag, doc, args)
+
   Gram = T('Gram', 'contains grammar rules (may inherit from `base`).',
            ['name', 'base', 'doc', 'body'])
   Def = T('Def', 'define a named rule.', ['name','body'])
-  Ref = T('Ref', 'refer to (invoke) a named rule')
+  Ref = TN('Ref', 'refer to (invoke) a named rule')
 
   Any = T('Any', 'match anything', [])
-  Not = T('Not', 'fail if the pattern would match, but do not consume')
-  Skip = T('Skip', 'match the pattern, but hide it from other rules')
+  Not = TI('Not', 'fail if the pattern would match, but do not consume')
+  Skip = TI('Skip', 'match the pattern, but hide it from other rules')
 
-  Lit = T('Lit', 'match literal item (using ==)')
-  Seq = T('Seq', 'match a sequence of patterns')
-  Grp = T('Grp', 'same as Seq, but renders in parentheses')
-  Alt = T('Alt', 'match any of the alternatives')
-  Rep = T('Rep', 'match 1 or more repetitions.')
-  Opt = T('Opt', 'match 0 or 1 repetitions.')
-  Orp = T('Orp', 'match 0 or more repetitions.')
+  Lit = TI('Lit', 'match literal item (using ==)')
+  Seq = TB('Seq', 'match a sequence of patterns')
+  Grp = TB('Grp', 'same as Seq, but renders in parentheses')
+  Alt = TB('Alt', 'match any of the alternatives')
+  Rep = TI('Rep', 'match 1 or more repetitions.')
+  Opt = TI('Opt', 'match 0 or 1 repetitions.')
+  Orp = TI('Orp', 'match 0 or more repetitions.')
 
-  Var = T('Var', 'save matched string in a variable.', ['name','body'])
-  Val = T('Val', 'match against the saved value.', ['name'])
-  New = T('New', 'build a new class/tuple instance', ['Class', 'body'])
-  Arg = T('Arg', 'pass matched data as arg to containing "New"')
+  Var = T2('Var', 'save matched string in a variable.')
+  Val = TN('Val', 'match against the saved value.')
+  New = T2('New', 'build a new class/tuple instance')
+  Arg = TB('Arg', 'pass matched data as arg to containing "New"')
 
 #+end_src
 
@@ -70,10 +75,10 @@ Our first step is to define some types that we can use to tag the different part
   ECHR, SQ, DQ = ['\\', "'", '"']
   base = Gram('ebnf', [], "rules common to all grammars", [
       Def('main', Orp('token')),
-      Def('token', [Skip(Orp(Ref('space'))),
+      Def('token',Seq([Skip(Orp(Ref('space'))),
                     Alt([Ref('STRING'), Ref('NUMBER'),
                          Ref('IDENT'), Ref('DELIM'),
-                         Rep(Not(Ref('space')))])]),
+                         Rep(Not(Ref('space')))])])),
       Def('space', Orp('White')),
       # character classes:
       Def('White', Alt([chr(c) for c in range(33)])),
@@ -86,13 +91,13 @@ Our first step is to define some types that we can use to tag the different part
       Def('Hexit', Alt([Ref('Digit')]+[Lit(c) for c in 'abcdefABCDEF'])),
       Def('Alnum', Alt([Ref('Under'), Ref('Alpha'), Ref('Digit')])),
       # simple patterns:
-      Def('IDENT', [Alt([Ref('Under'),Ref('Alpha')]), Orp(Ref('Alnum'))]),
-      Def('NUMBER', [Opt(Ref('Neg')), Rep(Ref('Digit')),
+      Def('IDENT', Seq([Alt([Ref('Under'),Ref('Alpha')]), Orp(Ref('Alnum'))])),
+      Def('NUMBER',Seq([Opt(Ref('Neg')), Rep(Ref('Digit')),
                      Orp([Ref('Under'),
-                          Ref('Digit'),Ref('Digit'),Ref('Digit')])]),
-      Def('STRING', Alt([ [Lit(DQ), Rep(Ref('STRCHR')), Lit(DQ)]])),
-      Def('STRCHR', Alt([ [Lit(ECHR), Alt([ Lit(ECHR), Lit(DQ) ])],
-                          Not(DQ) ])),
+                          Ref('Digit'),Ref('Digit'),Ref('Digit')])])),
+      Def('STRING', Alt([Seq([Lit(DQ), Rep(Ref('STRCHR')), Lit(DQ)])])),
+      Def('STRCHR', Alt([Seq([Lit(ECHR), Alt([ Lit(ECHR), Lit(DQ) ])]),
+                         Not(DQ) ])),
       Def('DELIM', Alt(list('(){}[]'))),
   ])
 #+end_src
@@ -109,13 +114,13 @@ Our first step is to define some types that we can use to tag the different part
       Def('main', Orp(Ref('rule'))),
       Def('rule', Seq([Var('name', Ref('IDENT')),
                        Lit('='), Ref('expr'), Lit('.') ])),
-      Def('expr', [ Ref('term'), Orp([Lit('|'), Ref('term') ]) ]),
-      Def('term', [ Ref('factor'), Rep(Ref('factor')) ]),
+      Def('expr', Seq([ Ref('term'), Orp([Lit('|'), Ref('term') ]) ])),
+      Def('term', Seq([ Ref('factor'), Rep(Ref('factor')) ])),
       Def('factor', Alt([Ref('IDENT'), Ref('STRING'),
                          Ref('rep'), Ref('opt'), Ref('grp')])),
-      Def('rep', ['{', New(Rep, Ref('expr')), '}']),  # 'x*'
-      Def('opt', ['[', New(Opt, Ref('expr')), ']']),  # 'x?'
-      Def('grp', ['(', New(Grp, Ref('expr')), ')']),  # '(x)'
+      Def('rep', Seq([Lit('{'), New(Rep, Ref('expr')), Lit('}')])),  # 'x*'
+      Def('opt', Seq([Lit('['), New(Opt, Ref('expr')), Lit(']')])),  # 'x?'
+      Def('grp', Seq([Lit('('), New(Grp, Ref('expr')), Lit(')')])),  # '(x)'
   ])
 #+end_src
 
@@ -139,10 +144,10 @@ from warnings import warn
           self.done = False
           self.node = None
           self.path = [] # stack of breadcrumbs from the root
-          
+
       def unhandled(self, node):
           yield warn('no handler for tag: %s' % node.__class__.__name__)
-          
+
       def walk(self, node):
           tag = node.__class__.__name__
           meth = getattr(self, 'on'+tag, self.unhandled)
@@ -161,7 +166,11 @@ A world is a context for holding changes, similar to a working copy in a version
 
 This ability is common in prototype-based langugaes like Self and JavaScript (though it isn't necessarily commonly /used/). The name 'World' and the idea of applying it to parsing comes from Alex Warth's [[http://www.tinlizzie.org/ometa/][OMeta]] dissertation.
 
-It's easy to make a python class that works this way: we just override
+It's easy to make a python class that works this way: we just override =__getattr__= (for the =x.a= syntax), and =__getitem__= (for the =x[a]= syntax) so that they delegate to a prototype object when there's no local value defined.
+
+Since we do /not/ override the corresponding =__setitem__= and =__setattr__= methods, any assignment made to an attribute or item of the world will affect the local object, leaving the prototype's value unchanged.
+
+It's very much like what happens when overriding methods in a subclass, except it happens for individual objects rather than classes, and it happens dynamically at runtime.
 
 #+name: @code
 #+begin_src python :session :results none
@@ -169,19 +178,25 @@ It's easy to make a python class that works this way: we just override
   HOME = {} # arbitrary dictionary object
 
   class World(dict):
-      
+
       def __init__(self, proto=HOME):
           super(World, self).__init__()
           self.proto = proto
-          
+
       def __getattr__(self, name):
           # called when attribute has no local definition.
           return getattr(self.proto, name)
-      
+
       def __getitem__(self, key):
           if key in self.keys(): return super(World, self)[key]
           else: return self.proto[key]
-          
+
+      def changed(self, key, val):
+          """Forks a new world, with one key changed."""
+          res = World(self)
+          res[key] = val
+          return res
+
 #+end_src
 
 
@@ -198,13 +213,13 @@ We will assume for now that we have the entire string in memory.
 
   class Grin(Dispatcher):
       """Grammar Interpreter"""
-      
+
       def match(self, src):
+          self.env = World()
           self.src, self.pos, self.ch = src, 0, ''
           self.page, self.line, self.col = 0, 0, 0
-          self.wo = World(); self.worlds = []
           for step in self.walk(self.root): pass
-          
+
       <<@methods>>
 #+end_src
 
@@ -230,9 +245,9 @@ I placed that code in a block of its own so it would be syntax highlighted, but 
 
 #+name: @code
 #+begin_src python :session :results none
-ebnf_src = '''
-<<ebnf>>
-'''
+ebnf_src = (
+ '<<ebnf>>'
+)
 #+end_src
 
 * OUTPUT wejalboot.py
@@ -243,12 +258,12 @@ ebnf_src = '''
 
 And now we can put the whole thing together:
 
-#+begin_src python :session :tangle "wejalboot.py" :noweb yes
+#+begin_example python :session :tangle "wejalboot.py" :noweb yes
   <<@imports>>
   <<@code>>
   if __name__=="__main__":
       print(Grin(ebnf).match(ebnf_src))
-#+end_src
+#+end_example
 
 If we try to run this now, here's what we'll get:
 
@@ -261,7 +276,112 @@ If we try to run this now, here's what we'll get:
 So now our job is to go back and fill in a handler method for each node until it's able to walk the whole tree.
 
 
-* Handler Methods for the Grammar Interpreter
+
+* TODO Input cursor
+:PROPERTIES:
+:TS:       <2015-01-22 05:51AM>
+:ID:       m3udu291oqg0
+:END:
+
+Traditionally, in functional languages, strings are represented as a linked list of characters, which makes them easy to work with recursively.
+
+#+name: @code
+#+begin_src python :session :results none
+  class StringCursor(object):
+
+      def __init__(self, aString:str):
+          self.string = s
+          self.pos = -1
+          self.line= 0
+          self.fwd()
+
+      def fwd(self):
+          self.pos += 1
+          self.ch
+
+#+end_src
+
+
+* Data structure for parse results.
+:PROPERTIES:
+:TS:       <2015-01-22 05:58AM>
+:ID:       x88gff91oqg0
+:END:
+
+The output format will be almost the same as the input format.
+
+#+name: @code
+#+begin_src python :session :results none
+  class Fail(object): """Value to indicate failure."""
+  FAIL = Fail()
+#+end_src
+
+
+* Inference Rules
+:PROPERTIES:
+:TS:       <2015-01-22 06:01AM>
+:ID:       yg99mk91oqg0
+:END:
+
+#+name: @methods
+#+begin_src python :session :results none
+
+  # (inside  `class Grin`...)
+  def onRef(self, node, cur, env):
+      raise NotImplementedError('no nonterminal references yet.')
+
+  def onEmp(self, node, cur, env):
+      return (None, cur, env)
+
+  def onLit(self, node, cur, env):
+      if cur.value == node.item: return (cur.value, cur.fwd(), env)
+      else: return (FAIL, cur, env)
+
+  def onSeq(self, node, cur, env):
+      for item in node.body:
+          tup = self.walk(item, cur, env)
+          if tup[0] is FAIL: return (FAIL, tup[1])
+          else: val, cur, env = tup
+      # if it didn't fail, return the last value:
+      else: return (val, cur, env)
+
+  def onAlt(self, node, cur, env):
+      for item in node.body:
+          tup = self.walk(item, cur, env)
+          if tup[0] is FAIL: env = tup[1]
+          else: return tup
+      return tup # last failure
+
+  def onOrp(self, node, cur, env):
+      vals = []
+      while True:
+          tup = self.walk(node.item, cur, env)
+          if tup[0] is FAIL: break
+          else:
+              val, cur, env = tup
+              vals.append(val)
+      return (vals, cur, env)
+
+  def onNot(self, node, cur, env):
+      tup = self.walk(node.item, cur, env)
+      if tup[0] is FAIL: return (None, cur, tup[1])
+      else: return (FAIL, tup[1])
+
+  def onVar(self, node, cur, env):
+      tup = self.walk(node.item, cur, env)
+      if tup[0] is FAIL: return tup
+      else: return (tup[0], cur, env.changed(node.name, tup[0])
+
+  def onAct(self, node, cur, env):
+      raise NotImplementedError('no semantic actions yet.')
+
+  def onCell(self, node, cur, env):
+      raise NotImplementedError('no tree matching yet.')
+
+#+end_src
+
+
+* Compilation step.
 :PROPERTIES:
 :TS:       <2015-01-18 02:10PM>
 :ID:       ks01bt30kqg0
@@ -279,3 +399,11 @@ So now our job is to go back and fill in a handler method for each node until it
       raise NotImplementedError('TODO: onDef (and others)...')
 
 #+end_src
+
+
+* TODO credits
+:PROPERTIES:
+:TS:       <2015-01-22 08:13AM>
+:ID:       hnv0l310pqg0
+:END:
+- grammar rules are adapted from Alessandro Warth's [[http://tinlizzie.org/ometa/][Ometa]] system.
