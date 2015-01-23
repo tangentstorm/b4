@@ -26,7 +26,7 @@ Our first step is to define some types that we can use to tag the different part
 #+end_src
 #+name: @code
 #+begin_src python :session :results none
-  def T(tag, doc='', args)
+  def T(tag, doc, args):
       """Creates a new tuple type."""
       res = namedtuple(tag, args)
       if doc: res.__doc__+=' : '+doc
@@ -138,6 +138,7 @@ from warnings import warn
 
 #+name: @code
 #+begin_src python :session :results none
+
   class Dispatcher(object):
       def __init__(self, tree):
           self.root = tree
@@ -145,15 +146,12 @@ from warnings import warn
           self.node = None
           self.path = [] # stack of breadcrumbs from the root
 
-      def unhandled(self, node):
-          yield warn('no handler for tag: %s' % node.__class__.__name__)
+      def walk(self, prefix, node):
+          meth_name = "%s_%s" % (prefix, node.__class__.__name__)
+          if hasattr(self, meth_name):
+              return getattr(self, meth_name)(node)
+          else: warn('no handler for %s' % (meth_name))
 
-      def walk(self, node):
-          tag = node.__class__.__name__
-          meth = getattr(self, 'on'+tag, self.unhandled)
-          self.path.append(self.node); self.node = node
-          yield from meth(node)
-          self.node = self.path.pop()
 #+end_src
 
 * Worlds for backtracking.
@@ -199,7 +197,6 @@ It's very much like what happens when overriding methods in a subclass, except i
 
 #+end_src
 
-
 * Grammar Interpreter
 :PROPERTIES:
 :TS:       <2015-01-18 12:28PM>
@@ -214,11 +211,14 @@ We will assume for now that we have the entire string in memory.
   class Grin(Dispatcher):
       """Grammar Interpreter"""
 
-      def match(self, src):
+      def __init__(self, root):
+          super(Grin,self).__init__(root)
+          self.init(root)
+
+      def parse(self, src):
           self.env = World()
           self.src, self.pos, self.ch = src, 0, ''
           self.page, self.line, self.col = 0, 0, 0
-          for step in self.walk(self.root): pass
 
       <<@methods>>
 #+end_src
@@ -245,9 +245,9 @@ I placed that code in a block of its own so it would be syntax highlighted, but 
 
 #+name: @code
 #+begin_src python :session :results none
-ebnf_src = (
- '<<ebnf>>'
-)
+ebnf_src = '''\
+<<ebnf>>
+'''
 #+end_src
 
 * OUTPUT wejalboot.py
@@ -258,24 +258,22 @@ ebnf_src = (
 
 And now we can put the whole thing together:
 
-#+begin_example python :session :tangle "wejalboot.py" :noweb yes
+#+begin_src python :session :tangle "wejalboot.py" :noweb yes
   <<@imports>>
   <<@code>>
   if __name__=="__main__":
-      print(Grin(ebnf).match(ebnf_src))
-#+end_example
+      print(Grin(ebnf).parse(ebnf_src))
+#+end_src
 
 If we try to run this now, here's what we'll get:
 
 #+begin_src org
-=wejalboot.py:82:= *UserWarning: no handler for tag: Gram*
+=wejalboot.py:92:= *UserWarning: no handler for init_Gram*
   ~yield warn('no handler for tag: %s' % node.__class__.__name__)~
 /None/
 #+end_src
 
 So now our job is to go back and fill in a handler method for each node until it's able to walk the whole tree.
-
-
 
 * TODO Input cursor
 :PROPERTIES:
@@ -301,7 +299,6 @@ Traditionally, in functional languages, strings are represented as a linked list
 
 #+end_src
 
-
 * Data structure for parse results.
 :PROPERTIES:
 :TS:       <2015-01-22 05:58AM>
@@ -316,70 +313,73 @@ The output format will be almost the same as the input format.
   FAIL = Fail()
 #+end_src
 
-
 * Inference Rules
 :PROPERTIES:
 :TS:       <2015-01-22 06:01AM>
 :ID:       yg99mk91oqg0
 :END:
 
+These were translated from the sequent notation in Warth's Ometa paper.
+
 #+name: @methods
 #+begin_src python :session :results none
 
   # (inside  `class Grin`...)
-  def onRef(self, node, cur, env):
-      raise NotImplementedError('no nonterminal references yet.')
 
-  def onEmp(self, node, cur, env):
+  def match_Ref(self, node, cur, env):
+      # pass in fresh World, then discard changes
+      tup = self.match(self.defs[node.name], cur, World())
+      if tup[0] is FAIL: return (FAIL, env)
+      else: return (tup[0], tup[1], env)
+
+  def match_Emp(self, node, cur, env):
       return (None, cur, env)
 
-  def onLit(self, node, cur, env):
+  def match_Lit(self, node, cur, env):
       if cur.value == node.item: return (cur.value, cur.fwd(), env)
       else: return (FAIL, cur, env)
 
-  def onSeq(self, node, cur, env):
+  def match_Seq(self, node, cur, env):
       for item in node.body:
-          tup = self.walk(item, cur, env)
+          tup = self.match(item, cur, env)
           if tup[0] is FAIL: return (FAIL, tup[1])
           else: val, cur, env = tup
-      # if it didn't fail, return the last value:
-      else: return (val, cur, env)
+      return tup # last value
 
-  def onAlt(self, node, cur, env):
+  def match_Alt(self, node, cur, env):
       for item in node.body:
-          tup = self.walk(item, cur, env)
+          tup = self.match(item, cur, env)
           if tup[0] is FAIL: env = tup[1]
           else: return tup
       return tup # last failure
 
-  def onOrp(self, node, cur, env):
+  def match_Orp(self, node, cur, env):
       vals = []
       while True:
-          tup = self.walk(node.item, cur, env)
+          tup = self.match(node.item, cur, env)
           if tup[0] is FAIL: break
           else:
               val, cur, env = tup
               vals.append(val)
       return (vals, cur, env)
 
-  def onNot(self, node, cur, env):
-      tup = self.walk(node.item, cur, env)
+  def match_Not(self, node, cur, env):
+      tup = self.match(node.item, cur, env)
       if tup[0] is FAIL: return (None, cur, tup[1])
       else: return (FAIL, tup[1])
 
-  def onVar(self, node, cur, env):
-      tup = self.walk(node.item, cur, env)
+  def match_Var(self, node, cur, env):
+      tup = self.match(node.item, cur, env)
       if tup[0] is FAIL: return tup
-      else: return (tup[0], cur, env.changed(node.name, tup[0])
+      else: return (tup[0], cur, env.changed(node.name, tup[0]))
 
-  def onAct(self, node, cur, env):
+  def match_Act(self, node, cur, env):
       raise NotImplementedError('no semantic actions yet.')
 
-  def onCell(self, node, cur, env):
+  def match_Box(self, node, cur, env):
       raise NotImplementedError('no tree matching yet.')
 
 #+end_src
-
 
 * Compilation step.
 :PROPERTIES:
@@ -391,15 +391,17 @@ The output format will be almost the same as the input format.
 #+begin_src python :session :results none
 
   # (still inside  `class Grin`...)
-  def onGram(self, node):
-      self.defs = {}
-      for child in node.body: yield from self.walk(child)
+  def init(self, node):
+      return self.walk('init', node)
 
-  def onDef(self, node):
-      raise NotImplementedError('TODO: onDef (and others)...')
+  def init_Gram(self, node):
+      self.defs = {}
+      for child in node.body: self.init(child)
+
+  def init_Def(self, node):
+      self.defs[node.name] = node
 
 #+end_src
-
 
 * TODO credits
 :PROPERTIES:
