@@ -1,0 +1,477 @@
+#+title: project euler problems
+
+* DONE 1. multiples of 3 and 5
+:PROPERTIES:
+:TS:       <2014-10-25 06:06AM>
+:ID:       k0di44q0fng0
+:END:
+
+#+begin_src J
+  +/ I. +./ 0 = 3 5 |/ i.1000
+#+end_src
+
+#+RESULTS:
+: 233168
+
+** NOTE . golfed version
+:PROPERTIES:
+:TS:       <2014-11-30 05:35PM>
+:ID:       b1vfeix0rog0
+:END:
+
+'Divisibility by 3 or 5', applied to the naturals produces a repeating sequence of 15 bits. I represent those bits here as the number 19252.
+
+#+begin_src J
++/I.1000$#:19252
+#+end_src
+
+#+RESULTS:
+: 233168
+
+
+* DONE 2. even fibonacci numbers
+:PROPERTIES:
+:TS: <2013-12-05 05:20PM>
+:ID: gindt020lbg0
+:END:
+
+#+begin_src j
+  NB. sum of the even unique values of fibonacci pairs less than 4 million
+  +/ (] #~ 2: -.@| ]) ~., (({:,+/)^:(4000000 > +/)^:(<_))1 2
+#+end_src
+
+* DONE 3. largest prime factor of 600851475143
+:PROPERTIES:
+:TS: <2013-12-05 05:20PM>
+:ID: s94jd120lbg0
+:END:
+
+#+begin_src j
+  >./ q: 600851475143
+#+end_src
+
+* DONE 4. largest palindrome product of two 3 digit numbers
+:PROPERTIES:
+:TS: <2013-12-05 05:23PM>
+:ID: oqo68620lbg0
+:END:
+
+#+begin_src J
+
+  NB. number of digits needed to represent y in base x
+  ndig =. 13 : '>. x ^. >: y'
+
+  NB. the actual digits of y in base x
+  basex =. 13 : '((x ndig f. y) # x) #: y'
+  digits =. 10 & basex
+
+  ispal =. *./ @ (|. = ]) & digits
+
+  >./ (ispal"0 # ]) , */~ 100 + i. 899
+
+#+end_src
+
+** second implementation, almost a year later
+:PROPERTIES:
+:TS:       <2014-11-06 10:50PM>
+:ID:       ump94qf0wng0
+:END:
+
+#+begin_src J
+  >./ (#~|.=":) ~. */~ 100+i.899x
+#+end_src
+
+
+* DONE 5. smallest multiple
+:PROPERTIES:
+:TS: <2013-12-05 08:48PM>
+:ID: kbr7vmb0lbg0
+:END:
+
+Smallest positive number that is evenly divisible by all integers from 1 to 20?
+
+#+begin_src J
+  9 ": */(] ^~ p:@i.@#)>./_ q:>:i.20
+
+  NB. this takes the prime exponents (_ q:) of the numbers (>:i.) 20
+  NB. then finds the product (*/) of the actual primes needed (p:@i.@#)
+  NB. raised to those powers. (]^~)
+#+end_src
+
+** much simpler version.
+:PROPERTIES:
+:TS:       <2015-01-25 05:20AM>
+:ID:       r063od51sqg0
+:END:
+
+I think ischtche pointed this out to me a while back:
+
+#+begin_src J
+ *./ 1+i.20
+#+end_src
+
+* DONE 6. sum square difference
+:PROPERTIES:
+:TS: <2013-12-05 10:08PM>
+:ID: g40f7cf0lbg0
+:END:
+
+#+begin_src J
+  (*:@(+/) - +/@:*:) >:i.100
+#+end_src
+
+#+RESULTS:
+: 25164150
+
+* DONE 7. 10001st prime
+:PROPERTIES:
+:TS: <2013-12-05 10:10PM>
+:ID: k5v4off0lbg0
+:END:
+
+#+begin_src J
+  p: 10000
+#+end_src
+
+#+RESULTS:
+: 104743
+
+* DONE 8. largest product in a series
+:PROPERTIES:
+:TS: <2013-12-05 10:10PM>
+:ID: wk08igf0lbg0
+:END:
+
+#+begin_src J
+
+  series =. 0 : 0
+  73167176531330624919225119674426574742355349194934
+  96983520312774506326239578318016984801869478851843
+  85861560789112949495459501737958331952853208805511
+  12540698747158523863050715693290963295227443043557
+  66896648950445244523161731856403098711121722383113
+  62229893423380308135336276614282806444486645238749
+  30358907296290491560440772390713810515859307960866
+  70172427121883998797908792274921901699720888093776
+  65727333001053367881220235421809751254540594752243
+  52584907711670556013604839586446706324415722155397
+  53697817977846174064955149290862569321978468622482
+  83972241375657056057490261407972968652414535100474
+  82166370484403199890008895243450658541227588666881
+  16427171479924442928230863465674813919123162824586
+  17866458359124566529476545682848912883142607690042
+  24219022671055626321111109370544217506941658960408
+  07198403850962455444362981230987879927244284909188
+  84580156166097919133875499200524063689912560717606
+  05886116467109405077541002256983155200055935729725
+  71636269561882670428252483600823257530420752963450
+  )
+
+  NB. find the greatest (>./) row-product (*/"1) where the rows
+  NB. are every 5-item sequence in an array.
+  v =. 13 : '>./ */"1 |: (,.i.13) |.!.0 x: y'
+
+  NB. This comes out to: [: >./ [: */"1 [: |: (i.5 1) |.!.0 ]
+  NB. I hadn't thought of using (i.5 1) before. Cool. :)
+
+  NB. strip out the newlines and convert to an array digits
+  series =. "."0 ((10{a.)&~: # ]) series
+
+  v series
+
+#+end_src
+
+#+RESULTS:
+: 23514624000
+
+* DONE 9. special pythagorean triplet
+:PROPERTIES:
+:TS: <2013-12-05 10:44PM>
+:ID: 0s84a0h0lbg0
+:END:
+
+#+begin_src j
+
+  NB. my thought was to use 'antibase' to enumerate. this found the answer,
+  NB. but there were other rows mixed in that contained zeros:
+  (]#~(1000 = +/"1 @: *:))"2 [ 500 500 500 #: (500 * 500) + i. 10000000
+
+  NB. this version is significantly faster because of starting at 500^3
+  NB. and skipping low numbers. if i hadn''t found the answer, i would have
+  NB. changed the (5 5 5) to (1 1 1) just to eliminate  the zeros.
+  (] #~ (1000 = +/"1 @: *:) *. -.@(0&e."1))"2 [ (5 5 5)+"1 (500 500 500) #: (500 ^3) + i. 1000000
+
+  NB. and in fact, once i added this, the   -. @ 0&e. is un-necessary
+
+  NB. this version is almost instantaneous, and avoids searching such a large
+  NB. number of (low,low,high) triples.
+  (] #~ (1000 = +/"1 @: *:))"2 [ (3$ 1)+"1 (3 $ 50) #: (50 ^3) + i.50^3
+
+  NB. all of these find several duplicates caused by multiples and
+  NB. re-arrangements. if I couldn't, i'd try to figure out how to filter
+  NB. permutations, or avoid them in the first place.
+
+  NB. --------------------------------------------
+  NB. whoops! we only want the +/a b c,  not +/@*: a b c
+  NB. --------------------------------------------
+
+  NB. test for triples a^2+b^2=c^2
+  NB. except we''ll write it  c^2 = b^2 + a^2
+  istriple =: ( =`+ / )@:*:
+
+  NB. generate a bunch of triples by using base n:  (i did these in problem 4)
+  ndigs =. 13 : '>. x ^. >: y'
+  basex =. 13 : '((x ndigs f. y) # x) #: y'
+
+#+end_src
+
+* TODO 11. largest product in a grid
+:PROPERTIES:
+:TS:       <2014-03-05 03:28AM>
+:ID:       qe99t1b1ueg0
+:END:
+
+08 02 22 97 38 15 00 40 00 75 04 05 07 78 52 12 50 77 91 08
+49 49 99 40 17 81 18 57 60 87 17 40 98 43 69 48 04 56 62 00
+81 49 31 73 55 79 14 29 93 71 40 67 53 88 30 03 49 13 36 65
+52 70 95 23 04 60 11 42 69 24 68 56 01 32 56 71 37 02 36 91
+22 31 16 71 51 67 63 89 41 92 36 54 22 40 40 28 66 33 13 80
+24 47 32 60 99 03 45 02 44 75 33 53 78 36 84 20 35 17 12 50
+32 98 81 28 64 23 67 10 /26/ 38 40 67 59 54 70 66 18 38 64 70
+67 26 20 68 02 62 12 20 95 /63/ 94 39 63 08 40 91 66 49 94 21
+24 55 58 05 66 73 99 26 97 17 /78/ 78 96 83 14 88 34 89 63 72
+21 36 23 09 75 00 76 44 20 45 35 /14/ 00 61 33 97 34 31 33 95
+78 17 53 28 22 75 31 67 15 94 03 80 04 62 16 14 09 53 56 92
+16 39 05 42 96 35 31 47 55 58 88 24 00 17 54 24 36 29 85 57
+86 56 00 48 35 71 89 07 05 44 44 37 44 60 21 58 51 54 17 58
+19 80 81 68 05 94 47 69 28 73 92 13 86 52 17 77 04 89 55 40
+04 52 08 83 97 35 99 16 07 97 57 32 16 26 26 79 33 27 98 66
+88 36 68 87 57 62 20 72 03 46 33 67 46 55 12 32 63 93 53 69
+04 42 16 73 38 25 39 11 24 94 72 18 08 46 29 32 40 62 76 36
+20 69 36 41 72 30 23 88 34 62 99 69 82 67 59 85 74 04 36 16
+20 73 35 29 78 31 90 01 74 31 49 71 48 86 81 16 23 57 05 54
+01 70 54 71 83 51 54 69 16 92 33 48 61 43 52 01 89 19 67 48
+
+fftw was trying to figure out how to do it in APL (which either lacks
+an oblique verb or he didn't know where to find it), and I remembered
+the game of life video from dyalog, where he used the vertical and
+horizontal rotate verbs. So i suggested this:
+
+#+begin_src j
+
+     ] y=. _ * -. 5 4 7 e.~ i. 3 3
+  _ _ _
+  _ 0 0
+  _ 0 _
+
+     1|.("1) 1|. y
+  0 0 _
+  0 _ _
+  _ _ _
+
+#+end_src
+
+* DONE 74. Digit factorial chains
+:PROPERTIES:
+:TS:       <2014-10-25 06:01AM>
+:ID:       gzwgiwp0fng0
+:END:
+
+#+begin_src J
+
+    NB. Quite slow.
+    +/60=<:@#@((,~ [: +/"1 @: ! (10 #.^:_1 {.))M.^:({.-.@e.}.)^:_)"0 i.1000000
+  402
+
+#+end_src
+* TODO 91 [[https://projecteuler.net/problem=91][Right triangles with integer coordinates]]
+:PROPERTIES:
+:TS:       <2014-12-01 10:07PM>
+:ID:       pq5h1nb0tog0
+:END:
+
+*Q:* How many right triangles can be made with one corner at (0, 0) and the other two corners at (/a/, /b/) and (/c/, /d/), where {/a/, /b/, /c/, /d/}⊂(0 ≤ ℤ ≤ /n/)? Give the answer for /n/ = 50.
+
+*A:*
+
+# (spent too much time on this tonight. maybe i'll finish it later)
+
+Let's start with the set of all such points. These form a square in the upper right quadrant of the Cartesian plane. In J, we'll represent the points by complex numbers, so we're actually looking at the complex plane:
+
+#+begin_src J :session eu91
+  n =: 5  NB. we'll use ≤5 instead of ≤50 for display purposes
+  ] pts =: |.|: j./~i.n+1
+#+end_src
+
+#+RESULTS:
+: 0j5 1j5 2j5 3j5 4j5 5j5
+: 0j4 1j4 2j4 3j4 4j4 5j4
+: 0j3 1j3 2j3 3j3 4j3 5j3
+: 0j2 1j2 2j2 3j2 4j2 5j2
+: 0j1 1j1 2j1 3j1 4j1 5j1
+:   0   1   2   3   4   5
+
+How many points are there to consider?
+
+#+begin_src J :session eu91
+  # (, pts) -. 0  NB. count the points (after removing the origin)
+#+end_src
+
+#+RESULTS:
+: 35
+
+This is the same as (/n/ + 1)²-1:
+
+#+begin_src J :session eu91
+  <: *: >: n  NB. number of points = ((n+1)^2)-1
+#+end_src
+
+#+RESULTS:
+: 35
+
+Now, how many triangles can we make with one corner at the origin, using these points?
+
+#+begin_src J :session eu91
+ 2! <: *: >: n     NB. number of ways choose 2 from list of n items
+ 2! <: *: >: 50    NB. the larger case
+#+end_src
+
+#+RESULTS:
+: 595
+:
+: 3378700
+
+We're using =!2= here because we don't care about the order of the two points.
+
+To actually generate all pairs of =m= items, we can take the cross product of =m= (the /m/ × /m/ array containing all pairs (/i/ : /m/, /j/ : /m/), regardless of order) and remove the ones where /i/ < /j/.
+
+We can stich the link scan (=;/=) of =}:i.m= to the box suffix-scan (=<\.=) of =}.i.m= to produce the a stem-and-leaf plot of the pairs:
+
+#+begin_src J :session eu91
+  i.m=.4
+  }: i.m        NB. curtail
+  ;/@:}: i.m    NB. link scan of prefixes of }:i.m
+#+end_src
+
+#+RESULTS:
+: 0 1 2 3
+:
+: 0 1 2
+:
+: ┌─┬─┬─┐
+: │0│1│2│
+: └─┴─┴─┘
+
+
+#+begin_src J :session eu91
+  i.m=.4
+  }. i.m          NB. behead
+  <\.@:}. i.m=.4  NB. box scan of suffixes of }.i.m
+#+end_src
+
+#+RESULTS:
+: 0 1 2 3
+:
+: 1 2 3
+:
+: ┌─────┬───┬─┐
+: │1 2 3│2 3│3│
+: └─────┴───┴─┘
+
+#+begin_src J :session eu91
+  (;/@:}: ,. <\.@}.) i. m=.4  NB. stitch the results
+#+end_src
+
+#+RESULTS:
+: ┌─┬─────┐
+: │0│1 2 3│
+: ├─┼─────┤
+: │1│2 3  │
+: ├─┼─────┤
+: │2│3    │
+: └─┴─────┘
+
+Next take the catalog on each row to produce the actual pairs:
+
+#+begin_src J :session eu91
+  {"1 (;/@}: ,. <\@}.) i. m=.4   NB. apply { to each row ("1)
+#+end_src
+
+#+RESULTS:
+: ┌───┬───┬───┐
+: │0 1│   │   │
+: ├───┼───┼───┤
+: │1 1│1 2│   │
+: ├───┼───┼───┤
+: │2 1│2 2│2 3│
+: └───┴───┴───┘
+
+
+Finally, ravel and remove the empty cells:
+
+#+begin_src J :session eu91
+  mkpairs=: [: (, -. a:"_) [: {"1 (;/@:}: ,. <\@}.)
+  mkpairs i. 4
+#+end_src
+
+#+RESULTS:
+: ┌───┬───┬───┬───┬───┬───┐
+: │0 1│1 1│1 2│2 1│2 2│2 3│
+: └───┴───┴───┴───┴───┴───┘
+
+We can now apply this verb to our list of points:
+
+#+begin_src J :session eu91
+  pairs =: mkpairs (,points)-.0
+  # pairs
+#+end_src
+
+#+RESULTS:
+: 595
+
+** NOTE . misc unused junk
+:PROPERTIES:
+:TS:       <2014-12-02 01:33AM>
+:ID:       1y1086l0tog0
+:END:
+
+
+#+begin_src J :session eu91
+  |.|: _ (<0 0) } ((+/\) + (n{.!._])\) i.n
+#+end_src
+
+#+RESULTS:
+: _ _ _ _ 14
+: _ _ _ 9 13
+: _ _ 5 8 12
+: _ 2 4 7 11
+: _ 1 3 6 10
+
+Since the line /y/ = /x/ bisects the
+
+#+begin_src J :session eu91
+  _:^:(-.@=/@+.)"0 points
+#+end_src
+
+#+RESULTS:
+: _   _   _   _   _ 5j5
+: _   _   _   _ 4j4   _
+: _   _   _ 3j3   _   _
+: _   _ 2j2   _   _   _
+: _ 1j1   _   _   _   _
+: 0   _   _   _   _   _
+
+
+
+
+For any such triangle, either (/a/, /b/) or (/c/, /d/) must
+
+
+#+begin_src J
+  NB. is 2d point x less than point y? (using lexicographic order)
+  LT =: (0:`(<&{:))@.(<:&{.)
+
+
+#+end_src
+
+#+RESULTS:
