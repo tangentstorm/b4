@@ -1,5 +1,4 @@
 #+title: mini-rosetta
-#+properties: :exports both
 
 These are all comparisons of J, haskell, and nial for now.
 
@@ -20,13 +19,10 @@ These are all comparisons of J, haskell, and nial for now.
   -- monadic hook and fork
   mfk f g h y = (f y) `g` (h y)
   mhk = mfk id
-
-  -- test that all items in list are true
-  allTrue = all (== True)
 #+end_src
 
 ** nial
-#+begin_src nial
+#+begin_src nial :exports both
 
   id is pass
 
@@ -43,7 +39,7 @@ These are all comparisons of J, haskell, and nial for now.
 
 * running total of first 10 cardinals
 
-#+begin_src J
+#+begin_src J :exports both
   +/\ >: i.10  NB. >: is 1+, '+/' is sum, '\' is scan
 #+end_src
 #+RESULTS:
@@ -54,7 +50,7 @@ These are all comparisons of J, haskell, and nial for now.
   [1,3,6,10,15,21,28,36,45,55]
 #+end_src
 
-#+begin_src nial
+#+begin_src nial :exports both
   accumulate + count 10
 #+end_src
 #+RESULTS:
@@ -63,7 +59,7 @@ These are all comparisons of J, haskell, and nial for now.
 
 * addition table for the numbers ~0 1 2 3~
 
-#+begin_src J
+#+begin_src J :exports both
   +/~i.4
 #+end_src
 #+RESULTS:
@@ -78,7 +74,7 @@ These are all comparisons of J, haskell, and nial for now.
   [[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]]
 #+end_src
 
-#+begin_src nial
+#+begin_src nial :exports both
   rfx outer + 0 1 2 3
 #+end_src
 #+RESULTS:
@@ -92,7 +88,7 @@ These are all comparisons of J, haskell, and nial for now.
 
 This is just doubling a number 5 times, which is the same as multiplying by 32, but it illustrates the concept:
 
-#+begin_src J
+#+begin_src J :exports both
   +~^:5 [ 1  NB. +~ (reflexive addition) is also  +: (double) in j
 #+end_src
 #+RESULTS:
@@ -104,16 +100,15 @@ This is just doubling a number 5 times, which is the same as multiplying by 32, 
   32
 #+end_src
 
-#+begin_src nial
+#+begin_src nial :exports both
   5 fold rfx + 1
 #+end_src
 #+RESULTS:
 : 32
 
-
 * three-verb forks (monadic)
 
-#+begin_src J
+#+begin_src J :exports both
   (>: % +:) 2
 #+end_src
 #+RESULTS:
@@ -124,7 +119,7 @@ This is just doubling a number 5 times, which is the same as multiplying by 32, 
   0.75
 #+end_src
 
-#+begin_src nial
+#+begin_src nial :exports both
   /[1 +, 2 *] 2
 #+end_src
 #+RESULTS:
@@ -137,7 +132,7 @@ This is just doubling a number 5 times, which is the same as multiplying by 32, 
 :TS:       <2014-05-29 10:07PM>
 :ID:       q61bqkc1zhg0
 :END:
-#+begin_src J
+#+begin_src J :exports both
   (-: /:~) i.10
 #+end_src
 #+RESULTS:
@@ -149,7 +144,7 @@ This is just doubling a number 5 times, which is the same as multiplying by 32, 
 #+end_src
 
 
-#+begin_src nial
+#+begin_src nial :exports both
   =[id,sortup] count 10
 #+end_src
 #+RESULTS:
@@ -160,29 +155,28 @@ This is just doubling a number 5 times, which is the same as multiplying by 32, 
 :TS:       <2014-05-29 10:07PM>
 :ID:       7z802lc1zhg0
 :END:
-#+begin_src J
+#+begin_src J :exports both
    *./ (}: < }.) i.10    NB. all (behead < curtail) i.10
 #+end_src
 #+RESULTS:
 : 1
 
 #+begin_src haskell
-  Prelude> allTrue $ (mfk tail (zipWith (<)) init) [0..9]
+  Prelude> and $ (mfk tail (zipWith (<)) init) [0..9]
   True
 #+end_src
 
-#+begin_src nial
+#+begin_src nial :exports both
   and <[front,rest] count 10
 #+end_src
 #+RESULTS:
 : l
 
-
 * hooks (monadic)
 
 Yet another way to double a number:
 
-#+begin_src J
+#+begin_src J :exports both
   (+[) 5
 #+end_src
 #+RESULTS:
@@ -193,7 +187,7 @@ Yet another way to double a number:
   10
 #+end_src
 
-#+begin_src nial
+#+begin_src nial :exports both
   mhk[+,id] 5
 #+end_src
 #+RESULTS:
@@ -208,8 +202,8 @@ Yet another way to double a number:
 :ID:       428ci5000ig0
 :END:
 
-#+begin_src J
-  5 (+ & *:) 6   NB. '&' is 'atop' ... '+:' is square
+#+begin_src J :exports both
+  5 (+ & *:) 6   NB. '&' is 'atop' ... '*:' is square
 #+end_src
 #+RESULTS:
 : 61
@@ -219,8 +213,37 @@ Yet another way to double a number:
   61
 #+end_src
 
-#+begin_src nial
-  + square 5 6   % '+' is already "binary pervasive";
+#+begin_src nial :exports both
+  % '+' is already "binary pervasive";
+  + square 5 6
 #+end_src
 #+RESULTS:
 : 61
+
+* zip list of functions with list of  arguments and evaluate each.
+:PROPERTIES:
+:TS:       <2015-01-24 08:17AM>
+:ID:       yuleohx0rqg0
+:END:
+
+#+begin_src J :exports both
+  team =: dyad : 'x :0 y' "_1
+#+end_src
+
+
+#+begin_src haskell :exports both
+  let team a b = map (uncurry ($)) $ zip a b in team [(+1),(*2)] [3,4]
+#+end_src
+
+#+RESULTS:
+| 4 | 8 |
+
+Amazingly, this reduces to:
+
+#+begin_src haskell :exports both
+  (zipWith id) [(+1),(*2)] [3,4]
+#+end_src
+
+#+RESULTS:
+| 4 | 8 |
+
