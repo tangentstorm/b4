@@ -43,6 +43,7 @@ FAIL=("FAIL",)
 # basic tree inspection, substitution, unification
 
 def kind(x): return x.__class__
+def kname(x): return x.__class__.__name__
 def isvar(x): return kind(x)==Var
 def istup(x): return isinstance(x, tuple)
 def isseq(x): return istup(x) or kind(x) is list
@@ -79,8 +80,49 @@ def unify(x:any,y:any) -> dict or FAIL:
         return res
 
 
+# pretty printer rules
+
+Unk = nt('Unk',['arg'])
+Row = nt('Row',['args'])
+Col = nt('Col',['args'])
+Tbl = nt('Tbl',['args'])
+Val = nt('Val',['name'])
+Sep = nt('Sep',['seq','by'])
+Str = nt('Str',['arg'])
+
+rule_ss = {
+    Rule : Row([Val('name'), ': ', Sep(Val('ants'),by=', '),
+                ' ⊢ ', Sep(Val('cons'),by='; '), '.']),
+    Imp  : Row([Val('x'), '→', Val('y')]),
+    Var  : Val('name'),
+    Try  : Row(['try: ', Val('rule')]),
+    int  : str,
+    str  : str,
+}
+
+def ppgen(x:nt, ss:dict, fmt:nt=None) -> [str]:
+    """helper for pp"""
+    f = fmt or ss.get(kind(x), Unk(x)); kf=kind(f)
+    if kind(x) in (int, str): yield str(x)
+    elif kind(x) is list:
+        for ex in x: yield from ppgen(ex,ss)
+    elif kf in (str, int): yield str(f)
+    elif kf is Unk: yield '(?: %s )' % kname(x)
+    elif kf is Val: yield from ppgen(getattr(x,f.name),ss)
+    elif kf is Str: yield f.arg
+    elif kf is Sep: yield f.by.join(s for s in ppgen(x,ss,f.seq) if s)
+    elif kf is Row:
+        yield ''.join(''.join(s for s in ppgen(x,ss,ef)) for ef in f.args)
+    else: raise NotImplementedError('ppgen(...,%s)'%(f,))
+
+def pp(x:nt, ss:dict=rule_ss) -> str:
+    """pretty print x according to stylesheet ss"""
+    return ''.join(s for s in ppgen(x,ss) if s)
+
+
 # logic engine
-def plan(stmt:nt, ctx:[Rule]=None)->[Try]:
+
+def tactics(stmt:nt, ctx:[Rule]=None)->[Try]:
     """
     Yields all rules from ctx with a consequent
     that unifies with stmt. These are the tactics
@@ -150,8 +192,8 @@ LGoals = [
 
 if __name__=="__main__":
     logic = L
-    for (con,goal) in [(g,c) for g in LGoals for c in g.cons]:
-        print(con,goal)
-        for a in plan(goal,L.rules):
-            print(a)
+    for (goal,con) in [(g,c) for g in LGoals for c in g.cons]:
+        print(pp(goal))
+        for t in tactics(goal,L.rules):
+            print(pp(t.rule))
         break
