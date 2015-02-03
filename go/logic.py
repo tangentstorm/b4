@@ -2,7 +2,7 @@
 Tools for logical inference.
 """
 from collections import namedtuple as nt
-from itertools import repeat
+from itertools import repeat, chain
 from types import GeneratorType
 
 Var = nt('Var',['name'])
@@ -33,8 +33,9 @@ MT = Rule("MT",["P","Q"],
 
 # Internal structure used to track subgoals.
 # Try to prove a statement in this context
-# using the rule with substitutions.
-Try = nt('Try', ['stmt','ctx','rule','kvs'])
+# using the rule with substitutions from ud.
+# (context is a lisp-style tuple-chain of statements)
+Try = nt('Try', ['stmt','ctx','ud'])
 
 Logic = nt('Logic', ['name','rules','axioms'])
 
@@ -51,6 +52,8 @@ def isvar(x): return kind(x)==Var
 def istup(x): return isinstance(x, tuple)
 def isseq(x): return istup(x) or kind(x) is list
 def atomic(x): return kind(x)in[Int,Sym,str]
+def kindly(seq):
+     for x in seq: yield (x,kind(x))
 
 def intree(x:any,y:nt) -> bool:
     """True when x appears somewhere in y"""
@@ -76,7 +79,7 @@ def unify(x:any,y:any) -> dict or FAIL:
     elif kind(x)!=kind(y): return FAIL
     else:
         res = {}
-        for ex,ey in zip(tx,ty):
+        for ex,ey in zip(x,y):
             eu = unify(subs(res,ex),subs(res,ey))
             if eu == FAIL: return FAIL
             else: res.update(eu)
@@ -135,9 +138,10 @@ rule_ss = {
     Not  : Row(['¬',Val('x')]),
     Var  : Val('name'),
     Par  : Row(['(',Val('x'),')']),
-    Try  : Row(['try: ', Val('rule')]),
+    Try  : Row(['try ', Val('stmt'), ' in:\n', Val('ctx')]),
 }
 
+def chompg(g): return chomp(''.join(ppfmt(g)))
 def ppgen(x:nt, ss:dict, fmt:nt=None) -> [str]:
     """helper for pp"""
     f = fmt or ss.get(kind(x), Unk(x)); kf=kind(f)
@@ -146,6 +150,11 @@ def ppgen(x:nt, ss:dict, fmt:nt=None) -> [str]:
     elif kf in (str, int): yield str(f)
     elif kind(x) is list:
         for ex in x: yield from ppgen(ex,ss)
+    elif kind(x) is tuple:
+        if len(x) == 0: h,s,t='','',''
+        elif len(x) == 1: h,s,t=ppgen(x[0],ss),'',''
+        else: h,s,t = chompg(ppgen(x[0],ss)), '\n', chompg(ppgen(x[1],ss))
+        yield ' ['; yield from h; yield s; yield from t; yield ']\n'
     elif kf in (Ind,Div): yield kf(ppgen(x,ss,f.arg))
     elif kf in (Row,Col): yield kf([ppgen(x,ss,a) for a in f.args])
     elif kf in (Sep,):
@@ -167,18 +176,26 @@ def pp(x:nt, ss:dict=rule_ss) -> str:
 
 # logic engine
 
-def tactics(stmt:nt, ctx:[Rule]=None)->[Try]:
+def tactics(goal:nt, stmt:nt, ctx:(nt,())=())->[Try]:
     """
-    Yields all rules from ctx with a consequent
-    that unifies with stmt. These are the tactics
-    we currently know that may allow us to prove
-    the statement.
+    Yields possible plans for unifying the goal with
+    the given statement.
     """
-    for rule in ctx:
-        for con in rule.cons:
-            kv=unify(stmt,con)
-            if kv is not FAIL: yield Try(stmt,ctx,rule,kv)
+    assert isinstance(stmt, tuple), str(stmt)
 
+    # base cases of the recursion:
+    ud=unify(goal,stmt); kg=kind(goal); ks = kind(stmt)
+    if ud is not FAIL: yield Try(stmt, (goal,ctx), ud)
+
+    if ks is Var: return # Vars always unify. No need to repeat.
+    elif ks is Par: yield from tactics(goal, stmt.x, (stmt,ctx))
+    elif ks is Rule:
+        for c in stmt.cons:
+            yield from tactics(goal, c, (stmt,ctx))
+    elif ks is Imp:
+        # either way, try to prove its consequent.
+        yield from tactics(goal, stmt.y, (stmt,ctx))
+    else: raise NotImplementedError('tactics(goal,%s,...)'%kname(stmt))
 
 
 # language L from /A Primer for Logic and Proof/
@@ -241,6 +258,7 @@ if __name__=="__main__":
     print(pp(L))
     for (goal,con) in [(g,c) for g in LGoals for c in g.cons]:
         print('goal:', pp(goal))
-        for t in tactics(goal,L.rules):
-            print(pp(t))
-        break
+        for stmt in chain(L.rules, L.axioms):
+            for t in tactics(goal,stmt):
+                print(pp(t))
+        break # only try first lemma for now.
