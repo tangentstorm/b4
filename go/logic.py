@@ -2,9 +2,12 @@
 Tools for logical inference.
 """
 from collections import namedtuple as nt
+from itertools import repeat
+from types import GeneratorType
 
 Var = nt('Var',['name'])
 Not = nt('Not',['x'])
+Par = nt('Par',['x',])
 Imp = nt('Imp',['x','y'])
 Rfn = nt('Rfn',['x','y'])
 And = nt('And',['x','y'])
@@ -33,7 +36,7 @@ MT = Rule("MT",["P","Q"],
 # using the rule with substitutions.
 Try = nt('Try', ['stmt','ctx','rule','kvs'])
 
-Logic = nt('Logic', ['rules','axioms'])
+Logic = nt('Logic', ['name','rules','axioms'])
 
 
 FAIL=("FAIL",)
@@ -80,44 +83,86 @@ def unify(x:any,y:any) -> dict or FAIL:
         return res
 
 
-# pretty printer rules
+# generic pretty printer
 
-Unk = nt('Unk',['arg'])
 Row = nt('Row',['args'])
 Col = nt('Col',['args'])
-Tbl = nt('Tbl',['args'])
+Ind = nt('Ind',['arg']) # indent
+Div = nt('Div',['arg']) # line feed at the end
+Grp = nt('Grp',['arg']) # fuse into string before yielding
+
+def sep(seq, by):
+    g = zip(repeat(by), seq)
+    yield next(g)[1] # drop first separator
+    for p,q in g:
+        yield p; yield q
+
+def ppfmt(gen, ind=0, width:int=float('inf')) -> str:
+    """low level string formatting"""
+    for e in gen:
+        ke=kind(e)
+        if ke is str: yield e
+        elif ke is Ind: yield from ppfmt(e.arg,ind+1)
+        elif ke is Col:
+            for arg in e.args: yield from ppfmt(arg,ind)
+        elif ke is Div:
+            yield (ind*'  ')
+            for ee in ppfmt(e.arg,ind): yield ee
+            if ee != '\n': yield '\n'
+        elif ke is Row:
+            for arg in e.args: yield from ppfmt(arg,ind)
+        elif ke is Grp:
+            yield ''.join(s for s in ppfmt(e.arg,ind))
+        else: raise NotImplementedError('ppfmt(%s)'%e)
+
+# pretty printer rules
+
 Val = nt('Val',['name'])
 Sep = nt('Sep',['seq','by'])
-Str = nt('Str',['arg'])
+Unk = nt('Unk',['arg'])
 
 rule_ss = {
-    Rule : Row([Val('name'), ': ', Sep(Val('ants'),by=', '),
-                ' ⊢ ', Sep(Val('cons'),by='; '), '.']),
-    Imp  : Row([Val('x'), '→', Val('y')]),
+    Logic: Col([Div(Row(['Logic: ', Val('name')])),
+                Ind(Col([Div(Row(['Inference rules:'])),
+                         Ind(Val('rules')),
+                         Div(Row(['Axioms:'])),
+                         Ind(Val('axioms')),
+                     ])
+                )]),
+    Rule : Div(Row([Val('name'), ': ', Sep('ants',by=', '),
+                ' ⊢ ', Sep('cons',by='; '), '.'])),
+    Imp  : Row([Val('x'), ' → ', Val('y')]),
+    Not  : Row(['¬',Val('x')]),
     Var  : Val('name'),
+    Par  : Row(['(',Val('x'),')']),
     Try  : Row(['try: ', Val('rule')]),
-    int  : str,
-    str  : str,
 }
 
 def ppgen(x:nt, ss:dict, fmt:nt=None) -> [str]:
     """helper for pp"""
     f = fmt or ss.get(kind(x), Unk(x)); kf=kind(f)
+    #print('>>', kname(x), '.', kname(f))
     if kind(x) in (int, str): yield str(x)
+    elif kf in (str, int): yield str(f)
     elif kind(x) is list:
         for ex in x: yield from ppgen(ex,ss)
-    elif kf in (str, int): yield str(f)
-    elif kf is Unk: yield '(?: %s )' % kname(x)
-    elif kf is Val: yield from ppgen(getattr(x,f.name),ss)
-    elif kf is Str: yield f.arg
-    elif kf is Sep: yield f.by.join(s for s in ppgen(x,ss,f.seq) if s)
-    elif kf is Row:
-        yield ''.join(''.join(s for s in ppgen(x,ss,ef)) for ef in f.args)
+    elif kf in (Ind,Div): yield kf(ppgen(x,ss,f.arg))
+    elif kf in (Row,Col): yield kf([ppgen(x,ss,a) for a in f.args])
+    elif kf in (Sep,):
+        yield from sep([Grp(ppgen(e,ss)) for e in getattr(x,f.seq)],f.by)
+    elif kf is Val:
+        yield from ppgen(getattr(x,f.name),ss)
+    elif kf is Unk: raise NotImplementedError('ppgen(%s,..)' % kname(x))
     else: raise NotImplementedError('ppgen(...,%s)'%(f,))
 
+
+# pretty printer
+
+def chomp(s):
+    return s[:-1] if s[-1]=='\n' else s
+
 def pp(x:nt, ss:dict=rule_ss) -> str:
-    """pretty print x according to stylesheet ss"""
-    return ''.join(s for s in ppgen(x,ss) if s)
+    return chomp(''.join(ppfmt(ppgen(x,ss))))
 
 
 # logic engine
@@ -139,24 +184,25 @@ def tactics(stmt:nt, ctx:[Rule]=None)->[Try]:
 # language L from /A Primer for Logic and Proof/
 # by Holly P. Hirst and Jeffry L. Hirst
 # http://www.mathsci.appstate.edu/~jlh/primer/hirst.pdf
-L = Logic([MP], [
+L = Logic('L', [MP], [
 
     # A1. ⊢ A → (B→A).
     Rule("A1", ["A","B"], [],
          [Imp(Var('A'),
-              Imp(Var('B'),Var('A')))]),
+              Par(Imp(Var('B'),Var('A'))))]),
 
     # A2. ⊢ ((A → (B→C)) → ((A→B) → (A→C)).
     Rule("A2", ["A","B","C"], [],
-         [Imp(Imp(Var('A'),
-                  Imp(Var('B'),Var('C'))),
-              Imp(Imp(Var('A'),Var('B')),
-                  Imp(Var('A'),Var('C'))))]),
+         [Imp(Par(Imp(Var('A'),
+                  Par(Imp(Var('B'),Var('C'))))),
+              Par(Imp(Par(Imp(Var('A'),Var('B'))),
+                      Par(Imp(Var('A'),Var('C')))))) ]),
 
     # A3. ⊢ (¬B → ¬A) → ((¬B → A) → B)).
     Rule("A3", ["A","B"], [],
-         [Imp(Imp(Not(Var('B')), Not(Var('A'))),
-            Imp(Imp(Not(Var('B')), Var('A')), Var('B')))]) ])
+         [Imp(Par(Imp(Not(Var('B')), Not(Var('A')))),
+              Par(Imp(Par(Imp(Not(Var('B')), Var('A'))),
+                      Var('B')))) ]) ])
 
 # These lemmas are either proven in the Hirst & Hirst PDF,
 # or given as exercises.
@@ -167,7 +213,7 @@ LGoals = [
     Rule("L2", ["B"], [], [Imp(Imp(Not(Var("B")),Var("B")), Var("B"))]),
     # L3. A → (B→C), A→B ⊢ A → C.
     Rule("L3", ["A","B","C"],
-         [Imp(Var("A"),Imp(Var("B"),Var("C"))),
+         [Imp(Var("A"),Par(Imp(Var("B"),Var("C")))),
           Imp(Var("A"),Var("B"))],
          [Imp(Var("A"),Var("C"))]),
     # L4. A → ((B→A) → C) ⊢ A → C.
@@ -192,8 +238,9 @@ LGoals = [
 
 if __name__=="__main__":
     logic = L
+    print(pp(L))
     for (goal,con) in [(g,c) for g in LGoals for c in g.cons]:
-        print(pp(goal))
+        print('goal:', pp(goal))
         for t in tactics(goal,L.rules):
-            print(pp(t.rule))
+            print(pp(t))
         break
