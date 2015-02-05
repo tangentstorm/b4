@@ -21,7 +21,7 @@ def isvar(x:any)->bool: return isinstance(x,Var)
 # we could use a dict in python, but that would prevent backtracking.
 # probably using a javascript-style chained dict would make more sense.
 def assp(c:Cell, p:(lambda Cell:bool))->Cell or ():
-    """find value in a association list"""
+    """find value in an association list"""
     if isnull(c): return null
     elif p(c[0][0]): return c[0]
     else: return assp(p,c[1])
@@ -77,7 +77,7 @@ def callf(f:Goal):
 
 def mplus(x:Cell,y:Cell)->Cell:
     if isnull(x): return y
-    elif callable(x): return (lambda:mplus(x)(y))
+    elif callable(x): return (lambda:mplus(y)(x))
     else: return cons(car(x),mplus(cdr(x),y))
 
 def bind(w, g)->Stream:
