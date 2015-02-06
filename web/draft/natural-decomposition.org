@@ -73,7 +73,7 @@ We can write integers out as products of rank 1 arrays like so:
            5  3  ; 15
      2  2  2  2  ; 16 ----
              17  ;
-        3  3  3  ; 18
+        3  3  2  ; 18
              19  ;
         5  2  2  ; 20
            7  3  ; 21
@@ -307,8 +307,8 @@ Again, take the average, and test:
 
 #+begin_src J :session
      ((lo=.*/ 2 2 2 2) bp (hi=.*/2 9)) * */ p=. 55 # 2
-     ((lo=.*/ 2 2 2 2) bp (hi=.*/17)) * */ p=. 55 # 2
- i < ((lo=.*/ 2 2 2 2) bp (hi=.*/17)) * */ p=. 55 # 2
+      ((lo=.*/ 2 2 2 2) bp (hi=.*/17)) * */ p=. 55 # 2
+  i < ((lo=.*/ 2 2 2 2) bp (hi=.*/17)) * */ p=. 55 # 2
 #+end_src
 
 #+RESULTS:
