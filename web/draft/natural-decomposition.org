@@ -1,0 +1,575 @@
+#+title: natural decomposition of boolean functions
+
+* ABSTRACT .
+:PROPERTIES:
+:TS:       <2015-02-04 10:05PM>
+:ID:       39tboma16rg0
+:END:
+We can think of a boolean function of /n/ variables as a predicate on the natural numbers from 0 to =2^n-1=.
+
+#+begin_src J
+blit 0=|/~1+i.n=.32
+#+end_src
+
+#+RESULTS:
+
+
+
+
+* on the distribution of primes
+:PROPERTIES:
+:TS:       <2015-02-05 03:11AM>
+:ID:       i4r3f7a07rg0
+:END:
+
+The smallest positive integer with =n= prime factors is =2^n=.
+
+| =n= | =2^n= |
+|---+-----|
+| 0 |   1 |
+| 1 |   2 |
+| 2 |   4 |
+| 3 |   8 |
+
+Clearly, natural numbers less than =2^n= must have fewer than =n= prime factors.
+
+Between =2^1= and =2^2= there are =2^1= integers.
+Between =2^2= and =2^3= there are =2^2= integers.
+Between =2^n= and =2^n+1= there are =2^n= integers.
+
+So between =2^3= and =2^4=, there are 8 (that is =2^3=) integers, each with fewer than 4 prime factors.
+
+If =p= is the sequence of =x= primes less than =2^n=, then clearly the integers between =2^n= and =2^n+1= must be of the form:
+
+: 2^e0 * 3^e1 * 5^e2 ... p[x]^ex
+
+The sum of the exponent array =e= must be ≤ =n=, because otherwise the result would have =n+1= factors.
+
+We already know the lowest of these values is =2^n=, which (as an array of exponents for prime values) looks like this:
+
+:  n   0   0   0    0  ...  0
+: 2   3   5   7   11   ... x
+
+If we were to increase =e0= by one, we'd get the next power of two, which is just outside the range we're trying to search.
+
+What about replacing some number of 2s by 3s?
+
+We can write integers out as products of rank 1 arrays like so:
+
+#+begin_src J
+              2  ;  2 -
+              3  ;
+           2  2  ;  4 --
+              5  ;
+           3  2  ;  6
+              7  ;
+        2  2  2  ;  8 ---
+           3  3  ;  9
+           5  2  ; 10
+             11  ;
+        3  2  2  ; 12
+             13  ;
+           7  2  ; 14
+           5  3  ; 15
+     2  2  2  2  ; 16 ----
+             17  ;
+        3  3  3  ; 18
+             19  ;
+        5  2  2  ; 20
+           7  3  ; 21
+          11  2  ; 22
+             23  ;
+     3  2  2  2  ; 24
+            5 5  ; 25
+          13  2  ; 26
+        3  3  3  ; 27
+        7  2  2  ; 28
+             29  ;
+        5  3  2  ; 30
+             31  ;
+  2  2  2  2  2  ; 32 -----
+#+end_src
+
+=3 * 2^n-1= always falls between =(*/2,2^x)= and =(*/2 2,2^x)=
+
+In fact, it is the midpoint, halfway between (2*x) and 4*x.
+
+:   q:-:+/(,:}.) 2^1+i.10
+: 3 0 0 0 0 0 0 0 0
+: 2 3 0 0 0 0 0 0 0
+: 2 2 3 0 0 0 0 0 0
+: 2 2 2 3 0 0 0 0 0
+: 2 2 2 2 3 0 0 0 0
+: 2 2 2 2 2 3 0 0 0
+: 2 2 2 2 2 2 3 0 0
+: 2 2 2 2 2 2 2 3 0
+: 2 2 2 2 2 2 2 2 3
+: 2 2 2 2 2 2 2 2 2
+
+Likewise, (6+4)%2 is 5, and (4+8)%2 is 7.
+
+
+
+Number of primes below each power of two:
+
+:   }:#S:0<@(3 :'(#~1=#@q:)1+i.2^y'"0)i.20
+: 0 1 2 4 6 11 18 31 54 97 172 309 564 1028 1900 3512 6542 12251 23000
+
+
+
+
+* test of factorization idea
+:PROPERTIES:
+:TS:       <2015-02-05 04:27PM>
+:ID:       pl4ii3b17rg0
+:END:
+
+Let's take an arbitrary string of 64 digits and treat it as a binary number:
+
+#+begin_src J  :session
+  [ i =: 607633171625416929x
+#+end_src
+
+#+RESULTS:
+: 607633171625416929
+
+Now we're going to find the smallest power of two greater than this number. One way to do this is to find the position of the leftmost bit:
+
+#+begin_src J :session
+  '01' {~ bits =: #: i
+#+end_src
+
+#+RESULTS:
+: 100001101110101111110010011001110100011110100001100011100001
+
+Now we can find the index of the leftmost 1, counting from the left:
+
+#+begin_src J :session
+  (#- 1 i.~]) bits
+#+end_src
+
+#+RESULTS:
+: 60
+
+This tells us that we need somewhere between 59 and 60 bits to hold the number.
+
+We can also arrive at this conclusion by taking the base 2 logarithm:
+
+#+begin_src J :session
+  2^.i
+#+end_src
+
+#+RESULTS:
+: 59.076
+
+... then rounding down and adding (0 1) to find our range:
+
+#+begin_src J :session
+  (0 1 + <.) 2^.i
+#+end_src
+
+#+RESULTS:
+: 59 60
+
+From this information, we know that =i= falls between 2^60 and 2^59.
+
+#+begin_src J :session
+  i < (*/59#2) , (*/60#2)
+#+end_src
+
+#+RESULTS:
+: 0 1
+
+We can rewrite this as:
+
+#+begin_src J :session
+  i <  (*/ 1) , (*/ 2) * */ 59 # 2
+#+end_src
+
+#+RESULTS:
+: 0 1
+
+Now we are going to perform a binary search inside this range.
+
+We can write the verb that finds the midpoint between two numbers as (=-:@+=, literally "half the sum").
+
+#+begin_src J :session
+  1 -:@+ 2
+#+end_src
+
+#+RESULTS:
+: 1.5
+
+Since we are looking for /integer/ factors, it would be nice if we could multiply this number by two. Luckily, we already have a large supply of twos on hand.
+
+We can rewrite our search as:
+
+#+begin_src J :session
+  i < (*/ 2) , (*/ 2 2) * */ 58 # 2
+#+end_src
+
+#+RESULTS:
+: 0 1
+
+Now when we average the factors of our boundaries, we get a nice clean integer:
+
+#+begin_src J :session
+  i < ((*/ 2) -:@+ (*/ 2 2)) * */ 58 # 2
+#+end_src
+
+#+RESULTS:
+: 1
+
+This tells us that =i= is less than the midpoint.
+
+Before we go any further, let's write a verb that takes two numbers and returns an array containing those same two numbers with their midpoint in between.
+
+#+begin_src J :session
+  bp =: [ , -:@+ , ]   NB. bp for 'binary partition'
+  (*/2) bp (*/2 2)
+#+end_src
+
+#+RESULTS:
+: 2 3 4
+
+Now we can write a single expression that compares =i= to all three points at once:
+
+#+begin_src J :session
+  i < ((*/ 2 ) bp (*/ 2 2)) * */ 58#2
+#+end_src
+
+#+RESULTS:
+: 0 1 1
+
+Again, this tells us that =i= lies between the midpoint and the lower bound. To continue our search, we will replace the upper bound =(*/ 2 2)= with the midpoint, =3=.
+
+#+begin_src J :session
+  i < ((*/ 2 ) bp (*/ 3)) * */ 58#2
+#+end_src
+
+#+RESULTS:
+: 0 1 1
+
+As it happens, =i= is also greater than the new midpoint, so again we want to replace the upper bound by averaging it with the midpoint.
+
+Before we go further, let's call these factors =lo= and =hi=, respectively, and give the name =p= to our product of twos on the right:
+
+#+begin_src J :session
+  i < ((lo=.*/ 2) bp (hi=.*/ 3)) * */p=. 58 # 2
+#+end_src
+
+#+RESULTS:
+: 0 1 1
+
+Since =hi= is odd, we want to factor out another two. We remove a factor of two from =p= and multiply both =lo= and =hi= by two:
+
+#+begin_src J :session
+  i < ((lo=.*/ 2 2) bp (hi=.*/ 2 3)) * */p=. 57 # 2
+#+end_src
+
+#+RESULTS:
+: 0 1 1
+
+Now the midpoint of =4= and =6= is =5= so we replace the =(*/2 3)= with =5=.
+
+#+begin_src J :session
+  i < ((lo=.*/ 2 2) bp (hi=.*/ 5)) * */ p=. 57 # 2
+#+end_src
+
+#+RESULTS:
+: 0 1 1
+
+Again, the number is higher, so we factor out a two:
+
+#+begin_src J :session
+  i < ((lo=.*/ 2 2 2) bp (hi=.*/  10)) * */ p=. 56 # 2
+#+end_src
+
+#+RESULTS:
+: 0 1 1
+
+And take the average. And again we are too high:
+
+#+begin_src J :session
+     ((lo=.*/ 2 2 2) bp (hi=.*/10)) * */ p=. 56 # 2
+     ((lo=.*/ 2 2 2) bp (hi=.*/ 9)) * */ p=. 56 # 2
+ i < ((lo=.*/ 2 2 2) bp (hi=.*/ 9)) * */ p=. 56 # 2
+#+end_src
+
+#+RESULTS:
+: 5.76461e17 6.48518e17 7.20576e17
+:
+: 5.76461e17 6.1249e17 6.48518e17
+:
+: 0 1 1
+
+Again, take the average, and test:
+
+#+begin_src J :session
+     ((lo=.*/ 2 2 2 2) bp (hi=.*/2 9)) * */ p=. 55 # 2
+     ((lo=.*/ 2 2 2 2) bp (hi=.*/17)) * */ p=. 55 # 2
+ i < ((lo=.*/ 2 2 2 2) bp (hi=.*/17)) * */ p=. 55 # 2
+#+end_src
+
+#+RESULTS:
+: 5.76461e17 6.1249e17 6.48518e17
+:
+: 5.76461e17 5.94475e17 6.1249e17
+:
+: 0 0 1
+
+Finally, our midpoint is too low. So now we adjust the lower bound, by setting =lo= to =hi=, and moving a two from =p= into hi.
+
+#+begin_src J :session
+  ((lo=.*/ 2 2 2 2) bp (hi=.*/   17)) * */ p=. 55 # 2
+    ((lo=.*/ 4 $ 2) bp (hi=.*/   17)) * */ p=. 55 # 2 NB. rewrite 2 2 2 2
+    ((lo=.*/ 5 $ 2) bp (hi=.*/ 2 17)) * */ p=. 54 # 2 NB. factor out another 2
+      ((lo=.*/  33) bp (hi=.*/ 2 17)) * */ p=. 54 # 2 NB. replace lo with midpoint
+  i < ((lo=.*/  33) bp (hi=.*/ 2 17)) * */ p=. 54 # 2 NB. test
+#+end_src
+
+#+RESULTS:
+: 5.76461e17 5.94475e17 6.1249e17
+:
+: 5.76461e17 5.94475e17 6.1249e17
+:
+: 5.76461e17 5.94475e17 6.1249e17
+:
+: 5.94475e17 6.03482e17 6.1249e17
+:
+: 0 0 1
+
+
+* NOTE . smaller example: factoring 9
+:PROPERTIES:
+:TS:       <2015-02-05 08:13PM>
+:ID:       28la7z608rg0
+:END:
+
+#+begin_src J :session
+ 9 < ((lo=.*/ 1) bp (hi=.*/ 2)) * s=.*/ 3 # 2
+#+end_src
+
+#+RESULTS:
+: 0 1 1
+
+It says 9 is between 8 and 16, so replace =hi=:
+
+#+begin_src J :session
+      ((lo=.*/ 1) bp (hi=.*/  2)) * s=.*/ 3 # 2
+      ((lo=.*/ 2) bp (hi=.*/2 2)) * s=.*/ 2 # 2 NB. factor out a 2
+      ((lo=.*/ 2) bp (hi=.*/  3)) * s=.*/ 2 # 2 NB. replace hi with midpoint
+  9 < ((lo=.*/ 2) bp (hi=.*/  3)) * s=.*/ 2 # 2 NB. test
+#+end_src
+
+#+RESULTS:
+: 8 12 16
+:
+: 8 12 16
+:
+: 8 10 12
+:
+: 0 1 1
+
+It says 9 is between =lo= (8) and midpoint (10), so set =hi= to 10.
+
+
+#+begin_src J :session
+      ((lo=.*/  2) bp (hi=.*/  3)) * s=.*/ 2 # 2
+#+end_src
+
+#+RESULTS:
+: 8 10 12
+
+#+begin_src J :session
+      ((lo=.*/2 2) bp (hi=.*/2 3)) * s=.*/ 1 # 2 NB. factor out a 2
+#+end_src
+
+#+RESULTS:
+: 8 10 12
+
+#+begin_src J :session
+      ((lo=.*/2 2) bp (hi=.*/  5)) * s=.*/ 1 # 2 NB. replace hi with midpoint
+#+end_src
+
+#+RESULTS:
+: 8 9 10
+
+#+begin_src J :session
+  9 <: ((lo=.*/2 2) bp (hi=.*/  5)) * s=.*/ 1 # 2 NB. test
+#+end_src
+
+#+RESULTS:
+: 0 1 1
+
+Our midpoint is now exactly equal to 9, but the algorithm tells us to keep going.
+
+9 is between midpoint 9 and =hi= (10), so again replace =hi=:
+
+#+begin_src J :session
+     ((lo=.*/2 2) bp (hi=.*/ 5)) * s=.*/ 1 # 2
+#+end_src
+
+#+RESULTS:
+: 8 9 10
+
+#+begin_src J :session
+     ((lo=.*/2 2 2) bp (hi=.*/2 5)) * s=.*/ 0 # 2  NB. factor out 2 (leaving s=1)
+#+end_src
+
+#+RESULTS:
+: 8 9 10
+
+
+* TODO hrm. this. is where i went wrong
+:PROPERTIES:
+:TS:       <2015-02-06 01:40AM>
+:ID:       1ux964m08rg0
+:END:
+
+/I tried taking the midpoint at this step but what I actually did was take the average of the 2 and 5/
+
+#+begin_src J :session
+     ((lo=.*/2 2 2) bp (hi=.*/ 3)) NB. replace hi with midpoint
+#+end_src
+
+#+RESULTS:
+: 8 5.5 3
+
+Note that our supply of twos has been exhausted, leaving us with a fractional midpoint.
+
+Further, all three points are now outside the search space:
+
+#+begin_src J :session
+   9 <: ((lo=.*/2 2 2) bp (hi=.*/ 3)) NB. replace hi with midpoint
+#+end_src
+
+#+RESULTS:
+: 0 0 0
+
+* TODO Is it true that one of these values must be a factor? If so, why?
+:PROPERTIES:
+:TS:       <2015-02-05 08:49PM>
+:ID:       jtud9n808rg0
+:END:
+
+
+** NOTE . an attempt
+:PROPERTIES:
+:TS:       <2015-02-05 09:59PM>
+:ID:       nr70cwb08rg0
+:END:
+
+Let's go back to this step:
+
+#+begin_src J :session
+  9 = ((lo=.*/2 2 2) bp (hi=.*/2 5))
+  (9 + _1 1) -: (*/2 2 2) , (*/  2 5)
+  *./ 9 = 1 _1 + (*/2 2 2) , (*/ 2 5)
+  *./ 9 = (1 + */2 2 2) , (_1 + */  2 5)
+#+end_src
+
+#+RESULTS:
+: 0 1 0
+:
+: 1
+:
+: 1
+:
+: 1
+
+
+: 9 = (2 + */2 2 2) = (*/ 5 2)
+
+* factoring algorithm in j
+:PROPERTIES:
+:TS:       <2015-02-05 10:40PM>
+:ID:       r7i6bsd08rg0
+:END:
+
+#+begin_src J :session
+
+  bp =: [ , -:@+ , ]  NB. from earlier
+  even =: (>0:) *. (0=2|])
+  nbits =: [: >. 2 ^. ]
+  drop2 =: verb define
+    if. 1 > n=. +/2=y do. echo 'y must contain a 2 (got:',(":y),')' throw. end.
+    \:~ (2#~n-1), y-.2 return.
+  )
+
+  factor =: verb define
+    f =. >a: if. y < 0 do. y=. -y [ f =. _1, f end.
+    while. even y do. 'f y' =. (f,2); -:y end.
+    if. y e. 0 1 2 do. 1 -.~ f, y return. end.
+    lo =. 2 [ hi=. 2 2 [ s =. <:<: nbits y
+    while. s>:0 do.
+      t =. y <: ss * m=. ((*/lo) -:@+ (*/hi))  [ ss =. 2 ^ s
+      msg=.('lmh=',":lo;m;hi);('f=',":f);('y<:m=',":t);'s=2^',(":s),'=',":ss
+      echo msg ,('y:',":y); 'ss*lmh:',":ss * */ S:0 lo;m;hi
+      s =. <: s [ hi=.hi,2 [ lo=.lo,2
+      if. t do. hi=.drop2 m meld hi else. lo=.drop2 m meld lo end.
+    end.
+    if. t do. r=.lo else. r=.hi end.
+    f,r-.1 2 return.
+  )
+  (q:;factor) 27
+
+  meld =: dyad define
+    echo (":x),' meld ', (":y)
+        if.(<.x) = x     do.
+    elseif.(<.x) = x-0.5 do.
+    elseif. do. echo'invalid x' throw. end.
+    echo '->', ": res =. 1-.~(<.x*2), }. \:~ y
+    res return.
+  )
+
+#+end_src
+
+#+RESULTS:
+: ,
+
+
+
+
+* NOTE . false step: factoring out a second power of two
+:PROPERTIES:
+:TS:       <2015-02-05 07:30PM>
+:ID:       rc4g30508rg0
+:END:
+
+
+In fact, we can just keep doing this until the sign changes.
+To do that, let's factor out another power of two.
+
+We'll momentarily drop the =i<= so we can see the actual numbers. (The =x:= forces J to use extended precision:
+
+#+begin_src J :session
+  x: ((lo=.*/ 2 2 2) bp (hi=.*/ 2 5)) * */ p=. 56 # 2
+#+end_src
+
+#+RESULTS:
+: 576460752303423488 648518346341351424 720575940379279360
+
+We can move some of the twos from =p= into a new factor, =q=, and incorporate =(q#2)= (=q= copies of the number =2=) into the product:
+
+#+begin_src J :session
+  x: ((lo=.*/ 2 2 2) bp (hi=.*/ 2 5)) * */ (q # 2) , p=. (56-q=.1) # 2
+#+end_src
+
+#+RESULTS:
+: 576460752303423488 648518346341351424 720575940379279360
+
+We can freely change q to any integer between 0 and 56 without affecting the results:
+
+#+begin_src J :session
+  x: ((lo=.*/ 2 2 2) bp (hi=.*/ 2 5)) * */ (q # 2) , p=. (56-q=.56) # 2
+  x: ((lo=.*/ 2 2 2) bp (hi=.*/ 2 5)) * */ (q # 2) , p=. (56-q=.10) # 2
+  x: ((lo=.*/ 2 2 2) bp (hi=.*/ 2 5)) * */ (q # 2) , p=. (56-q=. 0) # 2
+#+end_src
+
+#+RESULTS:
+: 576460752303423488 648518346341351424 720575940379279360
+:
+: 576460752303423488 648518346341351424 720575940379279360
+:
+: 576460752303423488 648518346341351424 720575940379279360
