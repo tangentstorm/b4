@@ -42,7 +42,7 @@ tok =: ((#~-.@:spcp@:{.@:>"0)@:tok1@:(,&' ')) ::[:
 #+end_src
 
 
-Ok. =spcp= is a monad that simply checks whether its =y= argument corresponds to any of the numbered ascii characters (all of which represent whitespace). My guess is the name is a mnemonic for 'space predicate', following the lisp tradition.
+Ok. =spcp= is a monad that simply checks whether its =y= argument corresponds to any of the numbered ascii characters (all of which represent whitespace). My guess is the name is a mnemonic for =space?=, following the lisp tradition.
 
 As for the other two, my eyes still aren't used to looking at code packed this densely, so I'm going to try to expand them a bit. First, =tok1=:
 
@@ -68,7 +68,7 @@ So now this gets used in =tok=, which I'll expand for readability here:
 
 : tok =: ((  #~    -.@: spcp@: {.@: >   "0  ) @: tok1 @: (,&' ')) :: [:
 
-The use of the =::= conjunction (/adverse/) is surprising to me. It's purpose is to specify what to do when the verb on the left throws an error. Since =[:= itself throws an error, I don't yet understand why he's doing this.
+The use of the =::= conjunction (/adverse/) is surprising to me. It's purpose is to specify what to do when the verb on the left throws an error. Since =[:= itself throws an error, I don't yet understand why he's doing this. (*edit:* bjonas confirmed that =:: [:= is an error. He meant to write  =: [:=, which triggers an error when the verb is used with two arguments.)
 
 The rest is one long pipeline. Reading right to left: 
 
@@ -111,7 +111,7 @@ This is simply a recursive descent parser. Let's follow the call chain, starting
  - =rdrc= simply unboxes a token and returns the index of its first character in the string '()':
     - '(' yields 0, so the 'b' in =rdrb= stands for /begin/.
     - ')' yields 1, so the 'e' in =rdre= stands for /end/.
-    - anything else yields 2 so the 'a' in =rdra= means /any/
+    - anything else yields 2 so the 'a' in =rdra= means /any/ (*edit*: bjonas told me it means /atom/)
 
 Presumably the input is a well-formed s-expression, so the first token is going to be an opening paren. So let's look at =rdrb=:
 
