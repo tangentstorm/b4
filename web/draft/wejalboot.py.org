@@ -1,25 +1,39 @@
 #+title: wejal bootstrap
 
-
-* Strategy
+* A Grammar Interpreter
 :PROPERTIES:
-:TS:       <2015-01-18 10:25AM>
-:ID:       nrogjy71jqg0
+:TS:       <2016-04-15 10:52AM>
+:ID:       7zli6i3147h0
 :END:
 
-The idea here is to manually construct a data structure (an abstract syntax tree) that describes a meta-grammar.
+Our goal is to bootstrap an interpreter for a new programming language.
+We would like to build it incrementally from the ground up.
 
-The meta-grammar describes whatever nice clean syntax we'd /like/ to use for creating grammars in the future.
+Rather than writing a parser by hand, we would like to model the language syntax and semantics as data, and pass this data to a generic /grammar interpreter/.
 
-Building these trees by hand can get messy, though, so we'll stick with a simple syntax for this first round, and then use /that/ to implement something better later.
+We will build the grammar interpreter incrementally, with test cases.
 
-Our first step is to define some types that we can use to tag the different parts of the tree. Each type represents the some feature of our pattern matching system.
+For starters, we will focus on simple regular expressions:, much like python's built-in =re= module.
 
-* Some data types for modeling grammar definitions.
+#+name: @doctests.matcher
+#+begin_src python
+>>> m = Matcher(Alt([Lit("x"), Lit("y"))   # match the letter x or y, like re.compile("x|y")
+>>> m.match("xyz")                         # should match "x" at position 0 
+Match(txt="x", pos=0)
+>>> m.match("zyx")                         # should fail to match
+FAIL
+#+end_src
+
+Obviously, the nice syntax provided by the =re= module is nicer than building pattern structures by hand. We will address this soon by bootstrapping our own parser for patterns. In the meantime, we will build our rule definitions by building data structures with python's =namedtuple=.
+
+* Grammar Combinators
 :PROPERTIES:
 :TS:       <2015-01-18 07:56AM>
 :ID:       9906u111jqg0
 :END:
+
+Here are our data types for modeling grammar definitions. Since we are using =namedtuple=, there is no actual behavior associated with them. They're just constructors we can manually compose to create data structures.
+
 #+name: @imports
 #+begin_src python :session :results none
   from collections import namedtuple
@@ -60,6 +74,227 @@ Our first step is to define some types that we can use to tag the different part
   Arg = TB('Arg', 'pass matched data as arg to containing "New"')
 
 #+end_src
+
+* Generic dispatch
+:PROPERTIES:
+:TS:       <2015-01-18 11:36AM>
+:ID:       w0bhd8b1jqg0
+:END:
+
+Since we will be composing instances of these types into trees, and want our system to interpret the types differently, we need a way to map each type to an appropriate handler.
+
+We will imlement this using a base class that simply maps each =namedtuple= type to a method with the same name (and a given prefix).
+
+In other words, when we see an =Alt= node in the tree, we can use this to automatically invoke a method in our interpreter class called =match_Alt=.
+
+#+name: @imports
+#+begin_src python :sesson :results none
+from warnings import warn
+#+end_src
+
+#+name: @code
+#+begin_src python :session :results none
+
+  def node_type(node):
+      return node.__class__.__name__
+
+  class Dispatcher(object):
+      """Provides a simple generic dispatch mechanism based on method names"""
+
+      def _find_handler(self, prefix, node):
+          """(prefix, namedtuple) -> callable"""
+          return getattr(self, '_'.join([prefix, node_type(node)]), self._unhandled)
+
+      def _unhandled(self, node, *a, **kw):
+          """Warn about unrecognized node types. (Just for development.)"""
+          raise ValueError("no handler found for %s" % node_type(node))
+
+      def dispatch(self, prefix, node, *a, **kw):
+          """Find and invoke a handler for the given node."""
+          h = self._find_handler(prefix, node)
+          return h(node, *a, **kw)
+
+#+end_src
+
+* Input cursor
+:PROPERTIES:
+:TS:       <2015-01-22 05:51AM>
+:ID:       m3udu291oqg0
+:END:
+
+We also need to keep track of where we are in the input sequence.
+The following helper class will do the work for us:
+
+#+name: @code
+#+begin_src python :session :results none
+
+  class Cursor(object):
+
+      def __init__(self, seq:[any]):
+          self.seq = seq    # sequence (probably a string)
+          self.val = None   # current value
+          self.pos = -1     # current position
+          self.fwd()
+
+      def fwd(self)->any:
+          """Move forward in the sequence and return the next item."""
+          end = len(self.seq)
+          self.pos = min(self.pos+1, end)
+          self.val = None if self.pos == end else self.seq[self.pos] 
+          return self
+
+#+end_src
+
+* Data structure for parse results.
+:PROPERTIES:
+:TS:       <2015-01-22 05:58AM>
+:ID:       x88gff91oqg0
+:END:
+
+Matching should either produce:
+
+... A match object, which stores the matched text, and its position within the input:
+
+#+name: @code
+#+begin_src python :session :results none
+
+  Match = namedtuple("Match", ['txt', 'pos'])
+  Match.__doc__ = "Match Result"
+
+#+end_src
+
+... Or, a special constant called =FAIL=:
+
+#+name: @code
+#+begin_src python :session :results none
+  class Fail(object):
+      """Value to indicate failure."""
+      def __repr__(self):
+          return "FAIL"
+  FAIL = Fail()
+#+end_src
+
+We are also going to use a namedtuple to represent the match state at any given time.
+This state includes the match result, a cursor marking the position in the string, and an environment (which we will use later on for storing state). 
+
+#+name: @code
+#+begin_src python :session :results none
+
+  class M(namedtuple("M", ['val', 'cur', 'env'])):
+      """Internal Match State"""
+
+      @property
+      def matched(self):
+          return self.val is not FAIL
+
+#+end_src
+
+
+* Simple pattern matching.
+:PROPERTIES:
+:TS:       <2016-04-15 11:15AM>
+:ID:       yba9ij4147h0
+:END:
+
+Now we can start building the matcher. First we will set up the =Dispatch= stuff:  
+
+#+name: @code
+#+begin_src python :session :results none
+
+  class Matcher(Dispatcher):
+      """A simple matcher for regular languages."""
+
+      def __init__(self, node):
+          self.root = node
+
+      def _match(self, node, cur, env):
+          """returns a match state tuple (the `M` class)"""
+          return self.dispatch('match', node, cur, env)
+
+      def match(self, s:str):
+          cur = Cursor(s)
+          env = {}
+          return self._match(self.root, cur, env).val
+
+#+end_src
+
+Now we are ready to implement the handlers for our initial example:
+
+The simplest case is comparison against a single literal character (=Lit=):
+
+#+name: @code
+#+begin_src python :session :results none
+
+  # class Matcher:
+
+      def match_Lit(self, node, cur, env):
+          return (M(Match(cur.val, cur.pos), cur.fwd(), env) if cur.val == node.item
+                  else M(FAIL, cur, env))
+#+end_src
+
+
+For =Alt=, we just try matching each alternative, in sequence.
+
+Note that only the /first/ matching pattern is returned.
+
+#+name: @code
+#+begin_src python :session :results none
+
+  # class Matcher:
+
+      def match_Alt(self, node, cur, env):
+          for item in node.body:
+              m = self._match(item, cur, env)
+              if m.matched: return m
+          return m # last failure
+
+#+end_src
+
+At this point, our original example using =Alt([ Lit('x'), Lit('y') ])= works as advertised.
+
+* TODO ---- finish cleaning up everything after this point ---
+:PROPERTIES:
+:TS:       <2016-04-15 02:43PM>
+:ID:       9u58i7e147h0
+:END:
+
+
+#+name: @code
+#+begin_src python :session :results none
+
+  # class Matcher:
+
+      def match_Seq(self, node):
+          pass
+
+      def match_Rep(self, node):
+          pass
+
+      def match_Opt(self, node):
+          pass
+
+      def match_Orp(self, node):
+          pass
+
+#+end_src
+
+
+
+
+
+* Strategy
+:PROPERTIES:
+:TS:       <2015-01-18 10:25AM>
+:ID:       nrogjy71jqg0
+:END:
+
+The idea here is to manually construct a data structure (an abstract syntax tree) that describes a meta-grammar.
+
+The meta-grammar describes whatever nice clean syntax we'd /like/ to use for creating grammars in the future.
+
+Building these trees by hand can get messy, though, so we'll stick with a simple syntax for this first round, and then use /that/ to implement something better later.
+
+Our first step is to define some types that we can use to tag the different parts of the tree. Each type represents the some feature of our pattern matching system.
 
 * Manually build a base grammar to provide generic tokenization.
 :PROPERTIES:
@@ -122,36 +357,6 @@ Our first step is to define some types that we can use to tag the different part
       Def('opt', Seq([Lit('['), New(Opt, Ref('expr')), Lit(']')])),  # 'x?'
       Def('grp', Seq([Lit('('), New(Grp, Ref('expr')), Lit(')')])),  # '(x)'
   ])
-#+end_src
-
-* Generic dispatch:
-:PROPERTIES:
-:TS:       <2015-01-18 11:36AM>
-:ID:       w0bhd8b1jqg0
-:END:
-We need a way walk these trees and dispatch to an appropriate method for each type of node in our AST.
-
-#+name: @imports
-#+begin_src python :sesson :results none
-from warnings import warn
-#+end_src
-
-#+name: @code
-#+begin_src python :session :results none
-
-  class Dispatcher(object):
-      def __init__(self, tree):
-          self.root = tree
-          self.done = False
-          self.node = None
-          self.path = [] # stack of breadcrumbs from the root
-
-      def walk(self, prefix, node):
-          meth_name = "%s_%s" % (prefix, node.__class__.__name__)
-          if hasattr(self, meth_name):
-              return getattr(self, meth_name)(node)
-          else: warn('no handler for %s' % (meth_name))
-
 #+end_src
 
 * Worlds for backtracking.
@@ -275,44 +480,6 @@ If we try to run this now, here's what we'll get:
 
 So now our job is to go back and fill in a handler method for each node until it's able to walk the whole tree.
 
-* TODO Input cursor
-:PROPERTIES:
-:TS:       <2015-01-22 05:51AM>
-:ID:       m3udu291oqg0
-:END:
-
-Traditionally, in functional languages, strings are represented as a linked list of characters, which makes them easy to work with recursively.
-
-#+name: @code
-#+begin_src python :session :results none
-  class StringCursor(object):
-
-      def __init__(self, aString:str):
-          self.string = s
-          self.pos = -1
-          self.line= 0
-          self.fwd()
-
-      def fwd(self):
-          self.pos += 1
-          self.ch
-
-#+end_src
-
-* Data structure for parse results.
-:PROPERTIES:
-:TS:       <2015-01-22 05:58AM>
-:ID:       x88gff91oqg0
-:END:
-
-The output format will be almost the same as the input format.
-
-#+name: @code
-#+begin_src python :session :results none
-  class Fail(object): """Value to indicate failure."""
-  FAIL = Fail()
-#+end_src
-
 * Inference Rules
 :PROPERTIES:
 :TS:       <2015-01-22 06:01AM>
@@ -335,23 +502,12 @@ These were translated from the sequent notation in Warth's Ometa paper.
   def match_Emp(self, node, cur, env):
       return (None, cur, env)
 
-  def match_Lit(self, node, cur, env):
-      if cur.value == node.item: return (cur.value, cur.fwd(), env)
-      else: return (FAIL, cur, env)
-
   def match_Seq(self, node, cur, env):
       for item in node.body:
           tup = self.match(item, cur, env)
           if tup[0] is FAIL: return (FAIL, tup[1])
           else: val, cur, env = tup
       return tup # last value
-
-  def match_Alt(self, node, cur, env):
-      for item in node.body:
-          tup = self.match(item, cur, env)
-          if tup[0] is FAIL: env = tup[1]
-          else: return tup
-      return tup # last failure
 
   def match_Orp(self, node, cur, env):
       vals = []
@@ -392,7 +548,7 @@ These were translated from the sequent notation in Warth's Ometa paper.
 
   # (still inside  `class Grin`...)
   def init(self, node):
-      return self.walk('init', node)
+      return self.dispatch('init', node)
 
   def init_Gram(self, node):
       self.defs = {}
