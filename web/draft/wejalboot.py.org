@@ -51,8 +51,8 @@ Here are our data types for modeling grammar definitions. Since we are using =na
   def TN(tag, doc, args=['name']): return T(tag, doc, args)
   def T2(tag, doc, args=['name','body']): return T(tag, doc, args)
 
-  Gram = T('Gram', 'contains grammar rules (may inherit from `base`).',
-           ['name', 'base', 'doc', 'body'])
+  Gram = T('Gram', 'contains grammar rules (may inherit from `bases`).',
+           ['name', 'bases', 'doc', 'body'])
   Def = T('Def', 'define a named rule.', ['name','body'])
   Ref = TN('Ref', 'refer to (invoke) a named rule')
 
@@ -434,6 +434,80 @@ Later on, we can improve the performance by compiling the rules into a state mac
 
 #+end_src
 
+* EBNF
+:PROPERTIES:
+:TS:       <2015-01-18 12:51PM>
+:ID:       bd6hv400kqg0
+:END:
+We are about to extend the simple string matcher to a full parsing system.
+
+One thing we would like to be able to parse is a nicer syntax for building grammars.
+
+There are various languages for writing grammars. We will use one called 'EBNF', which is an acronym for /Extended Backus-Naur Form/).
+
+Here's a grammar for EBNF written in EBNF, so we can test the parser.
+
+#+name: ebnf
+#+begin_src prolog
+main = { rule } .
+rule = IDENT "=" expr "." .
+expr = term { "|" term } .
+term = factor { factor } .
+factor = IDENT | STRING | "{" expr "}" | "[" expr "]" | "(" expr ")" .
+#+end_src
+
+This definition is adapted from [[http://www.inf.ethz.ch/personal/wirth/CompilerConstruction/index.html][Compiler Construction]] by Niklaus Wirth (who invented EBNF, as well as Pascal, Modula, Oberon, and a variety of other languages).
+
+It is self describing. The ={...}= syntax corresponds to =Orp(Seq(...))= in our world. The =|= is placed between alternatives, and the characters in quotes correspond to =Lit=.
+
+The =[...]= syntax defined in the =factor= rule isn't actually used by this grammar, but it corresponds to =Opt(...)=. The =(...)= syntax corresponds to =Seq(...)=. These can of course be nested inside each other to arbitrary depths.
+
+The lower case names correspond to rule definitions and references to those rules. These are =Def= and =Ref= in our system -- we'll be covering those soon.
+
+The upper case names refer to token types. A =STRING= is just a sequence of characters between double quotes, and an =IDENT= just means a sequence of english letters.
+
+I placed the definition code in a block of its own so it would be syntax highlighted, but for python it should be inside a string:
+
+#+name: @code
+#+begin_src python :session :results none
+ebnf_src = '''\
+<<ebnf>>
+'''
+#+end_src
+
+Our next major goal will be to parse grammars like these. First, we will manually create a tokenizer for this language, then we will extend the matcher with =Def= and =Ref= and the ability to match tokens rather than just strings. Then we will manually translate the above EBNF definition into a data structure built that we can pass to the grammar interpreter.
+
+
+* A Bootstrap tokenizer.
+:PROPERTIES:
+:TS:       <2016-04-17 03:48PM>
+:ID:       0zsa4ty077h0
+:END:
+
+With the tools we have now, there's really not much work to define a scanner for EBNF:
+
+#+name: @code
+#+begin_src python :session :results none
+
+  ECHR, SQ, DQ = ['\\', "'", '"']
+  LETTER = Alt([Lit(ch) for ch in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'])
+  STRCHR = Alt([Seq([Lit(ECHR), Alt([ Lit(ECHR), Lit(DQ) ])]),
+                Alt([Lit(ch) for ch in map(chr, range(32,127)) if ch not in '"\\'])])
+
+  ebnf_sc = Scanner([(ch, Lit(ch)) for ch in "{([=|.])}"]
+                    + [('IDENT', Rep(LETTER)),
+                       ('STRING', Alt([Seq([Lit(DQ), Rep(STRCHR), Lit(DQ)])]))])
+#+end_src
+
+Here's how to use it:
+
+#+name: @doctests.module
+#+begin_src python
+>>> ebnf_sc.scan('x = A | b')
+[('x', 'IDENT', 0), ('=', '=', 2), ('A', 'IDENT', 4), ('|', '|', 6), ('b', 'IDENT', 8)]
+
+#+end_src
+
 
 * TODO ---- clean up below here ----
 * Strategy
@@ -461,7 +535,7 @@ Our first step is to define some types that we can use to tag the different part
 #+end_src
 #+name: @code
 #+begin_src python :session :results none
-  ECHR, SQ, DQ = ['\\', "'", '"']
+
   base = Gram('ebnf', [], "rules common to all grammars", [
       Def('main', Orp('token')),
       Def('token',Seq([Skip(Orp(Ref('space'))),
@@ -484,7 +558,7 @@ Our first step is to define some types that we can use to tag the different part
       Def('NUMBER',Seq([Opt(Ref('Neg')), Rep(Ref('Digit')),
                      Orp([Ref('Under'),
                           Ref('Digit'),Ref('Digit'),Ref('Digit')])])),
-      Def('STRING', Alt([Seq([Lit(DQ), Rep(Ref('STRCHR')), Lit(DQ)])])),
+      Def('STRING', Seq([Lit(DQ), Rep(Ref('STRCHR')), Lit(DQ)])),
       Def('STRCHR', Alt([Seq([Lit(ECHR), Alt([ Lit(ECHR), Lit(DQ) ])]),
                          Not(DQ) ])),
       Def('DELIM', Alt(list('(){}[]'))),
@@ -582,32 +656,6 @@ We will assume for now that we have the entire string in memory.
       <<@methods>>
 #+end_src
 
-* ebnf in ebnf
-:PROPERTIES:
-:TS:       <2015-01-18 12:51PM>
-:ID:       bd6hv400kqg0
-:END:
-Here's an grammar for EBNF written in EBNF, so we can test the parser.
-
-This text is adapted from [[http://www.inf.ethz.ch/personal/wirth/CompilerConstruction/index.html][Compiler Construction]] by Niklaus Wirth (who invented EBNF, as well as Pascal, Modula, Oberon, and a variety of other languages).
-
-#+name: ebnf
-#+begin_src prolog
-main = { rule } .
-rule = IDENT "=" expr "." .
-expr = term { "|" term } .
-term = factor { factor } .
-factor = IDENT | STRING | "{" expr "}" | "[" expr "]" | "(" expr ")" .
-#+end_src
-
-I placed that code in a block of its own so it would be syntax highlighted, but for python it should be inside a string.
-
-#+name: @code
-#+begin_src python :session :results none
-ebnf_src = '''\
-<<ebnf>>
-'''
-#+end_src
 
 * OUTPUT wejalboot.py
 :PROPERTIES:
@@ -618,6 +666,9 @@ ebnf_src = '''\
 And now we can put the whole thing together:
 
 #+begin_src python :session :tangle "wejalboot.py" :noweb yes
+  """
+  <<@doctests.module>>
+  """
   <<@imports>>
   <<@code>>
   if __name__=="__main__":
