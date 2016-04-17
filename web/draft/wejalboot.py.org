@@ -17,14 +17,14 @@ For starters, we will focus on simple regular expressions:, much like python's b
 
 #+name: @doctests.matcher
 #+begin_src python
->>> m = Matcher(Alt([Lit("x"), Lit("y"))   # match the letter x or y, like re.compile("x|y")
->>> m.match("xyz")                         # should match "x" at position 0 
-Match(txt="x", pos=0)
+>>> m = Matcher(Alt([Lit("x"), Lit("y")])) # like re.compile("x|y")
+>>> m.match('xyz')                         # should match "x" at position 0
+Match(txt='x', pos=0)
 >>> m.match("zyx")                         # should fail to match
 FAIL
 #+end_src
 
-Obviously, the nice syntax provided by the =re= module is nicer than building pattern structures by hand. We will address this soon by bootstrapping our own parser for patterns. In the meantime, we will build our rule definitions by building data structures with python's =namedtuple=.
+Obviously, the concise syntax provided by the =re= module is nicer than building pattern structures by hand. We will address this soon by bootstrapping our own parser for grammar definitions. In the meantime, we will build our rule definitions by building data structures with python's =namedtuple=.
 
 * Grammar Combinators
 :PROPERTIES:
@@ -60,7 +60,11 @@ Here are our data types for modeling grammar definitions. Since we are using =na
   Not = TI('Not', 'fail if the pattern would match, but do not consume')
   Skip = TI('Skip', 'match the pattern, but hide it from other rules')
 
-  Lit = TI('Lit', 'match literal item (using ==)')
+  Emp = T('Emp', 'empty pattern (always matches)', [])
+  Emp = Emp() # since it doesn't need arguments
+
+  Lit = TI('Lit', 'match literal character (using ==)')
+  Str = TI('Str', 'match a string of literals')
   Seq = TB('Seq', 'match a sequence of patterns')
   Grp = TB('Grp', 'same as Seq, but renders in parentheses')
   Alt = TB('Alt', 'match any of the alternatives')
@@ -143,6 +147,10 @@ The following helper class will do the work for us:
           self.val = None if self.pos == end else self.seq[self.pos] 
           return self
 
+      def at_end(self)->bool:
+          """Are we at the end of the sequence?"""
+          return self.val is None
+
 #+end_src
 
 * Data structure for parse results.
@@ -189,7 +197,6 @@ This state includes the match result, a cursor marking the position in the strin
 
 #+end_src
 
-
 * Simple pattern matching.
 :PROPERTIES:
 :TS:       <2016-04-15 11:15AM>
@@ -202,7 +209,10 @@ Now we can start building the matcher. First we will set up the =Dispatch= stuff
 #+begin_src python :session :results none
 
   class Matcher(Dispatcher):
-      """A simple matcher for regular languages."""
+      """
+      A simple matcher for regular languages.
+      <<@doctests.matcher>>
+      """
 
       def __init__(self, node):
           self.root = node
@@ -252,36 +262,180 @@ Note that only the /first/ matching pattern is returned.
 
 At this point, our original example using =Alt([ Lit('x'), Lit('y') ])= works as advertised.
 
-* TODO ---- finish cleaning up everything after this point ---
+* Regular Expressions
 :PROPERTIES:
 :TS:       <2016-04-15 02:43PM>
 :ID:       9u58i7e147h0
 :END:
 
+With =Lit= and =Alt= out of the way, only need a few more cases to allow full regular expressions:
+
+=Emp= matches the empty string. It takes no arguments, and always succeeds:
+
+#+name: @doctests.matcher
+#+begin_src python
+>>> Matcher(Emp).match("hello")
+Match(txt='', pos=0)
+#+end_src
+
+=Seq= takes a list of patterns and matches all of them in sequence.
+
+#+name: @doctests.matcher
+#+begin_src python
+>>> m = Matcher(Seq([Lit("a"), Alt([Lit("a"), Lit("b")])]))
+>>> m.match("ab")
+Match(txt='ab', pos=0)
+>>> m.match("ac")
+FAIL
+#+end_src
+
+As a special case, =Str= matches a string of literals:
+
+#+name: @doctests.matcher
+#+begin_src python
+>>> Matcher(Str("hello")).match("hello")
+Match(txt='hello', pos=0)
+#+end_src
+
+=Rep= matches one or more repetitions of a pattern. It works like =+= in regular expressions.
+
+#+name: @doctests.matcher
+#+begin_src python
+>>> Matcher(Rep(Lit("a"))).match("aaabbbccc")
+Match(txt='aaa', pos=0)
+#+end_src
+
+=Opt= indicates that a match is optional. =Opt(x)= is equivalent to =Alt([x, Emp])=. It works like =?= in regular expressions.
+
+#+name: @doctests.matcher
+#+begin_src python
+>>> m = Matcher(Opt(Lit("a")))
+>>> m.match("abc")
+Match(txt='a', pos=0)
+>>> m.match("xyz")
+Match(txt='', pos=0)
+#+end_src
+
+=Orp(x)= is shorthand for =Opt(Rep(x))=, and works like =*= in regular expressions.
+
+#+name: @doctests.matcher
+#+begin_src python
+>>> m = Matcher(Orp(Lit("a")))
+>>> m.match("aaabc")
+Match(txt='aaa', pos=0)
+>>> m.match("xyz")
+Match(txt='', pos=0)
+#+end_src
+
+If you prefer, you could treat =Orp= as the more primitive operation, and =Rep(x)= as sugar for =Seq([x, Orp(x)])=, but the following implementation uses the rules above:
 
 #+name: @code
 #+begin_src python :session :results none
 
   # class Matcher:
 
-      def match_Seq(self, node):
-          pass
+      def match_Emp(self, node, cur, env):
+          return M(Match("", cur.pos), cur, env)
 
-      def match_Rep(self, node):
-          pass
+      def _join(self, matches):
+          """helper to join match results for Seq and Str"""
+          if matches is FAIL: return FAIL
+          else: return Match(''.join(v.txt for v in matches), matches[0].pos)
 
-      def match_Opt(self, node):
-          pass
+      def match_Seq(self, node, cur, env):
+          vals = []
+          for item in node.body:
+              res = self._match(item, cur, env)
+              if res.val is FAIL: return M(FAIL, res.cur, env)
+              else:
+                  val, cur, env = res
+                  vals.append(val)
+          return M(self._join(vals), res.cur, env)
 
-      def match_Orp(self, node):
-          pass
+      def match_Str(self, node, cur, env):
+          return self._match(Seq([Lit(c) for c in node.item]), cur, env)
+
+      def match_Rep(self, node, cur, env):
+          vals = []
+          while True:
+              res = self._match(node.item, cur, env)
+              if res.val is FAIL: break
+              else:
+                  val, cur, env = res
+                  vals.append(val)
+          return M(self._join(vals or FAIL), cur, env)
+
+      def match_Opt(self, node, cur, env):
+          return self._match(Alt([node.item, Emp]), cur, env)
+
+      def match_Orp(self, node, cur, env):
+          return self._match(Opt(Rep(node.item)), cur, env)
+
+#+end_src
+
+Most modern regular expression engines support additions like groups and backreferences. We will diverge a bit here, though, because we are interested in writing full parsers, with mutually recursive named rules.
+
+* Tokenization
+:PROPERTIES:
+:TS:       <2016-04-17 01:17PM>
+:ID:       ua87gur077h0
+:END:
+While not strictly required, it's traditional to break parsing up into two phases: the first pass scans through the text and breaks it up into tokens, a process called tokenization or lexing.The second pass parses the stream of tokens and (at least conceptually) constructs a tree-like structure. 
+
+Our version of tokens will just be tuples strings, tagged with rule names and match positions:
+
+#+name: @doctests.scanner
+#+begin_src python
+>>> s = Scanner([("a+", Rep(Lit("a"))), ("b+", Rep(Lit("b")))])
+>>> s.scan("abaabb")
+[('a', 'a+', 0), ('b', 'b+', 1), ('aa', 'a+', 2), ('bb', 'b+', 4)]
+
+>>> s.scan("a b   \t bb a")  # whitespace is ignored by default.
+[('a', 'a+', 0), ('b', 'b+', 2), ('bb', 'b+', 8), ('a', 'a+',  11)]
+#+end_src
+
+
+Our implementation is incredibly naive: it just keeps looping through the list of rules and trying to match each one.
+
+Later on, we can improve the performance by compiling the rules into a state machine, but we will stick with something simple while we're bootstrapping the rest of the system:
+
+#+name: @code
+#+begin_src python :session :results none
+
+  class Scanner(object):
+
+      def __init__(self, rules: [(str, namedtuple)]):
+          self.order = [rule[0] for rule in rules]  # test rules in given order
+          self.rules = dict(rules)
+          # default whitespace handler:
+          if '_' not in rules:
+              self.order.insert(0, '_')
+              self.rules['_'] = Alt([Lit(chr(i)) for i in range(33)])
+
+      def gen_tokens(self, txt):
+          cur = Cursor(txt)
+          env = {}
+          matcher = Matcher(Emp)
+          while not cur.at_end():
+              for rule in self.order:
+                  m = matcher._match(self.rules[rule], cur, env)
+                  if m.matched:
+                      match, cur, env = m
+                      if rule != '_':
+                          yield (match.txt, rule, match.pos)
+                      break
+                  else: continue
+              else:
+                  raise ValueError("unrecognized character at position %i : '%s'"
+                                   % (cur.pos, cur.val))
+
+      def scan(self, txt):
+          return list(self.gen_tokens(txt))
 
 #+end_src
 
 
-
-
-
+* TODO ---- clean up below here ----
 * Strategy
 :PROPERTIES:
 :TS:       <2015-01-18 10:25AM>
@@ -495,39 +649,19 @@ These were translated from the sequent notation in Warth's Ometa paper.
 
   def match_Ref(self, node, cur, env):
       # pass in fresh World, then discard changes
-      tup = self.match(self.defs[node.name], cur, World())
-      if tup[0] is FAIL: return (FAIL, env)
-      else: return (tup[0], tup[1], env)
-
-  def match_Emp(self, node, cur, env):
-      return (None, cur, env)
-
-  def match_Seq(self, node, cur, env):
-      for item in node.body:
-          tup = self.match(item, cur, env)
-          if tup[0] is FAIL: return (FAIL, tup[1])
-          else: val, cur, env = tup
-      return tup # last value
-
-  def match_Orp(self, node, cur, env):
-      vals = []
-      while True:
-          tup = self.match(node.item, cur, env)
-          if tup[0] is FAIL: break
-          else:
-              val, cur, env = tup
-              vals.append(val)
-      return (vals, cur, env)
+      res = self.match(self.defs[node.name], cur, World())
+      if res.val is FAIL: return (FAIL, env)
+      else: return (res.val, res[1], env)
 
   def match_Not(self, node, cur, env):
-      tup = self.match(node.item, cur, env)
-      if tup[0] is FAIL: return (None, cur, tup[1])
-      else: return (FAIL, tup[1])
+      res = self.match(node.item, cur, env)
+      if res.val is FAIL: return (None, cur, res[1])
+      else: return (FAIL, res[1])
 
   def match_Var(self, node, cur, env):
-      tup = self.match(node.item, cur, env)
-      if tup[0] is FAIL: return tup
-      else: return (tup[0], cur, env.changed(node.name, tup[0]))
+      res = self.match(node.item, cur, env)
+      if res.val is FAIL: return res
+      else: return (res.val, cur, env.changed(node.name, res.val))
 
   def match_Act(self, node, cur, env):
       raise NotImplementedError('no semantic actions yet.')
@@ -564,4 +698,5 @@ These were translated from the sequent notation in Warth's Ometa paper.
 :TS:       <2015-01-22 08:13AM>
 :ID:       hnv0l310pqg0
 :END:
-- grammar rules are adapted from Alessandro Warth's [[http://tinlizzie.org/ometa/][Ometa]] system.
+- grammar rules (and the 'world' concept) are adapted from Alessandro Warth's [[http://tinlizzie.org/ometa/][Ometa]] system.
+
