@@ -102,7 +102,7 @@ from warnings import warn
   def node_type(node):
       return node.__class__.__name__
 
-  class Dispatcher(object):
+  class Dispatcher:
       """Provides a simple generic dispatch mechanism based on method names"""
 
       def _find_handler(self, prefix, node):
@@ -132,7 +132,7 @@ The following helper class will do the work for us:
 #+name: @code
 #+begin_src python :session :results none
 
-  class Cursor(object):
+  class Cursor:
 
       def __init__(self, seq:[any]):
           self.seq = seq    # sequence (probably a string)
@@ -175,7 +175,7 @@ Matching should either produce:
 
 #+name: @code
 #+begin_src python :session :results none
-  class Fail(object):
+  class Fail:
       """Value to indicate failure."""
       def __repr__(self):
           return "FAIL"
@@ -402,7 +402,7 @@ Later on, we can improve the performance by compiling the rules into a state mac
 #+name: @code
 #+begin_src python :session :results none
 
-  class Scanner(object):
+  class Scanner:
 
       def __init__(self, rules: [(str, namedtuple)]):
           self.order = [rule[0] for rule in rules]  # test rules in given order
