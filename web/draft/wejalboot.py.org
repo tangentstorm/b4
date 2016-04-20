@@ -72,6 +72,7 @@ Here are our data types for modeling grammar definitions. Since we are using =na
   Opt = TI('Opt', 'match 0 or 1 repetitions.')
   Orp = TI('Orp', 'match 0 or more repetitions.')
 
+  Tok = TI('Tok', 'match a token of a given type')
   Var = T2('Var', 'save matched string in a variable.')
   Val = TN('Val', 'match against the saved value.')
   New = T2('New', 'build a new class/tuple instance')
@@ -517,7 +518,6 @@ Here's how to use it:
 
 To parse recursive grammars (where patterns can be nested inside each other to arbitrary depths) there's not too much more we need to do. We just need to supply our interpreter with a bunch of named rules, and then be able to tell it when to match those rules. Unlike a scanner, where the choice of pattern that gets matched depends on the input (as if each pattern were a child of an =Alt=), the parser starts with a top-level rule that it attempts to match, and follows references to other rules only when they appear in the patterns.
 
-
 * Named Rules
 :PROPERTIES:
 :TS:       <2016-04-20 06:04PM>
@@ -570,6 +570,64 @@ Match(txt='n', pos=0)
 
 
 
+
+* Parsing Tokens
+:PROPERTIES:
+:TS:       <2016-04-20 06:14PM>
+:ID:       wgld8b31b7h0
+:END:
+
+Now the =Parser= class can just focus on the work of turning a stream of tokens into a tree.
+
+One of the main differences is that we are now operating on tokens. This means we can have =Lit= match a token rather than a character, and therefore we no longer have any need for =Str=.
+
+However, there are two ways we might want to match a token: by its content (for example, a literal keyword like python's =def=) or by its kind (for example, any string). We will continue to use =Lit= for an exact match on the content, and introduce =Tok= for a match on the token type.
+
+Further, we need to override =_join= so that we build nested lists of tokens, rather than simply concatenating strings.
+
+#+name: @code
+#+begin_src python
+
+  class Parser(Matcher):
+
+      # cur.val will be a tuple(match:str, kind:str, pos:int)
+
+      # @override
+      def match_Lit(self, node, cur, env):
+          """match a token on its content"""
+          return (M(Match(cur.val, cur.pos), cur.fwd(), env) if cur.val and cur.val[0] == node.item
+                  else M(FAIL, cur, env))
+
+      # exact same thing, but match token type instead of content
+      def match_Tok(self, node, cur, env):
+          """match a token on its type"""
+          return (M(Match(cur.val, cur.pos), cur.fwd(), env) if cur.val and cur.val[1] == node.item
+                  else M(FAIL, cur, env))
+
+      def match_Str(self, node, cur, env):
+          raise TypeError("Str nodes make no sense in a grammar. Consider Lit, Tok or Seq.")
+
+      def _join(self, matches):
+          """helper to join match results for Seq"""
+          # Seq already gives us either FAIL or a list, so really we're just turning
+          # off the filter that Matcher used. However, since tokens already have position
+          # information, we can take the opportunity to remove the Match() wrapper, and
+          # just return a list:
+          return [m if isinstance(m, list) else m.txt
+                  for m in matches if isinstance(m, list) or m.txt != '']
+
+#+end_src
+
+Here it is in action:
+
+#+name: @doctests.module
+#+begin_src python
+>>> Parser( Seq([Def("x", Lit("n")), Rep(Ref("x")) ])).match([("n", "t1", 0), ("n", "t2", 1)])
+[[('n', 't', 0), ('n', 't', 1)]]
+
+>>> Parser( Seq([Def("x", Tok("t")), Rep(Ref("x")) ])).match([("abc", "t", 0), ("xyz", "t", 3)])
+[[('abc', 't', 0), ('xyz', 't', 3)]]
+#+end_src
 
 
 * TODO ---- clean up below here ----
