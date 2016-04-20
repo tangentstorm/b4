@@ -226,6 +226,8 @@ Now we can start building the matcher. First we will set up the =Dispatch= stuff
           env = {}
           return self._match(self.root, cur, env).val
 
+  <<@Matcher.changes>>
+
 #+end_src
 
 Now we are ready to implement the handlers for our initial example:
@@ -477,7 +479,6 @@ ebnf_src = '''\
 
 Our next major goal will be to parse grammars like these. First, we will manually create a tokenizer for this language, then we will extend the matcher with =Def= and =Ref= and the ability to match tokens rather than just strings. Then we will manually translate the above EBNF definition into a data structure built that we can pass to the grammar interpreter.
 
-
 * A Bootstrap tokenizer.
 :PROPERTIES:
 :TS:       <2016-04-17 03:48PM>
@@ -507,6 +508,68 @@ Here's how to use it:
 [('x', 'IDENT', 0), ('=', '=', 2), ('A', 'IDENT', 4), ('|', '|', 6), ('b', 'IDENT', 8)]
 
 #+end_src
+
+* Parsing
+:PROPERTIES:
+:TS:       <2016-04-20 05:41PM>
+:ID:       3r1lhs11b7h0
+:END:
+
+To parse recursive grammars (where patterns can be nested inside each other to arbitrary depths) there's not too much more we need to do. We just need to supply our interpreter with a bunch of named rules, and then be able to tell it when to match those rules. Unlike a scanner, where the choice of pattern that gets matched depends on the input (as if each pattern were a child of an =Alt=), the parser starts with a top-level rule that it attempts to match, and follows references to other rules only when they appear in the patterns.
+
+
+* Named Rules
+:PROPERTIES:
+:TS:       <2016-04-20 06:04PM>
+:ID:       fy19ru21b7h0
+:END:
+
+For our purposes, a =Parser= is just a generic =Matcher= that adds named rules that can refer to each other recursively, and which operates on a stream of tokens rather than just a string.
+
+Therefore, we are going to subclass =Matcher=. However, rather than adding support for =Def= and =Ref= only in the subclass, I'm going to push them up into =Matcher=. That way, =Matcher= will have support for named rules matching on strings, and the only difference we'll see in =Parser= is that it operates on tokens.
+
+We need one addition to the =Matcher= constructor:
+
+#+name: @Matcher.changes
+#+begin_src python
+
+  # update to class Matcher
+
+      def __init__(self, node):
+          self.root = node
+          self.defs = {}
+
+#+end_src
+
+
+Now we can create and refer to rules:
+
+#+name: @Matcher.changes
+#+begin_src python :session :results none
+
+  # addition to class Matcher
+
+      def match_Def(self, node, cur, env):
+          self.defs[node.name] = node.body
+          return self.match_Emp(node, cur, env)
+
+      def match_Ref(self, node, cur, env):
+          # pass in fresh World, then discard changes
+          res = self._match(self.defs[node.name], cur, {})
+          return M(res.val, res.cur, env) if res.matched else M(FAIL, cur, env)
+
+#+end_src
+
+Here's how it works:
+
+#+name: @doctests.module
+#+begin_src python
+>>> Matcher( Seq([Def("x", Lit("n")), Ref("x")])).match("n")
+Match(txt='n', pos=0)
+#+end_src
+
+
+
 
 
 * TODO ---- clean up below here ----
@@ -656,7 +719,6 @@ We will assume for now that we have the entire string in memory.
       <<@methods>>
 #+end_src
 
-
 * OUTPUT wejalboot.py
 :PROPERTIES:
 :TS:       <2015-01-18 12:38PM>
@@ -698,11 +760,6 @@ These were translated from the sequent notation in Warth's Ometa paper.
 
   # (inside  `class Grin`...)
 
-  def match_Ref(self, node, cur, env):
-      # pass in fresh World, then discard changes
-      res = self.match(self.defs[node.name], cur, World())
-      if res.val is FAIL: return (FAIL, env)
-      else: return (res.val, res[1], env)
 
   def match_Not(self, node, cur, env):
       res = self.match(node.item, cur, env)
