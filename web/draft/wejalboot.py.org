@@ -75,7 +75,7 @@ Here are our data types for modeling grammar definitions. Since we are using =na
   Tok = TI('Tok', 'match a token of a given type')
   Var = T2('Var', 'save matched string in a variable.')
   Val = TN('Val', 'match against the saved value.')
-  New = T2('New', 'build a new class/tuple instance')
+  New = TI('New', 'build a new class/tuple instance')
   Arg = TB('Arg', 'pass matched data as arg to containing "New"')
 
 #+end_src
@@ -613,6 +613,7 @@ Further, we need to override =_join= so that we build nested lists of tokens, ra
           # off the filter that Matcher used. However, since tokens already have position
           # information, we can take the opportunity to remove the Match() wrapper, and
           # just return a list:
+          if matches is FAIL: return FAIL
           return [m if isinstance(m, list) else m.txt
                   for m in matches if isinstance(m, list) or m.txt != '']
 
@@ -630,7 +631,99 @@ Here it is in action:
 #+end_src
 
 
+* The EBNF grammar
+:PROPERTIES:
+:TS:       <2016-04-20 07:18PM>
+:ID:       crld9961b7h0
+:END:
+
+We now have everything we need to interpret a grammar for EBNF:
+
+#+name: @code
+#+begin_src python :session :results none
+  ebnf = Seq([
+      Def('rule', Seq([Tok('IDENT'), Lit('='), Ref('expr'), Lit('.') ])),
+      Def('expr', Seq([ Ref('term'), Orp(Seq([Lit('|'), Ref('term') ])) ])),
+      Def('term', Rep(Ref('factor'))),
+      Def('factor', Alt([Tok('IDENT'), Ref('rep'), Ref('opt'), Ref('grp') ])),
+      Def('rep', Seq([Lit('{'), Ref('expr'), Lit('}')])),  # 'x*'
+      Def('opt', Seq([Lit('['), Ref('expr'), Lit(']')])),  # 'x?'
+      Def('grp', Seq([Lit('('), Ref('expr'), Lit(')')])),  # '(x)'
+
+      # top level rule:
+      Orp(Ref('rule'))
+  ])
+#+end_src
+
+Here's how it might be used:
+
+#+begin_src python
+>>> import pprint
+>>> pprint.pprint(Parser(ebnf).match(ebnf_sc.scan("ruleC = ruleA | {ruleB} .")))
+[[[('ruleC', 'IDENT', 0),
+   ('=', '=', 6),
+   [[('ruleA', 'IDENT', 8)],
+    [[('|', '|', 14),
+      [[('{', '{', 16), [[('ruleB', 'IDENT', 17)]], ('}', '}', 22)]]]]],
+   ('.', '.', 24)]]]
+#+end_src
+
+
+
 * TODO ---- clean up below here ----
+
+
+* Minor cleanups
+:PROPERTIES:
+:TS:       <2016-04-20 07:28PM>
+:ID:       b9gizp61b7h0
+:END:
+
+We can get rid of some of the clutter in our grammar definition by allowing python strings and lists as shorthand for =Lit= and =Seq= nodes, respectively:
+
+#+name: @Matcher.changes
+#+begin_src python :session :results none
+
+  # addition to class Matcher
+
+      def match_str(self, node, cur, env):
+          """just some sugar so that  'abc' <-> Lit('abc')"""
+          return self._match(Lit(node), cur, env)
+
+      def match_list(self, node, cur, env):
+          """just some sugar so that  [...] <-> Seq(...)"""
+          return self._match(Seq(node), cur, env)
+#+end_src
+
+
+
+* TODO =Gram= node handler.
+:PROPERTIES:
+:TS:       <2016-04-20 07:31PM>
+:ID:       58rc5w61b7h0
+:END:
+
+
+
+Adding one more handler lets us wrap the grammar definition in a nice wrapper object, with special support for a =main= rule:
+
+#+name: @code
+#+begin_src python :session :results none
+  _ebnf = Gram('ebnf', [], "ebnf meta-grammar (for parsing grammars)", [
+      Def('main', Orp(Ref('rule'))),
+      Def('rule',  [Tok('IDENT'), '=', Ref('expr'), '.']),
+      Def('expr',  [Ref('term'), Orp(['|', Ref('term')]) ]),
+      Def('term',  Rep(Ref('factor'))),
+      Def('factor', Alt([Tok('IDENT'), Ref('rep'), Ref('opt'), Ref('grp') ])),
+      Def('rep', ['{', Ref('expr'), '}']),  # 'x*'
+      Def('opt', ['[', Ref('expr'), ']']),  # 'x?'
+      Def('grp', ['(', Ref('expr'), ')']),  # '(x)'
+  ])
+#+end_src
+
+
+
+
 * Strategy
 :PROPERTIES:
 :TS:       <2015-01-18 10:25AM>
@@ -657,7 +750,7 @@ Our first step is to define some types that we can use to tag the different part
 #+name: @code
 #+begin_src python :session :results none
 
-  base = Gram('ebnf', [], "rules common to all grammars", [
+  base = Gram('base', [], "rules common to all grammars", [
       Def('main', Orp('token')),
       Def('token',Seq([Skip(Orp(Ref('space'))),
                     Alt([Ref('STRING'), Ref('NUMBER'),
@@ -692,21 +785,6 @@ Our first step is to define some types that we can use to tag the different part
 :ID:       7o9j7i21jqg0
 :END:
 
-#+name: @code
-#+begin_src python :session :results none
-  ebnf = Gram('ebnf', [base], "ebnf meta-grammar (for parsing grammars)", [
-      Def('main', Orp(Ref('rule'))),
-      Def('rule', Seq([Var('name', Ref('IDENT')),
-                       Lit('='), Ref('expr'), Lit('.') ])),
-      Def('expr', Seq([ Ref('term'), Orp([Lit('|'), Ref('term') ]) ])),
-      Def('term', Seq([ Ref('factor'), Rep(Ref('factor')) ])),
-      Def('factor', Alt([Ref('IDENT'), Ref('STRING'),
-                         Ref('rep'), Ref('opt'), Ref('grp')])),
-      Def('rep', Seq([Lit('{'), New(Rep, Ref('expr')), Lit('}')])),  # 'x*'
-      Def('opt', Seq([Lit('['), New(Opt, Ref('expr')), Lit(']')])),  # 'x?'
-      Def('grp', Seq([Lit('('), New(Grp, Ref('expr')), Lit(')')])),  # '(x)'
-  ])
-#+end_src
 
 * Worlds for backtracking.
 :PROPERTIES:
