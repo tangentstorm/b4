@@ -186,44 +186,50 @@ I think ischtche pointed this out to me a while back:
 
 * DONE 9. special pythagorean triplet
 :PROPERTIES:
-:TS: <2013-12-05 10:44PM>
-:ID: 0s84a0h0lbg0
+:TS:       <2016-04-22 11:50PM>
+:ID:       ej5f4i01e7h0
 :END:
 
+Find the pythagorean triple (a<b<c and a^2 + b^2 = c^2 such that a+b+c = 1000)
+
+a + b + c = 1000
+a^2 + b^2 = c^2
+
+I read earlier today that Diophantus figured out how to generate many triples:
+
+take any two integers, x and y (eg x:1 y:2)
 #+begin_src j
-
-  NB. my thought was to use 'antibase' to enumerate. this found the answer,
-  NB. but there were other rows mixed in that contained zeros:
-  (]#~(1000 = +/"1 @: *:))"2 [ 500 500 500 #: (500 * 500) + i. 10000000
-
-  NB. this version is significantly faster because of starting at 500^3
-  NB. and skipping low numbers. if i hadn''t found the answer, i would have
-  NB. changed the (5 5 5) to (1 1 1) just to eliminate  the zeros.
-  (] #~ (1000 = +/"1 @: *:) *. -.@(0&e."1))"2 [ (5 5 5)+"1 (500 500 500) #: (500 ^3) + i. 1000000
-
-  NB. and in fact, once i added this, the   -. @ 0&e. is un-necessary
-
-  NB. this version is almost instantaneous, and avoids searching such a large
-  NB. number of (low,low,high) triples.
-  (] #~ (1000 = +/"1 @: *:))"2 [ (3$ 1)+"1 (3 $ 50) #: (50 ^3) + i.50^3
-
-  NB. all of these find several duplicates caused by multiples and
-  NB. re-arrangements. if I couldn't, i'd try to figure out how to filter
-  NB. permutations, or avoid them in the first place.
-
-  NB. --------------------------------------------
-  NB. whoops! we only want the +/a b c,  not +/@*: a b c
-  NB. --------------------------------------------
-
-  NB. test for triples a^2+b^2=c^2
-  NB. except we''ll write it  c^2 = b^2 + a^2
-  istriple =: ( =`+ / )@:*:
-
-  NB. generate a bunch of triples by using base n:  (i did these in problem 4)
-  ndigs =. 13 : '>. x ^. >: y'
-  basex =. 13 : '((x ndigs f. y) # x) #: y'
-
+a =: |@-/@:*:  NB. difference in squares
+b =: +/@*:     NB. sum of squares
+c =: 2**/      NB. twice the product
 #+end_src
+
+playing around with the constants in:
+
+#+begin_src j
+(;+/) (|@-/@:*: , (2**/ ) , +/@:*:) 12 17
+#+end_src
+
+showed that the answer could probably be generated with two numbers between 10 and 20, but I had to widen the search a bit to actually find the answer:
+
+#+begin_src j
+   ([: I. 1000=+/"1) (|@-/@:*: , (2**/ ) , +/@:*:)"1 ] (n,n) #: i.n^2  [ n=:25
+375 200 425
+375 200 425
+   
+   (#~ 1000=+/"1) (|@-/@:*: , (2**/ ) , +/@:*:)"1 ] (n,n) #: i.n^2  [ n=:25
+375 200 425
+375 200 425
+   ([: I. 1000=+/"1) (|@-/@:*: , (2**/ ) , +/@:*:)"1 ] (n,n) #: i.n^2  [ n=:25
+145 505
+   25 #.^:_1 ] 145
+5 20
+   (|@-/@:*: , (2**/ ) , +/@:*:) 5 20
+375 200 425
+   */ (|@-/@:*: , (2**/ ) , +/@:*:) 5 20
+31875000
+#+end_src
+   
 
 * TODO 11. largest product in a grid
 :PROPERTIES:
