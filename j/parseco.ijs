@@ -106,6 +106,7 @@ chr =: {{'chr'] p;<nx^:p y [ p =. m -: ch y }} try
 
 NB. m one: s->fs. match one item from m and advance the index.
 one =: {{'one'] p;<nx^:p y [ p =. m e.~ ch y }} try
+one =: {{ y fw m e.~ ch y }} try
 
 NB. m seq: s->fs. match each rule in sequence m
 seq =: {{'seq'] s=:y
@@ -130,15 +131,27 @@ NB. this just matches the whole sequence directly vs S.
 NB. ,m is so we can match a single character.
 lit =: {{'lit'] f;<nx^:(f*#m) y [ f=.m-:(ib y){~(ix y)+i.#m=.,m }} try
 
+fw =: {{ (*y);<nx^:y x }}
+NB.fw =: *@];<@:(nx@[^:])  (doesn't work. ugly)
+
+(X =: @[) (Y =: @])
+NB. lookahead
+la =: {{ (ib y) {~ (ix y) + (i. x) }}
+la =: ib@] {~ ix@] + i.@[
+la =: ib Y {~ ix Y + i. X
+lit =: {{ y fw (#m) * m-: (#m=.,m) la y }} try
+
 NB. eat =: {{ if. f['f s'=.u y do. s=. a: TB} ,&(TB{s) AA nb s end. f;<s }}
 NB. zap =: {{ t =. TB{y if. f['f s'=.u y do. s=. t TB} s end. f;<s }}
 
 NB. u ifu v: s->fs. if u matches, return 1;<(s_old) v (s_new)
-ifu =: {{'ifu' if.f['f s'=.u y do. s=.y v s end. f;<s }}
+ifu =: {{ if.f['f s'=.u y do. s=.y v s end. f;<s }}
+ifu =: {{ f;<y v^:f s [ 'f s'=.u y }}
 
 NB. u tok: s->fs move current token to NB if u matches, else fail
 tok =: ifu {{x] a: TB} (TB{y) AP nb y }}
-tok =: ifu {{'tok']x] a: TB} (tb y) emit y }}
+tok =: ifu {{x] '' tb (tb y) emit y }}
+tok =: ifu ('' tb tb@] emit ])
 
 NB. m sym: s->fs alias for 'm lit tok'
 sym =: lit tok
@@ -146,13 +159,19 @@ sym =: lit tok
 NB. u zap: s->fs match if u matches, but drop any generated nodes
 NB. the only effect that persists is the current char and index.
 zap =: ifu {{'zap'] (ch y) ch (ix y) ix x }}
+zap =: ifu (ch@] ch ix@] ix [)
 
 NB. u opt: s->fs. optionally match rule u. succeed either way
 opt =: {{ 1 ; }. u y }}
 opt =: `nil alt
 
 NB. u rep: s->fs. match 1+ repetitions of u
-rep =: {{'rep'] f=.0 [ s=.y while. fi['fi s'=.u s do. f=.1 end. f;<s }}
+rep =: {{ f=.0 [ s=.y while. fi['fi s'=.u s do. f=.1 end. f;<s }}
+rep =: {{ s=.y while. f['f s'=.u s do.end. y (<&ix ; <@])s }}
+rep =: {{ y (<&ix ; <@]) 1 AT ([: u 1 AT)^:(0 AT)^:_] 1;<y }}
+while =: {{ u ^: v ^:_ y }}
+NB. ahead =: <&ix;< Y
+rep =: {{ y (<&ix;<@]) 1 AT ([:u 1 AT) while (0 AT) 1;<y }}
 
 NB. u orp: s->fs. optionally repeat (match 0+ repetitions of u)}}
 orp =: rep opt
@@ -167,7 +186,7 @@ not =: {{('not'] (u neg)`any) seq }}
 
 
 NB. u sep v: s->fs. match 1 or more u, separated by v
-sep =: {{ (u f.)`((v f.)`(u f.) seq orp) seq }}
+sep =: {{ u`(v`u seq orp) seq f. }}
 
 NB. plain functions for tree building
 NB. ---------------------------------
@@ -184,7 +203,8 @@ emit =: {{ (<x) AP nb y }}
 
 NB. m attr n: s->fs. append (m=key;n=value) pair to the attribute dictionary.
 NB. initialize dict if needed
-attr =: {{ if. a:-:NA{s do. s=. (0 2$a:) na s end. (m;n) AP na y }}
+attr =: {{ if. a:-:NA{y do. y=. (0 2$a:) na s end. (m;n) AP na y }}
+attr =: {{ (m;n) AP na ((0 2$a:)&na)^:(''-:na) y }}
 
 NB. done: s->s. closes current node and makes it an item of previous node-in progress.
 done =: {{
@@ -194,17 +214,19 @@ done =: {{
   new emit s }}         NB. and append new node to the node buffer.
 
 NB. x tk: s->(item;<s). pop the last item from buffer x in state y.
-tk =: {{ item ; < }: AA u y [ item =. {: u y }}
+tk =: {{ item ; < }: AA u y [ item =. ({: u y) }}
+tk =: {{ ({:u y) ;< }: AA u y }}
 
 
 NB. combinators for tree building.
 NB. ------------------------------
 
 NB. u elm n : s->fs. create node element tagged with n if u matches
-elm =: {{'elm' if.f['f s'=.u n node y do. 1;<done s else. 0;<y end. }}
+elm =: {{ if.f['f s'=.u n node y do. 1;<done s else. 0;<y end. }}
+elm =: {{ f;< y[`(done@])@.f s [ 'f s'=.u n node y }}
 
 NB. u atr n : s->fs. if u matched, move last item to node attribute n.
-atr =: {{'atr' if.f['f s'=. u y do. 1;<n attr it s [ 'it s'=. nb tk s else. 0;<y end. }}
+atr =: {{ if.f['f s'=. u y do. 1;<n attr it s [ 'it s'=. nb tk s else. 0;<y end. }}
 
 NB. u tag: s->fs. move the last token in node buffer to be the node's tag.
 NB. helpful for rewriting infix notation, eg  (a head(+) b) -> (+ (a b))
