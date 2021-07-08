@@ -55,6 +55,7 @@ AT =: {{ m&(>@{) : (<@[ m} ]) }}
 (nt=:NT AT) (na=:NA AT) (nb=:NB AT) (wk=:WK AT)
 
 NB. AA v. apply at
+aa =: {{ (u&.(>@]) n{ y) n} y }} NB. apply u at ix n in array of boxes y
 AA =: {{ (u v y) v y }}
 
 NB. nx :: state->state = move to next character (ch-:'' if past end)
