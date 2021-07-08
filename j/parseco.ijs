@@ -84,8 +84,10 @@ nil =: 1;<
 NB. any: s->fs. matches one input item, unless out of bounds.
 any =: {{'any'] f;<nx^:f y [ f =. (#S y)>ix at y }}
 
-NB. u neg: s->fs. consume nothing.
-NB. This primitive allows you to implement lookahead.
+NB. u neg: s->fs. invert match flag from u and restore everything else
+NB. from the original state after running u. This primitive allows
+NB. you to implement negative lookahead (or apply it twice to implement
+NB. positive lookahead without consuming).
 neg =: {{'neg'] (-.f);< y [ 'f s' =. u y }}
 
 NB. u end: s->fs. matches at end of input.
