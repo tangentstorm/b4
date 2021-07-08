@@ -54,12 +54,14 @@ AT =: {{ m&(>@{) : (<@[ m} ]) }}
 (ix=:IX AT) (ch=:CH AT) (ib=:IB AT) (tb=:TB AT)
 (nt=:NT AT) (na=:NA AT) (nb=:NB AT) (wk=:WK AT)
 
-NB. AA v. apply at
-aa =: {{ (u&.(>@]) n{ y) n} y }} NB. apply u at ix n in array of boxes y
+NB. u AA v. s->s. apply u at v in y. (where v = (m AT))
 AA =: {{ (u v y) v y }}
 
+NB. m AP v. s->s. append m to v=(buffer AT) in y
+AP =: {{ ,&m AA v y }}
+
 NB. nx :: state->state = move to next character (ch-:'' if past end)
-nx =: {{'nx'] (i; <i{ ::'' ib y) 0 1 } ,&(ch y) AA tb y [ i=: 1 + ix y }}
+nx =: {{'nx'] i ix (i{ ::'' ib y) ch (ch y) AP tb y [ i=: 1 + ix y }}
 
 NB. match: string -> s (initial parser state)
 NB. everything is stored explicitly inside
@@ -135,7 +137,7 @@ NB. u ifu v: s->fs. if u matches, return 1;<(s_old) v (s_new)
 ifu =: {{'ifu' if.f['f s'=.u y do. s=.y v s end. f;<s }}
 
 NB. u tok: s->fs move current token to NB if u matches, else fail
-tok =: ifu {{x] a: TB} ,&(TB{y) AA nb y }}
+tok =: ifu {{x] a: TB} (TB{y) AP nb y }}
 tok =: ifu {{'tok']x] a: TB} (tb y) emit y }}
 
 NB. m sym: s->fs alias for 'm lit tok'
@@ -143,7 +145,7 @@ sym =: lit tok
 
 NB. u zap: s->fs match if u matches, but drop any generated nodes
 NB. the only effect that persists is the current char and index.
-zap =: ifu {{'zap'] (CH{y) CH } (ix y) ix x }}
+zap =: ifu {{'zap'] (ch y) ch (ix y) ix x }}
 
 NB. u opt: s->fs. optionally match rule u. succeed either way
 opt =: {{ 1 ; }. u y }}
@@ -175,24 +177,24 @@ ntup =: NT,NA,NB
 
 NB. x node: s->s. starts a new node in the parse tree with tag x
 NB. copies current node tuple to work stack
-node =: {{ x nt a: ntup } ,&(<ntup{y) AA wk y }}
+node =: {{ x nt a: ntup } (<ntup{y) AP wk y }}
 
 NB. x emit: s->s push item x into the current node buffer
-emit =: {{ ,&(<x) AA nb y }}
+emit =: {{ (<x) AP nb y }}
 
 NB. m attr n: s->fs. append (m=key;n=value) pair to the attribute dictionary.
 NB. initialize dict if needed
-attr =: {{ if. a:-:NA{s do. s=. (<0 2$a:) NA} s end. ,&(m;n) AA na y }}
+attr =: {{ if. a:-:NA{s do. s=. (0 2$a:) na s end. (m;n) AP na y }}
 
 NB. done: s->s. closes current node and makes it an item of previous node-in progress.
 done =: {{
   new =. ntup { y       NB. temp storage for the node we're closing.
-  'old s' =. WK tk y    NB. pop the previous context
+  'old s' =. wk tk y    NB. pop the previous context
   s =. (>old) ntup } s  NB. insert it into the state
   new emit s }}         NB. and append new node to the node buffer.
 
 NB. x tk: s->(item;<s). pop the last item from buffer x in state y.
-tk =: {{ item ; < }: aa x y [ item =. {:>x{y }}
+tk =: {{ item ; < }: AA u y [ item =. {: u y }}
 
 
 NB. combinators for tree building.
@@ -202,11 +204,11 @@ NB. u elm n : s->fs. create node element tagged with n if u matches
 elm =: {{'elm' if.f['f s'=.u n node y do. 1;<done s else. 0;<y end. }}
 
 NB. u atr n : s->fs. if u matched, move last item to node attribute n.
-atr =: {{'atr' if.f['f s'=. u y do. 1;<n attr it s [ 'it s'=. NB tk s else. 0;<y end. }}
+atr =: {{'atr' if.f['f s'=. u y do. 1;<n attr it s [ 'it s'=. nb tk s else. 0;<y end. }}
 
 NB. u tag: s->fs. move the last token in node buffer to be the node's tag.
 NB. helpful for rewriting infix notation, eg  (a head(+) b) -> (+ (a b))
-tag =: {{'tag' if.f['f s'=. u y do. 1;<tok NT } s['tok s' =. NB take y else. 0;<y end. }}
+tag =: {{'tag' if.f['f s'=. u y do. 1;<tok NT } s['tok s' =. nb tk y else. 0;<y end. }}
 
 
 
