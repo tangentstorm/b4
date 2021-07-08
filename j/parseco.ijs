@@ -31,7 +31,7 @@ SOFTWARE.
 )
 
 NB. s0 : s. initial parse state
-s0 =: 0 ; 0 ; '' ; 6#a:
+s0 =: _ ; 0 ; '' ; 6#a:
 
 NB. these names are the indices into the tuple:
 'MB IX CH TB NT NA NB WK IB' =: i.#s0
@@ -52,11 +52,13 @@ NB.   was just invoked matched the input or not.
 
 NB. accessor verbs: (v y) gets item from state,  (x v y) sets it.
 AT =: {{ m&(>@{) : (<@[ m} ]) }}
-
-(I =:1&mb) (O =:0&mb) (mb=:MB AT)
 (ix=:IX AT) (ch=:CH AT) (ib=:IB AT) (tb=:TB AT)
 (nt=:NT AT) (na=:NA AT) (nb=:NB AT) (wk=:WK AT)
+(I =:1&mb) (O =:0&mb) (mb=:MB AT)
 
+NB. simple test framework
+T =: [:`]@.mb NB. T = assert match
+F =: ]`[:@.mb NB. F = assert doesn't match
 
 NB. u AA v. s->s. apply u at v in y. (where v = (m AT))
 AA =: {{ (u v y) v y }}
@@ -132,9 +134,6 @@ seq =: {{'seq'] s=:y
     if. -.mb s=. r`:6 s do. O y return. end.
   end. I s }}
 
-T =: [:`]@.mb NB. T = assert match
-F =: ]`[:@.mb NB. F = assert doesn't match
-
 T ('a'chr)`('b'chr)`('c'chr) seq match 'abc'
 
 
@@ -174,10 +173,10 @@ T 'ab' lit match 'abc'
 
 NB. u ifu v: s->fs. if u matches, return 1;<(s_old) v (s_new)
 ifu =: {{ if.f=.mb s=.u y do. s=.y v s end. f mb s }}
-ifu =: {{ f mb y v^:(mb@]) s [ f=.mb s=.u y }}
+ifu =: {{ f mb y v^:f s [ f=.mb s=.u y }}
 
 NB. u tok: s->fs move current token to NB if u matches, else fail
-tok =: ifu {{x] a: TB} (TB{y) AP nb y }}
+tok =: ifu({{ a: TB} (TB{y) AP nb y }}@])
 
 T 'ab' lit tok match 'abc'
 
@@ -191,18 +190,24 @@ T 'ab' sym match 'abc'
 NB. u zap: s->fs match if u matches, but drop any generated nodes
 NB. the only effect that persists is the current char and index.
 zap =: ifu {{'zap'] (ch y) ch (ix y) ix x }}
-zap =: ifu (ch@] ch ix@] ix [)
+zap =: ifu(ch@] ch ix@] ix [)
 
 NB. u opt: s->fs. optionally match rule u. succeed either way
-opt =: {{ 1 ; }. u y }}
+opt =: {{ I u y }}
 opt =: `nil alt
 
+T '3' lit opt match '1'
+T '3' lit opt match '3'
+T 'a'lit`('b'lit opt)`('c'lit) seq match 'abc'
+T 'a'lit`('b'lit opt)`('c'lit) seq match 'acb'
+
 NB. u rep: s->fs. match 1+ repetitions of u
-rep =: {{ f=.0 [ s=.y while. mb s =. u s do. f=.1 end. f mb s }}
-rep =: {{ s=.y while.mb  s=.u s do.end. y (<&ix mb ])s }}
+rep =: {{ f=.0 while. mb y =. u y do. f=.1 end. f mb y }}
+rep =: {{ s=.y while. mb s=.u s do.end. y (<&ix mb ])s }}
 rep =: {{ y (<&ix mb ]) u^:mb^:_ I y }}
-while =: {{ u ^: v ^:_ y }}
-rep =: {{ y (<&ix mb ]) u while mb I y }}
+
+NB. while =: {{ u ^: v ^:_ y }}
+NB. rep =: {{ y (<&ix mb ]) u while mb I y }}
 
 T ('a'lit rep) match 'aab'
 F ('a'lit rep) match 'bba'
@@ -214,7 +219,7 @@ orp =: rep opt
 
 NB. u not: s->fs. match anything but u.
 NB. fail if u matches or end of input, otherwise consume 1 input.
-not =:{{'not'
+not =:{{
   if. (#ib y) <: ix y do. O y
   elseif.mb u y do. O y
   else. I nx y end. }}
@@ -242,7 +247,6 @@ emit =: {{ (<x) AP nb y }}
 tok =: ifu {{x] '' tb (tb y) emit y }}
 tok =: ifu ('' tb tb@] emit ])
 
-
 NB. m attr n: s->fs. append (m=key;n=value) pair to the attribute dictionary.
 NB. initialize dict if needed
 attr =: {{ if. a:-:NA{y do. y=. (0 2$a:) na s end. (m;n) AP na y }}
@@ -257,8 +261,8 @@ done =: {{
 
 NB. x tk: s->(item;<s). pop the last item from buffer x in state y.
 tk =: {{ item ; < }: AA u y [ item =. ({: u y) }}
-tk =: {{ ({:u y) ;< }: AA u y }}
-
+tk =: {{ ({:u y) ;< (}: AA u) y }}
+NB. ^looks like a fork without the parens around (AA u) (but it's not)
 
 NB. combinators for tree building.
 NB. ------------------------------
