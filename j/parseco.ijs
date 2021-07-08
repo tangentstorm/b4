@@ -34,7 +34,7 @@ NB. s0 : s. initial parse state
 s0 =: 0 ; '' ; 6#a:
 
 NB. these names are the indices into the tuple:
-'ix ch tb nt na nb wk ib' =: i.#s0
+'IX CH TB NT NA NB WK IB' =: i.#s0
 
 NB. type s = (ix;ch;tb;nb;nt;na;wb)
 NB.   ix = current index into the input
@@ -49,28 +49,29 @@ NB. type fs = (bit;<s).  flag + parse state
 NB.   the flag indicates whether the rule that
 NB.   was just invoked matched the input or not.
 
-NB. accessor methods (combine with the names above: 'ix at state')
-at =: >@{                    NB. fetch and unbox at index x from boxes y
-aa =: {{ (u&.(>@]) n{ y) n} y }} NB. apply u at ix n in array of boxes y
+NB. accessor verbs: (v y) gets item from state,  (x v y) sets it.
+AT =: {{ m&(>@{) : (<@[ m} ]) }}
+(ix=:IX AT) (ch=:CH AT) (ib=:IB AT) (tb=:TB AT)
+(nt=:NT AT) (na=:NA AT) (nb=:NB AT) (wk=:WK AT)
 
-
-S =: ib&at NB. retrieve the input string
+NB. AA v. apply at
+AA =: {{ (u v y) v y }}
 
 NB. nx :: state->state = move to next character (ch-:'' if past end)
-nx =: {{'nx'] (i; <i{ ::'' S y) 0 1 } ,&(ch at y) aa tb y [ i=: 1 + ix at y }}
+nx =: {{'nx'] (i; <i{ ::'' ib y) 0 1 } ,&(ch y) AA tb y [ i=: 1 + ix y }}
 
 NB. match: string -> s (initial parser state)
 NB. everything is stored explicitly inside
 NB. the state tuple, to make it easy to backtrack.
-match =: {{ (<y) ib } (<{.y) ch} s0 }}
+match =: {{ ({.y) ch y ib s0 }}
 
 NB. u parse: string -> parse tree | error
 NB. applies rule u to (match y) and returns node buffer on success.
-parse =: {{ if.f['f s'=.u match y do. >nb{s else. ,.'parse failed';<s end. }}
+parse =: {{ if.f['f s'=.u match y do. nb s else. ,.'parse failed';<s end. }}
 
-NB. u lex: string -> tokens | error
+NB. u scan: string -> tokens | error
 NB. applies rule u to (match y) and returns token buffer on success.
-lex =: {{ if.f['f s'=.u match y do. >tb{s else. ,.'parse failed';<s end. }}
+scan =: {{ if.f['f s'=.u match y do. tb s else. ,.'scan failed';<s end. }}
 
 NB. parser combinators
 NB. --------------------------------------------------
@@ -82,7 +83,7 @@ NB. nil: s->fs. always match, but consume nothing.
 nil =: 1;<
 
 NB. any: s->fs. matches one input item, unless out of bounds.
-any =: {{'any'] f;<nx^:f y [ f =. (#S y)>ix at y }}
+any =: {{'any'] f;<nx^:f y [ f =. (#ib y)>ix y }}
 
 NB. u neg: s->fs. invert match flag from u and restore everything else
 NB. from the original state after running u. This primitive allows
@@ -98,10 +99,10 @@ NB. the case where we're reading past the end of the input.
 try =: :: (0;<)
 
 NB. m chr: s->fs. match literal atom m and advance the index
-chr =: {{'chr'] p;<nx^:p y [ p =. m -: ch at y }} try
+chr =: {{'chr'] p;<nx^:p y [ p =. m -: ch y }} try
 
 NB. m one: s->fs. match one item from m and advance the index.
-one =: {{'one'] p;<nx^:p y [ p =. m e.~ ch at y }} try
+one =: {{'one'] p;<nx^:p y [ p =. m e.~ ch y }} try
 
 NB. m seq: s->fs. match each rule in sequence m
 seq =: {{'seq'] s=:y
@@ -124,24 +125,24 @@ alt =: {{'alt'] s=:y
 NB. m lit: s->fs like seq for literals only.
 NB. this just matches the whole sequence directly vs S.
 NB. ,m is so we can match a single character.
-lit =: {{'lit'] f;<nx^:(f*#m) y [ f=.m-:(S y){~(ix at y)+i.#m=.,m }} try
+lit =: {{'lit'] f;<nx^:(f*#m) y [ f=.m-:(ib y){~(ix y)+i.#m=.,m }} try
 
-NB. eat =: {{ if. f['f s'=.u y do. s=. a: tb} ,&(tb{s) aa nb s end. f;<s }}
-NB. zap =: {{ t =. tb{y if. f['f s'=.u y do. s=. t tb} s end. f;<s }}
+NB. eat =: {{ if. f['f s'=.u y do. s=. a: TB} ,&(TB{s) AA nb s end. f;<s }}
+NB. zap =: {{ t =. TB{y if. f['f s'=.u y do. s=. t TB} s end. f;<s }}
 
 NB. u ifu v: s->fs. if u matches, return 1;<(s_old) v (s_new)
 ifu =: {{'ifu' if.f['f s'=.u y do. s=.y v s end. f;<s }}
 
-NB. u tok: s->fs move current token to nb if u matches, else fail
-tok =: ifu {{x] a: tb} ,&(tb{y) aa nb y }}
-tok =: ifu {{'tok']x] a: tb} (tb at y) emit y }}
+NB. u tok: s->fs move current token to NB if u matches, else fail
+tok =: ifu {{x] a: TB} ,&(TB{y) AA nb y }}
+tok =: ifu {{'tok']x] a: TB} (tb y) emit y }}
 
 NB. m sym: s->fs alias for 'm lit tok'
 sym =: lit tok
 
 NB. u zap: s->fs match if u matches, but drop any generated nodes
 NB. the only effect that persists is the current char and index.
-zap =: ifu {{'zap'] ((ch,ix){y) (ch,ix) } x }}
+zap =: ifu {{'zap'] (CH{y) CH } (ix y) ix x }}
 
 NB. u opt: s->fs. optionally match rule u. succeed either way
 opt =: {{ 1 ; }. u y }}
@@ -156,7 +157,7 @@ orp =: rep opt
 NB. u not: s->fs. match anything but u.
 NB. fail if u matches or end of input, otherwise consume 1 input.
 not =:{{'not'
-  if. (#S y) <: ix at y do. 0;<y
+  if. (#ib y) <: ix y do. 0;<y
   elseif. f['f s'=.{. u y do. 0;<y
   else. 1;<nx y end. }}
 not =: {{('not'] (u neg)`any) seq }}
@@ -169,23 +170,23 @@ NB. plain functions for tree building
 NB. ---------------------------------
 
 NB. ntup: the state indices to copy (in order) for current node
-ntup =: nt,na,nb
+ntup =: NT,NA,NB
 
 NB. x node: s->s. starts a new node in the parse tree with tag x
 NB. copies current node tuple to work stack
-node =: {{ (<x) nt } a: ntup } ,&(<ntup{y) aa wk y }}
+node =: {{ x nt a: ntup } ,&(<ntup{y) AA wk y }}
 
 NB. x emit: s->s push item x into the current node buffer
-emit =: {{ ,&(<x) aa nb y }}
+emit =: {{ ,&(<x) AA nb y }}
 
 NB. m attr n: s->fs. append (m=key;n=value) pair to the attribute dictionary.
 NB. initialize dict if needed
-attr =: {{ if. a:-:na{s do. s=. (<0 2$a:) na} s end. ,&(m;n) aa na y }}
+attr =: {{ if. a:-:NA{s do. s=. (<0 2$a:) NA} s end. ,&(m;n) AA na y }}
 
 NB. done: s->s. closes current node and makes it an item of previous node-in progress.
 done =: {{
   new =. ntup { y       NB. temp storage for the node we're closing.
-  'old s' =. wk tk y    NB. pop the previous context
+  'old s' =. WK tk y    NB. pop the previous context
   s =. (>old) ntup } s  NB. insert it into the state
   new emit s }}         NB. and append new node to the node buffer.
 
@@ -200,11 +201,11 @@ NB. u elm n : s->fs. create node element tagged with n if u matches
 elm =: {{'elm' if.f['f s'=.u n node y do. 1;<done s else. 0;<y end. }}
 
 NB. u atr n : s->fs. if u matched, move last item to node attribute n.
-atr =: {{'atr' if.f['f s'=. u y do. 1;<n attr it s [ 'it s'=. nb tk s else. 0;<y end. }}
+atr =: {{'atr' if.f['f s'=. u y do. 1;<n attr it s [ 'it s'=. NB tk s else. 0;<y end. }}
 
 NB. u tag: s->fs. move the last token in node buffer to be the node's tag.
 NB. helpful for rewriting infix notation, eg  (a head(+) b) -> (+ (a b))
-tag =: {{'tag' if.f['f s'=. u y do. 1;<tok nt } s['tok s' =. nb take y else. 0;<y end. }}
+tag =: {{'tag' if.f['f s'=. u y do. 1;<tok NT } s['tok s' =. NB take y else. 0;<y end. }}
 
 
 
@@ -235,7 +236,7 @@ RCURLY =: '}' lit
 WS =: (TAB,' ') one
 
 NB. generic line splitter
-lines =: {{ ,.> nb at s [ 'f s' =. (NL not rep) tok sep (NL zap) match y }}
+lines =: {{ ,.> NB at s [ 'f s' =. (NL not rep) tok sep (NL zap) match y }}
 
 
 NB. j syntax rules
@@ -349,7 +350,7 @@ all =: {{ (u f.)`end seq }}
 
 NB. u box: s->fs. matches if current value is
 box =: {{
-  if. 32 = 3!:0 c =. ch at y
+  if. 32 = 3!:0 c =. ch y
   do. smoutput 'entering box C:' [ C =: > c
       smoutput c
       f;<nx^:f s [ 'f s'=.u all match > c else. 0;<y end. }}
