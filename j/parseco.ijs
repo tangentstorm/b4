@@ -31,12 +31,13 @@ SOFTWARE.
 )
 
 NB. s0 : s. initial parse state
-s0 =: 0 ; '' ; 6#a:
+s0 =: 0 ; 0 ; '' ; 6#a:
 
 NB. these names are the indices into the tuple:
-'IX CH TB NT NA NB WK IB' =: i.#s0
+'MB IX CH TB NT NA NB WK IB' =: i.#s0
 
 NB. type s = (ix;ch;tb;nb;nt;na;wb)
+NB.   mb =: match bit
 NB.   ix = current index into the input
 NB.   ch = current character, or '' after ix>#S
 NB.   tb = token buffer (grows as we match each char)
@@ -54,6 +55,10 @@ AT =: {{ m&(>@{) : (<@[ m} ]) }}
 (ix=:IX AT) (ch=:CH AT) (ib=:IB AT) (tb=:TB AT)
 (nt=:NT AT) (na=:NA AT) (nb=:NB AT) (wk=:WK AT)
 
+NB. for this refactoring step, we'll replace the f['f s'=.. with mb 'f s'=..
+NB. this shouldn't break any code.
+(I =: 1&mb) O =: 0& mb =: (MB AT) : ([;<@(MB AT))
+
 NB. u AA v. s->s. apply u at v in y. (where v = (m AT))
 AA =: {{ (u v y) v y }}
 
@@ -70,11 +75,11 @@ match =: {{ ({.y) ch y ib s0 }}
 
 NB. u parse: string -> parse tree | error
 NB. applies rule u to (match y) and returns node buffer on success.
-parse =: {{ if.f['f s'=.u match y do. nb s else. ,.'parse failed';<s end. }}
+parse =: {{ if.mb'f s'=.u match y do. nb s else. ,.'parse failed';<s end. }}
 
 NB. u scan: string -> tokens | error
 NB. applies rule u to (match y) and returns token buffer on success.
-scan =: {{ if.f['f s'=.u match y do. tb s else. ,.'scan failed';<s end. }}
+scan =: {{ if.mb'f s'=.u match y do. tb s else. ,.'scan failed';<s end. }}
 
 NB. parser combinators
 NB. --------------------------------------------------
@@ -83,36 +88,36 @@ NB. that take an argument describing what to match and produce
 NB. a verb from s->fs
 
 NB. nil: s->fs. always match, but consume nothing.
-nil =: 1;<
+nil =: I
 
 NB. any: s->fs. matches one input item, unless out of bounds.
-any =: {{'any'] f;<nx^:f y [ f =. (#ib y)>ix y }}
+any =: {{'any'] f mb nx^:f y [ f =. (#ib y)>ix y }}
 
 NB. u neg: s->fs. invert match flag from u and restore everything else
 NB. from the original state after running u. This primitive allows
 NB. you to implement negative lookahead (or apply it twice to implement
 NB. positive lookahead without consuming).
-neg =: {{'neg'] (-.f);< y [ 'f s' =. u y }}
+neg =: {{'neg'] y mb~ -. mb u y }}
 
 NB. u end: s->fs. matches at end of input.
 end =: any neg
 
 NB. r try : s->fs. generic error trap. mostly this handles
 NB. the case where we're reading past the end of the input.
-try =: :: (0;<)
+try =: :: O
 
 NB. m chr: s->fs. match literal atom m and advance the index
-chr =: {{'chr'] p;<nx^:p y [ p =. m -: ch y }} try
+chr =: {{'chr'] p mb nx^:p y [ p =. m -: ch y }} try
 
 NB. m one: s->fs. match one item from m and advance the index.
-one =: {{'one'] p;<nx^:p y [ p =. m e.~ ch y }} try
+one =: {{'one'] p mb nx^:p y [ p =. m e.~ ch y }} try
 one =: {{ y fw m e.~ ch y }} try
 
 NB. m seq: s->fs. match each rule in sequence m
 seq =: {{'seq'] s=:y
   for_r. m do.
-    if. -.f['f s'=. r`:6 s do. 0;<y return. end.
-  end. 1;<s }}
+    if. -.mb'f s'=. r`:6 s do. O y return. end.
+  end. I s }}
 
 NB. m alt: s->fs. try each rule in m until one matches.
 NB. This is "Prioritized Choice" from PEG parsers.
@@ -123,16 +128,15 @@ NB. used as names but also reserves some strings of letters
 NB. as keywords, then you must specify the keywords first.
 alt =: {{'alt'] s=:y
   for_r. m do.
-    if. f['f s'=. r`:6 s do. 1;<s return. end.
-  end. 0;<y }}
+    if. mb 'f s'=. r`:6 s do. I s return. end.
+  end. O y }}
 
 NB. m lit: s->fs like seq for literals only.
 NB. this just matches the whole sequence directly vs S.
 NB. ,m is so we can match a single character.
-lit =: {{'lit'] f;<nx^:(f*#m) y [ f=.m-:(ib y){~(ix y)+i.#m=.,m }} try
+lit =: {{'lit'] f mb nx^:(f*#m) y [ f=.m-:(ib y){~(ix y)+i.#m=.,m }} try
 
-fw =: {{ (*y);<nx^:y x }}
-NB.fw =: *@];<@:(nx@[^:])  (doesn't work. ugly)
+fw =: {{ (*y) mb nx^:y x }}
 
 (X =: @[) (Y =: @])
 NB. lookahead
@@ -141,12 +145,9 @@ la =: ib@] {~ ix@] + i.@[
 la =: ib Y {~ ix Y + i. X
 lit =: {{ y fw (#m) * m-: (#m=.,m) la y }} try
 
-NB. eat =: {{ if. f['f s'=.u y do. s=. a: TB} ,&(TB{s) AA nb s end. f;<s }}
-NB. zap =: {{ t =. TB{y if. f['f s'=.u y do. s=. t TB} s end. f;<s }}
-
 NB. u ifu v: s->fs. if u matches, return 1;<(s_old) v (s_new)
-ifu =: {{ if.f['f s'=.u y do. s=.y v s end. f;<s }}
-ifu =: {{ f;<y v^:f s [ 'f s'=.u y }}
+ifu =: {{ if.mb'f s'=.u y do. s=.y v s end. f mb s }}
+ifu =: {{ f mb y v^:f s [ 'f s'=.u y }}
 
 NB. u tok: s->fs move current token to NB if u matches, else fail
 tok =: ifu {{x] a: TB} (TB{y) AP nb y }}
@@ -166,12 +167,11 @@ opt =: {{ 1 ; }. u y }}
 opt =: `nil alt
 
 NB. u rep: s->fs. match 1+ repetitions of u
-rep =: {{ f=.0 [ s=.y while. fi['fi s'=.u s do. f=.1 end. f;<s }}
-rep =: {{ s=.y while. f['f s'=.u s do.end. y (<&ix ; <@])s }}
-rep =: {{ y (<&ix ; <@]) 1 AT ([: u 1 AT)^:(0 AT)^:_] 1;<y }}
+rep =: {{ f=.0 [ s=.y while. mb 'fi s'=.u s do. f=.1 end. f mb s }}
+rep =: {{ s=.y while.mb 'f s'=.u s do.end. y (<&ix mb ])s }}
+rep =: {{ y (<&ix mb ]) 1 AT ([: u 1 AT)^:(0 AT)^:_] I y }}
 while =: {{ u ^: v ^:_ y }}
-NB. ahead =: <&ix;< Y
-rep =: {{ y (<&ix;<@]) 1 AT ([:u 1 AT) while (0 AT) 1;<y }}
+rep =: {{ y (<&ix mb ]) 1 AT ([:u 1 AT) while (0 AT) I y }}
 
 NB. u orp: s->fs. optionally repeat (match 0+ repetitions of u)}}
 orp =: rep opt
@@ -179,10 +179,10 @@ orp =: rep opt
 NB. u not: s->fs. match anything but u.
 NB. fail if u matches or end of input, otherwise consume 1 input.
 not =:{{'not'
-  if. (#ib y) <: ix y do. 0;<y
-  elseif. f['f s'=.{. u y do. 0;<y
-  else. 1;<nx y end. }}
-not =: {{('not'] (u neg)`any) seq }}
+  if. (#ib y) <: ix y do. O y
+  elseif.mb 'f s'=.{. u y do. O y
+  else. I nx y end. }}
+not =: {{ (u neg)`any seq }}
 
 
 NB. u sep v: s->fs. match 1 or more u, separated by v
@@ -222,15 +222,15 @@ NB. combinators for tree building.
 NB. ------------------------------
 
 NB. u elm n : s->fs. create node element tagged with n if u matches
-elm =: {{ if.f['f s'=.u n node y do. 1;<done s else. 0;<y end. }}
-elm =: {{ f;< y[`(done@])@.f s [ 'f s'=.u n node y }}
+elm =: {{ if.mb 'f s'=.u n node y do. I done s else. O y end. }}
+elm =: {{ f mb y[`(done@])@.f s [ 'f s'=.u n node y }}
 
 NB. u atr n : s->fs. if u matched, move last item to node attribute n.
-atr =: {{ if.f['f s'=. u y do. 1;<n attr it s [ 'it s'=. nb tk s else. 0;<y end. }}
+atr =: {{ if.mb 'f s'=. u y do. I n attr it s [ 'it s'=. nb tk s else. O y end. }}
 
 NB. u tag: s->fs. move the last token in node buffer to be the node's tag.
 NB. helpful for rewriting infix notation, eg  (a head(+) b) -> (+ (a b))
-tag =: {{'tag' if.f['f s'=. u y do. 1;<tok NT } s['tok s' =. nb tk y else. 0;<y end. }}
+tag =: {{'tag' if.mb 'f s'=. u y do. I tok NT } s['tok s' =. nb tk y else. O y end. }}
 
 
 
@@ -378,4 +378,4 @@ box =: {{
   if. 32 = 3!:0 c =. ch y
   do. smoutput 'entering box C:' [ C =: > c
       smoutput c
-      f;<nx^:f s [ 'f s'=.u all match > c else. 0;<y end. }}
+      f mb nx^:f s [ 'f s'=.u all match > c else. O y end. }}
