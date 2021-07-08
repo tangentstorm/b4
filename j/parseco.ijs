@@ -75,11 +75,11 @@ match =: {{ ({.y) ch y ib s0 }}
 
 NB. u parse: string -> parse tree | error
 NB. applies rule u to (match y) and returns node buffer on success.
-parse =: {{ if.mb'f s'=.u match y do. nb s else. ,.'parse failed';<s end. }}
+parse =: {{ if.mb'ff s'=.u match y do. nb s else. ,.'parse failed';<s end. }}
 
 NB. u scan: string -> tokens | error
 NB. applies rule u to (match y) and returns token buffer on success.
-scan =: {{ if.mb'f s'=.u match y do. tb s else. ,.'scan failed';<s end. }}
+scan =: {{ if.mb'ff s'=.u match y do. tb s else. ,.'scan failed';<s end. }}
 
 NB. parser combinators
 NB. --------------------------------------------------
@@ -116,7 +116,7 @@ one =: {{ y fw m e.~ ch y }} try
 NB. m seq: s->fs. match each rule in sequence m
 seq =: {{'seq'] s=:y
   for_r. m do.
-    if. -.mb'f s'=. r`:6 s do. O y return. end.
+    if. -.mb'ff s'=. r`:6 s do. O y return. end.
   end. I s }}
 
 NB. m alt: s->fs. try each rule in m until one matches.
@@ -128,7 +128,7 @@ NB. used as names but also reserves some strings of letters
 NB. as keywords, then you must specify the keywords first.
 alt =: {{'alt'] s=:y
   for_r. m do.
-    if. mb 'f s'=. r`:6 s do. I s return. end.
+    if. mb 'ff s'=. r`:6 s do. I s return. end.
   end. O y }}
 
 NB. m lit: s->fs like seq for literals only.
@@ -146,8 +146,8 @@ la =: ib Y {~ ix Y + i. X
 lit =: {{ y fw (#m) * m-: (#m=.,m) la y }} try
 
 NB. u ifu v: s->fs. if u matches, return 1;<(s_old) v (s_new)
-ifu =: {{ if.mb'f s'=.u y do. s=.y v s end. f mb s }}
-ifu =: {{ f mb y v^:f s [ 'f s'=.u y }}
+ifu =: {{ if.f=.mb'ff s'=.u y do. s=.y v s end. f mb s }}
+ifu =: {{ f mb y v^:(mb@]) s [ f=.mb'ff s'=.u y }}
 
 NB. u tok: s->fs move current token to NB if u matches, else fail
 tok =: ifu {{x] a: TB} (TB{y) AP nb y }}
@@ -167,8 +167,8 @@ opt =: {{ 1 ; }. u y }}
 opt =: `nil alt
 
 NB. u rep: s->fs. match 1+ repetitions of u
-rep =: {{ f=.0 [ s=.y while. mb 'fi s'=.u s do. f=.1 end. f mb s }}
-rep =: {{ s=.y while.mb 'f s'=.u s do.end. y (<&ix mb ])s }}
+rep =: {{ f=.0 [ s=.y while. mb 'ffi s'=.u s do. f=.1 end. f mb s }}
+rep =: {{ s=.y while.mb 'ff s'=.u s do.end. y (<&ix mb ])s }}
 rep =: {{ y (<&ix mb ]) 1 AT ([: u 1 AT)^:(0 AT)^:_] I y }}
 while =: {{ u ^: v ^:_ y }}
 rep =: {{ y (<&ix mb ]) 1 AT ([:u 1 AT) while (0 AT) I y }}
@@ -180,7 +180,7 @@ NB. u not: s->fs. match anything but u.
 NB. fail if u matches or end of input, otherwise consume 1 input.
 not =:{{'not'
   if. (#ib y) <: ix y do. O y
-  elseif.mb 'f s'=.{. u y do. O y
+  elseif.mb 'ff s'=.{. u y do. O y
   else. I nx y end. }}
 not =: {{ (u neg)`any seq }}
 
@@ -222,15 +222,15 @@ NB. combinators for tree building.
 NB. ------------------------------
 
 NB. u elm n : s->fs. create node element tagged with n if u matches
-elm =: {{ if.mb 'f s'=.u n node y do. I done s else. O y end. }}
-elm =: {{ f mb y[`(done@])@.f s [ 'f s'=.u n node y }}
+elm =: {{ if.mb 'ff s'=.u n node y do. I done s else. O y end. }}
+elm =: {{ f mb y[`(done@])@.f s [ f=.mb'ff s'=.u n node y }}
 
 NB. u atr n : s->fs. if u matched, move last item to node attribute n.
-atr =: {{ if.mb 'f s'=. u y do. I n attr it s [ 'it s'=. nb tk s else. O y end. }}
+atr =: {{ if.mb 'ff s'=. u y do. I n attr it s [ 'it s'=. nb tk s else. O y end. }}
 
 NB. u tag: s->fs. move the last token in node buffer to be the node's tag.
 NB. helpful for rewriting infix notation, eg  (a head(+) b) -> (+ (a b))
-tag =: {{'tag' if.mb 'f s'=. u y do. I tok NT } s['tok s' =. nb tk y else. O y end. }}
+tag =: {{'tag' if.mb 'ff s'=. u y do. I tok NT } s['tok s' =. nb tk y else. O y end. }}
 
 
 
@@ -312,8 +312,8 @@ examples =: {{
   ('hello'lit)`(', 'lit zap)`('world'lit) seq match 'hello, world'
   (NL not) rep match 'hello'
   hi =: ('hello'sym)`(', 'lit zap)`('world'sym atr 'who') seq
-  [ 'f s' =: hi match 'hello, world'
-  'f s' =: hi elm 'hi' match 'hello, world'
+  [ 'ff s' =: hi match 'hello, world'
+  'ff s' =: hi elm 'hi' match 'hello, world'
  }}
 
 examples'' NB. no output, but will complain if anything broke
@@ -378,4 +378,4 @@ box =: {{
   if. 32 = 3!:0 c =. ch y
   do. smoutput 'entering box C:' [ C =: > c
       smoutput c
-      f mb nx^:f s [ 'f s'=.u all match > c else. O y end. }}
+      f mb nx^:f s [f=.mb'ff s'=.u all match > c else. O y end. }}
