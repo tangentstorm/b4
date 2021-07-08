@@ -37,7 +37,7 @@ NB. these names are the indices into the tuple:
 'MB IX CH TB NT NA NB WK IB' =: i.#s0
 
 NB. type s = (ix;ch;tb;nb;nt;na;wb)
-NB.   mb =: match bit
+NB.   mb = match bit
 NB.   ix = current index into the input
 NB.   ch = current character, or '' after ix>#S
 NB.   tb = token buffer (grows as we match each char)
@@ -46,9 +46,6 @@ NB.   na = node attributes
 NB.   nb = node buffer (grows as we build rules)
 NB.   wk = work stack (grows with recursive descent)
 NB.   ib = input buffer
-NB. type fs = (bit;<s).  flag + parse state
-NB.   the flag indicates whether the rule that
-NB.   was just invoked matched the input or not.
 
 NB. accessor verbs: (v y) gets item from state,  (x v y) sets it.
 AT =: {{ m&(>@{) : (<@[ m} ]) }}
@@ -86,17 +83,17 @@ NB. parser combinators
 NB. --------------------------------------------------
 NB. these are all adverbs (or conjunctions in the case of 'sep')
 NB. that take an argument describing what to match and produce
-NB. a verb from s->fs
+NB. a verb from s->s
 
-NB. nil: s->fs. always match, but consume nothing.
+NB. nil: s->s. always match, but consume nothing.
 nil =: I
 
-NB. any: s->fs. matches one input item, unless out of bounds.
+NB. any: s->s. matches one input item, unless out of bounds.
 any =: {{'any'] f mb nx^:f y [ f =. (#ib y)>ix y }}
 
 any match 'hello'
 
-NB. u neg: s->fs. invert match flag from u and restore everything else
+NB. u neg: s->s. invert match flag from u and restore everything else
 NB. from the original state after running u. This primitive allows
 NB. you to implement negative lookahead (or apply it twice to implement
 NB. positive lookahead without consuming).
@@ -105,22 +102,22 @@ neg =: {{'neg'] y mb~ -. mb u y }}
 any neg match 'hello'
 
 
-NB. u end: s->fs. matches at end of input.
+NB. u end: s->s. matches at end of input.
 end =: any neg
 
 end match 'x'
 end match ''
 
-NB. r try : s->fs. generic error trap. mostly this handles
+NB. r try : s->s. generic error trap. mostly this handles
 NB. the case where we're reading past the end of the input.
 try =: :: O
 
-NB. m chr: s->fs. match literal atom m and advance the index
+NB. m chr: s->s. match literal atom m and advance the index
 chr =: {{'chr'] p mb nx^:p y [ p =. m -: ch y }} try
 'a' chr match 'xyz'
 'a' chr match 'abc'
 
-NB. m one: s->fs. match one item from m and advance the index.
+NB. m one: s->s. match one item from m and advance the index.
 one =: {{'one'] p mb nx^:p y [ p =. m e.~ ch y }} try
 one =: {{ y fw m e.~ ch y }} try
 
@@ -128,7 +125,7 @@ one =: {{ y fw m e.~ ch y }} try
 'abc' one match 'cab'
 
 
-NB. m seq: s->fs. match each rule in sequence m
+NB. m seq: s->s. match each rule in sequence m
 seq =: {{'seq'] s=:y
   for_r. m do.
     if. -.mb s=. r`:6 s do. O y return. end.
@@ -137,7 +134,7 @@ seq =: {{'seq'] s=:y
 T ('a'chr)`('b'chr)`('c'chr) seq match 'abc'
 
 
-NB. m alt: s->fs. try each rule in m until one matches.
+NB. m alt: s->s. try each rule in m until one matches.
 NB. This is "Prioritized Choice" from PEG parsers.
 NB. It removes some ambiguity, but means you have to think
 NB. carefully about how to order your rules. For example,
@@ -153,7 +150,7 @@ F ('a'chr)`('b'chr)`('c'chr) alt match 'xyz'
 T ('a'chr)`('b'chr)`('c'chr) alt match 'abc'
 
 
-NB. m lit: s->fs like seq for literals only.
+NB. m lit: s->s like seq for literals only.
 NB. this just matches the whole sequence directly vs S.
 NB. ,m is so we can match a single character.
 lit =: {{'lit'] f mb nx^:(f*#m) y [ f=.m-:(ib y){~(ix y)+i.#m=.,m }} try
@@ -171,28 +168,28 @@ T 'ab' lit match 'abc'
 
 
 
-NB. u ifu v: s->fs. if u matches, return 1;<(s_old) v (s_new)
+NB. u ifu v: s->s. if u matches, return 1;<(s_old) v (s_new)
 ifu =: {{ if.f=.mb s=.u y do. s=.y v s end. f mb s }}
 ifu =: {{ f mb y v^:f s [ f=.mb s=.u y }}
 
-NB. u tok: s->fs move current token to NB if u matches, else fail
+NB. u tok: s->s move current token to NB if u matches, else fail
 tok =: ifu({{ a: TB} (TB{y) AP nb y }}@])
 
 T 'ab' lit tok match 'abc'
 
 
-NB. m sym: s->fs alias for 'm lit tok'
+NB. m sym: s->s alias for 'm lit tok'
 sym =: lit tok
 
 T 'ab' sym match 'abc'
 
 
-NB. u zap: s->fs match if u matches, but drop any generated nodes
+NB. u zap: s->s match if u matches, but drop any generated nodes
 NB. the only effect that persists is the current char and index.
 zap =: ifu {{'zap'] (ch y) ch (ix y) ix x }}
 zap =: ifu(ch@] ch ix@] ix [)
 
-NB. u opt: s->fs. optionally match rule u. succeed either way
+NB. u opt: s->s. optionally match rule u. succeed either way
 opt =: {{ I u y }}
 opt =: `nil alt
 
@@ -201,7 +198,7 @@ T '3' lit opt match '3'
 T 'a'lit`('b'lit opt)`('c'lit) seq match 'abc'
 T 'a'lit`('b'lit opt)`('c'lit) seq match 'acb'
 
-NB. u rep: s->fs. match 1+ repetitions of u
+NB. u rep: s->s. match 1+ repetitions of u
 rep =: {{ f=.0 while. mb y =. u y do. f=.1 end. f mb y }}
 rep =: {{ s=.y while. mb s=.u s do.end. y (<&ix mb ])s }}
 rep =: {{ y (<&ix mb ]) u^:mb^:_ I y }}
@@ -214,10 +211,10 @@ F ('a'lit rep) match 'bba'
 T ('a'lit rep)`('b'lit) seq match 'aaab'
 
 
-NB. u orp: s->fs. optionally repeat (match 0+ repetitions of u)}}
+NB. u orp: s->s. optionally repeat (match 0+ repetitions of u)}}
 orp =: rep opt
 
-NB. u not: s->fs. match anything but u.
+NB. u not: s->s. match anything but u.
 NB. fail if u matches or end of input, otherwise consume 1 input.
 not =:{{
   if. (#ib y) <: ix y do. O y
@@ -228,7 +225,7 @@ not =: {{ (u neg)`any seq }}
 T 'x' lit not match 'a'
 
 
-NB. u sep v: s->fs. match 1 or more u, separated by v
+NB. u sep v: s->s. match 1 or more u, separated by v
 sep =: {{ u`(v`u seq orp) seq f. }}
 
 NB. plain functions for tree building
@@ -247,7 +244,7 @@ emit =: {{ (<x) AP nb y }}
 tok =: ifu {{x] '' tb (tb y) emit y }}
 tok =: ifu ('' tb tb@] emit ])
 
-NB. m attr n: s->fs. append (m=key;n=value) pair to the attribute dictionary.
+NB. m attr n: s->s. append (m=key;n=value) pair to the attribute dictionary.
 NB. initialize dict if needed
 attr =: {{ if. a:-:NA{y do. y=. (0 2$a:) na s end. (m;n) AP na y }}
 attr =: {{ (m;n) AP na ((0 2$a:)&na)^:(''-:na) y }}
@@ -267,14 +264,14 @@ NB. ^looks like a fork without the parens around (AA u) (but it's not)
 NB. combinators for tree building.
 NB. ------------------------------
 
-NB. u elm n : s->fs. create node element tagged with n if u matches
+NB. u elm n : s->s. create node element tagged with n if u matches
 elm =: {{ if.mb  s=.u n node y do. I done s else. O y end. }}
 elm =: {{ f mb y[`(done@])@.f s [ f=.mb s=.u n node y }}
 
-NB. u atr n : s->fs. if u matched, move last item to node attribute n.
+NB. u atr n : s->s. if u matched, move last item to node attribute n.
 atr =: {{ if.mb  s=. u y do. I n attr it s [ 'it s'=. nb tk s else. O y end. }}
 
-NB. u tag: s->fs. move the last token in node buffer to be the node's tag.
+NB. u tag: s->s. move the last token in node buffer to be the node's tag.
 NB. helpful for rewriting infix notation, eg  (a head(+) b) -> (+ (a b))
 tag =: {{'tag' if.mb  s=. u y do. I tok NT } s['tok s' =. nb tk y else. O y end. }}
 
@@ -416,10 +413,10 @@ se parse lisp
 
 NB. tree matching
 
-NB. u all: s->fs. matchs if u matches the entire remaining input.
+NB. u all: s->s. matchs if u matches the entire remaining input.
 all =: {{ (u f.)`end seq }}
 
-NB. u box: s->fs. matches if current value is
+NB. u box: s->s. matches if current value is
 box =: {{
   if. 32 = 3!:0 c =. ch y
   do. smoutput 'entering box C:' [ C =: > c
