@@ -1,68 +1,65 @@
-var b4 = (new function() { var EOF='\0',self = {
+let b4 = (new function() {
+  let EOF='\0',
+  d=[], a=[],                             // data and auxiliary/return stack
+  defs=[],core=[],scope=[],               // dictionary
+  base=10,                                // numbers
+  cp=-1, ch='\x01',ibuf=[],wd='',         // lexer state
+  compiling=false,state=[],target=[];      // compiler state
 
-  d:[], a:[],                             // data and auxiliary/return stack
-  defs:[],core:[],scope:[],               // dictionary
-  base:10,                                // numbers
-  cp:-1, ch:'\x01',ibuf:[],wd:'',         // lexer state
-  compiling:false,state:[],target:[],     // compiler state
-  def : function (k,v){
-    var res=self.defs.length; self.defs.push(v); self.scope[0].push([k,res]); return res },
+  function def(k,v) {
+    var res=defs.length; defs.push(v); scope[0].push([k,res]); return res }
 
-  tos : function(){return d.length ? d[d.length-1]:null},
+  function tos() { return d.length ? d[d.length-1]:null }
 
-  nextch : function(){
-    this.cp++;
-    while (this.ibuf.length && (this.cp>=this.ibuf[0].length)) {this.cp=0; this.ibuf.shift();}
-    this.ch = (this.ibuf.length ? this.ibuf[0][this.cp] : EOF);
-    return this.ch },
+  function nextch() {
+    cp++;
+    while (ibuf.length && (cp>=ibuf[0].length)) {cp=0; ibuf.shift()}
+    ch = (ibuf.length ? ibuf[0][cp] : EOF)
+    return ch }
 
-  word : function(){
+  function word() {
     var res=[];
-    while (this.ch <= ' ') if (this.ch===EOF) { return false } else this.nextch();
-      while (this.ch > ' ') { res.push(this.ch); this.nextch() }
-      this.wd = res.join('');
-      return true },
+    while (ch <= ' ') if (ch===EOF) { return false } else nextch();
+      while (ch > ' ') { res.push(ch); nextch() }
+      wd = res.join('');
+      return true }
 
-  send : function(s){ self.ibuf.push(s) },
+  function send(x) { ibuf.push(x) }
 
-  findwd : function() {
-      var found = false;
-      for (var i=self.scope.length-1; i>=0 && !found; i--){
-          for (var dict=self.scope[i], j=dict.length-1; j>=0 && !found; j--) {
-              if (dict[j][0]===this.wd) { found=true; self.d.push(dict[j][1]) }}}
-      return found },
+  function findwd() {
+    var found = false;
+    for (var i=scope.length-1; i>=0 && !found; i--){
+      for (var dict=scope[i], j=dict.length-1; j>=0 && !found; j--) {
+        if (dict[j][0]===wd) { found=true; d.push(dict[j][1]) }}}
+    return found }
 
-  lift : function(n) { return function(){ self.d.push(n) }},
+  function lift(n) { return function(){ d.push(n) }}
 
-  number : function() {
-      var i = parseInt(this.wd,this.base);
-      if (isNaN(i)) {return false} else {self.d.push(i); return true }},
+  function number() {
+    var i = parseInt(wd,base);
+    if (isNaN(i)) {return false} else {d.push(i); return true }}
 
-  error : function(msg){ console.log('error:',msg); throw msg },
+  function error(msg){ console.log('error:',msg); throw msg }
 
-  run : function(s){
-      var op;
-      this.send(s);
-      while (this.word()) {
-          op = this.findwd() ? this.defs[self.d.pop()]
-             : this.number() ? this.lift(self.d.pop())
-             : function() { self.error(self.wd+'?') };
-          if (this.compiling) { self.target.push(op) } else op.call(self);
-          console.log('wd: ', self.wd, '->', self.d); }
-      return this;}
-  };// end self
+  function run(x) {
+    send(x); var op;
+    while (word()) {
+      op = findwd() ? defs[d.pop()]
+         : number() ? lift(d.pop())
+         : ()=> error(wd+'?');
+      if (compiling) { target.push(op) } else op()
+      console.log('wd: ', wd, '->', d) }}
 
   var coreOps=[
-      ['+', function (){self.d.push(self.d.pop()+self.d.pop())}],
-      ['-', function(){self.d.push(self.d.pop()-self.d.pop())}],
-      ['*', function (){self.d.push(self.d.pop()*self.d.pop())}],
-      ['base', function(){self.d.push(self.base)}],
-      ['compiling?', function(){self.d.push(self.compiling.length)}]];
+    ['+', ()=> d.push(d.pop()+d.pop()) ],
+    ['-', ()=> d.push(d.pop()-d.pop()) ],
+    ['*', ()=> d.push(d.pop()*d.pop()) ],
+    ['base', ()=> d.push(base) ]
+    ['compiling?', ()=> d.push(compiling.length) ]]
 
-  self.scope.push(self.core);
-  for (var i=0; i<coreOps.length;++i) self.def.apply(self, coreOps[i]);
-  return self;
-});
+  scope.push(core)
+  for (var i=0; i<coreOps.length;++i) def.apply(null, coreOps[i])
+  return { run, d }});
 
 document.addEventListener("DOMContentLoaded", ()=>{
   b4.run('1 2 + 3 *');
