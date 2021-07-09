@@ -4,68 +4,59 @@ let b4 = (new function() {
   defs=[],core=[],scope=[[]],             // dictionary
   base=10,                                // numbers
   cp=-1,ch='\x01',ib=[],wd='',            // lexer state
-  compiling=false,state=[],target=[];     // compiler state
+  compiling=0,state=[],target=[];         // compiler state
+
+  //function log(x) { document.body.innerHTML += `<p>${x}</p>` }
+  function log(x) { console.log(x) }
 
   function def(k,v) {
     let res=defs.length; defs.push(v); scope[0].push([k,res]); return res }
 
-  function tos() { return d.length ? d[d.length-1]:null }
+  function nx() {
+    while (ib.length && (++cp>=ib[0].length)) {cp=0; ib.shift()}
+    return ch = (ib.length ? ib[0][cp] : EOF) }
 
-  function nextch() {
-    cp++;
-    while (ib.length && (cp>=ib[0].length)) {cp=0; ib.shift()}
-    ch = (ib.length ? ib[0][cp] : EOF)
-    return ch }
+  function word() { let res=[];
+    while (ch <= ' ') if (ch===EOF) return 0; else nx()
+    while (ch > ' ') { res.push(ch); nx() }
+    wd = res.join(''); return 1 }
 
-  function word() {
-    var res=[];
-    while (ch <= ' ') if (ch===EOF) { return false } else nextch();
-      while (ch > ' ') { res.push(ch); nextch() }
-      wd = res.join('');
-      return true }
-
-  function send(x) { ib.push(x) }
-
-  function findwd() {
-    var found = false;
+  function findwd() { let found = 0;
     for (var i=scope.length-1; i>=0 && !found; i--){
       for (var dict=scope[i], j=dict.length-1; j>=0 && !found; j--) {
-        if (dict[j][0]===wd) { found=true; d.push(dict[j][1]) }}}
+        if (dict[j][0]===wd) { found=1; d.push(dict[j][1]) }}}
     return found }
 
-  function lift(n) { return function(){ d.push(n) }}
+  function number() { let i = parseInt(wd,base);
+    return isNaN(i) ? 0 : d.push(i), 1 }
 
-  function number() {
-    var i = parseInt(wd,base);
-    if (isNaN(i)) {return false} else {d.push(i); return true }}
+  function err(msg){ console.error(msg); throw msg }
 
-  function error(msg){ console.log('error:',msg); throw msg }
-
-  function run(x) {
-    send(x); var op, args=[], res='.';
+  function run(x) { ib.push(x); var op, args=[], res='.', trace=[]
     while (word()) {
       op = findwd() ? defs[d.pop()]
-         : number() ? lift(d.pop())
-         : ()=> error(wd+'?');
+         : number() ? (n=>()=>n)(d.pop())
+         : ()=> err(wd+'?');
       if (compiling) { target.push(op) }
       else {
         args=[]; for (var i=0;i<op.length;i++) args.push(d.pop())
         res = op.apply(this, args)
         if(res!==undefined) d.push(res)}
-      console.log(`wd: ${wd} args: ${args}  res: ${res} -> ${d}`) }}
+      trace.push({ wd, op:op.toString(), args:JSON.stringify(args),
+                   res, d:JSON.stringify(d) })}
+    console.table(trace) }
 
   var coreOps=[
-    ['+', (x,y)=> x+y ],
-    ['-', (x,y)=> x-y ],
-    ['*', (x,y)=> x*y ],
-    ['base', ()=> d.push(base) ]
-    ['compiling?', ()=> compiling.length ]]
+    ['+', (x,y)=> x+y ],    ['-', (x,y)=> x-y ],
+    ['*', (x,y)=> x*y ],    ['/', (x,y)=> x/y ],
+    ['base', ()=> base ]
+    ['compiling?', ()=>compiling ]]
 
   scope.push(core)
   for (var i=0; i<coreOps.length;++i) def.apply(this, coreOps[i])
   return { run, d }});
 
 document.addEventListener("DOMContentLoaded", ()=>{
-  b4.run('1 2 + 3 *');
+  b4.run('2 1 + 3 *');
   log = x=> { document.body.innerHTML+=`<p>${x}</p>` }
   log(b4.d.pop()) });
