@@ -1,13 +1,13 @@
 let b4 = (new function() {
   let EOF='\0',
   d=[], a=[],                             // data and auxiliary/return stack
-  defs=[],core=[],scope=[],               // dictionary
+  defs=[],core=[],scope=[[]],             // dictionary
   base=10,                                // numbers
   cp=-1, ch='\x01',ibuf=[],wd='',         // lexer state
-  compiling=false,state=[],target=[];      // compiler state
+  compiling=false,state=[],target=[];     // compiler state
 
   function def(k,v) {
-    var res=defs.length; defs.push(v); scope[0].push([k,res]); return res }
+    let res=defs.length; defs.push(v); scope[0].push([k,res]); return res }
 
   function tos() { return d.length ? d[d.length-1]:null }
 
@@ -42,23 +42,27 @@ let b4 = (new function() {
   function error(msg){ console.log('error:',msg); throw msg }
 
   function run(x) {
-    send(x); var op;
+    send(x); var op, args=[], res='.';
     while (word()) {
       op = findwd() ? defs[d.pop()]
          : number() ? lift(d.pop())
          : ()=> error(wd+'?');
-      if (compiling) { target.push(op) } else op()
-      console.log('wd: ', wd, '->', d) }}
+      if (compiling) { target.push(op) }
+      else {
+        args=[]; for (var i=0;i<op.length;i++) args.push(d.pop())
+        res = op.apply(this, args)
+        if(res!==undefined) d.push(res)}
+      console.log(`wd: ${wd} args: ${args}  res: ${res} -> ${d}`) }}
 
   var coreOps=[
-    ['+', ()=> d.push(d.pop()+d.pop()) ],
-    ['-', ()=> d.push(d.pop()-d.pop()) ],
-    ['*', ()=> d.push(d.pop()*d.pop()) ],
+    ['+', (x,y)=> x+y ],
+    ['-', (x,y)=> x-y ],
+    ['*', (x,y)=> x*y ],
     ['base', ()=> d.push(base) ]
-    ['compiling?', ()=> d.push(compiling.length) ]]
+    ['compiling?', ()=> compiling.length ]]
 
   scope.push(core)
-  for (var i=0; i<coreOps.length;++i) def.apply(null, coreOps[i])
+  for (var i=0; i<coreOps.length;++i) def.apply(this, coreOps[i])
   return { run, d }});
 
 document.addEventListener("DOMContentLoaded", ()=>{
