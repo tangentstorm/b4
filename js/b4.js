@@ -3,7 +3,7 @@ let b4 = (new function() {
   d=[], a=[],                             // data and auxiliary/return stack
   defs=[],core=[],scope=[[]],             // dictionary
   base=10,                                // numbers
-  cp=-1, ch='\x01',ibuf=[],wd='',         // lexer state
+  cp=-1,ch='\x01',ib=[],wd='',            // lexer state
   compiling=false,state=[],target=[];     // compiler state
 
   function def(k,v) {
@@ -13,8 +13,8 @@ let b4 = (new function() {
 
   function nextch() {
     cp++;
-    while (ibuf.length && (cp>=ibuf[0].length)) {cp=0; ibuf.shift()}
-    ch = (ibuf.length ? ibuf[0][cp] : EOF)
+    while (ib.length && (cp>=ib[0].length)) {cp=0; ib.shift()}
+    ch = (ib.length ? ib[0][cp] : EOF)
     return ch }
 
   function word() {
@@ -24,7 +24,7 @@ let b4 = (new function() {
       wd = res.join('');
       return true }
 
-  function send(x) { ibuf.push(x) }
+  function send(x) { ib.push(x) }
 
   function findwd() {
     var found = false;
