@@ -1,6 +1,5 @@
 cocurrent'vid'
 NB. video buffers
-gethw_kvm_ =: u_gethw =: {{ _".}: 2!:0 'stty size' }}
 
 GS =: adverb :('m~';':';'(m)=:x')  NB. get/set
 
