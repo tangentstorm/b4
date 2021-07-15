@@ -5,9 +5,14 @@ NB. -------------------------------------------------------
 esc    =: u:27               NB. ANSI escape character
 csi    =: esc,'['            NB. vt100 'command sequence introduce'
 clrscr =: ,csi,"1 0'HJ'      NB. clear screen
-clreol =: csi,'0K'           NB. clear to end of line
-reset  =: csi,'0m'
 cls    =: clrscr
+clreol =: csi,'0K'           NB. clear to end of line
+reset  =: csi,'0m'           NB. reset color to gray on black
+cU =: csi,'A'                NB. cursor up
+cD =: csi,'B'                NB. cursor down
+cL =: csi,'D'                NB. cursor left
+cR =: csi,'C'                NB. cursor right
+
 
 NB. xterm 256-color codes
 NB. Most modern terminals seem to support 256 colors.
