@@ -10,6 +10,13 @@ kvm =: loop_kvm_
 cocurrent 'kvm'
 NB. ----------------------------------------------------
 
+NB. wfk y: wait for key code y
+wfk =: {{ while.y~:>r=.rkey'' do. end. }}
+
+NB. wait for character
+wfc =: {{ while.y~:r=.a.{~>rkey'' do. end. }}
+
+
 NB. with_kbd: run v on keypress.
 NB. (u is meant to be an event loop, but it will have to wait
 NB. until i get keyp'' test working)
@@ -18,9 +25,7 @@ with_kbd =: {{y[ v'' [ raw 1  while. 1-:v rkey'' do. u'' end. raw 0 }}
 break=:0
 
 onkey =: {{
-  if. y-:'' do.
-    echo 'running kvm in locale: ';coname''
-    1 return. end.
+  if. y-:'' do. 1 return. end.
   select. 1 27 28 31 126 I. k =. {.>y
   case. 0 do. vnm =. 'k_nul'
   case. 1 do. vnm =. 'kc_',a.{~97+<:k  NB. ascii ctrl+letter ^C-> kc_c
@@ -33,14 +38,14 @@ onkey =: {{
   end.
   NB. ask for more keys unless break=1
   if. 3=4!:0<vnm do. (vnm~) a.{~>y
-  elseif. 3=4!:0<'k_any' do. k_any a.{~>y
-  elseif. 3=4!:0<'k_any' do. k_any a.{~>y
+  elseif. 3=4!:0<'k_any' do. 1[k_any a.{~>y
   elseif. k e. 3 0 do. break_kvm_ =: 1
   end.
   -. break_kvm_ +. k=3 }}
 
 loop =: {{
-  u with_kbd onkey }}  NB. pass in coname'' as m
+  coinsert'kvm'
+  u with_kbd onkey }}
 
 
 NB. ----------------------------------------------------
@@ -74,6 +79,18 @@ end. }}
 w_gethw =: {{
   'l t r b'=. 4{.5}.>{: GetConsoleScreenBufferInfo w_stdo;22#0
   (b-t),(r-l) }}
+
+
+NB. ----------------------------------------------------
+NB. vt-100 terminal queries (must be done in raw mode)
+NB. ----------------------------------------------------
+
+getxy =: {{
+  puts csi,'6n'
+  wfc"0 csi
+  r=.'' while.'R'~:a.{~>c=.rkey''do. r=.r,c end.
+  |.0".>';' splitstring a.{~>r }}
+
 
 NB. ----------------------------------------------------
 
