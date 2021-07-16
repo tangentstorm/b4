@@ -26,7 +26,7 @@ break=:0
 
 onkey =: {{
   if. y-:'' do. 1 return. end.
-  select. 1 27 28 31 126 I. k =. {.>y
+  select. c =. 1 27 28 31 126 I. k =. {.>y
   case. 0 do. vnm =. 'k_nul'
   case. 1 do. vnm =. 'kc_',a.{~97+<:k  NB. ascii ctrl+letter ^C-> kc_c
   case. 2 do. vnm =. 'k_esc'
@@ -38,6 +38,7 @@ onkey =: {{
   end.
   NB. ask for more keys unless break=1
   if. 3=4!:0<vnm do. (vnm~) a.{~>y
+  elseif. (c=4)*.3=4!:0<'k_asc' do. 1[k_asc a.{~>y
   elseif. 3=4!:0<'k_any' do. 1[k_any a.{~>y
   elseif. k e. 3 0 do. break_kvm_ =: 1
   end.
@@ -45,6 +46,7 @@ onkey =: {{
 
 loop =: {{
   coinsert'kvm'
+  break_kvm_ =: 0
   u with_kbd onkey }}
 
 
