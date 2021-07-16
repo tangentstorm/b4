@@ -1,5 +1,6 @@
-cocurrent'vid'
 NB. video buffers
+cocurrent'vid'
+require'vt.ijs'
 
 GS =: adverb :('m~';':';'(m)=:x')  NB. get/set
 
@@ -45,5 +46,4 @@ rndscr =: {{
   puts_mje_ goxy_vt_ 0 0
   echo reset_vt_ [ draw_vid rnd init 10 32 [ puts_mje_ reset_vt_ }}
 
-puts_mje_ cls_vt_
 rndscr^:25''
