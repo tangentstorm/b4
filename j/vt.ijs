@@ -4,25 +4,12 @@ NB. supports windows and linux (and osx??)
 NB. ----------------------------------------------
 cocurrent 'vt'
 
-NB. obtain a pointer to stdin, so we can ungetc()
-uh_libc =: >0{'libdl.so dlopen * *c i' cd 'libc.so.6';1
-uh_stdi0 =. >0{'libdl.so dlsym * x *c'  cd uh_libc;'stdin'
-uh_stdi =: memr uh_stdi0,0,1,4
-
-u_fcntl =: 'libc.so.6 fcntl i i i i'&cd
-u_ungetc =: 'libc.so.6 ungetc i i x'&cd
-u_usleep =: 'libc.so.6 usleep i i'&cd
-
-sleep =: (0 0 $ [: u_usleep 1000&*)
-noblock =: {{ u_fcntl 0 4 2048 }}
-keyp=:{{ noblock raw 1 if. _1=k=.>rkey'' do. 0 else. 1: u_ungetc k,uh_stdi end. }}
-
 help =: 0 : 0
 
   'vt' locale: j virtual terminal support
   ----------------------------------------
   raw b     -> enter(b=1)/leave(b=0) raw mode
-  keyp''    -> bit. is key pressed?
+* keyp''    -> bit. is key pressed?
   rkey''    -> read key from keyboard
   wfc c     -> wait for character c to be pressed
 
@@ -44,7 +31,9 @@ help =: 0 : 0
   bgc n     -> set background color
   reset''   -> reset to default colors
 
-  sleep n   -> sleep for n milliseconds
+* sleep n   -> sleep for n milliseconds
+
+verbs marked with * are currently linux-only.
 )
 
 
@@ -140,6 +129,16 @@ init =: {{
     rkey =: (u_libc,' getchar l') & cd
     gethw =: {{ _".}: 2!:0 'stty size' }}
     putc =: 0 0 $ (u_libc,' putchar  n c') & cd
+    NB. obtain a pointer to stdin, so we can ungetc()
+    uh_libc =: >0{'libdl.so dlopen * *c i' cd 'libc.so.6';1
+    uh_stdi0 =. >0{'libdl.so dlsym * x *c'  cd uh_libc;'stdin'
+    uh_stdi =: memr uh_stdi0,0,1,4
+    u_fcntl =: 'libc.so.6 fcntl i i i i'&cd
+    u_ungetc =: 'libc.so.6 ungetc i i x'&cd
+    u_noblock =: {{ u_fcntl 0 4 2048 }}
+    keyp  =: {{ u_noblock raw 1 if. _1=k=.>rkey'' do. 0 else. 1: u_ungetc k,uh_stdi end. }}
+    u_usleep =: 'libc.so.6 usleep i i'&cd
+    sleep =: (0 0 $ [: u_usleep 1000&*)
   else.
     'vt.ijs only supports windows and unix platforms.'
   end. >a: }}
@@ -178,6 +177,7 @@ demo =: {{
   puts^:2 CR,LF
   puts 'press a key!'
   xy=.curxy'' [ s =. ' _.,oO( )Oo,._ ' [ raw 1
+if. IFUNIX do.
   while. -. keyp'' do.
     goxy xy [ bgc 4 [ fgc 9
     puts '['
@@ -189,4 +189,5 @@ demo =: {{
   end.
   echo a.{~>rkey'' [ reset''
   puts^:2 CR,LF
+end.
 }}
