@@ -125,7 +125,8 @@ step =: {{
       case. 2 1 do. dput (          op-16b80) dpop''
       case. do. NB. otherwise, previous op does not matter.
         select. g
-        case. 0 do. wz dput op  NB. if op is ascii char c, M[Z++:b]:=c
+        case. 0 do. NB. if op is non-zero ascii char c, M[Z++:b]:=c
+          if. op > 0 do. wz dput op end.
         case. 1 do. (ops{~128-op)`:0'' NB. execute vm instruction
         case. 2 do. dput     16b40 * op - 16bc0
         case. 3 do. dput   16b1000 * op - 16be0
@@ -138,3 +139,15 @@ step =: {{
   end. 0 0$0}}
 
 s =: {{ echo P;X;Y;Z;R;D[step'' }}
+
+
+NB. bootstrap assembler: 2-char assembly code
+NB. ---------------------------------------------------------------------
+NB. a0: strip out spaces. every pair of characters remaining
+NB. should be either an opcode mnemonic or a pair of hex digits.
+NB. ('ad' for 'add' is both, but you can use 'AD' for the hex number)
+NB. other strings are ignored and compile to 00.
+NB. Following the retroforth/muri convention, you can use '..'
+NB. for 0-padding when you are not explicitly referring to the number 0.
+
+asm =: ((128+])`(dfh&>@[)@.((#ops)=]) ops&i.)"0 @ (_2<\' '-.~])
