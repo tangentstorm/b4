@@ -117,7 +117,7 @@ NB. ----------------------------------------------------
 NB. vt-100 terminal queries (must be done in raw mode)
 NB. ----------------------------------------------------
 
-curxy =: {{  NB. get current xy. (must be done in raw mode on linux)
+curxy =: {{ raw 1
   r =. 2}. wfc 'R' [ puts CSI,'6n'
   |.0".>';' splitstring r }}
 
