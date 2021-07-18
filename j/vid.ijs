@@ -1,4 +1,16 @@
 NB. video buffers
+NB.
+NB. these are virtual console windows with separate
+NB. foreground color, background corol, and character
+NB. buffers.
+NB.
+NB. writing to the buffers is presumably much faster
+NB. than actually sending output, and they can be
+NB. composed to allow drawing multiple text-mode
+NB. windows onto a main buffer, which can then be
+NB. rendered to the screen using vt escape codes.
+NB.
+
 require 'vt.ijs'
 
 NB. by default, just use vt directly
@@ -7,7 +19,7 @@ cscr =: {{ cscr__term y }}
 ceol =: {{ ceol__term y }}
 putc =: {{ putc__term y }}
 goxy =: {{ goxy__term y }}
-go00  =: goxy@0 0
+go00 =: goxy@0 0
 puts =: putc"0
 fgc  =: {{ fgc__term y }}
 bgc  =: {{ bgc__term y }}
