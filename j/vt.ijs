@@ -70,42 +70,48 @@ NB. windows terminal:
 NB. ----------------------------------------------------
 
 NB. https://docs.microsoft.com/en-us/windows/console/console-functions
-ReadConsoleInput =: 'kernel32 ReadConsoleInputA b x *s s *s'&cd
 GetConsoleScreenBufferInfo =: 'kernel32 GetConsoleScreenBufferInfo c x *s'&cd
 GetStdHandle =: 'kernel32 GetStdHandle *c s'&cd
-WriteConsole =: 'kernel32 WriteConsoleA b x *c s *s'&cd
-PeekConsoleInput =: 'kernel32 PeekConsoleInputA b x *c s *s'&cd
+ReadConsoleInput =: 'kernel32 ReadConsoleInputA b x *s i *i'&cd
+PeekConsoleInput =: 'kernel32 PeekConsoleInputA b x *s i *i'&cd
+InputArgs =: {{ w_stdi;(10#0);1;<,0 }}
+WriteConsole =: 'kernel32 WriteConsoleA b x *c *i x'&cd
 
-w_putc =: {{ 0 0$WriteConsole w_stdo;(1#y);1;a: }}
-w_puts =: {{ 0 0$WriteConsole w_stdo;(,y);(#y);a: }}
-w_keyp =: {{ {.>{: PeekConsoleInput w_stdi;(,' ');1;<,0 }}
+
+w_putc =: {{ 0 0$WriteConsole w_stdo;(1#y);(<1);<a: }}
+w_puts =: {{ 0 0$WriteConsole w_stdo;(,y);(<#y);0 }}
 w_gethw =: {{
   'l t r b'=. 4{.5}.>{: GetConsoleScreenBufferInfo w_stdo;22#0
   (b-t),(r-l) }}
 
-w_rkey =: {{
-  RBS =. 10 NB. read buffer size
+w_keyp =: {{
+  r=. PeekConsoleInput InputArgs [ w_skip''
+  0{>{: r  }}
+w_skip =: {{ NB. skip events besides keydown
+  NB. names for windows event codes
   'FOCUS KEY MENU MOUSE SIZE' =.  16b10 16b01 16b08 16b02 16b04
-  trace =. echo NB.0 0$]
+  while. *{.nr ['r h b n0 nr'=.PeekConsoleInput InputArgs'' do.
+    NB. keep key down event
+    if. KEY -: 0{b do. if. 2{b do. break. end. end.
+    NB. otherwise read and discard the event:
+    ReadConsoleInput InputArgs''
+  end.
+0 0$0}}
+
+w_rkey =: {{
   while. 1 do.
-    'r h b n nr' =. ReadConsoleInput w_stdi;(0#~RBS);1;(,0)
-    NB. echo 'r';r;'h:';h;'b:';b;'n:';n;'nr:';nr
-    if. # b do. select. 0 { b
-    case. FOCUS do. trace 'FOCUS ',":b
-    case. KEY do.
+    w_skip''
+    'r h b n0 nr' =. ReadConsoleInput InputArgs''
+    if. *{.nr do.
       dn=. 2{b
       'rc kc sc ch' =. 4{.4}.b
       ch =. u:ch
       mod =. '.x'{~_32{.!.0#: 65536 65536 #. _2{.b
       NB. smoutput 'dn:';dn;'rc:';rc;'kc:';kc;'ch:';ch;'mod:';mod
-      NB. ingore modifier keys
+      NB. skip over modifier keys
       if. dn > kc e. 16 17 18 do. <a.i.ch return. end.
-    case. MENU do.  trace 'MENU: ',":b
-    case. MOUSE do. trace 'MOUSE: ',":b
-    case. SIZE do. trace 'SIZE: ',":b
-    case. do. 'UNKNOWN EVENT!' throw.
-    end. end.
-  end.}}
+    end.
+  end. }}
 
 NB. ----------------------------------------------------
 NB. vt-100 terminal queries (must be done in raw mode)
