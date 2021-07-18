@@ -112,11 +112,8 @@ NB. vt-100 terminal queries (must be done in raw mode)
 NB. ----------------------------------------------------
 
 curxy =: {{  NB. get current xy. (must be done in raw mode on linux)
-  puts CSI,'6n'
-  wfc ESC
-  wfc '['
-  r=.'' while.'R'~:a.{~>c=.rkey''do. r=.r,c end.
-  |.0".>';' splitstring a.{~>r }}
+  r =. 2}. wfc 'R' [ puts CSI,'6n'
+  |.0".>';' splitstring r }}
 
 init =: {{
   NB. define (raw, rkey, gethw, putc) + platform-specific helpers
@@ -152,7 +149,7 @@ init =: {{
     'vt.ijs only supports windows and unix platforms.'
   end. >a: }}
 
-wfc =: {{ while. -.y-:a.{~>rkey'' do. end. 0 0$'' }}
+wfc =: {{ r=.'' while. -.y-:c=.a.{~0{>rkey'' do. r=.r,c end. r }}
 
 cscr =: puts@CSCR
 ceol =: puts@CEOL
@@ -179,9 +176,11 @@ coinsert_base_'vt'
 
 NB. just a demo to show colors and waiting for a keypress.
 demo =: {{
-  cscr@'' reset''
+  reset''
+  cscr''
   puts '256 terminal colors:',CR,LF
-  (puts@(CR,LF) ([: puts ' ',~hfd [ fgc)"0)"1  i.16 16
+  ([: puts ' ',~hfd [ fgc)"0)"1  i.16 16
+  (puts@(CR,LF)
   reset''
   puts^:2 CR,LF
   puts 'press a key!'
