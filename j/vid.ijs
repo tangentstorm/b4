@@ -14,7 +14,7 @@ bgc  =: {{ bgc__term y }}
 reset=: {{ reset__term y }}
 
 prev =. ([ coclass@'vid') coname''
-create =: init
+create =: init@|.
 
 fgc   =: {{ FG =: y }}
 bgc   =: {{ BG =: y }}
@@ -23,7 +23,7 @@ go00  =: goxy@0 0
 reset =: fgc@7@bgc@0
 
 fill  =: {{ 0 0$ CHB=:HW$y }}
-cscr  =: {{ fill ' ' [ FGB=:HW$FG [ BGB=:WH$BG }}
+cscr  =: {{ fill ' ' [ FGB=:HW$FG [ BGB=:HW$BG }}
 sethw =: {{ cscr go00 reset WH =: |. HW =: y }}
 init  =: {{ sethw gethw_vt_^:(-.*#y) y }}
 
@@ -50,6 +50,9 @@ rnd =: {{
 cocurrent prev
 
 render =: {{ NB. render to vt
+  echo@''^:(h =. 0{HW__y) c =. curxy''
+  raw@0 goxy c+h [ c render y [ goxy c=.0 10 -~ curxy''
+:
   goxy x [ reset''
   f =. FG256_vt_ each FGB__y
   b =. BG256_vt_ each BGB__y
@@ -61,8 +64,14 @@ render =: {{ NB. render to vt
   end. }}
 
 rndscr =: {{
-  x render rnd__vid [ vid =. 10 32 conew'vid'
+  x render rnd__vid [ vid =. 32 10 conew'vid'
   codestroy__vid''
   echo ''[reset''[ raw 0}}
 
-(curxy@raw'') rndscr^:25''
+
+demo =: {{
+  curs 0 [ b =. 64 10 conew 'vid'
+  for_c. 20$ '/-+\|' do.
+    10 5 render b [ fill__b c [ sleep 50
+  end. curs@1 codestroy__b''
+  10 5 rndscr^:25''}}
