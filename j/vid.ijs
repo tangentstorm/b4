@@ -1,19 +1,31 @@
 NB. video buffers
-cocurrent'vid'
-require'vt.ijs'
+require 'vt.ijs'
 
-GS =: adverb :('m~';':';'(m)=:x')  NB. get/set
+NB. by default, just use vt directly
+term =: <'vt'
+cscr =: {{ cscr__term y }}
+ceol =: {{ ceol__term y }}
+putc =: {{ putc__term y }}
+goxy =: {{ goxy__term y }}
+go00  =: goxy@0 0
+puts =: putc"0
+fgc  =: {{ fgc__term y }}
+bgc  =: {{ bgc__term y }}
+reset=: {{ reset__term y }}
 
-fg =: 'FG'GS NB. current foreground color
-bg =: 'BG'GS NB. current background color
-xy =: 'XY'GS NB. current cursor coordinates
+prev =. ([ coclass@'vid') coname''
+create =: init
 
-reset =: {{ 0 0$ FG=:7 [ BG =:0 }}
-go00  =: {{ 0 0$ XY=:0 0 }}
+fgc   =: {{ FG =: y }}
+bgc   =: {{ BG =: y }}
+goxy  =: {{ XY =: y }}
+go00  =: goxy@0 0
+reset =: fgc@7@bgc@0
+
 fill  =: {{ 0 0$ CHB=:HW$y }}
-cls   =: {{ fill ' ' [ FGB=:HW$FG [ BGB=:WH$BG }}
-sethw =: {{ cls go00 reset WH =: |. HW =: y }}
-init  =: {{ sethw gethw_kvm_^:(-.*#y) y }}
+cscr  =: {{ fill ' ' [ FGB=:HW$FG [ BGB=:WH$BG }}
+sethw =: {{ cscr go00 reset WH =: |. HW =: y }}
+init  =: {{ sethw gethw_vt_^:(-.*#y) y }}
 
 peek =: {{ (<y) { m~ }}
 poke =: {{ 0 0 $ (m)=: x (<y) } m~ }}
@@ -26,24 +38,31 @@ chxy =: 'CHB' pepo
 
 NB. write to ram
 NB. putc =: {{ (y chxy])`(FG fgxy ])`(BG bgxy ])`:0 XY }}
-putc =: {{ y chxy xy [ FG fgxy xy [ BG bgxy XY }}
+putc =: {{ y chxy XY [ FG fgxy XY [ BG bgxy XY }}
 puts =: putc"0
-
-draw_vid =: {{
- f =. fgn_vt_ each FGB
- b =. bgn_vt_ each BGB
- j =. ,&.>
- s =. f j b j CHB
- (([: echo ''[ [: puts_mje_ reset_vt_ ,~ ])@;)"1 s
- 0$0}}
 
 rnd =: {{
   CHB =: a.{~97+?HW$26
   FGB =: ?HW$256
-  BGB =: HW$0 95 0 4 18 }}
+  BGB =: HW$0 95 0 4 18
+  coname'' }}
+
+cocurrent prev
+
+render =: {{ NB. render to vt
+  goxy x [ reset''
+  f =. FG256_vt_ each FGB__y
+  b =. BG256_vt_ each BGB__y
+  j =. ,&.>
+  s =. f j b j CHB__y
+  for_row. s do.
+    goxy x + 0, row_index
+    reset@'' puts_vt_ ;row
+  end. }}
 
 rndscr =: {{
-  puts_mje_ goxy_vt_ 0 0
-  echo reset_vt_ [ draw_vid rnd init 10 32 [ puts_mje_ reset_vt_ }}
+  x render rnd__vid [ vid =. 10 32 conew'vid'
+  codestroy__vid''
+  echo ''[reset''[ raw 0}}
 
-rndscr^:25''
+(curxy@raw'') rndscr^:25''
