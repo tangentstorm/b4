@@ -179,8 +179,7 @@ demo =: {{
   reset''
   cscr''
   puts '256 terminal colors:',CR,LF
-  ([: puts ' ',~hfd [ fgc)"0)"1  i.16 16
-  (puts@(CR,LF)
+  (puts@(CR,LF) ([: puts ' ',~hfd [ fgc)"0)"1  i.16 16
   reset''
   puts^:2 CR,LF
   puts 'press a key!'
