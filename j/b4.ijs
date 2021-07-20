@@ -6,14 +6,13 @@ new =: {{
   P =: 0                        NB. program counter
   G =: 0                        NB. group/flags register (private)
   X =: Y =: Z =: 0              NB. registers that programs can use
+  C =: 32$0                     NB. addresses of 'character handler'
   NB. Stacks and other RAM
   D =: 0$0                      NB. data stack
   R =: 0$0                      NB. return stack
-  M =: (8$0:)^:(''&-:) y        NB. user-addressable memory
+  M =: (32$0{a.)"_^:(''&-:) y   NB. user-addressable memory
   END =: #M
   0 0$0}}
-
-new''
 
 NB. helper defs. these are internal definitions
 NB. that are only used to define the instruction set.
@@ -27,46 +26,55 @@ NOT =: 0 &(26 b.)               NB. 26 b. is 'not y'. ignores left arg.
 bits =: #.32#1                  NB. bitmask (4294967295 in j, _1 in vm)
 byte =: #. 8#1                  NB. bitmask (255)
 mask =: 32&([SHR SHL)           NB. signed mask
-bytes =: (4#256)&#:             NB. i32 -> 4 bytes
+
 
 NB. "microcode"
+NB. not part of the instruction set, but each instruction
+NB. is composed of these building blocks.
 
 dput =: {{ D =: D, y }}
 rput =: {{ R =: R, y }}
 dtos =: {{ {: D }}
 dnos =: {{ {: }: D }}
 dswp =: {{ D =: 1 A. D }}
-dpop =: {{ r =. 0 if. #D do. D =: }: D [ r =. {. D end. r }}
-rpop =: {{ r =. 0 if. #R do. R =: }: R [ r =. {. R end. r }}
-rtos =: {{ {: R }}
-mget =: {{ y { M }}                   NB. fetch i32 from ram
-mput =: {{ M =: x y } M }}
-bget =: {{ (y AND 3) { bytes mget 2 SHR y }}
-bput =: {{ t =. (mget a) AND NOT (s=.8*b) SHL byte [ a=. 2 SHR y [ b=.y AND 3
-           (t XOR s SHL x) mput a }}
+dpop =: {{ r =. 0 if. #D do. D =: }: D [ r =. {: D end. r }}
+rpop =: {{ r =. 0 if. #R do. R =: }: R [ r =. {: R end. r }}
+bget =: {{ a. i. y { M }}                  NB. fetch a byte  (u8)
+sget =: (_127-~-)^:(127&<)@bget            NB. fetch a short (i8)
+bput =: {{ M =: x (a. { 256#:y) } M }}     NB. write y as u8 (_1 as 255)
+mget =: {{ (4#256)#.a.i.(y+i.4) { M }}     NB. fetch i32
+mput =: {{ M =: x (a.{~(4#256)#:y) } M }}  NB. store i32
 
 incp =: {{ P =: mask P + 1 }}         NB. ++p
+inc4 =: {{ 3-~P =: mask P + 4 }}      NB. p+=4,p-3
 yinc =: {{ r [ X =: mask 1 + r=.X }}  NB. x++
 zinc =: {{ r [ Y =: mask 1 + r=.Y }}  NB. y++
-(pset =: {{ P =: y }})`(xset =: {{ X =: y }})`(yset =: {{ Y =: y }})`(zset =: {{ Z=: y }})
-(pget =: {{ P }})     `(xget =: {{ X }})     `(yget =: {{ Y }})     `(zget =: {{ Z }})
+
+NB. get/set each register
+(xget =: {{ X }}) ` (xset =: {{ X =: y }})
+(yget =: {{ Y }}) ` (yset =: {{ Y =: y }})
+(zget =: {{ Z }}) ` (zset =: {{ Z =: y }})
+(pget =: {{ P }}) ` (pset =: {{ P =: y }})
+
+NB. there are 32 "C" registers, so cget/set take an argument
+(cget =: {{ (32#:y) { C }}) ` (cset =: {{ C =: x (32#:y) } C }})
 
 NB. monad/dyad: lifts 1/2-arg J verbs to VM
 dy =: {{ dput mask (dpop u dpop) y }}
 mo =: {{ dput mask u dpop y }}
-
 
 NB. instruction set
 NB. ---------------------------------------------------------------------
-s_ops=:' li sw du ov zp dr rd' [ n_ops=:' ad sb ml dv md ng sl sr'
-b_ops=:' an or xr nt'          [ c_ops=:' eq ne gt lt ge le'
-r_ops=:' dx dy dz xd yd zd'    [ f_ops=:' hl jm hp h0 h1 cl rt r0 r1'
-m_ops=:' rm wm wp rp qp ry wz'
+s_ops=:' si li sw du ov zp dr rd' [ n_ops=:' ad sb ml dv md ng sl sr'
+b_ops=:' an or xr nt'             [ c_ops=:' eq ne gt lt ge le'
+r_ops=:' dx xd dy yd dz zd dc cd' [ f_ops=:' hl jm hp h0 h1 cl rt r0 r1 ev'
+m_ops=:' rm wm yr zw wp rp qp'
 
 ops =: ;: s_ops,n_ops,b_ops,c_ops,r_ops,f_ops,m_ops
 
 NB. stack instructions
-li =: dput@mget@incp             NB. literal->stack
+si =: dput@sget@incp             NB. push next short int (signed byte) to data stack
+li =: dput@mget@inc4             NB. literal/longint -> push next 4 bytes to data stack as i32
 sw =: swap                       NB. swap: xy->yx
 du =: dput@dtos                  NB. dup: x->xx
 ov =: dput@dnos                  NB. over: xy->xyx
@@ -87,70 +95,82 @@ NB. comparison instructions
 (ne =: ~: dy)`(ge =: >: dy)`(le =: <: dy)
 
 NB. register instructions
-(dx =: xset@dpop)` (dy=: yset@dpop)` (dz=: zset@dpop)
-(xd =: dput@xget)` (yd=: dput@yget)` (zd=: dput@zget)
+(dx =: xset@dpop)` (dy=: yset@dpop)` (dz=: zset@dpop) `(dc=: dpop cset AND@15@dpop)
+(xd =: dput@xget)` (yd=: dput@yget)` (zd=: dput@zget) `(cd=: dput@cget@AND@15@dpop)
 
 NB. control flow instructions
 hl =: pset@END                  NB. halt
-jm =: pset@<:@mget@incp         NB. jump to M[1+P]-1 (because every op is followed by p++)
-hp =: pset@<:@(pget+mget)@incp  NB. hop to P+M[1+P]-1 (relative jump)
+jm =: pset@<:@mget@inc4         NB. jump to M[P+1 2 3 4]-1 (because every op is followed by p++)
+hp =: pset@<:@(pget+bget)@incp  NB. hop to P+M[P+1]-1 (relative short jump)
 h0 =: hp`incp@.(0-:dpop)        NB. hop if tos==0 else skip addr
 h1 =: hp`incp@.(0~:dpop)        NB. hop if tos!=0 else skip addr
-nx =: (hp@rput@<:)`incp@.(0-:])@ rpop  NB. 'next': if (rtos--)==0, else hop
+nx =: (hp@rput@<:)`incp@.(0-:])@ rpop  NB. 'next': if (rtos--)==0 proceed, else hop
 cl =: jm@rput@pget              NB. call. like jump, but push P to return stack first
 rt =: pset&(rpop-1:)            NB. return
 r0 =: rt^:(0-:dpop)             NB. return if tos==0
 r1 =: rt^:(0~:dpop)             NB. return if tos!=0
-
+ev =: pset@<:@dpop@rput@pget    NB. eval. like call, but take address from stack instead of M[1+P]
 
 NB. memory / messaging instructions
 rm =: dput@mget@dpop         NB. (y rm -> x) copy memory addr y to stack (i32)
 wm =: (dpop mput dpop)       NB. (x y wm -> ) write x to addr y
-ry =: dput@bget@yinc         NB. (rx -> v) read byte from M[x:b] and increment x
-wz =: ((8|dpop) bput zinc)   NB. (n wy->)  write low byet of tos to M[y:b] and increment y
+yr =: dput@bget@yinc         NB. (yr -> v) read byte from M[Y:b] and increment Y
+zw =: ((8|dpop) bput zinc)   NB. (n zw->)  write low byte of tos to M[Z:b] and increment Z
 wp =: [:                     NB. TODO: write to port
 rp =: [:                     NB. TODO: read from port
 qp =: [:                     NB. TODO: query port
+
+NB. character handler. call address in C with char on stack
+NB. this does not have a specific opcode, but is invoked for
+NB. every input sequence that designates a valid utf-8
+NB. codepoint.
+chev =: ev@cget@0@dput
 
 NB. cpu emulator
 NB. ---------------------------------------------------------------------
-grps =: <:dfh&> cut'80 c0 e0 f0 f5' NB. start of each group of ops
-step =: {{
-  if. END > pc =.pget'' do.
-    pg =. G AND 7
-    NB. instructions are 1 per byte, packed into 32-bit cells.
-    for_op. bytes mget pc do.
-      NB. inside a utf-8 sequence, we calculate a number on the stack
-      select. pg, g =. grps I. op
-      case. 4 3 do. dput (16b1000 * op-16be0) dpop''
-      case. 3 2 do. dput (  16b40 * op-16bc0) dpop''
-      case. 2 1 do. dput (          op-16b80) dpop''
-      case. do. NB. otherwise, previous op does not matter.
-        select. g
-        case. 0 do. NB. if op is non-zero ascii char c, M[Z++:b]:=c
-          if. op > 0 do. wz dput op end.
-        case. 1 do.
-          (ops{~op-128)`:0'' NB. execute vm instruction
-        case. 2 do. dput     16b40 * op - 16bc0
-        case. 3 do. dput   16b1000 * op - 16be0
-        case. 4 do. dput  16b40000 * op - 16bf0
-        case.   do.
-        end.
-      end.
-    end.
-    incp''
-  end. 0 0$0}}
+grps =: <:dfh&> cut'01 80 c0 c2 e0 f0 f5' NB. start of each group of ops
+'gOk gCh gOp gU2 gU3 gU4 gUx' =: i.7
 
+NB. eval: evaluate a single byte code. this allows for a
+NB. 'calculator' mode, where the VM is passive and driven
+NB. entirely by input from an external source.
+eval =: {{
+  pg =. G AND 7
+  NB. inside a utf-8 sequence, we calculate a number on the stack
+  select. pg, g =. grps I. op =. y
+  case. gU4, gU3 do. dput (16b1000 * op-16be0) dpop''
+  case. gU3, gU2 do. dput (  16b40 * op-16bc0) dpop''
+  case. gU2, gOp do. dput (          op-16b80) dpop''
+  case. do. NB. otherwise, previous op does not matter.
+    select. g
+    case. gOk do. NB. nothing. 00 is no-op
+    case. gCh do. chev op
+    case. gOp do. (ops{~op-128)`:0'' NB. execute vm instruction
+    case. gU2 do. dput     16b40 * op - 16bc0
+    case. gU3 do. dput   16b1000 * op - 16be0
+    case. gU4 do. dput  16b40000 * op - 16bf0
+    case. do. NB. nothing. utf-8 bytes>$f5 would encode invalid codepoints,
+      NB. and require 4-6 bytes. gU4 makes sense because we want to handle
+      NB. valid 4-byte utf-8 encodings. For building numbers higher than
+      NB. this, we can just use 'li'.
+    end.
+  end.
+  G =: (G AND NOT 7) XOR g }}
+
+NB. step: read instruction from memory, eval, advance program counter
+NB. loop: does same until the program halts.
+loop =: {{ while. END > pc=.pget'' do. incp@'' eval bget pc end. 0 0$0 }}
+step =: {{ if.    END > pc=.pget'' do. 0 0 $ incp@'' eval bget pc end. }}
+
+NB. these are helpers for tracing the vm in J:
 fmt =: ;:'P X Y Z R D M'
-log =: {{ ". &.> fmt }}
-sho =: fmt,:log
+log =: {{ (}:,<@,@(' ',.~hfd)@(a.&i.)@>@{:)":@". &.> fmt }}
+sho =: fmt ,: log
 s =: log@step
 
-NB. launch a new
+NB. launch a new vm with given memory image and trace what happens:
 trace =: {{ (fmt,s 0}[:,/ log@step^:a:) 0 0$s=.log new y }}
 boot =: [: ". 'D' [[: (log@step^:a:) new
-
-
 
 NB. asm: bootstrap assembler: 2 chars per byte
 NB. ---------------------------------------------------------------------
@@ -164,10 +184,14 @@ NB. for 0-padding when you are not explicitly referring to the number 0.
 assert 0 128 255 0 -: _2 dfh\'0080ff..'
 
 a0 =: ((128+])`(dfh&>@[)@.((#ops)=]) ops&i.)"0  NB. match boxed 2 char str
-a1 =: {{ _4 ]\ a0 (_2<\' '-.~]) y }}  NB. str -> 4-byte tuples. (ignoring all spaces)
-asm =: 256&#.@a1
+a1 =: {{ a0 (_2<\' '-.~]) y }}  NB. src str -> bytecode str (strips all spaces)
+asm =: a. {~ a1
 
-assert 2156037888 1 -: asm 'liduad..00000001'
+assert (128 1 131 136 {a.) -: asm 'si 01 du ad'
 
 NB. '1 dup +' should result in D=.,2
-assert (,2) -: boot asm 'liduad.. 00000001'
+assert (,2) -: boot asm 'si 01 du ad'
+assert (,3) -: boot asm 'si 01 du du ad ad'
+assert (,4) -: boot asm 'si 01 du ad du ad'
+
+new''
