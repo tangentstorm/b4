@@ -1,0 +1,241 @@
+#+title: bootstrapping a forth-like system
+
+* INTRO (why bother bootstrapping?)
+- narrative so people (including me) can understand what's happening
+- tool for others to follow along (and get exact same results)
+- you don't have to already know forth or assembly to follow along.
+- we're just going to make up whatever we need or what we want the bytecode to be
+- it doesn't matter what the vm looks like, because in the end we'll have a forth, and we can use that to write a more advanced assembler.
+- once you have your b4, you'll understand it completely, and you can make changes to tailor it to your own system.
+- you can follow the trail and implement the virtual machine to learn your new language or chip or whatever, and then you can use my tools.
+- (hopefully someday b4 itself will be able to guide you through implementing the b4 vm in a new environment, but these can still serve as test cases along the way)
+- maybe people will understand my stuff and make it better or contribute tools
+- just seems like fun. :)
+- it's really hard to bootstrap and figure this out, which is why most people just use the completed tools, but then that shifts the burden to new people trying to understand the system. by leaving a trail, maybe it'll make a smoother onramp for someone trying to understand b4, or just to bootstrap their own system.
+
+* GOALS
+
+1. I want to bootstrap a small repl on a forthlike system.
+It should be handy for symbolic processing of source code.
+
+2. I want this to be something that's easy to follow and easy to present,
+for other people wanting to work on their own forth implementations.
+
+More importantly, I want some kindof *feedback* from the system at each step.
+This is probably the main thing missing in most bootstrapping stories I've
+encountered: you have to do lots of steps before you get any feedback from
+the system.
+
+So instead, let's focus on clearly defined checkpoints
+that don't take much work to reach.
+
+* REQUIREMENTS
+- dictionary
+- lookup  : word as string -> address return 0
+- execute : execute the word you looked up
+- compile : write a call to the word you looked up
+
+* CHECKPOINTS
+
+** establish input/output (native code on host machine)
+*** hello world
+determine how we will perform output
+*** echo input
+determine how we will perform input
+determine end of input
+
+(for vm, can use input/output wrapper, where host language
+reads from stdin, copies to input buffer, waits for response,
+and posts to output buffer)
+
+** assembler(s)
+*** TODO a0 onboard hex code assembler
+**** help us learn the basic techniques
+establish file input/output protocol. simple hex parser
+**** handle spaces
+**** lookup character in string
+**** compose every two nibble chars
+**** write to output buffer
+*** TODO a1 add muri style mnemonics
+**** recognize a mnemonic
+***** :nextc (-c) scan for next non-space character
+***** nextc twice
+***** do they match an op?
+***** else fall back to hex
+*** TODO a2 1 char labels, hops, and comments
+hops are relative. we have a jump instruction,
+but addresses don't fit in two characters.
+so, might need multiple hops to make a long jump.
+hop allows position independent code.
+*** TODO a3 forth-style dictionary / compiler
+** interpreter(s)
+*** TODO b0 a1 (mnemonic) interpreter in a3
+*** TODO b1 add basic forth vocabulary
+*** TODO b2 sigils/classes (from retroforth)
+*** TODO b3 combinators ?
+*** TODO b4 (real, evolving language with std library)
+
+
+* IMPLEMENTATION
+** a0 : hex assembler
+*** recognize a single hex digit
+#+begin_src python
+
+  HEX = '0123456789ABCDEF'
+
+  # normal python:
+  def hexit(c):
+      return max('0123456789ABCDEF'.find(c),0)
+
+  # vm environent:
+  x = y = z = 0  # registers
+  d = []         # data stack
+  r = []         # return stack
+  m = ['...#0123456789ABCDEF']  # m = ram, # is len (15) 0-F ascii chars
+  d = [c]                       # d = stack, c= char to lookup
+
+  def rput(v): r.append(v)
+  def yr(): m[r]
+
+  def hexit:
+     # i counts down from 15 to 1
+     y = m.index('#')
+
+     for i in range(m[y],1):      # si 0F dr  (loop counter goes on return stack)
+         y = HEX+y              # rd
+         d.append(HEX[y])
+         # set y=hex+i  si 01 yd ad
+         if d[-1] == HEX[r[-1]]:
+            break
+        else: r[-1] -= 1
+     d.push(r.pop())
+     return
+
+  # actual b4a instructions:
+  # for = dr
+  # ii  = rd
+  >H `0`1`2`3`4`5`6`7`8`9`A`B`C`D`E`F
+  >h (c-n) # convert hex char c to 00,..10
+    &H y!
+    yr for             # loop through chars of HEX
+      du               # copy c
+      [ yr eq :        # if c = HEX[ix]  (ix=(#HEX)-ii)
+        zp             #  drop c, and find ix
+        &H rb          #  fetch one byte (the len), # TODO:relative
+        rd             # 'ii'=rd (look at loop counter)
+        sb             # len-ii = ix = the result
+        rt
+      ]
+    nx
+    0 rt
+
+#+end_src
+
+
+  def a0(s):
+     x = 0
+     for c in s:
+        if c <= ' ': continue
+        else:
+           hexit()
+           x = ~x
+           if x:
+
+
+* -- extra stuff --
+
+* (draft) explaining what a forth is
+
+A forth system has the following variables:
+
+   HERE : address of first cell of usable ram
+   LAST : address of last defined word record
+   IBUF : adresss of the input buffer
+
+message passing system:
+
+  declare an input buffer containing a short string:
+    1 byte length/mutex
+    255 input bytes
+  if length=0, interpreter is ready for input
+  client fills in the memory and sets leading byte to length.
+
+interpreter:
+
+  tokenize input and handle each token.
+  special leading characters:
+    : define word
+    & obtain pointer
+    ( comment
+    ` assembler
+    @ getter
+    ! setter
+    0..9       (decimal)
+    $ hex      (retro: char)
+    # comment  (retro: number)
+    [ block    (retro: n/a)
+
+* template for hex code assembly programs
+#+begin_src b4a
+#0 _1 _2 _3 _4 _5 _6 _7 _8 _9 _A _B _C _D _E _F
+hp 10 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+* how this exercise affected b4 design
+- hex dumper: i probably won't actually use it (since it isn't necessary to GENERATE a hex dump), but i started with this exercise in mind, and once i started writing it in hex+mnemonic assembly style, i was annoyed at how much space i was wasting with packed instructions followed by long addresess. This prompted me to switch to just using a bytecode, and not worry about 32-bit cells.
+- hex assembler:  this made me want to do xr as well as yr, to make it easy to compare strings, but i didn't (yet)
+
+* note on grimley's code
+this follows his lead
+he was using x86, because that's the system he was on
+but that's kind of an accident of history.
+i'll use a virtual bytecode interpreter)
+(which we can implement in any language)
+* hex dump
+# probably want a disassembler if I reorder the opcodes, or for a debugger
+# but probably don't need this for the bootstrapping process
+** program to generate hex dump of tos
+** break off a digit
+#+begin_src b4a
+
+:nibl (x-xd)  # extract next nibble
+du si 0F an   # x → xx → xxF → xd  (where d=x & F)
+sw si 04 sr   # xd → dx → dx'      (where x'=x>>4)
+rt .. .. ..
+#+end_src
+
+** break off all 8 digits
+: jump, loop, or macro, or duplicate code ?
+#+begin_src b4a
+# break tos into 8 hex digits
+dusi0Fanswsi04sr dusi0Fanswsi04sr dusi0Fanswsi04sr dusi0Fanswsi04sr
+dusi0Fanswsi04sr dusi0Fanswsi04sr dusi0Fanswsi04sr dusi0Fanswsi04sr
+zp
+
+# or, if we can call subroutines:
+nibl nibl nibl nibl nibl nibl nibl nibl zap
+
+# or
+&nibl 8 times zap
+
+# or:
+#+end_src
+
+- we could just repeat the instructions 4 times without the return.
+- or we could use a loop
+
+** 0..f -> char
+char buf
+just use it as index into buffer
+
+* notes
+edmund grimley evans, "bootstrapping a simple compiler from nothing"
+http://web.archive.org/web/20061108010907/http://www.rano.org/bcompiler.html
+
+jonesforth
+
+retroforth
+
+
