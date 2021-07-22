@@ -19,13 +19,20 @@ NB. that are only used to define the instruction set.
 NB. (at some point, the stacks may just be designated
 NB. regions in M, so these let me decouple the op
 NB. definitions from the physical memory layout.)
-AND =: 2b10001 b.
+AND =: 2b10001 b.               NB. bitwise and
+VEL =: 2b10111 b.               NB. bitwise inclusive or
 SHL =: 34 b.                    NB. signed shift left
 SHR =: -@[ 34 b. ]              NB. signed shift right
 NOT =: 0 &(26 b.)               NB. 26 b. is 'not y'. ignores left arg.
 bits =: #.32#1                  NB. bitmask (4294967295 in j, _1 in vm)
 byte =: #. 8#1                  NB. bitmask (255)
 mask =: 32&([SHR SHL)           NB. signed mask
+
+NB. flags/masks for the G register
+OGMASK =: 2b0111  NB. op group mask
+SKIPPY =: 2b1000  NB. skipping evaluation until we see 'go' op
+
+CMASK =: 31 NB. ctrl code mask
 
 
 NB. "microcode"
@@ -44,6 +51,7 @@ sget =: (_127-~-)^:(127&<)@bget            NB. fetch a short (i8)
 bput =: {{ M =: x (a. { 256#:y) } M }}     NB. write y as u8 (_1 as 255)
 mget =: {{ (4#256)#.a.i.(y+i.4) { M }}     NB. fetch i32
 mput =: {{ M =: x (a.{~(4#256)#:y) } M }}  NB. store i32
+skpy =: {{ G =: (G AND NOT SKIPPY) VEL SKIPPY * y }}  NB. set skippy bit to y
 
 incp =: {{ P =: mask P + 1 }}         NB. ++p
 inc4 =: {{ 3-~P =: mask P + 4 }}      NB. p+=4,p-3
@@ -68,9 +76,9 @@ NB. ---------------------------------------------------------------------
 s_ops=:' si li sw du ov zp dr rd' [ n_ops=:' ad sb ml dv md ng sl sr'
 b_ops=:' an or xr nt'             [ c_ops=:' eq ne gt lt ge le'
 r_ops=:' dx xd dy yd dz zd dc cd' [ f_ops=:' hl jm hp h0 h1 cl rt r0 r1 ev'
-m_ops=:' rm wm yr zw wp rp qp'
+m_ops=:' rm wm yr zw wp rp qp'    [ d_ops=:' bw go'
 
-ops =: ;: s_ops,n_ops,b_ops,c_ops,r_ops,f_ops,m_ops
+ops =: ;: s_ops,n_ops,b_ops,c_ops,r_ops,f_ops,m_ops,d_ops
 
 NB. stack instructions
 si =: dput@sget@incp             NB. push next short int (signed byte) to data stack
@@ -95,8 +103,8 @@ NB. comparison instructions
 (ne =: ~: dy)`(ge =: >: dy)`(le =: <: dy)
 
 NB. register instructions
-(dx =: xset@dpop)` (dy=: yset@dpop)` (dz=: zset@dpop) `(dc=: dpop cset AND@15@dpop)
-(xd =: dput@xget)` (yd=: dput@yget)` (zd=: dput@zget) `(cd=: dput@cget@AND@15@dpop)
+(dx =: xset@dpop)` (dy=: yset@dpop)` (dz=: zset@dpop) `(dc=: dpop cset AND@CMASK@dpop)
+(xd =: dput@xget)` (yd=: dput@yget)` (zd=: dput@zget) `(cd=: dput@cget@AND@CMASK@dpop)
 
 NB. control flow instructions
 hl =: pset@END                  NB. halt
@@ -112,13 +120,22 @@ r1 =: rt^:(0~:dpop)             NB. return if tos!=0
 ev =: pset@<:@dpop@rput@pget    NB. eval. like call, but take address from stack instead of M[1+P]
 
 NB. memory / messaging instructions
-rm =: dput@mget@dpop         NB. (y rm -> x) copy memory addr y to stack (i32)
-wm =: (dpop mput dpop)       NB. (x y wm -> ) write x to addr y
+rm =: dput@mget@dpop         NB. ( a-n) copy memory addr y to stack (i32)
+wm =: (dpop mput dpop)       NB. (na- ) write x to addr y
 yr =: dput@bget@yinc         NB. (yr -> v) read byte from M[Y:b] and increment Y
 zw =: ((8|dpop) bput zinc)   NB. (n zw->)  write low byte of tos to M[Z:b] and increment Z
 wp =: [:                     NB. TODO: write to port
 rp =: [:                     NB. TODO: read from port
 qp =: [:                     NB. TODO: query port
+
+NB. dictionary instructions
+NB. 'bw' provides a simple 'dictionary' system at the opcode level.
+NB.      the 'words' in the dictionary are the ascii control characters,
+NB.      (a.{~i.32) ops 'bw cw' define the 'control word' cw by setting
+NB.      the corresponding 'c' register to the adress of the next byte.
+NB.      Finally, enter skippy mode so that the definition is ignored.
+bw =: skpy@1@(pget cset AND@CMASK@bget@incp)
+go =: skpy@0   NB. exit skippy mode
 
 NB. character handler. call address in C with char on stack
 NB. this does not have a specific opcode, but is invoked for
@@ -128,6 +145,7 @@ chev =: ev@cget@0@dput
 
 NB. cpu emulator
 NB. ---------------------------------------------------------------------
+GO =: 128 + ops i. <'go'
 grps =: <:dfh&> cut'01 80 c0 c2 e0 f0 f5' NB. start of each group of ops
 'gOk gCh gOp gU2 gU3 gU4 gUx' =: i.7
 
@@ -135,7 +153,11 @@ NB. eval: evaluate a single byte code. this allows for a
 NB. 'calculator' mode, where the VM is passive and driven
 NB. entirely by input from an external source.
 eval =: {{
-  pg =. G AND 7
+  if. G AND SKIPPY do.
+    if. y = GO do. G =: G XOR SKIPPY end.
+    return.
+  end.
+  pg =. G AND OGMASK
   NB. inside a utf-8 sequence, we calculate a number on the stack
   select. pg, g =. grps I. op =. y
   case. gU4, gU3 do. dput (16b1000 * op-16be0) dpop''
@@ -155,7 +177,7 @@ eval =: {{
       NB. this, we can just use 'li'.
     end.
   end.
-  G =: (G AND NOT 7) XOR g }}
+  G =: (G AND NOT OGMASK) XOR g }}
 
 NB. step: read instruction from memory, eval, advance program counter
 NB. loop: does same until the program halts.
