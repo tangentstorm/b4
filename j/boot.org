@@ -36,7 +36,6 @@ that don't take much work to reach.
 - compile : write a call to the word you looked up
 
 * CHECKPOINTS
-
 ** establish input/output (native code on host machine)
 *** hello world
 determine how we will perform output
@@ -80,19 +79,79 @@ hop allows position independent code.
 * PREPARATION
 We should have templates for doing basic things:
 
-** basic control flow
-*** ok : do nothing
-*** fn : 'function' start function def. arg: i.26 (as =^a=, =^b=, etc)
-*** va : 'variable' ch + size
-*** if : 'if' indicate start of start conditional (op: 'ok')
-*** th : 'then' jumps if conditional is true      (op: 'h1' or 'j1')
-*** ef : 'elif' jump target
-*** el : 'else' jump target
-*** en : 'end'  jump target
-*** wh : 'while': jump target
-*** rp : 'repeat': jump target
-*** un : 'until': no-op. marks start of final condition
-*** cs : 'case': push value onto stack
+** DONE [4/4] basic control flow templates, based on the basic programs from [[#APTOP]]
+*** note: register =Z= contains the address we're writing to as we assemble.
+*** DONE =ok= is ~[ ].~ 'ok' does nothing, so no bytecode is emitted.
+*** DONE =if .. th  .. el .. fi= provides conditionals
+**** =if= is ~[ ( - ) ]~
+"If" is pretty much a no-op and only there for human readers.
+**** =th= ("then")  is ~[ ( -z) si h0 zw si 00 zw zd ]~
+~[ si h0 zw ]~ emits the opcode for h0
+~[ si 00 zw ]~ emits the byte 0
+~[ zd ]~ is the opcode that puts the address in register Z onto the stack
+
+We want to jump if the condition is /false/, but at compile time, we don't know where we're jumping yet, so we need to leave some space for the jump target, and also push the current position onto the stack so we can come back and fill it in later.
+**** =fi= ("endif") is ~[ (a- ) du zd sw su ^b ]~
+- if the input we're assembling is well formed, address =a= of the hop distance from =th= should still be on the stack. So now:
+- =(a- aa)=  du  duplicate a
+- =(.. aaz)= zd  take the new address in z
+- =(.. aza)= sw  swap them
+- =(.. ad)=  su  subtract to get the distance between =a= and =Z= (and thus how far to jump)
+- =(.. )=    ^b  writes a single byte to an address, while preserving =Z=
+
+**** =el= ("else") is ~[ (a-z) si hp zw     si 00 zw     zd    fi ]~
+( a-az)  hp, 0, zd  - unconditional hop to fill in later (jump from end of then to end of else)
+(.. zaz) sw ov      -
+(.. z)   fi         - we jump to 'el' branch if condition after 'th' is false, which is
+                      the same logic as jumping to the end of if..fi so we can just call fi here.
+                      the difference is we're keeping another address on the stack for the
+                      next =fi= to fill in.
+
+**** =^b= (helper macro) writes a single byte to an address, while preserving Z
+ sw (ab-ba)
+ zd (.. baz)
+ sw (.. bza)
+ dz (.. bz) and Z'=a
+ sw (.. zb)
+ zw (.. z) and M[a]=b
+ dz (.. ) restoring Z
+*** DONE =wh .. do .. od= provides while loops
+**** =wh= is ~[ (  -w) zd ]~
+**** =do= is ~[ (  -d) th ]~
+**** =od= is ~[ (wd- ) sw si hp zw zd sw su zw fi ]~
+(wd-dw)  =sw=
+(.. dw)  =si hp zw=  emits 'hop' instruction
+(.. dzw) =zd sw=
+(.. dv)  =su= calculate hop vector v: backward jump of distance z-w to the 'wh' address
+(.. d)   =zw= emits v as the argument to =hp=
+(.. )    =fi= fills in the jump over the loop from 'do' if the condition fails.
+*** DONE =bw ^c .. =go= binds a 'word'(ascii control character) to the next address
+as in forth, a word can act as a function, constant, or variable
+
+** TODO [0/4] extra credit
+*** TODO =ef= for 'else if' ... maybe this is just =el=, since =if= is a no-op?
+*** TODO fn : implementing function arguments
+- op 'ac s' would specify up to four arguments
+  - s would be a signature byte
+    - 2 bits specify number of args (up to 4)
+    - 4 bits specify which ones to preserve
+    - 2 bits left over for some other purprose
+      - ex: you could pass up to 16 arguments, only the last 4 could be writable
+      - but you probably just don't need this.
+      - you might want 1 bit for 'is recursive'. (see below)
+  - inside the definition, allocate n cells
+  - push the first n control registers to the return stack
+  - (if the function is recursive, you also have to push the cells onto the return stack)
+  - set ^A to address of first cell, ^B to next, etc.
+  - move the four values from the stack to the cells
+  - now inside the function, you can use ^A ^B ^C ^D to refer to the args.
+  - before returning, restore the arguments
+- all this means more work as part of the protocol, but less stack juggling
+*** TODO =rp .. un= : repeat until
+*** TODO =case= case / switch statement for scalars
+- with or without fallthrough (no fallthrough means you can reorder)
+- with range matching
+
 ** common operationss
 *** hash a string
 *** compare two strings
@@ -253,14 +312,16 @@ nibl nibl nibl nibl nibl nibl nibl nibl zap
 char buf
 just use it as index into buffer
 
-* notes
-edmund grimley evans, "bootstrapping a simple compiler from nothing"
-http://web.archive.org/web/20061108010907/http://www.rano.org/bcompiler.html
+* bibliography
+** [APTOP] eric hehner, [[http://www.cs.toronto.edu/~hehner/aPToP/][a practical theory of programming]]
+:PROPERTIES:
+:CUSTOM_ID: aptop
+:END:
 
-jonesforth
-
-retroforth
-
+** edmund grimley evans, [[http://web.archive.org/web/20061108010907/http://www.rano.org/bcompiler.html][bootstrapping a simple compiler from nothing]]
+** jonesforth
+** retroforth
+** kragen sitaker, [[https://github.com/kragen/stoneknifeforth][stone knife forth]] uses a 1-char instruction set
 
 * stackwise approach
 - keep it simple: b4-specific for now
