@@ -76,6 +76,29 @@ hop allows position independent code.
 *** TODO b4 (real, evolving language with std library)
 
 
+
+* PREPARATION
+We should have templates for doing basic things:
+
+** basic control flow
+*** ok : do nothing
+*** fn : 'function' start function def. arg: i.26 (as =^a=, =^b=, etc)
+*** va : 'variable' ch + size
+*** if : 'if' indicate start of start conditional (op: 'ok')
+*** th : 'then' jumps if conditional is true      (op: 'h1' or 'j1')
+*** ef : 'elif' jump target
+*** el : 'else' jump target
+*** en : 'end'  jump target
+*** wh : 'while': jump target
+*** rp : 'repeat': jump target
+*** un : 'until': no-op. marks start of final condition
+*** cs : 'case': push value onto stack
+** common operationss
+*** hash a string
+*** compare two strings
+*** traverse a linked list
+*** find value in lookup table
+
 * IMPLEMENTATION
 ** a0 : hex assembler
 *** recognize a single hex digit
@@ -239,3 +262,33 @@ jonesforth
 retroforth
 
 
+* stackwise approach
+- keep it simple: b4-specific for now
+- at the top level, you enter a specification
+  - a specification is a description of behavior
+- definitions only need to be well defined and valid syntax
+  - wds =                           -- well defined spec
+    - | 'ok'
+    - | (var) ':=' (val)
+    - | (wds) .. (wds)
+    - |  if: (cond) do: (wds)
+        (ef: (cond) do: (exp))*
+        (el: (exp))? nd.
+    - | wh: (cond) do: (wds) en.
+    - | fo: (var) in: (exp) do. (wds) en.
+    - | (other combinators: @ & ^: etc )
+
+  - also need: definitions for data types, 'classes'
+
+- usage:
+  - enter as many type specs as you like
+    - obligation: valid syntax,
+    - obligation: all referenced names are defined
+  - enter as many examples as you like (become test cases)
+  - enter a function name
+  - give it a name, and that's the first word you have to define
+- this generates several obligations:
+  - define (specify) all undefined words
+  - prove that the word implements the spec
+  - implement all unimplemented words
+    - can specify these without implementation (for now)
