@@ -1,21 +1,20 @@
-#+title: bootstrapping a forth-like system
+#+title: bootstrapping a forth-like assembler
 
 * output file: b3a.b3a
 #+begin_src b3a :tangle b3a.b3a :noweb yes
 # b3a.b3a : a bootstrap assembler for b4 vm, written in itself.
 
-## macros #####################################################
+#= macros =====================================================
 <<macros-if>>
 <<macros-while>>
 <<macros-quote>>
 <<macros-for>>
 
-## runtime ####################################################
+#= runtime ====================================================
 <<ctl-c>>
-<<ctl-k>>
-<<ctl-r>>
 <<ctl-s>>
 <<ctl-h>>
+<<ctl-k>>
 <<ctl-a>>
 
 #+end_src
@@ -141,8 +140,6 @@ rb wb !a
 ^q dnwdlcruvxyzqveot01lpmeitdlegtrvp01dmptbilrwmpdrdrdpw
 
    ,/"2'''',"0|:/:~>ops
-bw ^a 'a'a'b'c'c'd'd'd'd'd'd'd'e'e'g'g'g'h'h'h'h'j'l'l'l'm'm'n'n'n'o'o'q'r'r'r'r'r'r's's's's's'w'w'x'x'y'y'z'z'z go
-bw ^b 'd'n'w'd'l'c'r'u'v'x'y'z'q'v'e'o't'0'1'l'p'm'e'i't'd'l'e'g't'r'v'p'0'1'd'm'p't'b'i'l'r'w'm'p'd'r'd'r'd'p'w go
 
 #    NB. the total available choices:
 #    [ ctl =: tolower a.{~64+i. 32
@@ -162,7 +159,7 @@ bw ^b 'd'n'w'd'l'c'r'u'v'x'y'z'q'v'e'o't'0'1'l'p'm'e'i't'd'l'e'g't'r'v'p'0'1'd'm
 # if .. then .. else .. end
 bw ^i rt go
 bw ^t si h0 zw si 00 zw zd rt go
-bw ^e ![ hp 00 !] zd sw ov ^z ex rt go
+bw ^e ![ hp 00 !] zd sw ov ^z ev rt go
 bw ^z du zd sw su wb rt go
 #+end_src
 **** =!i= is ~[ ( - ) ]~
@@ -211,15 +208,13 @@ bw ^o sw ![ hp !] zd sw su zw ^z ev rt go
 #+name: macros-quote
 #+begin_src b3a
 
-# quote compiler macros
-bw ^[ !w !k du ![ FF 1C !] ad ne !d ![ si !] zw !o zp rt go
-bw ^] rt go
-
+# quote compiler macro
+bw ^[ !w ^k ev du ![ FF 1C !] ad ne !d ![ si !] zw !o zp rt go
 #+end_src
 =![= - offset of the ![ in the source is already in y, since we're assembling.
      - no need to preserve y, since we're still reading the same source
      - no need to preserve z, since we're still emitting to the same place
-   - ~bw ^[ !w !k du ![ FF 1C !] ad ne !d ![ si !] zw !o zp rt go~
+   - ~bw ^[ !w ^k ev du ![ FF 1C !] ad ne !d ![ si !] zw !o zp rt go~
 =!]= - does nothing. it's just used as an end marker.
 
 *** DONE =n !f .. !n= is a for loop. (count down from n to 0)
@@ -227,8 +222,8 @@ bw ^] rt go
 #+begin_src b3a
 
 # for-next loop
-bw !f zd ![ dr !] rt go
-bw !n ![ nx !] zw rt go
+bw ^f zd ![ dr !] rt go
+bw ^n ![ nx !] zw rt go
 #+end_src
 
 **** =!f= is ~[ ( -a) zd ![ dr !] ]~
@@ -254,7 +249,7 @@ chev 1             / ^a opcode, placing address of assembler on stack
 gs[]
 o: M[obuf+!tos[]]  / the assembled bytecode output
 #+end_src
-** TODO [3/6] 2-char assembler
+** TODO [4/6] 2-char assembler
 *** DONE =^c= puts the next non-whitespace, non-comment character on the stack
 #+name: ctl-c
 #+begin_src b3a
@@ -265,38 +260,8 @@ bw ^c   # ( -c) fetch next non-whitespace, non-comment character
       !i du si '# eq !t              # if it's a "#" character...
          !w ry si 0A ne !d !o        #   loop until we reach a linefeed
       !e rt !z                       # first char was not a "#" so return it
-   !o rt
-go
+   !o rt go
 #+end_src
-
-*** TODO =^k= fetches the byte for the next 2-character token, and tags it with a type code
-#+name: ctl-k
-#+begin_src b3a
-
-bw ^k  # ( -kt) fetch next token k, with type-tag t
-   ^c ev  # fetch first character after whitespace and comments
-   !i du si '' eq !t ry si 00 rt !z            # "'x" -> x 0
-   !i du si '^ eq !t ry si 01 rt !z            # "^x" -> x 1
-   !i du si '! eq !t ry si 02 rt !z            # "!x" -> x 2
-   # ^b -> try matching an opcode
-   # ^h -> try matching a hex character
-go
-#+end_src
-
-use ^s to find position of first character in ^x
-now count how many copies of that character there are.
-now do a ^s inside a bounded range of ^y to match second character
-*** DONE =^r= ("rotate") is ~[ (abc-cab) sw dr sw rd ]~
-#+name: ctl-r
-#+begin_src b3a
-
-# ^r is rotate (abc-cab)
-bw ^r sw dr sw rd rt go
-#+end_src
-: (abc-acb) sw
-: ( .. ac)  dr # push b to return stack
-: ( .. ca)  sw
-: ( .. cab) rd # recover b
 
 *** DONE =^s= (csl-i?b) "string search") is []
 find index of char =c= in string (address) =s= with length =l=. return 0 if not found, else ix 1
@@ -308,24 +273,58 @@ bw ^s  # (csl-i?b) search for c in string s with len l
    sw dy              # ( .. cl)now start reading from s
    si 00 sw           # ( .. cil)put index on stack under s (!f..!n counts i-- and we want i++)
    !f                 # ( .. ci)   for loop. (at runtime, this pushes length to stack)
-      ov yr           # ( .. cicv) copy c, read the byte value from index i
+      ov ry           # ( .. cicv) copy c, read the byte value from index i
       !i eq !t        # ( .. ci)   if they match..
          rd zp        #   ( .. ci)    remove the loop counter
          rd dy        #   ( .. ci)    restore the read pointer
          sw zp        #   ( .. i)     remove the character from the stack
          si 01 rt     #   ( .. i1)    and return the index and a found=1 flag.
-      !e              # ( .. ci)   if they did /not/ match
-         si 01 ad     #   ( .. ci')   add 1 to the index
+      !e si 01 ad     # ( .. ci')   else add 1 to the index
       !z !n           # ( .. ci')  .. and go on to the next iteration
-   zp zp 00 rt        # ( .. 0) if not found, clear c,i and return 0
-go
+   zp zp 00 rt go     # ( .. 0) if not found, clear c,i and return 0
 #+end_src
 
-*** TODO =^h= parse hex number
+*** DONE =^h= parse hex number
 #+name: ctl-h
 #+begin_src b3a
-# ^h - parse hex number
+
+# ^h : (c-n) hex digit to 00,..15 (capitals only. 00 on fail)
+bw ^x '0 '1 '2 '3 '4 '5 '6 '7 '8 '9 'A 'B 'C 'D 'E 'F go
+bw ^h !i ^x si 10 ^s ev nt !t si 00 !z rt go
 #+end_src
+
+*** TODO =^k= fetches the byte for the next 2-character token, and tags it with a type code
+#+name: ctl-k
+#+begin_src b3a
+
+bw ^p # firt chars of alphebetized mnemonics
+   'a 'a 'b 'c 'c 'd 'd 'd 'd 'd 'd 'd 'e 'e 'g 'g 'g
+   'h 'h 'h 'h 'j 'l 'l 'l 'm 'm 'n 'n 'n 'o 'o 'q 'r
+   'r 'r 'r 'r 'r 's 's 's 's 's 'w 'w 'x 'x 'y 'y 'z
+   'z 'z go
+
+bw ^q # second chars of alphabetized mnemonics
+   'd 'n 'w 'd 'l 'c 'r 'u 'v 'x 'y 'z 'q 'v 'e 'o 't
+   '0 '1 'l 'p 'm 'e 'i 't 'd 'l 'e 'g 't 'r 'v 'p '0
+   '1 'd 'm 'p 't 'b 'i 'l 'r 'w 'm 'p 'd 'r 'd 'r 'd
+   'p 'w go
+
+bw ^k  # ( -kt) fetch next token k, with type-tag t
+   ^c ev  # fetch first character after whitespace and comments
+   !i du si '' eq !t ry si 00 rt !z   # "'x" -> x 0
+   !i du si '^ eq !t ry si 01 rt !z   # "^x" -> x 1
+   !i du si '! eq !t ry si 02 rt !z   # "!x" -> x 2
+   !i du ^p ^s ev !t                  # try matiching an opcode
+      # TODO
+   !z
+   # as a last resort, parse as two (uppercase) hex digits, or 00
+   # first digit << 4   # add second digit     return with tag=_1
+   ^h ev si 04 sl       ry ^h ev ad si         FF rt go
+#+end_src
+
+use ^s to find position of first character in ^x
+now count how many copies of that character there are.
+now do a ^s inside a bounded range of ^y to match second character
 
 *** TODO code emitter
 #+name: ctl-a
@@ -338,6 +337,17 @@ loop through and emit 1 byte per 2-char token
 ***** test next against list of second chars for opcodes starting with the first char
 ***** use index into a corresponding lookup table
 ***** (if no match, emit 0)
+*** DONE =^r= ("rotate") is ~[ (abc-cab) sw dr sw rd ]~
+#+name: ctl-r
+#+begin_src b3a
+
+# ^r is rotate (abc-cab)
+bw ^r sw dr sw rd rt go
+#+end_src
+: (abc-acb) sw
+: ( .. ac)  dr # push b to return stack
+: ( .. ca)  sw
+: ( .. cab) rd # recover b
 
 
 
