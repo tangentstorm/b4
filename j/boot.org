@@ -79,19 +79,48 @@ hop allows position independent code.
 * PREPARATION
 We should have templates for doing basic things:
 
-** DONE [4/4] basic control flow templates, based on the basic programs from [[#APTOP]]
+** ops used
+00 ^b ^[ ^]
+si sw ov du zp go
+dr rd
+rb wb
+zd dz zw
+hp h0 rt
+ad su eq
+
+** macros used:
+!b write byte (probably going to be a plain op)
+
+![ quote compiler
+!] end quote compiler
+!d do
+!e else
+!f for
+!i if
+!j loop index
+!k next token
+!n next
+!o od
+!r rotate
+!s string search
+!t then
+!w while
+!z fi
+
+
+** DONE [4/5] basic control flow templates, based on the basic programs from [[#APTOP]]
 *** note: register =Z= contains the address we're writing to as we assemble.
-*** DONE =ok= is ~[ ].~ 'ok' does nothing, so no bytecode is emitted.
-*** DONE =if .. th  .. el .. fi= provides conditionals
-**** =if= is ~[ ( - ) ]~
+*** DONE 'ok' does nothing, so no bytecode is emitted and it isn't used in the assembler. (' ' works)
+*** DONE =!i .. !t .. !e .. !z= provides conditionals
+**** =!i= is ~[ ( - ) ]~
 "If" is pretty much a no-op and only there for human readers.
-**** =th= ("then")  is ~[ ( -z) si h0 zw si 00 zw zd ]~
+**** =!t= ("then")  is ~[ ( -z) si h0 zw si 00 zw zd ]~
 ~[ si h0 zw ]~ emits the opcode for h0
 ~[ si 00 zw ]~ emits the byte 0
 ~[ zd ]~ is the opcode that puts the address in register Z onto the stack
 
 We want to jump if the condition is /false/, but at compile time, we don't know where we're jumping yet, so we need to leave some space for the jump target, and also push the current position onto the stack so we can come back and fill it in later.
-**** =fi= ("endif") is ~[ (a- ) du zd sw su ^b ]~
+**** =!z= ("endif") is ~[ (a- ) du zd sw su ^b ]~
 - if the input we're assembling is well formed, address =a= of the hop distance from =th= should still be on the stack. So now:
 - =(a- aa)=  du  duplicate a
 - =(.. aaz)= zd  take the new address in z
@@ -99,7 +128,7 @@ We want to jump if the condition is /false/, but at compile time, we don't know 
 - =(.. ad)=  su  subtract to get the distance between =a= and =Z= (and thus how far to jump)
 - =(.. )=    ^b  writes a single byte to an address, while preserving =Z=
 
-**** =el= ("else") is ~[ (a-z) si hp zw     si 00 zw     zd    fi ]~
+**** =!e= ("else") is ~[ (a-z) si hp zw     si 00 zw     sw ov  !z ]~
 ( a-az)  hp, 0, zd  - unconditional hop to fill in later (jump from end of then to end of else)
 (.. zaz) sw ov      -
 (.. z)   fi         - we jump to 'el' branch if condition after 'th' is false, which is
@@ -107,7 +136,7 @@ We want to jump if the condition is /false/, but at compile time, we don't know 
                       the difference is we're keeping another address on the stack for the
                       next =fi= to fill in.
 
-**** =^b= (helper macro) writes a single byte to an address, while preserving Z
+**** =!b= (helper macro) writes a single byte to an address, while preserving Z
  sw (ab-ba)
  zd (.. baz)
  sw (.. bza)
@@ -115,17 +144,37 @@ We want to jump if the condition is /false/, but at compile time, we don't know 
  sw (.. zb)
  zw (.. z) and M[a]=b
  dz (.. ) restoring Z
-*** DONE =wh .. do .. od= provides while loops
-**** =wh= is ~[ (  -w) zd ]~
-**** =do= is ~[ (  -d) th ]~
-**** =od= is ~[ (wd- ) sw si hp zw zd sw su zw fi ]~
+*** DONE =!w .. !d .. !o= provides while loops
+**** =!w= is ~[ (  -w) zd ]~
+**** =!d= is ~[ (  -d) !t ]~
+**** =!o= is ~[ (wd- ) sw si hp zw zd sw su zw fi ]~
 (wd-dw)  =sw=
 (.. dw)  =si hp zw=  emits 'hop' instruction
 (.. dzw) =zd sw=
 (.. dv)  =su= calculate hop vector v: backward jump of distance z-w to the 'wh' address
 (.. d)   =zw= emits v as the argument to =hp=
 (.. )    =fi= fills in the jump over the loop from 'do' if the condition fails.
-*** DONE =bw ^c .. =go= binds a 'word'(ascii control character) to the next address
+*** DONE =![= .. =!]= for compiling multiple ops
+=![= - offset of the ![ in the source is already in y, since we're assembling.
+     - no need to preserve y, since we're still reading the same source
+     - no need to preserve z, since we're still emitting to the same place
+   - ~bw ^[ !w !k du ![ FF 1C !] ad ne !d ![ si !] zw !o zp rt go~
+=!]= - does nothing. it's just used as an end marker.
+
+*** TODO =!f .. !n= is a for loop
+**** TODO =!f= is [ (a-) zd si dr zw ]
+**** TODO =!n= is [ (a-) ]
+
+rd             # counter to stack
+^[ si 01 ad ^] # compile these
+si hp zw zw    # loop
+
+
+
+
+nx =: (hp@rput@<:)`incp@.(0-:])@ rpop  NB. 'next': if (rtos--)==0 proceed, else hop
+]
+** DONE =bw ^c .. =go= binds a 'word'(ascii control character) to the next address
 as in forth, a word can act as a function, constant, or variable
 
 ** TODO [0/4] extra credit
@@ -151,8 +200,50 @@ as in forth, a word can act as a function, constant, or variable
 *** TODO =case= case / switch statement for scalars
 - with or without fallthrough (no fallthrough means you can reorder)
 - with range matching
+** TODO 2-char assembler
+*** remove all whitespace/comments
+*** loop through and emit 1 byte per 2-char token
+**** if first char is ', emit the next byte
+**** =^= indicates a ctrl char. if next char is a-z, subtract ord('a') and emit, else emit 0.
+**** if char in list of first chars of opcodes:
+***** test next against list of second chars for opcodes starting with the first char
+***** use index into a corresponding lookup table
+***** (if no match, emit 0)
+*** otherwise treat as two hex digits (again, string lookup)
+** DONE =^r= ("rotate") is ~[ (abc-cab) sw dr sw rd ]~
+: (abc-acb) sw
+: ( .. ac)  dr # push b to return stack
+: ( .. ca)  sw
+: ( .. cab) rd # return b
 
-** common operationss
+** TODO =^s= ("string search") is
+find index of char =c= in string (address) =s=
+: (cs-csl)            # goal:
+: (.. csl)   du rb    # fetch length of the string
+: (.. cs)    dr       # push len(s) to return stack, as loop counter
+: (.. )
+: (cs- )
+  # actual b4a instructions:
+  # for = dr
+  # ii  = rd
+  >H `0`1`2`3`4`5`6`7`8`9`A`B`C`D`E`F
+  >h (c-n) # convert hex char c to 00,..10
+    &H y!
+    yr for             # loop through chars of HEX
+      du               # copy c
+      [ yr eq :        # if c = HEX[ix]  (ix=(#HEX)-ii)
+        zp             #  drop c, and find ix
+        &H rb          #  fetch one byte (the len), # TODO:relative
+        rd             # 'ii'=rd (look at loop counter)
+        sb             # len-ii = ix = the result
+        rt
+      ]
+    nx
+    0 rt
+
+
+
+** common operations
 *** hash a string
 *** compare two strings
 *** traverse a linked list
