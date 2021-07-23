@@ -91,6 +91,7 @@ ad su eq
 ** macros used:
 !b write byte (probably going to be a plain op)
 
+# assembler macros that anyone can use
 ![ quote compiler
 !] end quote compiler
 !d do
@@ -98,17 +99,37 @@ ad su eq
 !f for
 !i if
 !j loop index
-!k next token
 !n next
 !o od
-!r rotate
-!s string search
+!s search (given length byte and starting address)
 !t then
 !w while
 !z fi
 
+# macros
+^a invokes the assembler
+^l stores length of the input buffer
+^r rotate
+^c next char
+^k next token
+^x FEDCBA9876543210
+^h parse hex pair
+^p aabccdddddddeeggghhhhjlllmmnnnooqrrrrrrssssswwxxyyzzz
+^q dnwdlcruvxyzqveot01lpmeitdlegtrvp01dmptbilrwmpdrdrdpw
 
-** DONE [4/5] basic control flow templates, based on the basic programs from [[#APTOP]]
+   ,/"2'''',"0|:/:~>ops
+bw ^a 'a'a'b'c'c'd'd'd'd'd'd'd'e'e'g'g'g'h'h'h'h'j'l'l'l'm'm'n'n'n'o'o'q'r'r'r'r'r'r's's's's's'w'w'x'x'y'y'z'z'z go
+bw ^b 'd'n'w'd'l'c'r'u'v'x'y'z'q'v'e'o't'0'1'l'p'm'e'i't'd'l'e'g't'r'v'p'0'1'd'm'p't'b'i'l'r'w'm'p'd'r'd'r'd'p'w go
+
+:    NB. the total available choices:
+:    [ ctl =: tolower a.{~64+i. 32
+: @abcdefghijklmnopqrstuvwxyz[\]^_
+:    used =: '[]defijknorstwz c'
+:    ctl -. used
+: @abghlmpquvxy\^_
+
+
+** DONE [5/5] basic control flow templates, based on the basic programs from [[#APTOP]]
 *** note: register =Z= contains the address we're writing to as we assemble.
 *** DONE 'ok' does nothing, so no bytecode is emitted and it isn't used in the assembler. (' ' works)
 *** DONE =!i .. !t .. !e .. !z= provides conditionals
@@ -147,13 +168,13 @@ We want to jump if the condition is /false/, but at compile time, we don't know 
 *** DONE =!w .. !d .. !o= provides while loops
 **** =!w= is ~[ (  -w) zd ]~
 **** =!d= is ~[ (  -d) !t ]~
-**** =!o= is ~[ (wd- ) sw si hp zw zd sw su zw fi ]~
+**** =!o= is ~[ (wd- ) sw ![ hp !] zd sw su zw !z ]~
 (wd-dw)  =sw=
-(.. dw)  =si hp zw=  emits 'hop' instruction
+(.. dw)  ~![ hp !]~ →  =si hp zw=  emits 'hop' instruction
 (.. dzw) =zd sw=
 (.. dv)  =su= calculate hop vector v: backward jump of distance z-w to the 'wh' address
 (.. d)   =zw= emits v as the argument to =hp=
-(.. )    =fi= fills in the jump over the loop from 'do' if the condition fails.
+(.. )    =!z= fills in the jump over the loop from 'do' if the condition fails.
 *** DONE =![= .. =!]= for compiling multiple ops
 =![= - offset of the ![ in the source is already in y, since we're assembling.
      - no need to preserve y, since we're still reading the same source
@@ -161,23 +182,16 @@ We want to jump if the condition is /false/, but at compile time, we don't know 
    - ~bw ^[ !w !k du ![ FF 1C !] ad ne !d ![ si !] zw !o zp rt go~
 =!]= - does nothing. it's just used as an end marker.
 
-*** TODO =!f .. !n= is a for loop
-**** TODO =!f= is [ (a-) zd si dr zw ]
-**** TODO =!n= is [ (a-) ]
-
-rd             # counter to stack
-^[ si 01 ad ^] # compile these
-si hp zw zw    # loop
-
-
-
-
-nx =: (hp@rput@<:)`incp@.(0-:])@ rpop  NB. 'next': if (rtos--)==0 proceed, else hop
-]
-** DONE =bw ^c .. =go= binds a 'word'(ascii control character) to the next address
+*** DONE =n !f .. !n= is a for loop. (count down from n to 0)
+**** =!f= is ~[ ( -a) zd ![ dr !] ]~
+At compile time, it writes the current address to top of ram. (so we can compile the jump later)
+At runtime, it pushes the number of times to loop to the return stack.
+**** =!n= is ~[ (a-) ![ nx !] zw ]~
+*** DONE =bw ^c .. =go= provides both assignment and function definition
+binds a 'word'(ascii control character) to the next address
 as in forth, a word can act as a function, constant, or variable
 
-** TODO [0/4] extra credit
+** TODO [1/5] extra credit
 *** TODO =ef= for 'else if' ... maybe this is just =el=, since =if= is a no-op?
 *** TODO fn : implementing function arguments
 - op 'ac s' would specify up to four arguments
@@ -200,48 +214,85 @@ as in forth, a word can act as a function, constant, or variable
 *** TODO =case= case / switch statement for scalars
 - with or without fallthrough (no fallthrough means you can reorder)
 - with range matching
+*** DONE implementing =nx= if it weren't an opcode
+![ rd si 01 su du !]  (leaving two copies of (ii-1))
+![ h0 03 !]           (if 0, hop over the next 3 bytes)
+![ dr hp !] zw        (>0, so put back on return stack and hop backwards)
+![ zp !]              (zap extra 0 at runtime)
 ** TODO 2-char assembler
-*** remove all whitespace/comments
-*** loop through and emit 1 byte per 2-char token
-**** if first char is ', emit the next byte
+*** DONE =^c= puts the next non-whitespace, non-comment character on the stack
+: bw ^c
+:  !w si 01 !d                                   # infinite outer loop
+:     !w ry du si 20 le !d zp !o                 # leave first non-whitespace char on stack
+:     !i du si '# eq !t                          # if it's a "#" character...
+:        !w ry si 0A ne !d !o                    #   loop until we reach a linefeed
+:     !e rt !z                                   # first char was not a "#" so return it
+:  !o
+: go
+*** TODO =^k= fetches the byte for the next 2-character token, and tags it with a type code
+: bw ^k
+:    ^c ev  # fetch first character after whitespace and comments
+:    !i du si '' eq !t ry si 00 rt !z            # "'x" -> x 0
+:    !i du si '^ eq !t ry si 01 rt !z            # "^x" -> x 1
+:    !i du si '! eq !t ry si 02 rt !z            # "!x" -> x 2
+:    # ^b -> try matching an opcode
+:    # ^h -> try matching a hex character
+: go
+
+use ^s to find position of first character in ^x
+now count how many copies of that character there are.
+now do a ^s inside a bounded range of ^y to match second character
+
+*** TODO code emitter
+loop through and emit 1 byte per 2-char token
 **** =^= indicates a ctrl char. if next char is a-z, subtract ord('a') and emit, else emit 0.
 **** if char in list of first chars of opcodes:
 ***** test next against list of second chars for opcodes starting with the first char
 ***** use index into a corresponding lookup table
 ***** (if no match, emit 0)
-*** otherwise treat as two hex digits (again, string lookup)
-** DONE =^r= ("rotate") is ~[ (abc-cab) sw dr sw rd ]~
+*** DONE =^r= ("rotate") is ~[ (abc-cab) sw dr sw rd ]~
 : (abc-acb) sw
 : ( .. ac)  dr # push b to return stack
 : ( .. ca)  sw
 : ( .. cab) rd # return b
 
-** TODO =^s= ("string search") is
-find index of char =c= in string (address) =s=
-: (cs-csl)            # goal:
-: (.. csl)   du rb    # fetch length of the string
-: (.. cs)    dr       # push len(s) to return stack, as loop counter
-: (.. )
-: (cs- )
-  # actual b4a instructions:
-  # for = dr
-  # ii  = rd
-  >H `0`1`2`3`4`5`6`7`8`9`A`B`C`D`E`F
-  >h (c-n) # convert hex char c to 00,..10
-    &H y!
-    yr for             # loop through chars of HEX
-      du               # copy c
-      [ yr eq :        # if c = HEX[ix]  (ix=(#HEX)-ii)
-        zp             #  drop c, and find ix
-        &H rb          #  fetch one byte (the len), # TODO:relative
-        rd             # 'ii'=rd (look at loop counter)
-        sb             # len-ii = ix = the result
-        rt
-      ]
-    nx
-    0 rt
+*** DONE =^s= (csl-i?b) "string search") is []
+find index of char =c= in string (address) =s= with length =l=. return 0 if not found, else ix 1
+
+: yd dr              # (csl-csl) copy current read pointer to return stack
+: sw dy              # ( .. cl)now start reading from s
+: si 00 sw           # ( .. cil)put index on stack under s (!f..!n counts i-- and we want i++)
+: !f                 # ( .. ci)   for loop. (at runtime, this pushes length to stack)
+:    ov yr           # ( .. cicv) copy c, read the byte value from index i
+:    !i eq !t        # ( .. ci)   if they match..
+:         rd zp      #   ( .. ci)    remove the loop counter
+:         rd dy      #   ( .. ci)    restore the read pointer
+:         sw zp      #   ( .. i)     remove the character from the stack
+:         si 01 rt   #   ( .. i1)    and return the index and a found=1 flag.
+:    !e              # ( .. ci)   if they did /not/ match
+:         si 01 ad   # ( .. ci')     add 1 to the index
+:    !z !n           # ( .. ci')  .. and go on to the next iteration
+:   zp zp 00 rt      # ( .. 0) if not found, clear c,i and return 0
+: go
+
+*** TODO =^h= parse hex number
+^x ev
 
 
+** DONE protocol for invoking the assembler
+#+begin_src k
+/ ibuf and obuf are arbitrary addresses of input/output buffers somewhere in M
+/ vm should have already executed the instructions in the assembler binary,
+/ and be in calculator mode (since 'hl' gets called at the end)
+
+M[ibuf+!#src] = src
+dput ibuf
+dput #src
+dput obuf
+chev 1             / ^a opcode, placing address of assembler on stack
+gs[]
+o: M[obuf+!tos[]]  / the assembled bytecode output
+#+end_src
 
 ** common operations
 *** hash a string
