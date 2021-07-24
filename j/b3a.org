@@ -38,15 +38,28 @@ The b3 version provides only the opcodes necessary to run this assembler on itse
   Instead, it has hard-coded support for the specific
   macros used in b3a.b3a.
   """
-  import re
+  import re, collections
+
+  OPS = [
+      'ad',  'an',  'bw',  'cd',  'cl',  'dc',  'dr',  'du',
+      'dv',  'dx',  'dy',  'dz',  'eq',  'ev',  'ge',  'go',
+      'gt',  'h0',  'h1',  'hl',  'hp',  'jm',  'le',  'li',
+      'lt',  'md',  'ml',  'ne',  'ng',  'nt',  'nx',  'or',
+      'ov',  'qp',  'r0',  'r1',  'rd',  'rm',  'rp',  'rt',
+      'sb',  'si',  'sl',  'sr',  'sw',  'wm',  'wp',  'xd',
+      'xr',  'yd',  'yr',  'zd',  'zp',  'zw' ]
+
+  SEEN = collections.Counter()
 
   <<py-tokens>>
   <<py-macros>>
   <<py-asm>>
+  <<py-stats>>
 
   if __name__=="__main__":
       src = open('b3a.b3a').read()
       open('b3a0.out','wb').write(asm(src))
+      print_stats()
 
 #+end_src
 
@@ -380,15 +393,6 @@ bw ^r sw dr sw rd rt go
 
   ## lexer for b3a source code ############################
 
-  OPS = [
-      'ad',  'an',  'bw',  'cd',  'cl',  'dc',  'dr',  'du',
-      'dv',  'dx',  'dy',  'dz',  'eq',  'ev',  'ge',  'go',
-      'gt',  'h0',  'h1',  'hl',  'hp',  'jm',  'le',  'li',
-      'lt',  'md',  'ml',  'ne',  'ng',  'nt',  'nx',  'or',
-      'ov',  'qp',  'r0',  'r1',  'rd',  'rm',  'rp',  'rt',
-      'sb',  'si',  'sl',  'sr',  'sw',  'wm',  'wp',  'xd',
-      'xr',  'yd',  'yr',  'zd',  'zp',  'zw' ]
-
   def bc(t):
       """return the byte code for a mnemonic token"""
       return OPS.index(t) + 0xA0
@@ -402,10 +406,12 @@ bw ^r sw dr sw rd rt go
       src = src.replace("'#", hex(ord('#'))[2:])  # get rid of '# so # always indicates comment.
       src = re.sub('#.*','',src)                  # get rid of all comments
       for t in src.split():
+          SEEN[t] += 1
           if   t[0]=="'": yield (ord(t[1]),    1)
           elif t[0]=="^": yield (ord(t[1].upper())-64, 1)
           elif t[0]=="!": yield (t[1], 0)
-          elif t in OPS: yield (bc(t), 1)
+          elif t in OPS:
+              yield (bc(t), 1)
           else: yield ((hexit(t[0]) << 4) + hexit(t[1]), 1)
 #+end_src
 *** DONE macro handlers
@@ -537,9 +543,21 @@ bw ^r sw dr sw rd rt go
               return bytes(res)
 
 #+end_src
+*** TODO op statistics
+#+name: py-stats
+#+begin_src python
+
+  def print_stats():
+      print("opcodes that appeared in the source code:")
+      for (tok,count) in SEEN.most_common():
+          if tok in OPS: # or tok.startswith('!') or tok.startswith('^'):
+              print (tok, '%2i|'%count, '*'*count)
+      print("unused: ", ' '.join(sorted({op for op in OPS if not SEEN[op]})))
+
+#+end_src
+
 
 ** TODO do a topological sort on the macros to see if we can define them directly on the vm
-** TODO manually expand any macros we can't macros to get b3a0
 ** TODO try simplifying macros by having an op 'zz' that sets sleepy=1
 
 * -- extra stuff --
