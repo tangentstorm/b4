@@ -1,6 +1,12 @@
 #+title: bootstrapping a forth-like assembler
 
-* output file: b3a.b3a
+* OUTPUT
+This org-mode document, when run through =org-babel-tangle= in emacs, produces two output files, both of which are assemblers for the b3 assembly language, =b3a=.
+
+=b3= is a stripped down version of the =b4= virtual machine, (in development at the time of this writing).
+The b3 version provides only the opcodes necessary to run this assembler on itself.
+
+** file:b3a.b3a is b3a assembler written in b3a.
 #+begin_src b3a :tangle b3a.b3a :noweb yes
 # b3a.b3a : a bootstrap assembler for b4 vm, written in itself.
 
@@ -16,6 +22,31 @@
 <<ctl-h>>
 <<ctl-k>>
 <<ctl-a>>
+
+#+end_src
+
+** file:b3a0.py  is a bootstrap assembler for b3a in python.
+#+begin_src python :tangle b3a0.py :noweb yes  :padline no
+  #!/usr/bin/env python3
+  """
+  b3a0.py: a bootstrap b3 assembler in python
+
+  This is a simplfied version of b3a.b3a.
+
+  It does not provide the ability to create macros
+  (since that would require a b3 bytecode interpreter).
+  Instead, it has hard-coded support for the specific
+  macros used in b3a.b3a.
+  """
+  import re
+
+  <<py-tokens>>
+  <<py-macros>>
+  <<py-asm>>
+
+  if __name__=="__main__":
+      src = open('b3a.b3a').read()
+      open('b3a0.out','wb').write(asm(src))
 
 #+end_src
 
@@ -98,17 +129,6 @@ hop allows position independent code.
 * PREPARATION
 We should have templates for doing basic things:
 
-** ops used
-#+begin_src b3a
-00 ^b ^[ ^]
-si sw ov du zp go .. bw
-dr rd
-rb wb !a
-  zd dz zw
-  hp h0 rt
-  ad su eq
-#+end_src
-
 ** macros used:
 #+begin_src b3a
 !b # write byte (probably going to be a plain op)
@@ -149,7 +169,7 @@ rb wb !a
 # @abghlmpquvxy\^_
 #+end_src
 
-** DONE [5/5] basic control flow templates, based on the basic programs from [[#APTOP]]
+** DONE [6/6] basic control flow templates, based on the basic programs from [[#APTOP]]
 *** note: register =Z= contains the address we're writing to as we assemble.
 *** DONE 'ok' does nothing, so no bytecode is emitted and it isn't used in the assembler. (' ' works)
 *** DONE =!i .. !t .. !e .. !z= provides conditionals
@@ -160,7 +180,7 @@ rb wb !a
 bw ^i rt go
 bw ^t si h0 zw si 00 zw zd rt go
 bw ^e ![ hp 00 !] zd sw ov ^z ev rt go
-bw ^z du zd sw su wb rt go
+bw ^z du zd sw sb wb rt go
 #+end_src
 **** =!i= is ~[ ( - ) ]~
 "If" is pretty much a no-op and only there for human readers.
@@ -170,12 +190,12 @@ bw ^z du zd sw su wb rt go
 ~[ zd ]~ is the opcode that puts the address in register Z onto the stack
 
 We want to jump if the condition is /false/, but at compile time, we don't know where we're jumping yet, so we need to leave some space for the jump target, and also push the current position onto the stack so we can come back and fill it in later.
-**** =!z= ("endif") is ~[ (a- ) du zd sw su wb ]~
+**** =!z= ("endif") is ~[ (a- ) du zd sw sb wb ]~
 - if the input we're assembling is well formed, address =a= of the hop distance from =th= should still be on the stack. So now:
 - =(a- aa)=  du  duplicate a
 - =(.. aaz)= zd  take the new address in z
 - =(.. aza)= sw  swap them
-- =(.. ad)=  su  subtract to get the distance between =a= and =Z= (and thus how far to jump)
+- =(.. ad)=  sb  subtract to get the distance between =a= and =Z= (and thus how far to jump)
 - =(.. )=    wb  writes the distance byte to the address
 
 **** =!e= ("else") is ~[ (a-z) si hp zw     si 00 zw   zd sw ov  ^z ex ]~
@@ -193,11 +213,12 @@ We want to jump if the condition is /false/, but at compile time, we don't know 
 # while .. do .. od
 bw ^w zd rt go
 bw ^d ^t ev rt go
-bw ^o sw ![ hp !] zd sw su zw ^z ev rt go
+bw ^b zd sw sb zw go   # backwards jump
+bw ^o sw ![ hp !] ^b ev ^z ev rt go
 #+end_src
 **** =!w= is ~[ (  -w) zd ]~
 **** =!d= is ~[ (  -d) !t ]~
-**** =!o= is ~[ (wd- ) sw ![ hp !] zd sw su zw !z ]~
+**** =!o= is ~[ (wd- ) sw ![ hp !] zd sw sb zw !z ]~
 (wd-dw)  =sw=
 (.. dw)  ~![ hp !]~ →  =si hp zw=  emits 'hop' instruction
 (.. dzw) =zd sw=
@@ -223,7 +244,7 @@ bw ^[ !w ^k ev du ![ FF 1C !] ad ne !d ![ si !] zw !o zp rt go
 
 # for-next loop
 bw ^f zd ![ dr !] rt go
-bw ^n ![ nx !] zw rt go
+bw ^n ![ nx !] ^b ev rt go
 #+end_src
 
 **** =!f= is ~[ ( -a) zd ![ dr !] ]~
@@ -352,6 +373,171 @@ bw ^r sw dr sw rd rt go
 
 
 * BOOTSTRAPPING
+** DONE python bootstrap assembler
+*** DONE tokenizer
+#+name: py-tokens
+#+begin_src python
+
+  ## lexer for b3a source code ############################
+
+  OPS = [
+      'ad',  'an',  'bw',  'cd',  'cl',  'dc',  'dr',  'du',
+      'dv',  'dx',  'dy',  'dz',  'eq',  'ev',  'ge',  'go',
+      'gt',  'h0',  'h1',  'hl',  'hp',  'jm',  'le',  'li',
+      'lt',  'md',  'ml',  'ne',  'ng',  'nt',  'nx',  'or',
+      'ov',  'qp',  'r0',  'r1',  'rd',  'rm',  'rp',  'rt',
+      'sb',  'si',  'sl',  'sr',  'sw',  'wm',  'wp',  'xd',
+      'xr',  'yd',  'yr',  'zd',  'zp',  'zw' ]
+
+  def bc(t):
+      """return the byte code for a mnemonic token"""
+      return OPS.index(t) + 0xA0
+
+  def hexit(c):
+      """(capital) hex value of c, else 0"""
+      return max('0123456789ABCDEF'.find(c),0)
+
+  def tokens(src):
+      """src -> [(byte|char, ready?:bit)]"""
+      src = src.replace("'#", hex(ord('#'))[2:])  # get rid of '# so # always indicates comment.
+      src = re.sub('#.*','',src)                  # get rid of all comments
+      for t in src.split():
+          if   t[0]=="'": yield (ord(t[1]),    1)
+          elif t[0]=="^": yield (ord(t[1].upper())-64, 1)
+          elif t[0]=="!": yield (t[1], 0)
+          elif t in OPS: yield (bc(t), 1)
+          else: yield ((hexit(t[0]) << 4) + hexit(t[1]), 1)
+#+end_src
+*** DONE macro handlers
+#+name: py-macros
+#+begin_src python
+
+  ## built-in macros function #############################
+
+  STACK = []
+
+  def SW():
+      """swap operation"""
+      x = STACK.pop()
+      y = STACK.pop()
+      STACK.extend([x,y])
+
+  def OV():
+      """over operation"""
+      STACK.append(STACK[-2])
+
+  def ZD(res):
+      """in b3, 'zd' writes the current write position to the stack"""
+      STACK.append(len(res))
+
+  def backjump(res, op):
+      last = STACK.pop()
+      dist = last - len(res) # negative short int
+      res.extend([bc(op), 255 & dist])
+
+  # == if/then/else/endif =================================
+
+  def i(res):
+      """the IF part of IF .. THEN .. ELSE .. END"""
+      # <<ctl-i>>
+      # bw ^i rt go
+      pass
+
+  def t(res):
+      """the THEN part of IF .. THEN .. ELSE .. END"""
+      # <<ctl-t>>
+      # bw ^t si h0 zw si 00 zw zd rt go
+      res.extend([bc('si'), 0])
+      ZD(res)
+
+  def e(res):
+      """the ELSE part of IF .. THEN .. ELSE .. END"""
+      # <<ctl-e>>
+      # bw ^e ![ hp 00 !] zd sw ov ^z ev rt go
+      res.extend([bc('hp'), 0])
+      ZD(res); SW(); OV(); z(res)
+
+  def z(res):
+      """the END part of IF .. THEN .. ELSE .. END"""
+      # <<ctl-z>>
+      # bw ^z du zd sw sb wb rt go
+      last = STACK.pop()
+      dist = (len(res) - last)
+      res[last-1]=dist
+
+  # == while .. do .. od ==================================
+
+  def w(res):
+      """the WHILE part of WHILE .. DO .. OD"""
+      # <<ctl-w>>
+      # bw ^w zd rt go
+      ZD(res)
+
+  def d(res):
+      """the DO part of WHILE .. DO .. OD"""
+      # <<ctl-d>>
+      # bw ^d ^t ev rt go
+      t(res)
+
+  def o(res):
+      """the OD part of WHILE .. DO .. OD"""
+      # <<ctl-o>>
+      # bw ^o sw ![ hp !] zd sw sb zw ^z ev rt go
+      backjump(res, 'hp')
+      z(res) # fwd jump when condition fails
+
+  # == for .. next ========================================
+
+  def f(res):
+      """the FOR part of FOR .. NEXT"""
+      # <<ctl-f>>
+      # bw ^f zd ![ dr !] rt go
+      ZD(res)
+      res.extend([bc('dr')])
+
+  def n(res):
+      """the NEXT part of FOR .. NEXT"""
+      # <<ctl-f>>
+      # bw ^n ![ nx !] ^b ev rt go
+      res.extend([bc('nx')])
+      backjump(res, 'nx')
+
+  MACROS = {
+      'i':i, 't':t, 'e':e, 'z':z,
+      'w':w, 'd':d, 'o':o,
+      'f':f, 'n':n }
+
+  def quote(res, toks):
+      """ quote handler: ( ) """
+      # bw ^[ !w ^k ev du ![ FF 1C !] ad ne !d ![ si !] zw !o zp rt go
+      for tok,ready in toks:
+          if ready: res.append(tok)
+          elif tok == ']': return
+          elif tok == '[': raise "cannot handle nested ![ .. !]"
+          elif tok in MACROS: MACROS[tok](res)
+          else: raise "cannot handle '!"+tok+"' inside ![...!]"
+
+#+end_src
+*** DONE assembler
+#+name: py-asm
+#+begin_src python
+
+  ## main assembler function ##############################
+
+  def asm(src):
+      res, toks = ([], tokens(src))
+      while True:
+          try:
+              tok, ready = next(toks)
+              if ready: res.append(tok)
+              else: # macros
+                  if tok == '[': quote(res, toks)
+                  else: MACROS[tok](res)
+          except StopIteration:
+              return bytes(res)
+
+#+end_src
+
 ** TODO do a topological sort on the macros to see if we can define them directly on the vm
 ** TODO manually expand any macros we can't macros to get b3a0
 ** TODO try simplifying macros by having an op 'zz' that sets sleepy=1
@@ -547,7 +733,7 @@ just use it as index into buffer
 - with range matching
 * impleminting some ops in b3a
 ** DONE implementing =nx= if it weren't an opcode
-![ rd si 01 su du !]  (leaving two copies of (ii-1))
+![ rd si 01 sb du !]  (leaving two copies of (ii-1))
 ![ h0 03 !]           (if 0, hop over the next 3 bytes)
 ![ dr hp !] zw        (>0, so put back on return stack and hop backwards)
 ![ zp !]              (zap extra 0 at runtime)
