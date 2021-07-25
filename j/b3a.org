@@ -12,9 +12,10 @@ The b3 version provides only the opcodes necessary to run this assembler on itse
 
 #= macros =====================================================
 <<macros-if>>
+<<macros-back>>
 <<macros-while>>
-<<macros-quote>>
 <<macros-for>>
+<<macros-quote>>
 
 #= runtime ====================================================
 <<ctl-c>>
@@ -182,7 +183,7 @@ We should have templates for doing basic things:
 # @abghlmpquvxy\^_
 #+end_src
 
-** DONE [6/6] basic control flow templates, based on the basic programs from [[#APTOP]]
+** DONE [7/7] basic control flow templates, based on the basic programs from [[#APTOP]]
 *** note: register =Z= contains the address we're writing to as we assemble.
 *** DONE 'ok' does nothing, so no bytecode is emitted and it isn't used in the assembler. (' ' works)
 *** DONE =!i .. !t .. !e .. !z= provides conditionals
@@ -218,7 +219,6 @@ We want to jump if the condition is /false/, but at compile time, we don't know 
                       the same logic as jumping to the end of if..fi so we can just call fi here.
                       the difference is we're keeping another address on the stack for the
                       next =fi= to fill in.
-
 *** DONE =!w .. !d .. !o= provides while loops
 #+name: macros-while
 #+begin_src b3a
@@ -226,7 +226,6 @@ We want to jump if the condition is /false/, but at compile time, we don't know 
 # while .. do .. od
 bw ^w zd rt go
 bw ^d ^t ev rt go
-bw ^b zd sw sb zw go   # backwards jump
 bw ^o sw ![ hp !] ^b ev ^z ev rt go
 #+end_src
 **** =!w= is ~[ (  -w) zd ]~
@@ -238,32 +237,45 @@ bw ^o sw ![ hp !] ^b ev ^z ev rt go
 (.. dv)  =su= calculate hop vector v: backward jump of distance z-w to the 'wh' address
 (.. d)   =zw= emits v as the argument to =hp=
 (.. )    =!z= fills in the jump over the loop from 'do' if the condition fails.
-*** DONE =![= .. =!]= for emitting instructions which emit the ops inside the brackets
-#+name: macros-quote
+*** DONE =!b= backwards jump helper
+#+name: <<macros-back>>
 #+begin_src b3a
-
-# quote compiler macro
-bw ^[ !w ^k ev du ![ FF 1C !] ad ne !d ![ si !] zw !o zp rt go
+bw ^b zd sw sb zw rt go   # backwards jump
 #+end_src
-=![= - offset of the ![ in the source is already in y, since we're assembling.
-     - no need to preserve y, since we're still reading the same source
-     - no need to preserve z, since we're still emitting to the same place
-   - ~bw ^[ !w ^k ev du ![ FF 1C !] ad ne !d ![ si !] zw !o zp rt go~
-=!]= - does nothing. it's just used as an end marker.
 
 *** DONE =n !f .. !n= is a for loop. (count down from n to 0)
 #+name: macros-for
 #+begin_src b3a
 
-# for-next loop
-bw ^f zd ![ dr !] rt go
-bw ^n ![ nx !] ^b ev rt go
+  # for-next loop
+  bw ^f zd ![ dr !] rt go
+  # bw ^n ![ nx !] ^b ev rt go
+  bw ^n ![
+    rd si
+    01 sb du
+    h0 03
+    dr hp !]
+    ^b ev
+    ![ zp !]
+    rt go
 #+end_src
 
 **** =!f= is ~[ ( -a) zd ![ dr !] ]~
 At compile time, it writes the current address to top of ram. (so we can compile the jump later)
 At runtime, it pushes the number of times to loop to the return stack.
 **** =!n= is ~[ (a-) ![ nx !] zw ]~
+*** DONE =![= .. =!]= for emitting instructions which emit the ops inside the brackets
+#+name: macros-quote
+#+begin_src b3a
+
+# quote compiler macro
+bw ^[ !w ^k ev du ![ FF 1C !] ad eq nt !d ![ si !] zw !o zp rt go
+#+end_src
+=![= - offset of the ![ in the source is already in y, since we're assembling.
+     - no need to preserve y, since we're still reading the same source
+     - no need to preserve z, since we're still emitting to the same place
+   - ~bw ^[ !w ^k ev du ![ FF 1C !] ad eq nt !d ![ si !] zw !o zp rt go~
+=!]= - does nothing. it's just used as an end marker.
 *** DONE =bw ^c .. =go= provides both assignment and function definition
 binds a 'word'(ascii control character) to the next address
 as in forth, a word can act as a function, constant, or variable
@@ -292,7 +304,7 @@ bw ^c   # ( -c) fetch next non-whitespace, non-comment character
    !w si 01 !d                       # infinite outer loop
       !w ry du si 20 le !d zp !o     # leave first non-whitespace char on stack
       !i du si '# eq !t              # if it's a "#" character...
-         !w ry si 0A ne !d !o        #   loop until we reach a linefeed
+         !w ry si 0A eq nt !d !o     #   loop until we reach a linefeed
       !e rt !z                       # first char was not a "#" so return it
    !o rt go
 #+end_src
@@ -515,7 +527,7 @@ bw ^r sw dr sw rd rt go
 
   def quote(res, toks):
       """ quote handler: ( ) """
-      # bw ^[ !w ^k ev du ![ FF 1C !] ad ne !d ![ si !] zw !o zp rt go
+      # bw ^[ !w ^k ev du ![ FF 1C !] ad eq nt !d ![ si !] zw !o zp rt go
       for tok,ready in toks:
           if ready: res.append(tok)
           elif tok == ']': return
