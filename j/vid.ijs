@@ -50,7 +50,9 @@ chxy =: 'CHB' pepo
 
 NB. write to ram
 NB. putc =: {{ (y chxy])`(FG fgxy ])`(BG bgxy ])`:0 XY }}
-putc =: {{ y chxy XY [ FG fgxy XY [ BG bgxy XY }}
+putc =: {{
+  y chxy XY [ FG fgxy XY [ BG bgxy XY
+  if. {. XY =: XY + 1 0 do. XY =: 0,1+{:XY end. }}
 puts =: putc"0
 
 rnd =: {{
