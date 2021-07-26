@@ -32,6 +32,8 @@ help =: 0 : 0
   reset''   -> reset to default colors
 
   sleep n   -> sleep for n milliseconds
+
+  mouse b   -> enable/disable mouse events
 )
 
 
@@ -120,6 +122,16 @@ NB. ----------------------------------------------------
 curxy =: {{ raw 1
   r =. 2}. wfc 'R' [ puts CSI,'6n'
   |.0".>';' splitstring r }}
+
+mouse =: {{
+  'cdm' mouse y  NB. click, drag, move events
+:
+  f =. y { 'lh'  NB. 0->l=off, 1->h=on
+  qs =. ''
+  if. 'c' e. x do. qs=.qs,CSI,'?1000',f end.
+  if. 'd' e. x do. qs=.qs,CSI,'?1002',f end.
+  if. 'm' e. x do. qs=.qs,CSI,'?1003',f end.
+  puts CSI,'?1006h',qs }}
 
 init =: {{
   NB. define (raw, rkey, gethw, putc) + platform-specific helpers
