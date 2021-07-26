@@ -93,53 +93,6 @@ the system.
 So instead, let's focus on clearly defined checkpoints
 that don't take much work to reach.
 
-* REQUIREMENTS
-- dictionary
-- lookup  : word as string -> address return 0
-- execute : execute the word you looked up
-- compile : write a call to the word you looked up
-
-* TODO CHECKPOINTS  # revisit this
-** establish input/output (native code on host machine)
-*** hello world
-determine how we will perform output
-*** echo input
-determine how we will perform input
-determine end of input
-
-(for vm, can use input/output wrapper, where host language
-reads from stdin, copies to input buffer, waits for response,
-and posts to output buffer)
-
-** assembler(s)
-*** TODO a0 onboard hex code assembler
-**** help us learn the basic techniques
-establish file input/output protocol. simple hex parser
-**** handle spaces
-**** lookup character in string
-**** compose every two nibble chars
-**** write to output buffer
-*** TODO a1 add muri style mnemonics
-**** recognize a mnemonic
-***** :nextc (-c) scan for next non-space character
-***** nextc twice
-***** do they match an op?
-***** else fall back to hex
-*** TODO a2 1 char labels, hops, and comments
-hops are relative. we have a jump instruction,
-but addresses don't fit in two characters.
-so, might need multiple hops to make a long jump.
-hop allows position independent code.
-*** TODO a3 forth-style dictionary / compiler
-** interpreter(s)
-*** TODO b0 a1 (mnemonic) interpreter in a3
-*** TODO b1 add basic forth vocabulary
-*** TODO b2 sigils/classes (from retroforth)
-*** TODO b3 combinators ?
-*** TODO b4 (real, evolving language with std library)
-
-
-
 * PREPARATION
 We should have templates for doing basic things:
 
@@ -279,7 +232,6 @@ bw ^[ !w ^k ev du ![ FF 1C !] ad eq nt !d ![ si !] zw !o zp rt go
 *** DONE =bw ^c .. =go= provides both assignment and function definition
 binds a 'word'(ascii control character) to the next address
 as in forth, a word can act as a function, constant, or variable
-
 * IMPLEMENTATION
 ** DONE protocol for invoking the assembler
 #+begin_src k
@@ -394,9 +346,6 @@ bw ^r sw dr sw rd rt go
 : ( .. ac)  dr # push b to return stack
 : ( .. ca)  sw
 : ( .. cab) rd # recover b
-
-
-
 * BOOTSTRAPPING
 ** DONE python bootstrap assembler
 *** DONE tokenizer
@@ -555,7 +504,7 @@ bw ^r sw dr sw rd rt go
               return bytes(res)
 
 #+end_src
-*** TODO op statistics
+*** DONE op statistics
 #+name: py-stats
 #+begin_src python
 
@@ -573,47 +522,7 @@ bw ^r sw dr sw rd rt go
 ** TODO try simplifying macros by having an op 'zz' that sets sleepy=1
 
 * -- extra stuff --
-
-* (draft) explaining what a forth is
-
-A forth system has the following variables:
-
-   HERE : address of first cell of usable ram
-   LAST : address of last defined word record
-   IBUF : adresss of the input buffer
-
-message passing system:
-
-  declare an input buffer containing a short string:
-    1 byte length/mutex
-    255 input bytes
-  if length=0, interpreter is ready for input
-  client fills in the memory and sets leading byte to length.
-
-interpreter:
-
-  tokenize input and handle each token.
-  special leading characters:
-    : define word
-    & obtain pointer
-    ( comment
-    ` assembler
-    @ getter
-    ! setter
-    0..9       (decimal)
-    $ hex      (retro: char)
-    # comment  (retro: number)
-    [ block    (retro: n/a)
-
-* template for hex code assembly programs
-#+begin_src b4a
-#0 _1 _2 _3 _4 _5 _6 _7 _8 _9 _A _B _C _D _E _F
-hp 10 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
-.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
-.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
-#+end_src
-
-* how this exercise affected b4 design
+** how this exercise affected b4 design
 - hex dumper: i probably won't actually use it (since it isn't necessary to GENERATE a hex dump), but i started with this exercise in mind, and once i started writing it in hex+mnemonic assembly style, i was annoyed at how much space i was wasting with packed instructions followed by long addresess. This prompted me to switch to just using a bytecode, and not worry about 32-bit cells.
 - hex assembler:  this made me want to do xr as well as yr, to make it easy to compare strings, but i didn't (yet)
 - real assembler:
@@ -631,81 +540,11 @@ hp 10 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
     - so we only need 'rb/wb' instead 'rm/wm' - previously these were not opcodes
   - so all this caused me to add 'rb,wb,bw,go' opcodes
 
-* early psuedocode to recognize a single hex digit
-was trying to work backwards from a structured programmming approach in python (but using only the equivalent of primative ops in b4). it was very frustrating.
-#+begin_src python
-
-  HEX = '0123456789ABCDEF'
-
-  # normal python:
-  def hexit(c):
-      return max('0123456789ABCDEF'.find(c),0)
-
-  # vm environent:
-  x = y = z = 0  # registers
-  d = []         # data stack
-  r = []         # return stack
-  m = ['...#0123456789ABCDEF']  # m = ram, # is len (15) 0-F ascii chars
-  d = [c]                       # d = stack, c= char to lookup
-
-  def rput(v): r.append(v)
-  def yr(): m[r]
-
-  def hexit:
-     # i counts down from 15 to 1
-     y = m.index('#')
-
-     for i in range(m[y],1):      # si 0F dr  (loop counter goes on return stack)
-         y = HEX+y              # rd
-         d.append(HEX[y])
-         # set y=hex+i  si 01 yd ad
-         if d[-1] == HEX[r[-1]]:
-            break
-        else: r[-1] -= 1
-     d.push(r.pop())
-     return
-
-  # actual b4a instructions:
-  # for = dr
-  # ii  = rd
-  >H `0`1`2`3`4`5`6`7`8`9`A`B`C`D`E`F
-  >h (c-n) # convert hex char c to 00,..10
-    &H y!
-    yr for             # loop through chars of HEX
-      du               # copy c
-      [ yr eq :        # if c = HEX[ix]  (ix=(#HEX)-ii)
-        zp             #  drop c, and find ix
-        &H rb          #  fetch one byte (the len), # TODO:relative
-        rd             # 'ii'=rd (look at loop counter)
-        sb             # len-ii = ix = the result
-        rt
-      ]
-    nx
-    0 rt
-
-  def a0(s):
-     x = 0
-     for c in s:
-        if c <= ' ': continue
-        else:
-           hexit()
-           x = ~x
-           if x:
-
-#+end_src
-
-
-* note on grimley's code
-this follows his lead
-he was using x86, because that's the system he was on
-but that's kind of an accident of history.
-i'll use a virtual bytecode interpreter)
-(which we can implement in any language)
-* disassembler (unused)
+** b3a disassembler (unused)
 # probably want a disassembler if I reorder the opcodes, or for a debugger
 # but probably don't need this for the bootstrapping process
-** program to generate hex dump of tos
-** break off a digit
+*** program to generate hex dump of tos
+*** break off a digit
 #+begin_src b4a
 
 :nibl (x-xd)  # extract next nibble
@@ -714,7 +553,7 @@ sw si 04 sr   # xd → dx → dx'      (where x'=x>>4)
 rt .. .. ..
 #+end_src
 
-** break off all 8 digits
+*** break off all 8 digits
 : jump, loop, or macro, or duplicate code ?
 #+begin_src b4a
 # break tos into 8 hex digits
@@ -734,13 +573,12 @@ nibl nibl nibl nibl nibl nibl nibl nibl zap
 - we could just repeat the instructions 4 times without the return.
 - or we could use a loop
 
-** 0..f -> char
+*** 0..f -> char
 char buf
 just use it as index into buffer
-
-* TODO [2/6] extra control structures
-** TODO =ef= for 'else if' ... maybe this is just =el=, since =if= is a no-op?
-** TODO fn : implementing function arguments
+** TODO [2/6] extra control structures
+*** TODO =ef= for 'else if' ... maybe this is just =el=, since =if= is a no-op?
+*** TODO fn : implementing function arguments
 - op 'ac s' would specify up to four arguments
   - s would be a signature byte
     - 2 bits specify number of args (up to 4)
@@ -757,18 +595,18 @@ just use it as index into buffer
   - now inside the function, you can use ^A ^B ^C ^D to refer to the args.
   - before returning, restore the arguments
 - all this means more work as part of the protocol, but less stack juggling
-** TODO =rp .. un= : repeat until
-** TODO =case= case / switch statement for scalars
+*** TODO =rp .. un= : repeat until
+*** TODO =case= case / switch statement for scalars
 - with or without fallthrough (no fallthrough means you can reorder)
 - with range matching
-* impleminting some ops in b3a
-** DONE implementing =nx= if it weren't an opcode
+** implementing some ops in b3a
+*** DONE implementing =nx= if it weren't an opcode
 ![ rd si 01 sb du !]  (leaving two copies of (ii-1))
 ![ h0 03 !]           (if 0, hop over the next 3 bytes)
 ![ dr hp !] zw        (>0, so put back on return stack and hop backwards)
 ![ zp !]              (zap extra 0 at runtime)
 
-** DONE =!b= ('wb' when I only had 'wm') writes a single byte to an address, while preserving Z
+*** DONE =!b= ('wb' when I only had 'wm') writes a single byte to an address, while preserving Z
  sw (ab-ba)
  zd (.. baz)
  sw (.. bza)
@@ -776,44 +614,13 @@ just use it as index into buffer
  sw (.. zb)
  zw (.. z) and M[a]=b
  dz (.. ) restoring Z
-* bibliography
-** [APTOP] eric hehner, [[http://www.cs.toronto.edu/~hehner/aPToP/][a practical theory of programming]]
+** bibliography
+*** [APTOP] eric hehner, [[http://www.cs.toronto.edu/~hehner/aPToP/][a practical theory of programming]]
 :PROPERTIES:
 :CUSTOM_ID: aptop
 :END:
 
-** edmund grimley evans, [[http://web.archive.org/web/20061108010907/http://www.rano.org/bcompiler.html][bootstrapping a simple compiler from nothing]]
-** jonesforth
-** retroforth
-** kragen sitaker, [[https://github.com/kragen/stoneknifeforth][stone knife forth]] uses a 1-char instruction set
-
-* stackwise approach
-- keep it simple: b4-specific for now
-- at the top level, you enter a specification
-  - a specification is a description of behavior
-- definitions only need to be well defined and valid syntax
-  - wds =                           -- well defined spec
-    - | 'ok'
-    - | (var) ':=' (val)
-    - | (wds) .. (wds)
-    - |  if: (cond) do: (wds)
-        (ef: (cond) do: (exp))*
-        (el: (exp))? nd.
-    - | wh: (cond) do: (wds) en.
-    - | fo: (var) in: (exp) do. (wds) en.
-    - | (other combinators: @ & ^: etc )
-
-  - also need: definitions for data types, 'classes'
-
-- usage:
-  - enter as many type specs as you like
-    - obligation: valid syntax,
-    - obligation: all referenced names are defined
-  - enter as many examples as you like (become test cases)
-  - enter a function name
-  - give it a name, and that's the first word you have to define
-- this generates several obligations:
-  - define (specify) all undefined words
-  - prove that the word implements the spec
-  - implement all unimplemented words
-    - can specify these without implementation (for now)
+*** edmund grimley evans, [[http://web.archive.org/web/20061108010907/http://www.rano.org/bcompiler.html][bootstrapping a simple compiler from nothing]]
+*** jonesforth
+*** retroforth
+*** kragen sitaker, [[https://github.com/kragen/stoneknifeforth][stone knife forth]] uses a 1-char instruction set
