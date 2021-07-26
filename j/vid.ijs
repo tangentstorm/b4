@@ -56,7 +56,7 @@ putc =: {{
 puts =: putc"0
 
 rnd =: {{
-  CHB =: a.{~97+?HW$26
+  CHB =: u:a.{~97+?HW$26
   FGB =: ?HW$256
   BGB =: HW$0 95 0 4 18
   coname'' }}
@@ -74,7 +74,7 @@ render =: {{ NB. render to vt
   s =. f j b j CHB__y
   for_row. s do.
     goxy x + 0, row_index
-    reset@'' puts_vt_ ;row
+    reset@'' puts_vt_ 8 u: ;row
   end. }}
 
 rndscr =: {{
