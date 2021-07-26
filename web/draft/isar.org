@@ -1,0 +1,145 @@
+* keywords
+** TODO =notepad= : seems to allow various commands
+** =begin= .. =end=
+** =fix= : declare locally fixed entity
+
+fix x
+fix x::'a
+fix a b
+assume a = b
+** =assume=
+** =define= x =where= y   (non-polymorphic)
+** abbreviations (polymorphic)
+*** =let= ?f = λx.x
+*** =term= ?f ?g
+** TODO =write x=   ???
+** functional programing
+*** =datatype=
+*** =definition=
+*** =primrec=
+a safe way of defining primitive recursive functions on datatypes
+*** =fun=
+
+* proof grammar
+
+#+begin_src antlr
+proof : 'by' method | 'proof' method? step* qed ;
+
+hvsh  : ('have'|'show') prop ('is' pattern) ;
+step  : 'fix' vars | 'assume' prop
+      | ( ('from' fact+ hvsh) | (hvsh ('using'|'with') facts) ) proof
+      | 'let' unk '=' inner
+      ;
+inner : '"' formula '"' ;
+inners: inner ('and' inner)* ;
+prop  : (name ":")? inner ;
+fact  : name | "..." ;  // is this really "..." or is it just "name+" ?
+lemma : lemkw (name ":")?
+        ( inner | ('assumes' inners | 'shows' inners | fixes name+ ))
+        proof ;
+lemkw : 'lemma'|'theorem'|'corollary'|'proposition'|'schematic_goal' ;
+
+
+
+#+end_src
+
+=show= should meet the current goal
+=have= introduces new propositions.
+
+~this~ indicates the previous step
+~then~ means =from this=
+~hence~ means =then have=
+~thus~ means =then show=
+
+=note= fact adds it to "from" list
+~from a~ means =note a then=
+~with a~ means =from a and this=
+
+
+
+~...~ matches the right hand side of ~this~ where this has the form =P lhs rhs=
+(generally P would be "=" or an arrow, and possibly in infix form).
+this is intended for chains of equations.
+
+
+=define= x where x == a  means "fix a assume <expand> x == a"
+
+
+=assms= refers to the fact when =lemma assumes ...= syntax is used
+
+=next= moves onto the next goal in a proof method.
+=obtain= myX =where= ~prop~. is used to proove =∃ x.= ~prop~
+
+
+=also=  assigns ~calculation~ := ~this~ so you can show t1 = t2, t1=t3, etc.
+=finally= packs all the chains together and yields t1 = tn
+
+
+=have= "p1"
+=moreover= have "p2"
+=ultimately= have "p" from p1 p2 p3
+
+=case= is for proof using rules like "cases" or "induction"
+it introduces fixed variables, sets the unknown ~?case~ to the required subgoal.
+
+
+=theorem= =corollary= =proposition= are the same as =lemma=.
+
+=schematic_goal= is almost the same as =lemma= but allows the statement to contain unbound schematic variables.
+
+
+* TODO unknown
+=presume= / =show .. when..=   : weak premises
+=function=  - requires a proof
+=termination= - requires a proof
+=declare= declares a theorem
+
+
+* proof methods
+if the proof method is left out, isabelle guesses one.
+
+"-" is the null method that does nothing to the goal.
+
+"." -> "by this" solves the goal directly by matching an assumption.
+
+".." -> "by standard"
+
+=unfolding= ~facts~ works directly on the goal by applying equalities
+
+
+
+* proof operators
+
+** =of= for instantiating unknowns
+
+** =OF= for applying one theorem to another
+
+theorem refl: ?t = ?t
+thm conjI[OF refl[of "a"] refl[of "b"]]
+
+
+
+* Pure
+
+α ⇒ β    syntactic function space (terms depending on terms)
+Λx. B(x) universal quantification (proofs depending on terms)
+A ⟹   B  entailment (proofs depending on proofs)
+≡ = equality
+
+#+begin_src isar
+  thm impI impE conjI conjE allI allE
+#+end_src
+
+
+* Concepts
+** fact : a simultaneous list of theorems
+** produce via:
+*** assumption: =assume=
+*** proof: =have=
+*** abbreviation:  =note= c = a b
+
+
+
+* to try
+
+** fib example from program refinement in codegen book, pg 13
