@@ -3,21 +3,22 @@ load'tangentstorm/j-kvm'
 coinsert 'kvm' [ coclass 'ed'
 
 init =: {{
-  B =: ''  NB. the string to edit.
+  B =: ''  NB. the buffer to edit.
   C =: 0   NB. cursor position(s)
   M =: 0   NB. mark(s) (one per cursor)
+  E =: ' ' NB. empty element (temp used when appending a value at the end)
   W =: 64  NB. width/max length
-  E =: ' ' NB. empty element to put at the end
+  R =: 1   NB. 'needs redraw' flag
   XY=: 1 1 NB. screen coordinates
   BG=: 8   NB. bg color
   FG=: 7   NB. fg color
   CF=: 0   NB. cursor fg
   CB=: 9   NB. cursor bg
   EX=: 1   NB. whether or not to draw extent
-  R =: 1   NB. redraw flag
 }}
 
-create =: {{ B=:y [ init'' if. 32=3!:0 y do. E =: a: end. }}
+NB. {.@(0&$) gives a default value for any type.
+create =: {{ E=: {.@(0&$) B=:y [ init'' }}
 
 NB. buffer editing commands:
 ins =: {{ R=:1[ B=:(C+&#B) {. y (<:C=:>:(+i.@#)C) } (1+C e.~ i.#b)#b=.B,E }}"0
