@@ -1,20 +1,19 @@
-NB. token editor
-load 'tangentstorm/j-kvm tangentstorm/j-lex data/sqlite ed.ijs'
+NB. token-centric editor component.
+NB. (currently this file is not a standalone application,
+NB. but is called by mje.ijs)
+
+load 'tangentstorm/j-kvm tangentstorm/j-lex ed.ijs'
 load 'b4.ijs' [ cocurrent 'b4'
 cocurrent 'base'
 coinsert 'vt';'ed'
-load 'app.ijs'
 
 NB. token and character editors
 ted =: (0$a:) conew 'ed'
 ced =: '' conew 'ed'
 
-cmds =: 'one';'two'
-
 kvm_init =: {{ curs 0 }}
 kvm_done =: {{ curs 1 }}
 
-db =: sqlopen_psqlite_'~/b4/sql/syndir.sdb'
 run =:  draw loop_kvm_
 jcut =: jcut_jlex_
 save =: curxy@raw@1

@@ -9,7 +9,15 @@ NB. that I should probably have it under version control.
 NB. main code
 NB.cocurrent'mje'
 coinsert 'kvm' [ load 'tangentstorm/j-kvm'
-load 'app.ijs ed.ijs'
+load 'ed.ijs tok.ijs data/sqlite'
+
+NB. 'colorwrite' stuff
+cwc=. [: [:^:(16=]) 'krgybmcwKRGYBMCW' i. ]
+ischr=. 2 = 3!:0
+fg=: ([: fgc cwc^:ischr) f.
+bg=: ([: bgc cwc^:ischr) f.
+db =: sqlopen_psqlite_'~/b4/sql/syndir.sdb'
+
 
 
 NB. org-mode stuff
