@@ -10,6 +10,7 @@ NB. main code
 NB.cocurrent'mje'
 coinsert 'kvm' [ load 'tangentstorm/j-kvm'
 load 'ed.ijs tok.ijs data/sqlite'
+load'tangentstorm/j-kvm/ui'
 
 NB. todo: move this to kvm
 cocurrent 'kvm'
@@ -31,37 +32,49 @@ cur =: 8 NB. jump to slide
 NB. need to handle empty tokens (blanks lines??)
 put_tok=:put_tok_tok_ :: ]
 
+list =: 'uiList' conew~ 0{"1 slides
+H__list =: (ymax'')-18
+XY__list =: 0,18
+
+cmds =: 'uiList' conew~ a:
+W__cmds =: (xmax'')-32
+H__cmds =: H__list
+XY__cmds =: 33 0 + XY__list
+
 
 draw_slide =: {{
   NB. draw the current slide
-  cscr@reset''
   goxy 0 0 [ bg'y' [ fg'k'
   puts ' ',71$!.' ' head cur
-  puts CR,LF [ reset''
+  puts CRLF [ reset''
   for_line. >jlex code cur do.
     puts ' '
     if. line ~: a: do.  put_tok L:1 "1 > line end.
-    puts CR,LF
+    puts CRLF [ ceol''
   end.
-  for. i.16-#code cur do. puts CR,LF end.
-  NB. limit text to 5 lines
-  for_line. > ({.~5&<.@#) text cur do. puts line,CR,LF [ fg'K' end.
-  puts CR,LF[ reset'' }}
+  for. i.16-#code cur do. puts CRLF [ ceol'' end.
+  puts CRLF [ reset'' }}
 
+
+draw_app =: {{
+  draw_slide''
+  render__list''
+  render__cmds'' }}
 
 
 NB. keyboard control
+goto =: {{
+ L__cmds =: text cur =: y
+ C__cmds =: 0 }}
+
 k_any =: {{
   puts '[',y,']' [ goxy 20 5
   select. 0{y
-  case.'9'do. draw_slide bak''
-  case.'0'do. draw_slide fwd''
-  end.
-}}
-kc_l =: draw_slide
+  case.'9'do. draw_app goto bak__list''
+  case.'0'do. draw_app goto fwd__list''
+  end. }}
 
-NB. emacs keys -> cursor keys
-csi =: csi_vt_
+kc_l =: draw_app@cscr@''
 
 kc_p =: puts@CURSU
 kc_n =: puts@CURSD
