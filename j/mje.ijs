@@ -11,13 +11,15 @@ NB.cocurrent'mje'
 coinsert 'kvm' [ load 'tangentstorm/j-kvm'
 load 'ed.ijs tok.ijs data/sqlite'
 
+NB. todo: move this to kvm
+cocurrent 'kvm'
 NB. 'colorwrite' stuff
 cwc=. [: [:^:(16=]) 'krgybmcwKRGYBMCW' i. ]
 ischr=. 2 = 3!:0
 fg=: ([: fgc cwc^:ischr) f.
 bg=: ([: bgc cwc^:ischr) f.
 db =: sqlopen_psqlite_'~/b4/sql/syndir.sdb'
-
+cocurrent'base'
 
 
 NB. org-mode stuff
@@ -26,29 +28,11 @@ load '~/ver/j-talks/preztool/org.ijs'
 slides =: org_slides '~/ver/j-talks/s1/e3-sandpiles-in-j/sandpiles-j.org'
 cur =: 8 NB. jump to slide
 
-put_tok =: {{
-  if. 2~:#y do. 0$0 return. end.
-  'code text' =. y
-  select. code
-  case. ''  do.        NB. ??
-  case. 'S' do.        NB. space
-  case. 'A' do. fg'B'  NB. assignment
-  case. 'i' do. fg'w'  NB. identifier
-  case. 'v' do. fg'r'  NB. verb
-  case. 'a' do. fg'y'  NB. adverb
-  case. 'D' do. fg'R'  NB. def braces
-  case. 'c' do. fg'r'  NB. conjunction
-  case. 'P' do. fg'w'  NB. parens
-  case. 'p' do. fg'Y'  NB. proname
-  case. 'N' do. fg'M'  NB. numeric
-  case. 'L' do. fg'c'  NB. literal
-  case. 'C' do. fg'K'  NB. comment
-  case. 'K' do. fg'B'  NB. control word
-  case. do. reset [ puts '[',code,']' [ bg'b'
-  end.
-  puts text }}
+NB. need to handle empty tokens (blanks lines??)
+put_tok=:put_tok_tok_ :: ]
 
-draw =: {{
+
+draw_slide =: {{
   NB. draw the current slide
   cscr@reset''
   goxy 0 0 [ bg'y' [ fg'k'
@@ -56,7 +40,7 @@ draw =: {{
   puts CR,LF [ reset''
   for_line. >jlex code cur do.
     puts ' '
-    if. line ~: a: do.  put_tok"1 > line end.
+    if. line ~: a: do.  put_tok L:1 "1 > line end.
     puts CR,LF
   end.
   for. i.16-#code cur do. puts CR,LF end.
@@ -70,11 +54,11 @@ NB. keyboard control
 k_any =: {{
   puts '[',y,']' [ goxy 20 5
   select. 0{y
-  case.'9'do. draw bak''
-  case.'0'do. draw fwd''
+  case.'9'do. draw_slide bak''
+  case.'0'do. draw_slide fwd''
   end.
 }}
-kc_l =: draw
+kc_l =: draw_slide
 
 NB. emacs keys -> cursor keys
 csi =: csi_vt_
@@ -127,7 +111,7 @@ do' b v?,?  b n?0 0 4 0 0? !'
 do' b v?,?  b n?0 0 4 0 0? !'
 do' bb i?y? c?=.?          !'
 raw 0 [ goxy 0 8 [ curs 1 }}
-go''
+NB.go''
 NB. ej : emit j. (string -> commands)
 NB. ej =: sleep@(25+[:?25[])@do@('?',,&'?') each @jcut
 NB. ej '{{ (+33*])/|.0, 5381,a.i. y}}'

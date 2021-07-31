@@ -4,7 +4,7 @@ NB. but is called by mje.ijs)
 
 load 'tangentstorm/j-kvm tangentstorm/j-lex ed.ijs'
 load 'b4.ijs' [ cocurrent 'b4'
-cocurrent 'base'
+cocurrent 'tok'
 coinsert 'vt';'ed'
 
 NB. token and character editors
@@ -27,7 +27,7 @@ kpxy =: {{
 MODE =: 'n' NB. MODE e. 'niq'  : navigate, insert, quote
 
 put_tok =: {{
-  select. t=.jtype_jlex_>y
+  select. tag [ 'tag tok'=. y
   case. ''  do.        NB. ??
   case. 'S' do.        NB. space
   case. 'A' do. fg'B'  NB. assignment
@@ -42,17 +42,17 @@ put_tok =: {{
   case. 'L' do. fg'c'  NB. literal
   case. 'C' do. fg'K'  NB. comment
   case. 'K' do. fg'B'  NB. control word
-  case. do. reset [ puts '[',t,']' [ bg'b'
+  case. do. reset [ puts '[',tag,']' [ bg'b'
   end.
-  puts >y }}
+  puts tok }}
 
 
-draw =: {{
+draw_toked =: {{
   goxy 4 0 [  puts '   ' [ goxy 0 0 [ reset''
-  for_tok. C__ted {. B__ted do. put_tok tok end.
+  for_tok. C__ted {. B__ted do. put_tok (jtype_jlex;]) tok end.
   if. MODE e. 'iq' do. puts B__ced [ fg FG__ced [ bg BG__ced end.
   reset''
-  for_tok. C__ted }. B__ted do. put_tok tok end.
+  for_tok. C__ted }. B__ted do. put_tok (jtype_jlex;]) tok end.
   ceol'' }} kpxy
 
 emit =: {{
@@ -73,7 +73,7 @@ do =: {{
   NB. this provides a little language for animating the editors.
   NB. execute a series of actions on the token editor
   i=.0 [ q =. '?'  NB. quote char. '?' is probably the least used symbol in j
-  draw''
+  draw_toked''
   while. i < #y do. i=.i+1 [ c=.i{y
     select. MODE
     fcase. 'q' do.
@@ -89,10 +89,10 @@ do =: {{
       if. c = q do. MODE =: 'q'
       else. ins__ced c end.
     end.
-    sleep 15+?20 [ echo@'' [  draw''
+    sleep 15+?20 [ echo@'' [  draw_toked''
   end.
   if. MODE = 'q' do. MODE =: 'n' [ emit'' end.
-  draw''
+  draw_toked''
   0 0 $ 0}} kpxy
 
 EX__ced =: 0 [ BG__ced =: 234
