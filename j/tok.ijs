@@ -27,6 +27,7 @@ kpxy =: {{
 MODE =: 'n' NB. MODE e. 'niq'  : navigate, insert, quote
 
 put_tok =: {{
+  if. -.*#y do. return. end.
   select. tag [ 'tag tok'=. y
   case. ''  do.        NB. ??
   case. 'S' do.        NB. space
@@ -46,27 +47,27 @@ put_tok =: {{
   end.
   puts tok }}
 
+jtype =: jtype_jlex_ &.>
 
 draw_toked =: {{
   goxy 4 0 [  puts '   ' [ goxy 0 0 [ reset''
-  for_tok. C__ted {. B__ted do. put_tok (jtype_jlex;]) tok end.
+  for_tok. C__ted {. B__ted do. put_tok (jtype,]) tok end.
   if. MODE e. 'iq' do. puts B__ced [ fg FG__ced [ bg BG__ced end.
   reset''
-  for_tok. C__ted }. B__ted do. put_tok (jtype_jlex;]) tok end.
+  for_tok. C__ted }. B__ted do. put_tok (jtype,]) tok end.
   ceol'' }} kpxy
 
 emit =: {{
    ins__ted jcut B__ced
-   C__ced =: 0 [ B__ced =: '' [ XY__ced =: 1,~4++/# S:0 C__ted {. B__ted }}
+   C__ced =: 0 [ B__ced =: '' [ XY__ced =: 0,~4++/# S:0 C__ted {. B__ted }}
 
 eval =: {{
   try.   err =. 0 [ res =. ":".;B__ted
   catch. err =. 1 [ res =. 'error'  end. NB. how to get error message?
   reset''
-  for_i. 2+i.#res do. ceol goxy 0,i end.
-  goxy 0,2
-  puts res ,"1 CR, LF
-}}
+  for_i. 1+i.#res do. ceol goxy 0,i end.
+  goxy 0,1
+  puts res ,"1 CRLF }}
 
 
 do =: {{
