@@ -17,8 +17,8 @@ kvm_done =: {{ curs 1 }}
 db =: sqlopen_psqlite_'~/b4/sql/syndir.sdb'
 run =:  draw loop_kvm_
 jcut =: jcut_jlex_
-save =: curxy@raw@1 @curs@0
-rest =: raw@0 @ curs@1 @ reset@'' goxy
+save =: curxy@raw@1
+rest =: raw@0 @ reset@'' goxy
 kpxy =: {{
   NB. execute u and then restore the cursor position.
   res [ rest xy [ res =. u y [ xy =. save''
@@ -49,18 +49,32 @@ put_tok =: {{
 
 
 draw =: {{
-  goxy 0 0 [ reset''
-  for_tok. B__ted do. put_tok tok end.
+  goxy 4 0 [  puts '   ' [ goxy 0 0 [ reset''
+  for_tok. C__ted {. B__ted do. put_tok tok end.
+  if. MODE e. 'iq' do. puts B__ced [ fg FG__ced [ bg BG__ced end.
+  reset''
+  for_tok. C__ted }. B__ted do. put_tok tok end.
   ceol'' }} kpxy
 
 emit =: {{
    ins__ted jcut B__ced
-   C__ced =: 0 [ B__ced =: '' [ XY__ced =: 1,~1++/# S:0 C__ted {. B__ted }}
+   C__ced =: 0 [ B__ced =: '' [ XY__ced =: 1,~4++/# S:0 C__ted {. B__ted }}
+
+eval =: {{
+  try.   err =. 0 [ res =. ":".;B__ted
+  catch. err =. 1 [ res =. 'error'  end. NB. how to get error message?
+  reset''
+  for_i. 2+i.#res do. ceol goxy 0,i end.
+  goxy 0,2
+  puts res ,"1 CR, LF
+}}
+
 
 do =: {{
   NB. this provides a little language for animating the editors.
   NB. execute a series of actions on the token editor
   i=.0 [ q =. '?'  NB. quote char. '?' is probably the least used symbol in j
+  draw''
   while. i < #y do. i=.i+1 [ c=.i{y
     select. MODE
     fcase. 'q' do.
@@ -69,19 +83,17 @@ do =: {{
     case. 'n' do.
       select. c
       case. '?' do. MODE =: 'i'
-      case. '!' do. NB. evaluate and show B__ced
+      case. 'b' do. bak__ted''
+      case. '!' do. eval''
       end.
     case. 'i' do.
       if. c = q do. MODE =: 'q'
       else. ins__ced c end.
     end.
-    sleep 15+?20 [ echo@'' [ draw__ced ''
+    sleep 15+?20 [ echo@'' [  draw''
   end.
   if. MODE = 'q' do. MODE =: 'n' [ emit'' end.
   draw''
   0 0 $ 0}} kpxy
 
 EX__ced =: 0 [ BG__ced =: 234
-do '?0 0 4 0 0?'
-ej =: sleep@(25+[:?25[])@do@('?',,&'?') each @jcut
-ej '{{ (+33*])/|.0, 5381,a.i. y}}'
