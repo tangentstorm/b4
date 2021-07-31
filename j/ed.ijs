@@ -27,6 +27,8 @@ del =: {{ R=:1[ C=:C-i.#C[B=:}:b#~-.C e.~i.#b=.B,E}}
 eol =: {{ R=:1[ C=:C+(#B)->./C }}
 bol =: {{ R=:1[ C=:C-<./C }}
 swp =: {{ R=:1[ B=: a (C-1) } b (C-2) } B [ a=. (C-2) { B [ b=. (C-1) { B }}
+fwd =: {{ R=:1 [ C=:>:C }}
+bak =: {{ if. 0<<./C do. R=:1 [ C=:<:C end. }}
 
 NB. keybindings:
 kc_m =: {{ break_kvm_=: 1}}
@@ -34,8 +36,8 @@ k_asc =: {{ ins y }}
 kc_d =: del
 kc_h =: k_bksp =: bsp
 kc_e =: eol
-kc_b =: {{ if. 0<<./C do. R=:1 [ C=:<:C end. }}
-kc_f =: {{ R=:1 [ C=:>:C }}
+kc_b =: bak
+kc_f =: gor
 kc_t =: swp
 
 draw =: {{
