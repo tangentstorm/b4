@@ -26,13 +26,17 @@ cocurrent'base'
 NB. org-mode stuff
 load 'tangentstorm/j-lex'
 load '~/ver/j-talks/preztool/org.ijs'
-slides =: org_slides '~/ver/j-talks/s1/e3-sandpiles-in-j/sandpiles-j.org'
+
+NB. org_slides defines locale variables: title=:.. and slides=:..
+org_slides org_path=: 'e3/sandpiles-j.org'
 cur =: 8 NB. jump to slide
 
 NB. need to handle empty tokens (blanks lines??)
 put_tok=:put_tok_tok_ :: ]
 
-list =: 'uiList' conew~ 0{"1 slides
+NB. indent headings based on depth
+heads =: <@;"1((' '#~+:@<:) each 3 {"1 slides),.(0{"1 slides)
+list =: 'uiList' conew~ heads
 H__list =: (ymax'')-18
 XY__list =: 0,18
 
@@ -47,10 +51,12 @@ draw_slide =: {{
   goxy 0 0 [ bg'y' [ fg'k'
   puts ' ',71$!.' ' head cur
   puts CRLF [ reset''
-  for_line. >jlex code cur do.
-    puts ' '
-    if. line ~: a: do.  put_tok L:1 "1 > line end.
-    puts CRLF [ ceol''
+  if. -. a: -: code cur do.
+    for_line. >jlex code cur do.
+      puts ' '
+      if. line ~: a: do.  put_tok L:1 "1 > line end.
+      puts CRLF [ ceol''
+    end.
   end.
   for. i.16-#code cur do. puts CRLF [ ceol'' end.
   puts CRLF [ reset'' }}
@@ -87,6 +93,8 @@ kc_h =: {{ puts '[^H:BS]' }}
 kc_d =: {{ puts '[^D:del]' }}
 kc_a =: {{ puts '^A' }}
 
+kc_s =: {{ (org_text'') fwrites org_path }}
+
 kc_t =: {{ reset'' NB. ^T -> random colored text
   for. i.500 do. putc a.{~32+?94 [ goxy 20 2 + ? 30 10 [ fg ? 256 end.
   bg@24 fg'w' }}
@@ -111,6 +119,9 @@ mje =: {{
 
 rl =: {{ load'mje.ijs' }}
 
+ced =: ced_tok_
+ted =: ted_tok_
+do =: do_tok_
 go =: {{
 curs 0 0 [ cscr''
 'cx cy'=.curxy''
