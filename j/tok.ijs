@@ -50,7 +50,7 @@ put_tok =: {{
 jtype =: jtype_jlex_ &.>
 
 draw_toked =: {{
-  goxy 4 0 [  puts '   ' [ goxy 0 0 [ reset''
+  goxy XY__ted [  puts '   ' [ goxy 0 0 [ reset''
   for_tok. C__ted {. B__ted do. put_tok (jtype,]) tok end.
   if. MODE e. 'iq' do. puts B__ced [ fg FG__ced [ bg BG__ced end.
   reset''
