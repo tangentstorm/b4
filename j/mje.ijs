@@ -64,7 +64,7 @@ put_tok=:put_tok_tok_ :: ]
 
 NB. --  screen setup --------------------------------------------------------
 
-H_HIST =: 24
+H_HIST =: 32
 X_HIST =: 72
 Y_META =: H_HIST+2
 
@@ -108,7 +108,7 @@ draw_hist =: {{
   lines =. (-H_HIST-1) {. ('HISTL1_',w,'_')~ {. ehist_world_
   for_line. lines do.
     goxy X_HIST, line_index
-    puts (RESET,CEOL),~ 7 u: > line
+    puts (RESET,CEOL),~ > line
   end.
   NB. draw last line
   goxy xy =. X_HIST, #lines
@@ -170,7 +170,7 @@ mje =: {{
   9!:29]0  NB. disable infinite loop on error
   NB. clear the display
   cscr @ bg 24 [ curs 0
-  draw_app''
+  draw_app goto 0
   [ loop_kvm_'base'
   reset''
   0$0}}
@@ -181,7 +181,10 @@ mje =: {{
 rl =: {{ load'mje.ijs' }}
 
 k_p =: {{
-  if. at0__cmds'' do. draw_app goto bak__list''
+  if. (at0__cmds > at0__list)'' do.
+    goto bak__list''
+    goz__cmds''
+    draw_app''
   else. draw_hist@'' render__cmds bak__cmds'' end. }}
 
 k_n =: {{
