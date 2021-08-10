@@ -28,8 +28,11 @@ lines =: {{
  if. 1 = # $ y do. y =. ,:y end.
  ,(LF cut CR -.~ ])"1 y }}
 
-echo =: {{ for_line. lines y do. ehist =: ehist,line end.
-  ('HISTL1'in_world_) =: #ehist_world_  }}
+boxc =: ,(,.<"0 a.{~ 16+i.11),.(8 u: dfh) each cut'250c 252c 2510 251c 253c 2524 2514 2534 2518 2502 2500'
+boxe =: {{ y rplc"1 boxc }}
+echo =: {{
+  for_line. lines boxe y do. ehist =: ehist,line end.
+  ('HISTL1'in_world_) =: #ehist }}
 
 this =: {{ 'WORLD',":ii_world_ }}
 next =: {{
