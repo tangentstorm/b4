@@ -42,7 +42,11 @@ open =: {{
         if. ': ' {.@E. line do. line =. 2}.line     NB. : marks code line
           if. '. ' {.@E. line do. line =. 2}.line   NB. : . is editor macro
             NB. TODO : execute macro
-          else. exec_world_ line end.               NB. execute code in repl
+          else.
+            ehlen =. #ehist_world_
+            exec_world_ line              NB. execute code in repl
+            ehist_world_ =: (<'   ',vtcolor_tok_ line) ehlen } ehist_world_
+          end.
         end.
         index =: index, i,j
         world =: world,<this_world_''
@@ -108,7 +112,7 @@ draw_hist =: {{
   lines =. (-H_HIST-1) {. ('HISTL1_',w,'_')~ {. ehist_world_
   for_line. lines do.
     goxy X_HIST, line_index
-    puts (RESET,CEOL),~ > line
+    puts (RESET,CEOL), > line
   end.
   NB. draw last line
   goxy xy =. X_HIST, #lines
