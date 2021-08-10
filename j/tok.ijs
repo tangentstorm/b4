@@ -26,25 +26,34 @@ kpxy =: {{
 
 MODE =: 'n' NB. MODE e. 'niq'  : navigate, insert, quote
 
+color =: {{
+  select. tag [ 'tag tok'=. y
+  case. ''  do. 16b999999  NB. ??
+  case. 'S' do. 16b999999  NB. space
+  case. 'A' do. 16b008b8b  NB. assignment
+  case. 'i' do. 16bffffff  NB. identifier
+  case. 'v' do. 16bffd700  NB. verb
+  case. 'a' do. 16bc78243  NB. adverb
+  case. 'D' do. 16bf95c54  NB. def braces
+  case. 'c' do. 16bff4500  NB. conjunction
+  case. 'P' do. 16b555555  NB. parens
+  case. 'p' do. 16b32cd32  NB. proname
+  case. 'N' do. 16bf984e5  NB. numeric
+  case. 'L' do. 16b2dabfc  NB. literal
+  case. 'C' do. 16b666666  NB. comment
+  case. 'K' do. 16bf95c54  NB. control word
+  case. do. 16b0000cd  end. }}
+
+vtcolor =: {{  NB. colorize a line of j using vt escape codes
+  res =. ''
+  for_tt. {.>{.> jlex y do.
+    if. -.*#tt do. continue. end.
+    res =. res,(FG24B color tt),,>}.tt
+  end. res }}
+
 put_tok =: {{
   if. -.*#y do. return. end.
-  select. tag [ 'tag tok'=. y
-  case. ''  do.        NB. ??
-  case. 'S' do.        NB. space
-  case. 'A' do. fg'B'  NB. assignment
-  case. 'i' do. fg'W'  NB. identifier
-  case. 'v' do. fg'r'  NB. verb
-  case. 'a' do. fg'y'  NB. adverb
-  case. 'D' do. fg'R'  NB. def braces
-  case. 'c' do. fg'r'  NB. conjunction
-  case. 'P' do. fg'B'  NB. parens
-  case. 'p' do. fg'Y'  NB. proname
-  case. 'N' do. fg'M'  NB. numeric
-  case. 'L' do. fg'c'  NB. literal
-  case. 'C' do. fg'K'  NB. comment
-  case. 'K' do. fg'B'  NB. control word
-  case. do. reset [ puts '[',tag,']' [ bg'b'
-  end.
+  fgx color 'tag tok' =. y
   puts tok }}
 
 jtype =: jtype_jlex_ &.>
