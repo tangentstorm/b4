@@ -2,14 +2,14 @@ NB. token-centric editor component.
 NB. (currently this file is not a standalone application,
 NB. but is called by mje.ijs)
 
-load 'tangentstorm/j-kvm tangentstorm/j-lex ed.ijs'
+load 'tangentstorm/j-kvm/ui tangentstorm/j-lex'
 load 'b4.ijs' [ cocurrent 'b4'
 cocurrent 'tok'
 coinsert 'vt';'ed'
 
 NB. token and character editors
-ted =: (0$a:) conew 'ed'
-ced =: '' conew 'ed'
+ted =: (0$a:) conew 'UiField'
+ced =: '' conew 'UiField'
 
 kvm_init =: {{ curs 0 }}
 kvm_done =: {{ curs 1 }}
@@ -59,7 +59,7 @@ put_tok =: {{
 jtype =: jtype_jlex_ &.>
 
 draw_toked =: {{
-  goxy XY__ted [  puts '   ' [ goxy 0 0 [ reset''
+  goxy XY__ted
   for_tok. C__ted {. B__ted do. put_tok (jtype,]) tok end.
   if. MODE e. 'iq' do. puts B__ced [ fg FG__ced [ bg BG__ced end.
   reset''

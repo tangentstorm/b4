@@ -9,7 +9,7 @@ NB. that I should probably have it under version control.
 NB. main code
 NB.cocurrent'mje'
 coinsert 'kvm' [ load 'tangentstorm/j-kvm'
-load 'ed.ijs tok.ijs data/sqlite'
+load 'tok.ijs data/sqlite'
 load'tangentstorm/j-kvm/ui'
 load'worlds.ijs'
 
@@ -86,11 +86,9 @@ ced =: ced_tok_
 ted =: ted_tok_
 
 
-draw_slide =: {{
-  NB. draw the current slide
-  goxy 0 0 [ bg'y' [ fg'k'
-  puts ' ',71$!.' ' head cur
-  puts CRLF [ reset''
+draw_code =: {{
+  NB. draw the code editor
+  goxy 0 0 [ bgx 16b101010 [ reset''
   if. -. a: -: code cur do.
     for_line. >jlex code cur do.
       puts ' '
@@ -109,7 +107,7 @@ draw_hist =: {{
     goxy X_HIST, line_index
     puts (RESET,CEOL), > line
   end.
-  NB. draw last line
+  NB. draw token editor on the last line
   goxy xy =. X_HIST, #lines
   puts (RESET,CEOL)
   if. ':' {.@E. val =. >val__cmds'' do.
@@ -120,7 +118,7 @@ draw_hist =: {{
 
 
 draw_app =: {{
-  draw_slide''
+  draw_code''
   render__list''
   render__cmds''
   draw_hist'' }}
