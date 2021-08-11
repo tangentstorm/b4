@@ -47,23 +47,29 @@ init =: {{
   coerase (#~ #@('WORLD\d+'&rxmatches)&>) conl''
   HISTL0_WORLD0_=: HISTL1_WORLD0_=: ii_world_=:0 }}
 
+
+NB. nesting depth of tokens
+depth =: {{ +/\ 1 _1 0 {~ ('{{';'}}')&i. L:1 y }}
+
 exec =: {{ NB. run code in the current 'world'
+  NB. you get a domain error if you try to perform (".'y=:1')
+  NB. inside a verb, because it conflicts with the locally defined 'y'.
+  NB. (In fact, this is true for any locally defined name, hence the
+  NB. 'exec' prefix on all the locals here.)
+  NB. so.. we will rewrite 'x','y', etc to ('y'in_world_)...
+  NB. BUT we do NOT want to dot this inside a direct definition, so
+  NB. we use 'depth' as a mask.
   try.
-    mut =. ('=:';'=.')&(+./@e.) tok0 =. ;: y
-    new =. mut +. 1  NB. TODO: allow disabling new worlds
-    if. new do.
-      tok1 =.  ]`('=:'"_)@.('=.'&-:)L:0 tok0
-      cocurrent next_world_''
-      NB. echo_world_'running: (',(;tok1),') in: ',this_world_''
-      echo_world_ '   ',y
-      res =. ": ('do'in_world_)~ ' ' joinstring tok1
-    else.
-      cocurrent this_world_''
-      NB. echo_world_'running: (',(y),') in: ',this_world_''
-      echo_world_ '  ',y
-      res =. ": ". y
+    exec_mut =. ('=:';'=.')&(+./@e.) exec_toks =. ;: y
+    exec_toks =.  ]`('=:'"_)@.('=.'&-:)L:0 exec_toks
+    cocurrent next_world_''
+    echo_world_ '   ',y
+    for_execslot. I. ((0=depth_world_) *. e."1 _ S:0 & (,.'xymnuv')) exec_toks do.
+      exec_fix =. <(>execslot{exec_toks),'_',(this_world_''),'_'
+      exec_toks =. exec_fix execslot } exec_toks
     end.
-    if. # res do. echo_world_ res end.
+    exec_res =. ": (<'do'in_world_)`:0 ' ' joinstring exec_toks
+    if. (# exec_res) > '=:'-:>1{exec_toks,a:,a: do. echo_world_ exec_res end.
   catch.
     echo_world_ dberm''
   end. }}
