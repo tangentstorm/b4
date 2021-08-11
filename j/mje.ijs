@@ -73,19 +73,14 @@ X_HIST =: 72
 Y_META =: H_HIST+2
 
 NB. indent headings based on depth
-list =: 'uiList' conew~ heads
+list =: 'UiList' conew~ heads
 H__list =: (ymax'')-Y_META
 XY__list =: 0,Y_META
 
-cmds =: 'uiList' conew~ a:
+cmds =: 'UiList' conew~ a:
 W__cmds =: (xmax'')-32
 H__cmds =: 32
 XY__cmds =: 33 0 + XY__list
-
-repl =: 'uiList' conew~ a:
-W__repl =: W__cmds
-H__repl =: (ymax'')-H__cmds+H__list
-XY__repl =: XY__cmds + 0,H__cmds+2
 
 ced =: ced_tok_
 ted =: ted_tok_
@@ -128,8 +123,7 @@ draw_app =: {{
   draw_slide''
   render__list''
   render__cmds''
-  draw_hist''
-  render__repl''  }}
+  draw_hist'' }}
 
 
 NB. keyboard control
