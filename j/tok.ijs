@@ -8,8 +8,8 @@ cocurrent 'tok'
 coinsert 'vt';'ed'
 
 NB. token and character editors
-ted =: (0$a:) conew 'UiField'
-ced =: '' conew 'UiField'
+ted =: (0$a:) conew 'UiEditWidget'
+ced =: '' conew 'UiEditWidget'
 
 kvm_init =: {{ curs 0 }}
 kvm_done =: {{ curs 1 }}
