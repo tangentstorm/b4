@@ -11,6 +11,7 @@ NB.cocurrent'mje'
 coinsert 'kvm' [ load 'tangentstorm/j-kvm'
 load 'tok.ijs data/sqlite'
 load'tangentstorm/j-kvm/ui'
+load'code-edit.ijs'
 load'worlds.ijs'
 
 NB. todo: move this to kvm
@@ -68,7 +69,7 @@ put_tok=:put_tok_tok_ :: ]
 
 NB. --  screen setup --------------------------------------------------------
 
-H_HIST =: 32
+H_HIST =: 24
 X_HIST =: 72
 Y_META =: H_HIST+2
 
@@ -82,7 +83,6 @@ W__cmds =: (xmax'')-32
 H__cmds =: 32
 XY__cmds =: 33 0 + XY__list
 
-ced =: ced_tok_
 ted =: ted_tok_
 
 
@@ -116,11 +116,11 @@ draw_hist =: {{
     draw_toked_tok_''
   end. }}
 
+app =: (list,cmds) conew 'UiApp'
 
 draw_app =: {{
+  render__app''
   draw_code''
-  render__list''
-  render__cmds''
   draw_hist'' }}
 
 
@@ -137,7 +137,7 @@ k_any =: {{
   case.')'do. draw_app fwd__cmds''
   end. }}
 
-kc_l =: draw_app@cscr@''bg@24@curs@0
+kc_l =: draw_app@smudge__app
 
 kc_p =: puts@CURSU
 kc_n =: puts@CURSD
@@ -157,8 +157,6 @@ kc_t =: {{ reset'' NB. ^T -> random colored text
   bg@24 fg'w' }}
 
 kc_c =: {{ curs@1 reset@'' break_kvm_=: 1 }}
-
-
 
 
 NB. event loop
@@ -181,11 +179,11 @@ k_p =: {{
     goto bak__list''
     goz__cmds''
     draw_app''
-  else. draw_hist@'' render__cmds bak__cmds'' end. }}
+  else. draw_hist@'' render__app bak__cmds'' end. }}
 
 k_n =: {{
   if. atz__cmds'' do. draw_app goto fwd__list''
-  else. draw_hist@'' render__cmds fwd__cmds'' end. }}
+  else. draw_hist@'' render__app fwd__cmds'' end. }}
 
 k_N =: {{
   if. -. a: = cmd =. val__cmds'' do.
