@@ -6,6 +6,8 @@ NB. components, etc. It is something of a scratchpad and
 NB. not well organized at the moment, but important enough
 NB. that I should probably have it under version control.
 
+dbg 1
+
 NB. main code
 NB.cocurrent'mje'
 coinsert 'kvm' [ load 'tangentstorm/j-kvm'
@@ -64,13 +66,14 @@ rkey''
 cur =: 8 NB. jump to slide
 
 NB. need to handle empty tokens (blanks lines??)
-put_tok=:put_tok_tok_ :: ]
+put_tok=:put_tok_TokEd_ :: ]
 
 
 NB. --  screen setup --------------------------------------------------------
 
 H_HIST =: 24
 X_HIST =: 72
+W_HIST =: X_HIST -~ xmax''
 Y_META =: H_HIST+2
 
 NB. indent headings based on depth
@@ -83,7 +86,14 @@ W__cmds =: (xmax'')-32
 H__cmds =: 32
 XY__cmds =: 33 0 + XY__list
 
-ted =: ted_tok_
+ted =: 'TokEd' conew~ ''
+H__ted =: 1
+W__ted =: W_HIST-3
+
+hist =: 'UiWidget' conew~ ''
+H__hist =: H_HIST
+W__hist =: W_HIST
+XY__hist=: X_HIST,0
 
 
 draw_code =: {{
@@ -99,24 +109,27 @@ draw_code =: {{
   for. i.16-#code cur do. puts CRLF [ ceol'' end.
   puts CRLF [ reset'' }}
 
-draw_hist =: {{
+
+hist_lines =: {{
   w =. world pick~ index I. C__list, C__cmds
   NB. H_HIST-1 to leave one line at bottom for next repl input
-  lines =. (-H_HIST-1) {. ('HISTL1_',w,'_')~ {. ehist_world_
-  for_line. lines do.
+  (-H_HIST-1) {. ('HISTL1_',w,'_')~ {. ehist_world_ }}
+
+draw_hist =: {{
+  for_line. hist_lines'' do.
     goxy X_HIST, line_index
     puts (RESET,CEOL), > line
-  end.
-  NB. draw token editor on the last line
-  goxy xy =. X_HIST, #lines
-  puts (RESET,CEOL)
-  if. ':' {.@E. val =. >val__cmds'' do.
-    XY__ted =: 3 0 + xy  NB. 3-space prompt
-    B__ted =: jcut_jlex_ 2}.val
-    draw_toked_tok_''
   end. }}
 
-app =: (list,cmds) conew 'UiApp'
+render__hist =: {{
+  ted =. ted_base_
+  cmds =. cmds_base_
+  NB. draw token editor on the last line
+  XY__ted =: 3 0 + X_HIST_base_, #hist_lines_base_'' NB. 3-space prompt
+  if. ':' {.@E. val =. >val__cmds'' do. B__ted =: jcut_jlex_ 2}.val
+  else. B__ted =: a: end. }}
+
+app =: (list,cmds,hist,ted) conew 'UiApp'
 
 draw_app =: {{
   render__app''

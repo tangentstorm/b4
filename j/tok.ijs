@@ -1,32 +1,11 @@
 NB. token-centric editor component.
 NB. (currently this file is not a standalone application,
 NB. but is called by mje.ijs)
-
 load 'tangentstorm/j-kvm/ui tangentstorm/j-lex'
-load 'b4.ijs' [ cocurrent 'b4'
-cocurrent 'tok'
-coinsert 'vt';'ed'
 
-NB. token and character editors
-ted =: (0$a:) conew 'UiEditWidget'
-ced =: '' conew 'UiEditWidget'
+cocurrent 'tok' extends 'vt'
 
-kvm_init =: {{ curs 0 }}
-kvm_done =: {{ curs 1 }}
-
-run =:  draw loop_kvm_
-jcut =: jcut_jlex_
-save =: curxy@raw@1
-rest =: raw@0 @ reset@'' goxy
-kpxy =: {{
-  NB. execute u and then restore the cursor position.
-  res [ rest xy [ res =. u y [ xy =. save''
-:
-  res [ rest xy [ res =. x u y [ xy =. save'' }}
-
-MODE =: 'n' NB. MODE e. 'niq'  : navigate, insert, quote
-
-color =: {{
+jcolor =: {{
   select. tag [ 'tag tok'=. y
   case. ''  do. 16b999999  NB. ??
   case. 'S' do. 16b999999  NB. space
@@ -48,30 +27,56 @@ vtcolor =: {{  NB. colorize a line of j using vt escape codes
   res =. ''
   for_tt. {.>{.> jlex y do.
     if. -.*#tt do. continue. end.
-    res =. res,(FG24B color tt),,>}.tt
+    res =. res,(FG24B jcolor tt),,>}.tt
   end. res }}
+
+coclass 'TokEd' extends 'UiEditWidget';'tok'
+
+create =: {{
+  create_UiEditWidget_ f. 0$a:
+  BG =: _1
+  NB. ced = character editor for new tokens
+  ced =: '' conew 'UiEditWidget'
+  EX__ced =: 0 [ BG__ced =: _234 }}
+
+
+kvm_init =: {{ curs 0 }}
+kvm_done =: {{ curs 1 }}
+
+run =:  draw loop_kvm_
+jcut =: jcut_jlex_
+save =: curxy@raw@1
+rest =: raw@0 @ reset@'' @ goxy
+kpxy =: {{
+  NB. execute u and then restore the cursor position.
+  res [ rest xy [ res =. u y [ xy =. save''
+:
+  res [ rest xy [ res =. x u y [ xy =. save'' }}
+
+NB. TODO: restore  draw_toked + kpxy
+
+MODE =: 'n' NB. MODE e. 'niq'  : navigate, insert, quote
 
 put_tok =: {{
   if. -.*#y do. return. end.
-  fgx color 'tag tok' =. y
+  fgx jcolor 'tag tok' =. y
   puts tok }}
 
 jtype =: jtype_jlex_ &.>
 
-draw_toked =: {{
-  goxy XY__ted
-  for_tok. C__ted {. B__ted do. put_tok (jtype,]) tok end.
-  if. MODE e. 'iq' do. puts B__ced [ fg FG__ced [ bg BG__ced end.
+render =: {{
+  cscr'' [ bgc 0
+  for_tok. C {. B do. put_tok (jtype,]) tok end.
+  if. MODE e. 'iq' do. puts B__ced [ fgc FG__ced [ bgc BG__ced end.
   reset''
-  for_tok. C__ted }. B__ted do. put_tok (jtype,]) tok end.
-  ceol'' }} kpxy
+  for_tok. C }. B do. put_tok (jtype,]) tok end. }}
 
 emit =: {{
-   ins__ted jcut B__ced
-   C__ced =: 0 [ B__ced =: '' [ XY__ced =: 0,~4++/# S:0 C__ted {. B__ted }}
+   ins jcut B__ced
+   C__ced =: 0 [ B__ced =: '' [ XY__ced =: 0,~4++/# S:0 C {. B }}
 
 eval =: {{
-  try.   err =. 0 [ res =. ":".;B__ted
+  try.   err =. 0 [ res =. ":".;B
   catch. err =. 1 [ res =. 'error'  end. NB. how to get error message?
   reset''
   for_i. 1+i.#res do. ceol goxy 0,i end.
@@ -92,7 +97,7 @@ do =: {{
     case. 'n' do.
       select. c
       case. '?' do. MODE =: 'i'
-      case. 'b' do. bak__ted''
+      case. 'b' do. bak''
       case. '!' do. eval''
       end.
     case. 'i' do.
@@ -105,4 +110,3 @@ do =: {{
   draw_toked''
   0 0 $ 0}} kpxy
 
-EX__ced =: 0 [ BG__ced =: 234
