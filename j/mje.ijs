@@ -109,7 +109,7 @@ render__editor =: {{
       puts ' ' NB. little bit of whitespace on the left
       if. line ~: a: do.  (put_tok_TokEd_ :: ]) L:1 "1 > line end.
     end.
-  end. }}
+  end. R =: 0 }}
 
 hist_lines =: {{
   w =. world pick~ index I. C__list, C__cmds
@@ -141,6 +141,7 @@ draw_app =: {{
 
 NB. keyboard control
 goto =: {{
+ R__editor =: 1
  L__cmds =: text cur =: y
  S__cmds =: C__cmds =: 0 }}
 
