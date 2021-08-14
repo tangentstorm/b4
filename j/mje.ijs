@@ -65,8 +65,6 @@ echo<'done loading j-talk. press enter.'
 rkey''
 cur =: 8 NB. jump to slide
 
-NB. need to handle empty tokens (blanks lines??)
-put_tok=:put_tok_TokEd_ :: ]
 
 
 NB. --  screen setup --------------------------------------------------------
@@ -95,20 +93,23 @@ H__hist =: H_HIST
 W__hist =: W_HIST
 XY__hist=: X_HIST,0
 
-
-draw_code =: {{
-  NB. draw the code editor
-  goxy 0 0 [ bgx 16b101010 [ reset''
-  if. -. a: -: code cur do.
-    for_line. >jlex code cur do.
-      puts ' '
-      if. line ~: a: do.  put_tok L:1 "1 > line end.
-      puts CRLF [ ceol''
-    end.
-  end.
-  for. i.16-#code cur do. puts CRLF [ ceol'' end.
-  puts CRLF [ reset'' }}
+editor =: 'UiWidget' conew~ ''
+XY__editor =: 0 0
+H__editor =: H_HIST
+W__editor =: X_HIST-2
 
+
+render__editor =: {{
+  cc =. code_base_ cur_base_
+  NB. draw the code editor
+  cscr'' [ bgx 16b101010 [ reset''
+  if. -. a: -: cc do.
+    for_line. >jlex cc do.
+      goxy 0,line_index
+      puts ' ' NB. little bit of whitespace on the left
+      if. line ~: a: do.  (put_tok_TokEd_ :: ]) L:1 "1 > line end.
+    end.
+  end. }}
 
 hist_lines =: {{
   w =. world pick~ index I. C__list, C__cmds
@@ -116,6 +117,8 @@ hist_lines =: {{
   (-H_HIST-1) {. ('HISTL1_',w,'_')~ {. ehist_world_ }}
 
 draw_hist =: {{
+  NB. the repl output includes vt escape codes because of j-kvm/vm,
+  NB. and I do not yet have a parser for these.
   for_line. hist_lines'' do.
     goxy X_HIST, line_index
     puts (RESET,CEOL), > line
@@ -129,11 +132,10 @@ render__hist =: {{
   if. ':' {.@E. val =. >val__cmds'' do. B__ted =: jcut_jlex_ 2}.val
   else. B__ted =: a: end. }}
 
-app =: (list,cmds,hist,ted) conew 'UiApp'
+app =: (editor,list,cmds,hist,ted) conew 'UiApp'
 
 draw_app =: {{
   render__app''
-  draw_code''
   draw_hist'' }}
 
 
