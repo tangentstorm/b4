@@ -6,6 +6,10 @@ NB. components, etc. It is something of a scratchpad and
 NB. not well organized at the moment, but important enough
 NB. that I should probably have it under version control.
 
+
+copush =: {{ 18!:4 y [ BASE__y =: coname'' [ y=.<y }}
+copop_z_ =: {{ y [ 18!:4 BASE [ y=.coname'' }}
+
 dbg 1
 
 NB. main code
@@ -84,9 +88,16 @@ W__cmds =: (xmax'')-32
 H__cmds =: 32
 XY__cmds =: 33 0 + XY__list
 
+NB. ted is the token editor in the 'on-camera' repl
 ted =: 'TokEd' conew~ ''
 H__ted =: 1
 W__ted =: W_HIST-3
+
+NB. led is the line editor for editing the text
+led =: 'UiEditWidget' conew~ ''
+XY__led =: XY__cmds
+W__led =: W__cmds
+V__led =: 0
 
 hist =: 'UiWidget' conew~ ''
 H__hist =: H_HIST
@@ -121,7 +132,7 @@ draw_hist =: {{
   NB. and I do not yet have a parser for these.
   for_line. hist_lines'' do.
     goxy X_HIST, line_index
-    puts (RESET,CEOL), > line
+    puts RESET,(>line),RESET,CEOL
   end. }}
 
 render__hist =: {{
@@ -132,7 +143,7 @@ render__hist =: {{
   if. ':' {.@E. val =. >val__cmds'' do. B__ted =: jcut_jlex_ 2}.val
   else. B__ted =: a: end. }}
 
-app =: (editor,list,cmds,hist,ted) conew 'UiApp'
+app =: (editor,list,cmds,hist,ted,led) conew 'UiApp'
 
 draw_app =: {{
   render__app''
@@ -145,6 +156,10 @@ goto =: {{
  L__cmds =: text cur =: y
  S__cmds =: C__cmds =: 0 }}
 
+
+(copush [ coinsert) 'outkeys'
+NB. -----------------------------------------------------------
+coinsert BASE
 k_any =: {{
   select. 0{y
   case.'9'do. draw_app goto bak__list''
@@ -154,25 +169,57 @@ k_any =: {{
   end. }}
 
 kc_l =: draw_app@smudge__app
-
-kc_p =: puts@CURSU
-kc_n =: puts@CURSD
-kc_b =: puts@CURSL
-kc_f =: puts@CURSR
-kc_a =: putc@CR
-
-NB. kc_d =: {{ break_kvm_=:1 }}
-kc_h =: {{ puts '[^H:BS]' }}
-kc_d =: {{ puts '[^D:del]' }}
-kc_a =: {{ puts '^A' }}
-kc_o =: draw_app@{{ L__list =: heads }}@open
 kc_s =: {{ (org_text'') fwrites org_path }}
-
-kc_t =: {{ reset'' NB. ^T -> random colored text
-  for. i.500 do. putc a.{~32+?94 [ goxy 20 2 + ? 30 10 [ fg ? 256 end.
-  bg@24 fg'w' }}
-
 kc_c =: {{ curs@1 reset@'' break_kvm_=: 1 }}
+kc_o =: draw_app@{{ L__list =: heads }}@open
+
+
+edline =: {{
+  R__led =: V__led =: 1 [ XY__led =: XY__cmds + 0,C__cmds
+  C__led =: 0
+  B__led =: '',>val__cmds__BASE''
+  coinsert__BASE 'edkeys'
+  draw_app__BASE'' }}
+
+put_text =: {{ 0 0 $ slides =: (<L__cmds) (<cur,1) } slides  }}
+insline =: edline@'' put_text@'' @ ins__cmds@''
+k_o =: edline@'' insline
+k_e =: edline
+
+k_k =: k_p =: {{
+  if. (at0__cmds > at0__list)'' do.
+    goto bak__list''
+    goz__cmds''
+    draw_app''
+  else. draw_hist@'' render__app bak__cmds'' end. }}
+
+k_j =: k_n =: {{
+  if. atz__cmds'' do. draw_app goto fwd__list''
+  else. draw_hist@'' render__app fwd__cmds'' end. }}
+
+k_N =: {{
+  if. -. a: = cmd =. val__cmds'' do.
+    cmd =. >cmd
+    if. ':' = 0{cmd do.  do_tok_>'n?','?!',~}.cmd end.
+  end.
+  k_n'' }}
+
+copop''
+
+copush 'edkeys'
+coinsert led__BASE
+NB. -----------------------------------------------------------
+kc_m  =: {{ BASE copath~ (<'edkeys') -.~ copath BASE }}
+k_asc =: {{ ins y }}
+kc_d =: del
+kc_h =: k_bksp =: bsp
+kc_e =: eol
+kc_b =: bak
+kc_f =: gor
+kc_t =: swp
+
+copop''
+
 
 
 NB. event loop
@@ -189,22 +236,3 @@ mje =: {{
 9!:29]1
 
 rl =: {{ load'mje.ijs' }}
-
-k_p =: {{
-  if. (at0__cmds > at0__list)'' do.
-    goto bak__list''
-    goz__cmds''
-    draw_app''
-  else. draw_hist@'' render__app bak__cmds'' end. }}
-
-k_n =: {{
-  if. atz__cmds'' do. draw_app goto fwd__list''
-  else. draw_hist@'' render__app fwd__cmds'' end. }}
-
-k_N =: {{
-  if. -. a: = cmd =. val__cmds'' do.
-    cmd =. >cmd
-    if. ':' = 0{cmd do.  do_tok_>'n?','?!',~}.cmd end.
-  end.
-  k_n'' }}
-
