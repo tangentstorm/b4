@@ -156,32 +156,33 @@ goto =: {{
  L__cmds =: text cur =: y
  S__cmds =: C__cmds =: 0 }}
 
+put_text =: {{ 0 0 $ slides =: (<L__cmds) (<cur,1) } slides  }}
 
+
 (copush [ coinsert) 'outkeys'
 NB. -----------------------------------------------------------
 coinsert BASE
 k_any =: {{
   select. 0{y
-  case.'9'do. draw_app goto bak__list''
-  case.'0'do. draw_app goto fwd__list''
-  case.'('do. draw_app bak__cmds''
-  case.')'do. draw_app fwd__cmds''
+  case.'9'do. goto bak__list''
+  case.'0'do. goto fwd__list''
+  case.'('do. bak__cmds''
+  case.')'do. fwd__cmds''
   end. }}
 
-kc_l =: draw_app@smudge__app
+kc_l =: smudge__app
 kc_s =: {{ (org_text'') fwrites org_path }}
 kc_c =: {{ curs@1 reset@'' break_kvm_=: 1 }}
-kc_o =: draw_app@{{ L__list =: heads }}@open
+kc_o =: {{ L__list =: heads }}@open
 
 
 edline =: {{
   R__led =: V__led =: 1 [ XY__led =: XY__cmds + 0,C__cmds
   C__led =: 0
   B__led =: '',>val__cmds__BASE''
-  coinsert__BASE 'edkeys'
-  draw_app__BASE'' }}
+  COPATH__BASE =: copath base=. BASE
+  (~. (<'outkeys')-.~ (}: 'edkeys';copath 'edkeys'),COPATH__BASE) copath BASE }}
 
-put_text =: {{ 0 0 $ slides =: (<L__cmds) (<cur,1) } slides  }}
 insline =: edline@'' put_text@'' @ ins__cmds@''
 k_o =: edline@'' insline
 k_e =: edline
@@ -190,12 +191,11 @@ k_k =: k_p =: {{
   if. (at0__cmds > at0__list)'' do.
     goto bak__list''
     goz__cmds''
-    draw_app''
-  else. draw_hist@'' render__app bak__cmds'' end. }}
+  else. bak__cmds'' end. }}
 
 k_j =: k_n =: {{
-  if. atz__cmds'' do. draw_app goto fwd__list''
-  else. draw_hist@'' render__app fwd__cmds'' end. }}
+  if. atz__cmds'' do. goto fwd__list''
+  else. fwd__cmds'' end. }}
 
 k_N =: {{
   if. -. a: = cmd =. val__cmds'' do.
@@ -205,18 +205,23 @@ k_N =: {{
   k_n'' }}
 
 copop''
-
+
 copush 'edkeys'
-coinsert led__BASE
+led =: led__BASE [ cmds =: cmds__BASE
 NB. -----------------------------------------------------------
-kc_m  =: {{ BASE copath~ (<'edkeys') -.~ copath BASE }}
-k_asc =: {{ ins y }}
-kc_d =: del
-kc_h =: k_bksp =: bsp
-kc_e =: eol
-kc_b =: bak
-kc_f =: gor
-kc_t =: swp
+kc_m  =: {{ NB. this executes in base
+  COPATH copath coname''
+  V__led =: 0 [ R__led =: R__cmds =: 1
+  L__cmds =: (<B__led) C__cmds } L__cmds
+  put_text'' }}
+
+k_asc =: {{ R__led =: 1 [ ins__led y }}
+kc_d =: del__led
+kc_h =: k_bksp =: bsp__led
+kc_e =: eol__led
+kc_b =: bak__led
+kc_f =: fwd__led
+kc_t =: swp__led
 
 copop''
 
@@ -228,7 +233,7 @@ mje =: {{
   NB. clear the display
   cscr @ bg 24 [ curs 0
   draw_app goto 0
-  [ loop_kvm_'base'
+  draw_app loop_kvm_'base'
   reset''
   0$0}}
 
