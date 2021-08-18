@@ -5,7 +5,7 @@ NB. over to my new console-based libraries, token editor
 NB. components, etc. It is something of a scratchpad and
 NB. not well organized at the moment, but important enough
 NB. that I should probably have it under version control.
-
+(<'z') copath 'base'
 
 copush =: {{ 18!:4 y [ BASE__y =: coname'' [ y=.<y }}
 copop_z_ =: {{ y [ 18!:4 BASE [ y=.coname'' }}
@@ -41,6 +41,7 @@ open =: {{
   heads =: <@;"1((' '#~+:@<:) each 3 {"1 slides),.(0{"1 slides)
   index =: 0 0 $ 0
   world =: ,<'WORLD0'
+  ihist =: iline =: ''
   init_world_''
   for_slide. slides do. i =. slide_index
     for_line. text i do. j =. line_index
@@ -50,8 +51,10 @@ open =: {{
           if. '. ' {.@E. line do. line =. 2}.line   NB. : . is editor macro
             NB. TODO : execute macro
           else.
-            ehlen =. #ehist_world_
-            exec_world_ line              NB. execute code in repl
+            ihist =: ihist,<line
+            iline =: line_index
+            ehlen =. #ehist_world_     NB. length of the history
+            exec_world_ line           NB. execute code in repl
             ehist_world_ =: (<'   ',vtcolor_tok_ line) ehlen } ehist_world_
           end.
         end.
@@ -92,6 +95,14 @@ NB. ted is the token editor in the 'on-camera' repl
 ted =: 'TokEd' conew~ ''
 H__ted =: 1
 W__ted =: W_HIST-3
+
+NB. except for now, i will just use a normal editor for editing the repl.
+NB. this is just to avoid blocking video production until the token
+NB. editor is working.
+red =: 'UiEditWidget' conew~ ''
+V__red =: 0
+H__red =: 1
+W__red =: W_HIST-3
 
 NB. led is the line editor for editing the text
 led =: 'UiEditWidget' conew~ ''
@@ -136,14 +147,14 @@ draw_hist =: {{
   end. }}
 
 render__hist =: {{
-  ted =. ted_base_
+  red =. red_base_ [ ted =. ted_base_
   cmds =. cmds_base_
   NB. draw token editor on the last line
-  XY__ted =: 3 0 + X_HIST_base_, #hist_lines_base_'' NB. 3-space prompt
+  XY__red =: XY__ted =: 3 0 + X_HIST_base_, #hist_lines_base_'' NB. 3-space prompt
   if. ':' {.@E. val =. >val__cmds'' do. B__ted =: jcut_jlex_ 2}.val
   else. B__ted =: a: end. }}
 
-app =: (editor,list,cmds,hist,ted,led) conew 'UiApp'
+app =: (editor,list,cmds,hist,ted,red,led) conew 'UiApp'
 
 draw_app =: {{
   render__app''
@@ -157,6 +168,9 @@ goto =: {{
  S__cmds =: C__cmds =: 0 }}
 
 put_text =: {{ 0 0 $ slides =: (<L__cmds) (<cur,1) } slides  }}
+
+COPATH =: copath coname''
+keymode =: {{ (~. (}: y;copath y),COPATH__BASE) copath BASE }}
 
 
 (copush [ coinsert) 'outkeys'
@@ -175,17 +189,23 @@ kc_s =: {{ (org_text'') fwrites org_path }}
 kc_c =: {{ curs@1 reset@'' break_kvm_=: 1 }}
 kc_o =: {{ L__list =: heads }}@open
 
-
 edline =: {{
   R__led =: V__led =: 1 [ XY__led =: XY__cmds + 0,C__cmds
-  C__led =: 0
-  B__led =: '',>val__cmds__BASE''
-  COPATH__BASE =: copath base=. BASE
-  (~. (<'outkeys')-.~ (}: 'edkeys';copath 'edkeys'),COPATH__BASE) copath BASE }}
+  C__led =: 0 [ B__led =: '',>val__cmds__BASE''
+  ed_edkeys_ =: led
+  keymode__BASE 'edkeys'}}
+
+edrepl =: {{
+  V__red =: R__red =: 1 NB.[ MODE__ted =: 'i'
+  C__red =: 0 [ B__red =: 2}.>val__cmds__BASE''
+  keymode__BASE 'replkeys' }}
 
 insline =: edline@'' put_text@'' @ ins__cmds@''
-k_o =: edline@'' insline
+k_O =: insline
+k_o =: insline@fwd__cmds
 k_e =: edline
+k_E =: edrepl
+k_d =: put_text@'' @ del__cmds
 
 k_k =: k_p =: {{
   if. (at0__cmds > at0__list)'' do.
@@ -207,10 +227,11 @@ k_N =: {{
 copop''
 
 copush 'edkeys'
-led =: led__BASE [ cmds =: cmds__BASE
 NB. -----------------------------------------------------------
-kc_m  =: {{ NB. this executes in base
-  COPATH copath coname''
+led =: led__BASE [ cmds =: cmds__BASE
+
+kc_m =: stop__led =: {{
+  keymode__BASE 'outkeys'
   V__led =: 0 [ R__led =: R__cmds =: 1
   L__cmds =: (<B__led) C__cmds } L__cmds
   put_text'' }}
@@ -222,6 +243,28 @@ kc_e =: eol__led
 kc_b =: bak__led
 kc_f =: fwd__led
 kc_t =: swp__led
+
+copop''
+
+
+
+copush'replkeys'
+NB. -----------------------------------------------------------
+red =: red__BASE
+
+kc_m =: {{
+  keymode__BASE 'outkeys'
+  V__red =: 0 [ R__red =: R__hist =: 1
+  NB. TODO:
+}}
+
+k_asc =: {{ R__red =: 1 [ ins__red y }}
+kc_d =: del__red
+kc_h =: k_bksp =: bsp__red
+kc_e =: eol__red
+kc_b =: bak__red
+kc_f =: fwd__red
+kc_t =: swp__red
 
 copop''
 
