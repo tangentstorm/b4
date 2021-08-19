@@ -69,7 +69,7 @@ exec =: {{ NB. run code in the current 'world'
       exec_toks =. exec_fix execslot } exec_toks
     end.
     exec_res =. ": (<'do'in_world_)`:0 ' ' joinstring exec_toks
-    if. (# exec_res) > '=:'-:>1{exec_toks,a:,a: do. echo_world_ exec_res end.
+    if. (*# exec_res) > '=:'-:>1{exec_toks,a:,a: do. echo_world_ exec_res end.
   catch.
     echo_world_ dberm''
   end. }}
