@@ -83,15 +83,11 @@ eval =: {{
 
 
 vid =: conew'vid'
-draw_toked =: {{
-  render''
-  ceol'' }}
-
 do =: {{
   NB. this provides a little language for animating the editors.
   NB. execute a series of actions on the token editor
-  i=.0 [ q =. '?'  NB. quote char. '?' is probably the least used symbol in j
-  draw_toked''
+  i=.0 [ q =. '?'  NB. quote char. '?' is rare symbol in j
+  echo@''@ceol@''@render''
   while. i < #y do. i=.i+1 [ c=.i{y
     select. MODE
     fcase. 'q' do.
@@ -100,7 +96,8 @@ do =: {{
     case. 'n' do.
       select. c
       case. '?' do. MODE =: 'i'
-      case. 'b' do. bak''
+      case. 'b' do. bwd''
+      case. 'h' do. bak''
       case. '$' do. eol''
       case. 'X' do. bsp''  NB. todo: delete only character, not token
       case. '!' do. eval''
@@ -110,10 +107,8 @@ do =: {{
       else. ins__ced c end.
     end.
     sleep 150+?20
-    draw_toked''
-    echo''
+    echo@''@ceol@''@render''
   end.
   if. MODE = 'q' do. MODE =: 'n' [ emit'' end.
-  draw_toked''
+  ceol@''@render''
   0 0 $ 0}} kpxy
-
