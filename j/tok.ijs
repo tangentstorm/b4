@@ -37,7 +37,7 @@ create =: {{
   BG =: _1
   NB. ced = character editor for new tokens
   ced =: '' conew 'UiEditWidget'
-  EX__ced =: 0 [ BG__ced =: _234 }}
+  EX__ced =: 0 [ FG__ced =: _7 [ BG__ced =: _234 }}
 
 
 kvm_init =: {{ curs 0 }}
@@ -53,8 +53,6 @@ kpxy =: {{
 :
   res [ rest xy [ res =. x u y [ xy =. save'' }}
 
-NB. TODO: restore  draw_toked + kpxy
-
 MODE =: 'n' NB. MODE e. 'niq'  : navigate, insert, quote
 
 put_tok =: {{
@@ -67,7 +65,7 @@ jtype =: jtype_jlex_ &.>
 render =: {{
   cscr'' [ bgc 0
   for_tok. C {. B do. put_tok (jtype,]) tok end.
-  if. MODE e. 'iq' do. puts B__ced [ fgc FG__ced [ bgc BG__ced end.
+  if. MODE e. 'iq' do. puts B__ced [ FGvt FG__ced [ BGvt BG__ced end.
   reset''
   for_tok. C }. B do. put_tok (jtype,]) tok end. }}
 
@@ -84,6 +82,11 @@ eval =: {{
   puts res ,"1 CRLF }}
 
 
+vid =: conew'vid'
+draw_toked =: {{
+  render''
+  ceol'' }}
+
 do =: {{
   NB. this provides a little language for animating the editors.
   NB. execute a series of actions on the token editor
@@ -98,13 +101,17 @@ do =: {{
       select. c
       case. '?' do. MODE =: 'i'
       case. 'b' do. bak''
+      case. '$' do. eol''
+      case. 'X' do. bsp''  NB. todo: delete only character, not token
       case. '!' do. eval''
       end.
     case. 'i' do.
       if. c = q do. MODE =: 'q'
       else. ins__ced c end.
     end.
-    sleep 15+?20 [ echo@'' [  draw_toked''
+    sleep 150+?20
+    draw_toked''
+    echo''
   end.
   if. MODE = 'q' do. MODE =: 'n' [ emit'' end.
   draw_toked''
