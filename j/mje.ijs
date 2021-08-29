@@ -25,8 +25,8 @@ cocurrent 'kvm'
 NB. 'colorwrite' stuff
 cwc=. [: [:^:(16=]) 'krgybmcwKRGYBMCW' i. ]
 ischr=. 2 = 3!:0
-fg=: ([: fgc cwc^:ischr) f.
-bg=: ([: bgc cwc^:ischr) f.
+cwfg=: ([: fgc cwc^:ischr) f.
+cwbg=: ([: bgc cwc^:ischr) f.
 db =: sqlopen_psqlite_'~/b4/sql/syndir.sdb'
 cocurrent'base'
 
@@ -124,7 +124,7 @@ W__editor =: X_HIST-2
 render__editor =: {{
   cc =. code_base_ cur_base_
   NB. draw the code editor
-  cscr'' [ bgx 16b101010 [ reset''
+  cscr'' [ bg 16b101010 [ reset''
   if. -. a: -: cc do.
     for_line. >jlex cc do.
       goxy 0,line_index
