@@ -53,11 +53,10 @@ kpxy =: {{
 :
   res [ rest xy [ res =. x u y [ xy =. save'' }}
 
-MODE =: 'n' NB. MODE e. 'niq'  : navigate, insert, quote
 
 put_tok =: {{
   if. -.*#y do. return. end.
-  fgx jcolor 'tag tok' =. y
+  fg jcolor 'tag tok' =. y
   puts tok }}
 
 jtype =: jtype_jlex_ &.>
@@ -83,32 +82,4 @@ eval =: {{
 
 
 vid =: conew'vid'
-do =: {{
-  NB. this provides a little language for animating the editors.
-  NB. execute a series of actions on the token editor
-  i=.0 [ q =. '?'  NB. quote char. '?' is rare symbol in j
-  echo@''@ceol@''@render''
-  while. i < #y do. i=.i+1 [ c=.i{y
-    select. MODE
-    fcase. 'q' do.
-      if. c = q do. ins__ced q [ MODE =: 'i' continue.
-      else. MODE=:'n' [ emit'' end. NB. and fall through
-    case. 'n' do.
-      select. c
-      case. '?' do. MODE =: 'i'
-      case. 'b' do. bwd''
-      case. 'h' do. bak''
-      case. '$' do. eol''
-      case. 'X' do. bsp''  NB. todo: delete only character, not token
-      case. '!' do. eval''
-      end.
-    case. 'i' do.
-      if. c = q do. MODE =: 'q'
-      else. ins__ced c end.
-    end.
-    sleep 150+?20
-    echo@''@ceol@''@render''
-  end.
-  if. MODE = 'q' do. MODE =: 'n' [ emit'' end.
-  ceol@''@render''
-  0 0 $ 0}} kpxy
+
