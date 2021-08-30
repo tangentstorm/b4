@@ -64,7 +64,7 @@ jtype =: jtype_jlex_ &.>
 render =: {{
   cscr'' [ bgc 0
   for_tok. C {. B do. put_tok (jtype,]) tok end.
-  if. MODE e. 'iq' do. puts B__ced [ FGvt FG__ced [ BGvt BG__ced end.
+  if. MODE e. 'iq' do. puts B__ced [ fg FG__ced [ bg BG__ced end.
   reset''
   for_tok. C }. B do. put_tok (jtype,]) tok end. }}
 
