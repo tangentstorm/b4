@@ -10,12 +10,14 @@ XY__ed =: 3 0
 XY__ted =: 3 0
 B__ed =: '{{ i. y }}"0 ] 5'
 
-
 render__ed =: {{
-  cscr'' [ bgx BG [ fgx FG
+  cscr'' [ bg BG [ fg FG
   B__ted =: jcut_jlex_ B
   render__ted''
-  render_cursor^:y'' }}
+  render_cursor ''
+  bg BG [ fg FG  }}
 
+macro =: '$XXXXXXXXXXXXXXXX?hello world?b?,?$'
+do__ed macro
 
 render__app loop_kvm_ >ed
