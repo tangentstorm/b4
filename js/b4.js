@@ -51,6 +51,7 @@ let b4 = (new function() {
   var coreOps=[
     ['+', (x,y)=> x+y ],    ['-', (x,y)=> x-y ],
     ['*', (x,y)=> x*y ],    ['/', (x,y)=> x/y ],
+    ['.', (x)=>{ }     ],   ['1+', (x)=> x+1 ],
     ['base', ()=> base ]
     ['compiling?', ()=>compiling ]]
 
