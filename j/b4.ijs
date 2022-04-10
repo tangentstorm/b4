@@ -68,7 +68,7 @@ NB. there are 32 "C" registers, so cget/set take an argument
 (cget =: {{ (32#:y) { C }}) ` (cset =: {{ C =: x (32#:y) } C }})
 
 NB. monad/dyad: lifts 1/2-arg J verbs to VM
-dy =: {{ dput mask (dpop u dpop) y }}
+dy =: {{ dput mask (dpop u dpop) y }}  NB. !! this conflicts with 'dy' op below
 mo =: {{ dput mask u dpop y }}
 
 NB. instruction set
