@@ -1,4 +1,3 @@
-clear''
 NB. Parser Combinators for J
 NB.
 NB. The semantics here are heavily inspired by
@@ -306,6 +305,8 @@ RBRACK =: ']' lit
 LCURLY =: '{' lit
 RCURLY =: '}' lit
 WS =: (TAB,' ') one
+WSz =: WS orp zap
+
 
 NB. generic line splitter
 lines =: {{ ,.> NB at s =. (NL not rep) tok sep (NL zap) on y }}
@@ -334,6 +335,11 @@ J_TOKEN =: NL`J_LDEF`J_RDEF`LPAREN`RPAREN`J_NB`J_STR`J_OPER`J_NUMS`J_OP`IDENT al
 J_LEXER =: (WS zap)`(J_TOKEN tok) alt rep
 
 J_STR on h=.'''hello'',abc'
+
+NB. c-style strings
+STR_ESC =: ('\'lit)`any seq
+DQ =: '"'lit
+STR =: DQ`(STR_ESC`(DQ not) alt orp)`DQ seq tok
 
 
 jsrc =: 0 : 0
@@ -400,15 +406,15 @@ ALL =: toupper each all
 (ALL) =: br each all
 
 NB. s-expressions (lisp-like syntax)
-lp =: 'lp' trace (LPAREN zap)
-rp =: 'rp' trace (RPAREN zap)
-id =: 'id' trace (lp`rp`WS alt not rep tok)
+LP =: 'LP' trace (LPAREN zap)
+RP =: 'RP' trace (RPAREN zap)
+ID =: 'ID' trace (LP`RP`WS`DQ alt not rep tok)
 
 NB. se: s-expression parser
-se =: 'se' trace (lp`(id`se`(WS zap) alt orp)`rp seq elm '' sep (WS zap))
+se =: 'se' trace (WSz`LP`(se`ID`STR`WSz alt orp)`RP seq elm '' sep WSz)
 
 NB. ll: lisp lexer
-ll =: (LPAREN tok)`(RPAREN tok)`(WS zap)`id alt rep
+ll =: WSz`((LPAREN tok)`(RPAREN tok)`WS`ID`(STR tok) alt)seq orp
 
 lisp =: '(one two (a b c) three) (banana)'
 ll parse lisp
