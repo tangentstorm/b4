@@ -86,6 +86,8 @@ begin
         end
     until (debug and pause) or (step >= maxheap);
   close(disk);
+  {$IFDEF pauseafter} { for turbo pascal }
   writeln('done. press any key to continue');
   repeat until keypressed;
+  {$ENDIF}
 end.
