@@ -5,6 +5,18 @@ uses xpc, cli, ub4, ub4asm, ub4ops, kvm, cw, kbd;
 
 const pgsz = 8 * 9; { should be multiple of 8 to come out even }
 
+procedure draw_stack(x,y : byte; id:char; minaddr,maxaddr:value);
+  var i : value;
+  begin
+    gotoxy(x,y); bg('k'); clreol; fg('w'); write(id,':');
+    fg('Y'); write(' <'); fg('y'); write(maxaddr-minaddr); fg('Y');
+    write('> '); fg('y');
+    for i := maxaddr-1 downto minaddr do write(ram[i],' ');
+  end;
+
+procedure wv(k: string; v:value); { write value }
+  begin fg('w'); write(k); fg('k'); write(': '); fg('W'); write(v); write(' ') end;
+
 
 procedure dump;
   { this displays the visual debugger }
@@ -16,8 +28,7 @@ procedure dump;
     literal := false; target := false; r := 0;
 
     { find the right page }
-    while (r < (maxcell - pgsz)) and not( (ram[ep]<r) and (ram[ep] <= r+pgsz-1) )
-    do inc(r,pgsz);
+    r := ram[ep] mod pgsz;
 
     { draw ram }
     for i := r to r + pgsz-1 do
@@ -46,11 +57,11 @@ procedure dump;
       end;
 
       { draw the data stack }
-      gotoxy(0,16); bg('k'); clreol;
-      fg('Y'); write('<', maxdata-ram[dp] ,'> '); fg('y');
-      for i := maxdata-1 downto ram[dp] do write(ram[i],' ');
-
-      gotoxy(x,y); textattr:=oldattr;
+      draw_stack(0, 15, 'd', ram[dp], maxdata);
+      draw_stack(0, 16, 'r', ram[rp], maxretn);
+      gotoxy(0, 17); bg('K'); clreol;
+      wv('ip', ram[ip]); wv('hp', ram[hp]); wv('ep',ram[ep]);
+      gotoxy(x,y); textattr := oldattr;
   end;
 
 
