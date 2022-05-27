@@ -1,7 +1,7 @@
 {$mode delphi}{$i xpc}
 { this is the main entry point for b4 }
 program b4;
-uses xpc, cli, ub4, ub4asm, ub4ops, kvm, cw, kbd;
+uses xpc, ub4, ub4asm, ub4ops, kvm, kbd;
 
 const pgsz = 8 * 9; { should be multiple of 8 to come out even }
 
@@ -15,12 +15,14 @@ procedure draw_stack(x,y : byte; id:char; minaddr,maxaddr:value);
   end;
 
 procedure wv(k: string; v:value); { write value }
-  begin fg('w'); write(k); fg('k'); write(': '); fg('W'); write(v); write(' ') end;
+  begin fg('w'); write(k); fg('k'); write(': ');
+    fg('W'); write(v); write(' ')
+  end;
 
 
 procedure dump;
   { this displays the visual debugger }
-  var x,y,oldattr: word; i, r : value; literal, target : boolean;
+  var x, y, oldattr: word; i, r: value; literal, target: boolean;
   begin
     x := wherex; y := wherey; oldattr := textattr;
 
@@ -47,9 +49,7 @@ procedure dump;
           end
         else if i > high(ram) then begin fg('K'); write('xxxxx') end
         else if (ram[i] in [1..high(optbl)]) then
-          begin
-            fg('W');
-            write(optbl[ram[i]]:5);
+          begin fg('W'); write(optbl[ram[i]]:5);
             if ram[i] = 1 then literal := true;
             if ram[i] in [2..3] then target := true;
           end
@@ -65,7 +65,7 @@ procedure dump;
   end;
 
 
-var ch : ansichar; pause : boolean;
+var ch: ansichar; pause: boolean = false;
 begin
   open('disk.b4'); boot; clrscr;
   assign(input, 'bios.b4a');
