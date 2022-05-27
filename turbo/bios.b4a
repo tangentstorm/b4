@@ -7,11 +7,11 @@
 :last 4 ret
 :ap   5 ret
 
-:a+ ap @ dup rput !                # a+ ( n - ) , writes a value to the
-    rpop inc ap ! ret              #    address in ap and increments ap.
+:a+ ap @ dup push !                # a+ ( n - ) , writes a value to the
+    pop inc ap ! ret               #    address in ap and increments ap.
 
-:, here @ dup rput !
-    rpop inc here ! ret            # , is exact same thing for the heap
+:, here @ dup push !
+    pop inc here ! ret             # , is exact same thing for the heap
 
 :cmdlinebuffer                     # allocate 80 characters for input
   02 04 06 08 10 12 14 16 18 20    # each one is 2 bytes because there's
