@@ -74,6 +74,7 @@ begin
   while ram[ip] <= maxheap do begin
     if ram[dbg]=1 then begin
       if not pause then ram[ep] := ram[ip];
+      pause := true;
       dump;
       ch := readkey;
       case upcase(ch) of
