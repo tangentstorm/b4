@@ -1,4 +1,3 @@
-{$mode delphi}{$i xpc}
 {-- do not edit! regenerate with mkoptbl.pas --}
 unit ub4ops;
 interface
@@ -9,15 +8,15 @@ begin
   optbl[ 0] := 'nop';
   optbl[ 1] := 'lit';
   optbl[ 2] := 'jmp';
-  optbl[ 3] := 'jwz';
+  optbl[ 3] := 'jw0';
   optbl[ 4] := 'ret';
-  optbl[ 5] := 'rwz';
+  optbl[ 5] := 'rw0';
   optbl[ 6] := 'eq';
   optbl[ 7] := 'ne';
   optbl[ 8] := 'gt';
   optbl[ 9] := 'lt';
-  optbl[10] := 'lte';
-  optbl[11] := 'gte';
+  optbl[10] := 'le';
+  optbl[11] := 'gt';
   optbl[12] := 'and';
   optbl[13] := 'or';
   optbl[14] := 'xor';
@@ -48,7 +47,7 @@ begin
   optbl[39] := 'keyp';
   optbl[40] := 'cscr';
   optbl[41] := 'ceol';
-  optbl[42] := '';
+  optbl[42] := 'crxy';
   optbl[43] := '';
   optbl[44] := '';
   optbl[45] := '';

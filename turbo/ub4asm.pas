@@ -73,7 +73,7 @@ procedure b4as;
                   if dict[op].key = tok.str then emit(dict[op].val);
                   inc(op); end end;
         _wh : dput(here-1);
-        _do : begin emit(b4opc('jwz')); emit(0); dput(here-1); emit(b4opc('drop')); end;
+        _do : begin emit(b4opc('jw0')); emit(0); dput(here-1); emit(b4opc('drop')); end;
         _od : begin
                 { first, an unconditional jump back to the _do }
                 { the if is just to discard the boolean }
