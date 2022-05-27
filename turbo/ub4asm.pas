@@ -58,30 +58,34 @@ procedure b4as;
   var here: value; err: integer; tok: token; ch: char;
       dict: array[0..31] of entry; ents : byte;
   procedure emit(v:value); begin ram[here] := v; inc(here); end;
+  procedure emit_call(v:value); begin emit(v) end;
+  procedure emit_lit(v:value); begin emit(1); {lit} emit(v); end;
+  procedure unknown(s:string); begin writeln('unknown word:', s); halt end;
   procedure compile;
-    var op : byte; v : value;
+    var op : byte; v : value; found: boolean=false;
     begin
       case tok.tag of
         wsp, cmt : ok; { do nothing }
-        raw : begin val(tok.str, v, err); if err=0 then emit(v); end;
-        lit : begin val(tok.str, v, err); if err=0 then begin emit(1); emit(v) end end;
+        {=123 is a raw number, 123 is 'lit 123'}
+        raw : begin val(tok.str, v, err); if err=0 then emit(v) else unknown(tok.str) end;
+        lit : begin val(tok.str, v, err); if err=0 then emit_lit(v) else unknown(tok.str) end;
         def : if ents > 31 then err := -12345
               else begin dict[ents].key := tok.str; dict[ents].val := here-1; inc(ents) end;
         ref : if b4op(tok.str, op) then emit(op)
-              else begin op := 0;
-                while op < ents do begin
-                  if dict[op].key = tok.str then emit(dict[op].val);
-                  inc(op); end end;
-        _wh : dput(here-1);
-        _do : begin emit(b4opc('jw0')); emit(0); dput(here-1); emit(b4opc('drop')); end;
-        _od : begin
+              else begin op := 0; found := false;
+                while (op < ents) and not found do begin
+                  if dict[op].key = tok.str then begin emit_call(dict[op].val); found:=true end;
+                  inc(op) end;
+                if not found then unknown(tok.str) end;
+        _wh : dput(here-1); {(- wh)}
+        _do : begin {(- do)} emit(b4opc('jw0')); emit(0); dput(here-1); emit(b4opc('drop')) end;
+        _od : begin { compile time: (wh do -)}
                 { first, an unconditional jump back to the _do }
-                { the if is just to discard the boolean }
                 emit(b4opc('jmp')); swap; emit(dpop);
                 { now go back to the guard and compile the forward jump }
                 ram[dpop] := here-1; end;
-        _if : ; { if does nothing. it's just syntactic sugar. }
-        _fi : ram[dpop] := here-1; { compile the forward jump at '|' }
+        _if : ; { 'if' does nothing. just syntactic sugar. }
+        _fi : {(do-)} ram[dpop] := here-1; { jump to 'end' when 'if' test fails }
       end end;
   begin
     err := 0; ents := 0; here := ram[hp]; read(ch);
