@@ -206,7 +206,7 @@ function step : value;
       00 : {nop } begin end;
       01 : {lit } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
       02 : {jmp } ram[ip] := ram[ram[ip]+1];
-      03 : {jw0 } if tos = 0 then begin zap(dpop); ram[ip] := ram[ram[ip]+1] end
+      03 : {jw0 } if dpop = 0 then begin ram[ip] := ram[ram[ip]+1] end
                   else inc(ram[ip]) { skip over the address };
       04 : {ret } ram[ip] := rpop;
       05 : {rw0 } if tos = 0 then begin zap(dpop); ram[ip] := rpop end;

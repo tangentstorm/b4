@@ -25,7 +25,7 @@ function b4opc(code:opstring) : byte;
     else begin writeln('invalid op: ', code); halt end end;
 
 type
-  tokentag = ( wsp, cmt, raw, lit, def, ref, _wh, _do, _od, _if, _fi );
+  tokentag = ( wsp, cmt, raw, lit, def, ref, adr, _wh, _do, _od, _if, _fi );
   token = record tag : tokentag; str : string; end;
   entry = record key : string[32]; val : value; end;
 
@@ -39,9 +39,10 @@ function next( var tok : token; var ch : char ) : boolean;
       #0..#32: begin tok.tag := wsp; repeat until eof or (nextchar(ch) >= #32) end;
       '#' : begin tok.tag := cmt; readln(tok.str); ch := nextchar(ch) end;
       '-', '=', '0'..'9': begin
-        if ch='=' then tok.tag := raw else tok.tag := lit;
+        if ch='=' then begin tok.tag := raw; tok.str := '' end else tok.tag := lit;
         while nextchar(ch) in ['0'..'9'] do keep end;
       ':' : begin tok.tag := def; tok.str := ''; while nextchar(ch) > #32 do keep end;
+      '$' : begin tok.tag := adr; tok.str := ''; while nextchar(ch) > #32 do keep end;
       'a'..'z' : begin tok.tag := ref; while nextchar(ch) > #32 do keep end;
       { curly = (while | body) }
       '{' : begin tok.tag := _wh; ch:=nextchar(ch) end;
@@ -61,24 +62,29 @@ procedure b4as;
   procedure emit_call(v:value); begin emit(v) end;
   procedure emit_lit(v:value); begin emit(1); {lit} emit(v); end;
   procedure unknown(s:string); begin writeln('unknown word:', s); halt end;
+  function find_addr(s:string): value; { return address of label }
+    var op:byte = 0; found: boolean=false;
+    begin while (op < ents) and not found do begin
+      if dict[op].key = tok.str then begin find_addr := dict[op].val; found:=true end;
+      inc(op) end;
+      if not found then unknown(tok.str) end;
   procedure compile;
-    var op : byte; v : value; found: boolean=false;
+    var op : byte; v : value;
     begin
       case tok.tag of
         wsp, cmt : ok; { do nothing }
         {=123 is a raw number, 123 is 'lit 123'}
-        raw : begin val(tok.str, v, err); if err=0 then emit(v) else unknown(tok.str) end;
-        lit : begin val(tok.str, v, err); if err=0 then emit_lit(v) else unknown(tok.str) end;
+        raw : begin val(tok.str, v, err);
+                if err=0 then emit(v) else unknown(tok.str) end;
+        lit : begin val(tok.str, v, err);
+                if err=0 then emit_lit(v) else unknown(tok.str) end;
         def : if ents > 31 then err := -12345
-              else begin dict[ents].key := tok.str; dict[ents].val := here-1; inc(ents) end;
-        ref : if b4op(tok.str, op) then emit(op)
-              else begin op := 0; found := false;
-                while (op < ents) and not found do begin
-                  if dict[op].key = tok.str then begin emit_call(dict[op].val); found:=true end;
-                  inc(op) end;
-                if not found then unknown(tok.str) end;
+              else begin
+                dict[ents].key := tok.str; dict[ents].val := here-1; inc(ents) end;
+        ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
+        adr : emit_lit(find_addr(tok.str));
         _wh : dput(here-1); {(- wh)}
-        _do : begin {(- do)} emit(b4opc('jw0')); emit(0); dput(here-1); emit(b4opc('drop')) end;
+        _do : begin {(- do)} emit(b4opc('jw0')); emit(0); dput(here-1) end;
         _od : begin { compile time: (wh do -)}
                 { first, an unconditional jump back to the _do }
                 emit(b4opc('jmp')); swap; emit(dpop);
