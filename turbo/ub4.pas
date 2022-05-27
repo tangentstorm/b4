@@ -52,6 +52,7 @@ const {-- these are all offsets into the ram array --}
   function dpop:value;
   procedure swap;
 
+
 implementation
 
 procedure boot;
@@ -83,7 +84,6 @@ procedure open(path:string);
         end;
     {$i+}
   end;
-
 
 function dpop : value;
   begin
@@ -197,26 +197,19 @@ procedure save;
     write(disk, tmp);
   end;
 
+
 function step : value;
   { execute next instruction, then increment and return the IP }
   begin
     case ram[ram[ip]] of
-      { Do not reformat this function! mkb4asm.pas uses it! }
+      { Do not reformat this function! mkoptbl.pas uses it! }
       00 : {nop } begin end;
       01 : {lit } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
       02 : {jmp } ram[ip] := ram[ram[ip]+1];
-      03 : {jw0 } if tos = 0 then
-                    begin
-                      zap(dpop);
-                      ram[ip] := ram[ram[ip]+1];
-                    end
-                  else inc(ram[ip]) { skip over the addres };
+      03 : {jw0 } if tos = 0 then begin zap(dpop); ram[ip] := ram[ram[ip]+1] end
+                  else inc(ram[ip]) { skip over the address };
       04 : {ret } ram[ip] := rpop;
-      05 : {rw0 } if tos = 0 then
-                    begin
-                      zap(dpop);
-                      ram[ip] := rpop
-                    end;
+      05 : {rw0 } if tos = 0 then begin zap(dpop); ram[ip] := rpop end;
       06 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
       07 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
       08 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
@@ -229,11 +222,7 @@ function step : value;
       15 : {add } dput(dpop  + dpop);
       16 : {sub } dput(-dpop + dpop);
       17 : {mul } dput(dpop * dpop);
-      18 : {dvm } begin
-                    rput(tos mod nos);
-                    dput(dpop div dpop);
-                    dput(rpop);
-                  end;
+      18 : {dvm } begin rput(tos mod nos); dput(dpop div dpop); dput(rpop) end;
       19 : {shl } begin swap; dput(dpop shl dpop) end;
       20 : {shr } begin swap; dput(dpop shr dpop) end;
       21 : {push} rput(dpop);
@@ -246,24 +235,12 @@ function step : value;
       28 : {drop} zap(dpop);
       29 : {swap} swap;
       30 : {over} dput(nos);
-      31 : {goxy} begin
-                    swap;
-                    kvm.gotoxy(dpop mod (xMax + 1),
-                               dpop mod (yMax + 1))
-                  end;
+      31 : {goxy} begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
       32 : {attr} kvm.textattr := dpop;
       33 : {putc} write(chr(dpop));
-      34 : {getc} begin
-                    dput(value(kbd.readkey));
-                    { we have 32 bits and only need 16,
-                      so we can store extended keys in
-                      one cell }
-                    if tos = 0 then
-                      begin
-                        zap(dpop);
-                        dput(value(kbd.readkey) shl 8)
-                      end
-                  end;
+      34 : {getc} begin dput(value(kbd.readkey));
+                    { we have 32 bits & only need 16. we can store extended keys in one cell }
+                    if tos = 0 then begin zap(dpop); dput(value(kbd.readkey) shl 8) end end;
       35 : {halt} halt;
       36 : {boot} boot;
       37 : {load} load;
@@ -273,9 +250,7 @@ function step : value;
       41 : {ceol} kvm.clreol;
       42 : {crxy} begin dput(kvm.wherex); dput(kvm.wherey) end;
       { reserved: } 43 .. 63 : begin end;
-      else
-        rput(ram[ip]);
-        ram[ip] := ram[ram[ip]];
+      else rput(ram[ip]); ram[ip] := ram[ram[ip]]
     end;
     inc(ram[ip]);
     step := ram[ip];

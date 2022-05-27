@@ -29,6 +29,7 @@ function match(have, want:string) : boolean;
     match := sofar;
   end;
 
+
 procedure readops;
   var i, op : byte;
   begin
@@ -73,4 +74,3 @@ begin
   writeln(out, 'end.');
   close(out);
 end.
-

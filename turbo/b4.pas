@@ -15,9 +15,8 @@ procedure dump;
     literal := false; target := false; r := 0;
 
     { find the right page }
-    while (r < (maxcell - pgsz)) and
-      not((ram[ep] >= r) and (ram[ep] <= r+pgsz-1)) do
-      inc(r,pgsz);
+    while (r < (maxcell - pgsz)) and (ram[ep]<r) and (ram[ep] <= r+pgsz-1)
+    do inc(r,pgsz);
 
     { draw ram }
     for i := r to r + pgsz-1 do
