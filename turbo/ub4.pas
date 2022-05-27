@@ -215,7 +215,7 @@ function step : value;
       08 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
       09 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
       10 : {le  } if dpop <= dpop then dput(-1) else dput(0);
-      11 : {gt  } if dpop >= dpop then dput(-1) else dput(0);
+      11 : {ge  } if dpop >= dpop then dput(-1) else dput(0);
       12 : {and } dput(dpop and dpop);
       13 : {or  } dput(dpop or dpop);
       14 : {xor } dput(dpop xor dpop);

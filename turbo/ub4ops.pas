@@ -16,7 +16,7 @@ begin
   optbl[ 8] := 'gt';
   optbl[ 9] := 'lt';
   optbl[10] := 'le';
-  optbl[11] := 'gt';
+  optbl[11] := 'ge';
   optbl[12] := 'and';
   optbl[13] := 'or';
   optbl[14] := 'xor';
