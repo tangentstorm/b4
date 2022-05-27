@@ -5,6 +5,7 @@ uses xpc, cli, ub4, ub4asm, ub4ops, kvm, cw, kbd;
 
 const pgsz = 8 * 9; { should be multiple of 8 to come out even }
 
+
 procedure dump;
   { this displays the visual debugger }
   var x,y, oldattr :word; i, r : value; literal, target : boolean;
@@ -49,16 +50,10 @@ procedure dump;
       fg('Y'); write('<', maxdata-ram[dp] ,'> '); fg('y');
       for i := maxdata-1 downto ram[dp] do write(ram[i],' ');
 
-      bg('k');
-      for r := 1 to 16 do
-        begin
-          gotoxy(57, r);
-          if r < 3 then fg('b') else
-          fg('B'); for i := 1 to 24 do write('#');
-        end;
       gotoxy(x,y); textattr:=oldattr;
   end;
 
+
 var ch : ansichar; debug, pause : boolean;
 begin
   open('disk.b4'); boot; clrscr;
