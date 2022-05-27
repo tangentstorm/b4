@@ -3,54 +3,45 @@
 :@  get ret                        # these are forth syntax for get/put
 :!  set ret
 
-:heap 3 ret                        # names for some important registers
+:here 3 ret                        # names for some important registers
 :last 4 ret
 :ap   5 ret
 
 :a+ ap @ dup rput !                # a+ ( n - ) , writes a value to the
     rpop inc ap ! ret              #    address in ap and increments ap.
 
-:, heap @ dup rput !
-    rpop inc heap ! ret            # , is exact same thing for the heap
+:, here @ dup rput !
+    rpop inc here ! ret            # , is exact same thing for the heap
 
 :cmdlinebuffer                     # allocate 80 characters for input
-   02 04 06 08 10 12 14 16 18 20
-   22 24 26 28 30 32 34 36 38 40
-   42 44 46 48 50 52 54 56 58 60
-   62 64 66 68 70 72 74 76 78 80
+  02 04 06 08 10 12 14 16 18 20    # each one is 2 bytes because there's
+  22 24 26 28 30 32 34 36 38 40    # a 'lit' opcode in front of each one.
+  42 44 46 48 50 52 54 56 58 60
+  62 64 66 68 70 72 74 76 78 80
+
 :cmd lit cmdlinebuffer ret         # return the address of the buffer
-:run ret
+:nl 10 putc 13 putc                # emit CRLF
+:go ret                            # word handler (does nothing so far)
 :ok
-   10 putc ret
-   02 attr 62 putc 07 attr         # green > on black, gray input.
-   :echo
-     getc                          # get next char
-     [ dup 13 eq | drop run        # on enter, run the command
-                   jmp ok   ]
-     [ dup 27 eq | drop ret ]      # on escape, exit
-     [ dup 32 lt | jmp echo ]      # ignore other control chars for now
-     dup a+ putc                   # anything else goes to the buffer
-   jmp echo
-] cscr ok                          # end of bios. show prompt.
-
-
-
-15 { dup 0 gt | dup attr dup 1 swap goxy 64 putc dec } drop
-[ 1 | 2 attr 65 putc ]
+  nl 02 attr                       # green on black
+  111 putc 107 putc 62 putc        # echo 'ok>'
+  02 attr 32 putc 07 attr          # gray on black for user input.
+  :rkey { 1 | getc                 # readkey loop
+    [ dup 13 eq | drop go jmp ok ] # on enter, run the command
+    [ dup 04 eq | drop ret ]       # on ^d, exit
+    [ dup 32 gt | jmp rkey ]       # ignore other control chars for now
+    dup a+ putc }                  # anything else goes to the buffer
+]                                  # end of bios.
 
 nop nop nop nop nop
 nop nop nop nop nop
 nop nop nop nop nop
 nop nop nop nop nop
 nop nop nop nop nop
-getc
 
-# b4 bios
-# cscr
-#1 attr 87 putc
-#2 attr 88 putc
-#15 { dec dup | dup attr 64 putc }
-#4 attr 65 putc
-#[ 0 | 4 attr 66 putc ]
-# 4 attr 67 putc
-
+# -- main loop --
+15 { dec dup | dup attr 64 putc } # draw colors
+ok
+
+nl 01 attr 101 putc 110 putc 100 putc nl  # 'end' in red
+halt
