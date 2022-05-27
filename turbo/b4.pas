@@ -20,18 +20,18 @@ procedure wv(k: string; v:value); { write value }
 
 procedure dump;
   { this displays the visual debugger }
-  var x,y, oldattr :word; i, r : value; literal, target : boolean;
+  var x,y,oldattr: word; i, r : value; literal, target : boolean;
   begin
-    x := wherex; y := wherey; oldattr := textattr; clrscr;
+    x := wherex; y := wherey; oldattr := textattr;
 
     gotoxy(0,17);
-    literal := false; target := false; r := 0;
+    literal := false; target := false;
 
     { find the right page }
-    r := ram[ep] mod pgsz;
+    r := ram[ep] div pgsz;
 
     { draw ram }
-    for i := r to r + pgsz-1 do
+    for i := r * pgsz to (r * pgsz) + pgsz-1 do
       begin
         if (i=ram[ip]) and (i=ram[ep]) then begin bg('m'); fg('M') end
         else if i=ram[ip] then begin bg('c'); fg('m') end
@@ -57,45 +57,44 @@ procedure dump;
       end;
 
       { draw the data stack }
-      draw_stack(0, 15, 'd', ram[dp], maxdata);
-      draw_stack(0, 16, 'r', ram[rp], maxretn);
-      gotoxy(0, 17); bg('K'); clreol;
+      draw_stack(0, 14, 'd', ram[dp], maxdata);
+      draw_stack(0, 15, 'r', ram[rp], maxretn);
+      gotoxy(0, 16); bg('K'); clreol;
       wv('ip', ram[ip]); wv('hp', ram[hp]); wv('ep',ram[ep]);
       gotoxy(x,y); textattr := oldattr;
   end;
 
 
-var ch : ansichar; debug, pause : boolean;
+var ch : ansichar; pause : boolean;
 begin
   open('disk.b4'); boot; clrscr;
   assign(input, 'bios.b4a');
   reset(input); b4as;
-  debug := false; pause:=false;
-  while ram[ip] <= maxheap do
-    repeat
-      if ram[ip] = 64 then debug := true; { breakpoint! }
-      if debug then
-        begin
-          dump; pause := true;
-          ch := readkey;
-          case upcase(ch) of
-            ^N : inc(ram[ep],8);
-            ^P : if ram[ep] >= 8 then dec(ram[ep],8);
-            ^F : inc(ram[ep]);
-            ^B : dec(ram[ep]);
-            ^V : inc(ram[ep], pgsz);
-            'I': ram[ep] := ram[ip];
-            'S',
-            ' ': pause := false;
-            'G': debug := false;
-            'Q': halt;
-            '0'..'9' : fillchar(ram[minbuff],
-                                (maxbuff-minbuff)*sizeof(value), ch);
-          end;
-          if ram[ep] < 0 then ram[ep] := maxcell;
-          if ram[ep] > maxcell then ram[ep] := 0;
-        end
-    until (debug and pause) or (step >= maxheap);
+  ram[dbg] := 1;
+  while ram[ip] <= maxheap do begin
+    if ram[dbg]=1 then begin
+      if not pause then ram[ep] := ram[ip];
+      dump;
+      ch := readkey;
+      case upcase(ch) of
+        ^N : inc(ram[ep],8);
+        ^P : if ram[ep] >= 8 then dec(ram[ep],8);
+        ^F : inc(ram[ep]);
+        ^B : dec(ram[ep]);
+        ^V : inc(ram[ep], pgsz);
+        'I': ram[ep] := ram[ip];
+        'S',
+        ' ': pause := false;
+        'G': ram[dbg] := 0;
+        'Q': halt;
+        '0'..'9' : fillchar(ram[minbuff],
+                            (maxbuff-minbuff)*sizeof(value), ch);
+      end;
+      if ram[ep] < 0 then ram[ep] := maxcell;
+      if ram[ep] > maxcell then ram[ep] := 0;
+    end; { if ram[debug] }
+    if not (pause and (ram[dbg]=1)) then step;
+  end; { while }
   close(disk);
   {$IFDEF pauseafter} { for turbo pascal }
   writeln('done. press any key to continue');

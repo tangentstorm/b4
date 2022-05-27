@@ -40,6 +40,7 @@ const {-- these are all offsets into the ram array --}
   last  =  4; { last dictionary entry }
   ap    =  5; { the 'a' register }
   ep    =  6; { the editor pointer }
+  dbg   =  7; { debug flag }
   ml    = 64; { main loop }
 
 
