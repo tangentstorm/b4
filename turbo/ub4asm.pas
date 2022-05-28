@@ -6,6 +6,7 @@ interface uses xpc, ub4ops, ub4;
 
   var nextchar : chargen;
   function b4op(code : opstring; out op:byte) : boolean;
+  function b4opc(code:opstring) : byte;
   function readnext( var ch : char ) : char;
   procedure b4as;
 
@@ -60,7 +61,7 @@ procedure b4as;
       dict: array[0..31] of entry; ents : byte;
   procedure emit(v:value); begin ram[here] := v; inc(here); end;
   procedure emit_call(v:value); begin emit(v) end;
-  procedure emit_lit(v:value); begin emit(1); {lit} emit(v); end;
+  procedure emit_lit(v:value); begin emit(b4opc('li')); emit(v); end;
   procedure unknown(s:string); begin writeln('unknown word:', s); halt end;
   function find_addr(s:string): value; { return address of label }
     var op:byte = 0; found: boolean=false;
@@ -84,10 +85,10 @@ procedure b4as;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
         adr : emit_lit(find_addr(tok.str));
         _wh : dput(here-1); {(- wh)}
-        _do : begin {(- do)} emit(b4opc('jw0')); emit(0); dput(here-1) end;
+        _do : begin {(- do)} emit(b4opc('j0')); emit(0); dput(here-1) end;
         _od : begin { compile time: (wh do -)}
                 { first, an unconditional jump back to the _do }
-                emit(b4opc('jmp')); swap; emit(dpop);
+                emit(b4opc('jm')); swap; emit(dpop);
                 { now go back to the guard and compile the forward jump }
                 ram[dpop] := here-1; end;
         _if : ; { 'if' does nothing. just syntactic sugar. }

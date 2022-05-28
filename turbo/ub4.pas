@@ -193,59 +193,85 @@ procedure save;
     write(disk, tmp);
   end;
 
+procedure getc;
+  begin dput(value(kbd.readkey));
+    { we have 32 bits & only need 16. we can store extended keys in one cell }
+    if tos = 0 then begin zap(dpop); dput(value(kbd.readkey) shl 8) end
+  end;
+
+procedure todo(op : string);
+  begin
+    writeln('todo: ', op);
+    halt
+  end;
 
 function step : value;
   { execute next instruction, then increment and return the IP }
   begin
     case ram[ram[ip]] of
       { Do not reformat this function! mkoptbl.pas uses it! }
-      00 : {nop } begin end;
-      01 : {lit } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
-      02 : {jmp } ram[ip] := ram[ram[ip]+1];
-      03 : {jw0 } if dpop = 0 then begin ram[ip] := ram[ram[ip]+1] end
+      00 : {ok  } ; { no-op }
+      01 : {si  } ; { todo: short int }
+      02 : {li  } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
+      03 : {sw  } swap;
+      04 : {du  } dput(tos);
+      05 : {ov  } dput(nos);
+      06 : {zp  } zap(dpop);
+      07 : {dr  } rput(dpop);
+      08 : {rd  } dput(rpop);
+      09 : {ad  } dput(dpop  + dpop);
+      10 : {sb  } dput(-dpop + dpop);
+      11 : {ml  } dput(dpop * dpop);
+      12 : {dv  } dput(dpop div dpop);
+      13 : {md  } dput(dpop mod dpop);
+      14 : {ng  } dput(-dpop);
+      15 : {sl  } begin swap; dput(dpop shl dpop) end;
+      16 : {sr  } begin swap; dput(dpop shr dpop) end;
+      17 : {an  } dput(dpop and dpop);
+      18 : {or  } dput(dpop or dpop);
+      19 : {xr  } dput(dpop xor dpop);
+      20 : {nt  } dput(dpop xor dpop);
+      21 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
+      22 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
+      23 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
+      24 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
+      25 : {ge  } if dpop >= dpop then dput(-1) else dput(0);
+      26 : {le  } if dpop <= dpop then dput(-1) else dput(0);
+      27 : {dx  } todo('dx');
+      28 : {dy  } todo('dy');
+      29 : {dz  } todo('dz');
+      30 : {dc  } todo('dc');
+      31 : {xd  } todo('xd');
+      32 : {yd  } todo('yd');
+      33 : {zd  } todo('zd');
+      34 : {cd  } todo('cd');
+      35 : {hl  } halt;
+      36 : {jm  } ram[ip] := ram[ram[ip]+1];
+      37 : {j0  } if dpop = 0 then begin ram[ip] := ram[ram[ip]+1] end
                   else inc(ram[ip]) { skip over the address };
-      04 : {ret } ram[ip] := rpop;
-      05 : {rw0 } if tos = 0 then begin zap(dpop); ram[ip] := rpop end;
-      06 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
-      07 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
-      08 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
-      09 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
-      10 : {le  } if dpop <= dpop then dput(-1) else dput(0);
-      11 : {ge  } if dpop >= dpop then dput(-1) else dput(0);
-      12 : {and } dput(dpop and dpop);
-      13 : {or  } dput(dpop or dpop);
-      14 : {xor } dput(dpop xor dpop);
-      15 : {add } dput(dpop  + dpop);
-      16 : {sub } dput(-dpop + dpop);
-      17 : {mul } dput(dpop * dpop);
-      18 : {dvm } begin rput(tos mod nos); dput(dpop div dpop); dput(rpop) end;
-      19 : {shl } begin swap; dput(dpop shl dpop) end;
-      20 : {shr } begin swap; dput(dpop shr dpop) end;
-      21 : {push} rput(dpop);
-      22 : {pop } dput(rpop);
-      23 : {inc } inc(ram[ram[dp]]);
-      24 : {dec } dec(ram[ram[dp]]);
-      25 : {get } dput(ram[dpop]);
-      26 : {set } ram[dpop] := dpop;
-      27 : {dup } dput(tos);
-      28 : {drop} zap(dpop);
-      29 : {swap} swap;
-      30 : {over} dput(nos);
-      31 : {goxy} begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
-      32 : {attr} kvm.textattr := dpop;
-      33 : {putc} write(chr(dpop));
-      34 : {getc} begin dput(value(kbd.readkey));
-                    { we have 32 bits & only need 16. we can store extended keys in one cell }
-                    if tos = 0 then begin zap(dpop); dput(value(kbd.readkey) shl 8) end end;
-      35 : {halt} halt;
-      36 : {boot} boot;
-      37 : {load} load;
-      38 : {save} save;
-      39 : {keyp} if keypressed then dput(-1) else dput(0);
-      40 : {cscr} kvm.clrscr;
-      41 : {ceol} kvm.clreol;
-      42 : {crxy} begin dput(kvm.wherex); dput(kvm.wherey) end;
-      { reserved: } 43 .. 63 : begin end;
+      38 : {hp  } todo('hp'); { hop }
+      39 : {h0  } todo('h0'); { hop if 0 }
+      40 : {h1  } todo('h1'); { hop if 1 }
+      41 : {nx  } todo('nx'); { next }
+      42 : {cl  } todo('cl'); { call }
+      43 : {rt  } ram[ip] := rpop;
+      44 : {r0  } if tos = 0 then begin zap(dpop); ram[ip] := rpop end;
+      45 : {r1  } if tos<> 0 then begin zap(dpop); ram[ip] := rpop end;
+      46 : {ev  } todo('ev'); { eval - like call, but address comes from stack }
+      47 : {rm  } dput(ram[dpop]);    { read memory }
+      48 : {wm  } ram[dpop] := dpop;  { write memory }
+      49 : {goxy} begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
+      50 : {attr} kvm.textattr := dpop;
+      51 : {putc} write(chr(dpop));
+      52 : {getc} getc;
+      53 : {boot} boot;
+      54 : {load} load;
+      55 : {save} save;
+      56 : {keyp} if keypressed then dput(-1) else dput(0);
+      57 : {cscr} kvm.clrscr;
+      58 : {ceol} kvm.clreol;
+      59 : {crxy} begin dput(kvm.wherex); dput(kvm.wherey) end;
+      { reserved: } 60 .. 63 : begin end;
       else rput(ram[ip]); ram[ip] := ram[ram[ip]]
     end;
     inc(ram[ip]);

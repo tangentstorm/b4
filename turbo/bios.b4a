@@ -1,18 +1,21 @@
 [ 0                                # jump over bios
 | #--- begin bios -----------------#
-:@  get ret                        # these are forth syntax for get/put
-:!  set ret
-:. drop ret
+:@ rm rt                           # these are forth syntax for get/put
+:! wm rt
+:. zp rt
+:+ ad rt
 
-:here 3 ret                        # names for some important registers
-:last 4 ret
-:ap   5 ret
+:here 3 rt                         # names for some important registers
+:last 4 rt
+:ap   5 rt
 
-:a+ ap @ dup push !                # a+ ( n - ) , writes a value to the
-    pop inc ap ! ret               #    address in ap and increments ap.
+:inc  1 ad rt
 
-:, here @ dup push !
-    pop inc here ! ret             # , is exact same thing for the heap
+:a+ ap @ du dr !                   # a+ ( n - ) , writes a value to the
+    rd inc ap ! rt                 #    address in ap and increments ap.
+
+:, here @ du dr !
+    rd inc here ! rt               # , is exact same thing for the heap
 
 :buf                               # allocate 80 characters for input
   02 04 06 08 10 12 14 16 18 20    # each one is 2 bytes because there's
@@ -20,34 +23,34 @@
   42 44 46 48 50 52 54 56 58 60
   62 64 66 68 70 72 74 76 78 80
 
-:nl 10 putc 13 putc ret            # emit CRLF
+:nl 10 putc 13 putc rt             # emit CRLF
 
-:init $buf ap ! ret                # set ap = buf
+:init $buf ap ! rt                 # set ap = buf
 
-:word ret                          # word handler (does nothing so far)
+:word rt                           # word handler (does nothing so far)
 
 :exit nl 01 attr                   # red
   101 putc 110 putc 100 putc nl    # echo 'end'
-  halt
+  hl
 
-:ok
+:prompt
   nl 02 attr                       # green on black
   111 putc 107 putc 62 putc        # echo 'ok>'
-  02 attr 32 putc 07 attr ret      # gray on black for user input.
+  02 attr 32 putc 07 attr rt       # gray on black for user input.
 
 
 :eol =1                            # end of line flag
 
 :repl { 1 |
-  [ $eol @ | 0 $eol ! ok ]         # show prompt if new line
+  [ $eol @ | 0 $eol ! prompt ]     # show prompt if new line
   getc
-  [ dup 13 eq | . 1 $eol ! word ]  # on cr, set newline and run word
-  [ dup 04 eq | . exit ]           # on ^d, exit
-  [ dup 31 ge | . ]                # ignore other control chars
-  dup a+ putc }                    # others go to buffer with echo
+  [ du 13 eq | . 1 $eol ! word ]   # on cr, set newline and run word
+  [ du 04 eq | . exit ]            # on ^d, exit
+  [ du 31 ge | . ]                 # ignore other control chars
+  du a+ putc }                     # others go to buffer with echo
 ] #--- end of bios ----------------#
 
 # -- main --
-# 15 { dec dup dup | dup attr 64 putc } # draw colors
+# 15 { dec du du | du attr 64 putc } # draw colors
 # :once =1 [ $once @ | 0 $once ! init repl ]  # why doesn't this work?
 init repl

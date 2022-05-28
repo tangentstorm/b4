@@ -5,6 +5,8 @@ uses xpc, ub4, ub4asm, ub4ops, kvm, kbd;
 
 const pgsz = 8 * 8; { should be multiple of 8 to come out even }
 
+var opli, opjm, opj0 : value;
+
 procedure draw_stack(x,y : byte; id:char; minaddr,maxaddr:value);
   var i : value;
   begin
@@ -54,8 +56,8 @@ procedure dump;
         else if i > high(ram) then begin fg('K'); write('xxxxx') end
         else if (ram[i] in [1..high(optbl)]) then
           begin fg('W'); write(optbl[ram[i]]:5);
-            if ram[i] = 1 then literal := true;
-            if ram[i] in [2..3] then target := true;
+            if ram[i] = opli then literal := true;
+            if (ram[i] = opjm) or (ram[i] = opj0) then target := true;
           end
         else begin fg('b'); write(ram[i]:5) end;
       end;
@@ -69,6 +71,7 @@ procedure dump;
 
 var ch: ansichar; pause: boolean = false;
 begin
+  opli := b4opc('li');  opjm := b4opc('jm'); opj0 := b4opc('j0');
   open('disk.b4'); boot; clrscr;
   assign(input, 'bios.b4a');
   reset(input); b4as;
