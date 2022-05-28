@@ -12,7 +12,7 @@ always:
 run: always b4
 	./b4
 
-b4 : b4.pas ub4.pas ub4ops.pas ub4asm.pas
+b4 : b4.pas ub4ops.pas ub4asm.pas
 	$(FPC) -B b4.pas
 
 ub4.ppu: ub4.pas
