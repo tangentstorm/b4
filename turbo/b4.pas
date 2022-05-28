@@ -61,7 +61,7 @@ procedure dump;
       end;
     { for ui debugging, draw line numbers on the right: }
     bg('K'); fg('k'); for i := 0 to 24 do begin gotoxy(xMax-1,i); write(i:2) end;
-    gotoxy(0,24); for i := 1 to 8 do write(i*10:4);
+    gotoxy(0,24); for i := 1 to 8 do write(i*10:10);
     { restore cursor position and color so we don't break the vm }
     gotoxy(x,y); textattr := oldattr;
   end;
