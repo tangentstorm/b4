@@ -26,7 +26,7 @@ function b4opc(code:opstring) : byte;
     else begin writeln('invalid op: ', code); halt end end;
 
 type
-  tokentag = ( wsp, cmt, raw, lit, def, ref, adr, _wh, _do, _od, _if, _fi );
+  tokentag = ( wsp, cmt, raw, lit, chr, def, ref, adr, _wh, _do, _od, _if, _fi );
   token = record tag : tokentag; str : string; end;
   entry = record key : string[32]; val : value; end;
 
@@ -42,6 +42,7 @@ function next( var tok : token; var ch : char ) : boolean;
       '-', '=', '0'..'9': begin
         if ch='=' then begin tok.tag := raw; tok.str := '' end else tok.tag := lit;
         while nextchar(ch) in ['0'..'9'] do keep end;
+      '''' : begin tok.tag := chr; tok.str := ''; while nextchar(ch) > #32 do keep end;
       ':' : begin tok.tag := def; tok.str := ''; while nextchar(ch) > #32 do keep end;
       '$' : begin tok.tag := adr; tok.str := ''; while nextchar(ch) > #32 do keep end;
       'a'..'z' : begin tok.tag := ref; while nextchar(ch) > #32 do keep end;
@@ -79,6 +80,8 @@ procedure b4as;
                 if err=0 then emit(v) else unknown(tok.str) end;
         lit : begin val(tok.str, v, err);
                 if err=0 then emit_lit(v) else unknown(tok.str) end;
+        chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
+              else emit_lit(ord(tok.str[1]));
         def : if ents > 31 then err := -12345
               else begin
                 dict[ents].key := tok.str; dict[ents].val := here-1; inc(ents) end;

@@ -30,12 +30,12 @@
 :word rt                           # word handler (does nothing so far)
 
 :exit nl 01 attr                   # red
-  101 putc 110 putc 100 putc nl    # echo 'end'
+  'e putc 'n putc 'd putc nl       # echo 'end'
   hl
 
 :prompt
   nl 02 attr                       # green on black
-  111 putc 107 putc 62 putc        # echo 'ok>'
+  'o putc 'k putc '> putc          # echo 'ok>'
   02 attr 32 putc 07 attr rt       # gray on black for user input.
 
 
@@ -51,6 +51,6 @@
 ] #--- end of bios ----------------#
 
 # -- main --
-# 15 { dec du du | du attr 64 putc } # draw colors
+# 15 { dec du du | du attr '@ putc } # draw colors
 # :once =1 [ $once @ | 0 $once ! init repl ]  # why doesn't this work?
 init repl
