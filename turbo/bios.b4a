@@ -1,21 +1,16 @@
-[ 0                                # jump over bios
-| #--- begin bios -----------------#
-:@ rm rt                           # these are forth syntax for get/put
-:! wm rt
-:. zp rt
-:+ ad rt
-
+[ 0 |                              # jump over bios
+#--- begin bios -------------------\
 :here 3 rt                         # names for some important registers
 :last 4 rt
 :ap   5 rt
 
 :inc  1 ad rt
 
-:a+ ap @ du dr !                   # a+ ( n - ) , writes a value to the
-    rd inc ap ! rt                 #    address in ap and increments ap.
+:a+ ap rm du dr wm                 # a+ ( n - ) , writes a value to the
+    rd inc ap wm rt                #    address in ap and increments ap.
 
-:, here @ du dr !
-    rd inc here ! rt               # , is exact same thing for the heap
+:, here rm du dr wm
+    rd inc here wm rt              # , is exact same thing for the heap
 
 :buf                               # allocate 80 characters for input
   02 04 06 08 10 12 14 16 18 20    # each one is 2 bytes because there's
@@ -25,7 +20,7 @@
 
 :nl 10 putc 13 putc rt             # emit CRLF
 
-:init $buf ap ! rt                 # set ap = buf
+:init $buf ap wm rt                # set ap = buf
 
 :word rt                           # word handler (does nothing so far)
 
@@ -42,15 +37,15 @@
 :eol =1                            # end of line flag
 
 :repl { 1 |
-  [ $eol @ | 0 $eol ! prompt ]     # show prompt if new line
+  [ $eol rm | 0 $eol wm prompt ]   # show prompt if new line
   getc
-  [ du 13 eq | . 1 $eol ! word ]   # on cr, set newline and run word
-  [ du 04 eq | . exit ]            # on ^d, exit
-  [ du 31 ge | . ]                 # ignore other control chars
-  du a+ putc }                     # others go to buffer with echo
-] #--- end of bios ----------------#
+  [ du 13 eq | zp 1 $eol wm word ] # on cr, set newline and run word
+  [ du 04 eq | zp exit ]           # on ^d, exit
+  [ du 31 ge | zp ]                # ignore other control chars
+  du a+ putc } ]                   # others go to buffer with echo
+#--- end of bios ------------------/
 
 # -- main --
 # 15 { dec du du | du attr '@ putc } # draw colors
-# :once =1 [ $once @ | 0 $once ! init repl ]  # why doesn't this work?
+# :once =1 [ $once rm | 0 $once wm init repl ]  # why doesn't this work?
 init repl
