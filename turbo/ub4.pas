@@ -1,10 +1,6 @@
 {$mode delphi}{$i xpc}
-unit ub4;
+unit ub4; { the b4 virtual machine }
 interface uses xpc, kvm, kbd;
-{
-  this contains the virtual machine
-  and the code to load and save blocks.
-}
 
 type
   value = longint;
@@ -42,7 +38,6 @@ const {-- these are all offsets into the ram array --}
   ep    =  6; { the editor pointer }
   dbg   =  7; { debug flag }
   ml    = 64; { main loop }
-
 
   procedure open( path : string );
   procedure boot;

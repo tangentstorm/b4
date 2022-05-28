@@ -3,7 +3,7 @@
 program b4;
 uses xpc, ub4, ub4asm, ub4ops, kvm, kbd;
 
-const pgsz = 8 * 9; { should be multiple of 8 to come out even }
+const pgsz = 8 * 8; { should be multiple of 8 to come out even }
 
 procedure draw_stack(x,y : byte; id:char; minaddr,maxaddr:value);
   var i : value;
@@ -22,24 +22,28 @@ procedure wv(k: string; v:value); { write value }
 
 procedure dump;
   { this displays the visual debugger }
-  var x, y, oldattr: word; i, r: value; literal, target: boolean;
+  var x, y, oldattr: word; i, pg: value; literal, target: boolean;
   begin
     x := wherex; y := wherey; oldattr := textattr;
 
-    gotoxy(0,17);
-    literal := false; target := false;
+    { draw the data and return stacks }
+    draw_stack(0, 13, 'd', ram[dp], maxdata);
+    draw_stack(0, 14, 'r', ram[rp], maxretn);
 
-    { find the right page }
-    r := ram[ep] div pgsz;
+    { draw some important registers }
+    gotoxy(0, 15); bg('K'); clreol;
+    wv('ip', ram[ip]); wv('hp', ram[hp]); wv('ep',ram[ep]);
 
     { draw ram }
-    for i := r * pgsz to (r * pgsz) + pgsz-1 do
+    gotoxy(0,16); pg := pgsz * (ram[ep] div pgsz);
+    literal := false; target := false; { next cell is literal or jump target }
+    for i := pg to pg + pgsz-1 do
       begin
         if (i=ram[ip]) and (i=ram[ep]) then begin bg('m'); fg('M') end
         else if i=ram[ip] then begin bg('c'); fg('m') end
         else if i=ram[ep] then begin bg('r'); fg('M') end
         else begin bg('k'); fg('m') end;
-        if i mod 8 = 0 then writeln;
+        if (i>pg) and (i mod 8 = 0) then writeln;
         write(i:5);
         if literal or (i < 64) { 0..63 is a register } then
           begin fg('y'); write(ram[i]:5); literal := false end
@@ -55,13 +59,11 @@ procedure dump;
           end
         else begin fg('b'); write(ram[i]:5) end;
       end;
-
-      { draw the data stack }
-      draw_stack(0, 14, 'd', ram[dp], maxdata);
-      draw_stack(0, 15, 'r', ram[rp], maxretn);
-      gotoxy(0, 16); bg('K'); clreol;
-      wv('ip', ram[ip]); wv('hp', ram[hp]); wv('ep',ram[ep]);
-      gotoxy(x,y); textattr := oldattr;
+    { for ui debugging, draw line numbers on the right: }
+    bg('K'); fg('k'); for i := 0 to 24 do begin gotoxy(xMax-1,i); write(i:2) end;
+    gotoxy(0,24); for i := 1 to 8 do write(i*10:4);
+    { restore cursor position and color so we don't break the vm }
+    gotoxy(x,y); textattr := oldattr;
   end;
 
 
