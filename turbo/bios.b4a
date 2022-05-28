@@ -5,6 +5,7 @@
 :ap   5 rt
 
 :inc  1 ad rt
+:dec -1 ad rt
 
 :a+ ap rm du dr wm                 # a+ ( n - ) , writes a value to the
     rd inc ap wm rt                #    address in ap and increments ap.
@@ -33,19 +34,18 @@
   'o putc 'k putc '> putc          # echo 'ok>'
   02 attr 32 putc 07 attr rt       # gray on black for user input.
 
-
 :eol =1                            # end of line flag
-
 :repl { 1 |
   [ $eol rm | 0 $eol wm prompt ]   # show prompt if new line
   getc
-  [ du 13 eq | zp 1 $eol wm word ] # on cr, set newline and run word
-  [ du 04 eq | zp exit ]           # on ^d, exit
-  [ du 31 ge | zp ]                # ignore other control chars
-  du a+ putc } ]                   # others go to buffer with echo
+  [ du 13 eq | 1 $eol wm word ]    # on cr, set newline and run word
+  [ du 04 eq | exit ]              # on ^d, exit
+  [ du 31 lt | du a+ putc ] }      # copy non-ctrl chars to buffer and echo
+
+# this should be compiled, but never execute:
+hl ]
 #--- end of bios ------------------/
 
 # -- main --
-# 15 { dec du du | du attr '@ putc } # draw colors
-# :once =1 [ $once rm | 0 $once wm init repl ]  # why doesn't this work?
+15 { dec du | du attr '- putc } zp # draw colors
 init repl
