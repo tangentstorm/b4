@@ -80,6 +80,8 @@ m_ops=:' rm wm yr zw wp rp qp'    [ d_ops=:' bw go'
 
 ops =: ;: s_ops,n_ops,b_ops,c_ops,r_ops,f_ops,m_ops,d_ops
 
+ok =: ]                          NB. no-op ... this should be op 0 though
+
 NB. stack instructions
 si =: dput@sget@incp             NB. push next short int (signed byte) to data stack
 li =: dput@mget@inc4             NB. literal/longint -> push next 4 bytes to data stack as i32
@@ -95,7 +97,7 @@ NB. numeric instructions
 (ng =: - mo)`(sl =: SHL dy)`(sr =: SHR dy)
 
 NB. bitwise instructions (and or xor not)
-(an =: (2b1001 b.) dy)` (or =: (2b0111 b.) dy)` (xr =: (2b0110 b.) dy)
+(an =: (2b0001 b.) dy)` (or =: (2b0111 b.) dy)` (xr =: (2b0110 b.) dy)
 nt =: NOT mo
 
 NB. comparison instructions
