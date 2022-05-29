@@ -22,6 +22,9 @@ ub4ops.pas: mkoptbl.pas ub4.ppu
 	$(FPC) -B mkoptbl.pas
 	./mkoptbl
 
+b4a: b4 b4a.pas
+	$(FPC) -B b4a.pas
+
 test:
 	$(FPC) testb4a.pas
 	./testb4a
