@@ -3,7 +3,7 @@
 :here 3 rt                         # names for some important registers
 :last 4 rt
 :ap   5 rt
-:dbg  7 wm rt                      # turn debugger on or off
+:dbg  1 7 wm rt                    # turn debugger on
 
 :inc  1 ad rt
 :dec -1 ad rt
@@ -33,9 +33,11 @@
 :prompt
   nl 02 attr                       # green on black
   'o putc 'k putc '> putc          # echo 'ok>'
-  02 attr 32 putc 07 attr rt       # gray on black for user input.
+  02 attr 32 putc 07 attr          # gray on black for user input.
+  rt rt                            # TODO: !!! ub4a.pas bug: why is first one not emitted?!?
 
 :eol =1                            # end of line flag
+
 :repl { 1 |
   [ $eol rm | 0 $eol wm prompt ]   # show prompt if new line
   getc
