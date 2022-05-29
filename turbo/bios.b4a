@@ -33,7 +33,7 @@
 :b4>
   nl si 02 ta                      # green on black
   si 'b tw si '4 tw si '> tw       # echo 'b4>'
-  si 02 ta si 32 tw si 07 ta       # gray on black for user input.
+  si 32 tw si 07 ta                # gray on black for user input.
   rt rt                            # !! TODO: do i still need this? (it wasn't emitting the first one)
 
 :eol 01                            # end of line flag
@@ -44,7 +44,7 @@
   [ du si 13 eq |                  # on enter,
     si 01 $eol wm word ]           # execute word (does nothing yet)
   [ du si 04 eq | exit ]           # on ^d, exit
-  [ du si 31 lt | du a+ tw ] }   # copy non-ctrl chars to buffer and echo
+  [ du si 31 lt | du a+ tw ] }     # copy non-ctrl chars to buffer and echo
 
 # this should be compiled, but never execute:
 hl ]
