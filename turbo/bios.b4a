@@ -32,7 +32,7 @@
 
 :prompt
   nl 02 attr                       # green on black
-  si 'o putc si 'k putc si '> putc # echo 'ok>'
+  si 'b putc si '4 putc si '> putc # echo 'b4>'
   02 attr 32 putc 07 attr rt       # gray on black for user input.
   rt rt
 
