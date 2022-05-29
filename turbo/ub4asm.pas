@@ -61,7 +61,7 @@ procedure b4as;
   var here: value; err: integer; tok: token; ch: char;
       dict: array[0..31] of entry; ents : byte;
   procedure emit(v:value); begin ram[here] := v; inc(here); end;
-  procedure emit_call(v:value); begin emit(v) end;
+  procedure emit_call(v:value); begin emit(b4opc('cl')); emit(v) end;
   procedure emit_lit(v:value); begin emit(b4opc('li')); emit(v); end;
   procedure unknown(s:string); begin writeln('unknown word:', s); halt end;
   function find_addr(s:string): value; { return address of label }

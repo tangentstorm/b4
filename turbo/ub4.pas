@@ -252,7 +252,7 @@ function step : value;
       $A7 : {h0  } todo('h0'); { hop if 0 }
       $A8 : {h1  } todo('h1'); { hop if 1 }
       $A9 : {nx  } todo('nx'); { next }
-      $AA : {cl  } todo('cl'); { call }
+      $AA : {cl  } begin rput(ram[ip]); ram[ip] := ram[ram[ip]+1] end; { call }
       $AB : {rt  } ram[ip] := rpop;
       $AC : {r0  } if tos = 0 then begin zap(dpop); ram[ip] := rpop end;
       $AD : {r1  } if tos<> 0 then begin zap(dpop); ram[ip] := rpop end;
@@ -271,7 +271,7 @@ function step : value;
       $BA : {load} load;
       $BB : {save} save;
       { reserved: } $BC .. $BF : begin end;
-      else rput(ram[ip]); ram[ip] := ram[ram[ip]]
+      else { no-op };
     end;
     inc(ram[ip]);
     step := ram[ip];
