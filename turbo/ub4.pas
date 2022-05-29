@@ -260,17 +260,17 @@ function step : value;
       46 : {ev  } todo('ev'); { eval - like call, but address comes from stack }
       47 : {rm  } dput(ram[dpop]);    { read memory }
       48 : {wm  } ram[dpop] := dpop;  { write memory }
-      49 : {goxy} begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
-      50 : {attr} kvm.textattr := dpop;
-      51 : {putc} write(chr(dpop));
-      52 : {getc} getc;
-      53 : {boot} boot;
-      54 : {load} load;
-      55 : {save} save;
-      56 : {keyp} if keypressed then dput(-1) else dput(0);
-      57 : {cscr} kvm.clrscr;
-      58 : {ceol} kvm.clreol;
-      59 : {crxy} begin dput(kvm.wherex); dput(kvm.wherey) end;
+      49 : {tg  } begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
+      50 : {ta  } kvm.textattr := dpop;
+      51 : {tw  } write(chr(dpop));
+      52 : {tr  } getc;
+      53 : {tk  } if keypressed then dput(-1) else dput(0);
+      54 : {ts  } kvm.clrscr;
+      55 : {tl  } kvm.clreol;
+      56 : {tc  } begin dput(kvm.wherex); dput(kvm.wherey) end;
+      57 : {boot} boot;
+      58 : {load} load;
+      59 : {save} save;
       { reserved: } 60 .. 63 : begin end;
       else rput(ram[ip]); ram[ip] := ram[ram[ip]]
     end;

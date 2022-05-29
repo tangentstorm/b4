@@ -20,36 +20,36 @@
   32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47
   48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63
 
-:nl si 10 putc si 13 putc rt       # emit CRLF
+:nl si 10 tw si 13 tw rt           # emit CRLF
 
 :init $buf ap wm rt                # set ap = buf
 
 :word rt                           # word handler (does nothing so far)
 
-:exit nl si 01 attr                # red
-  si 'e putc si 'n putc si 'd putc # echo 'end'
+:exit nl si 01 ta                  # red
+  si 'e tw si 'n tw si 'd tw       # echo 'end'
   nl hl
 
 :b4>
-  nl si 02 attr                    # green on black
-  si 'b putc si '4 putc si '> putc # echo 'b4>'
-  si 02 attr si 32 putc si 07 attr # gray on black for user input.
-  rt rt
+  nl si 02 ta                      # green on black
+  si 'b tw si '4 tw si '> tw       # echo 'b4>'
+  si 02 ta si 32 tw si 07 ta       # gray on black for user input.
+  rt rt                            # !! TODO: do i still need this? (it wasn't emitting the first one)
 
 :eol 01                            # end of line flag
 
 :repl { si 01 |
   [ $eol rm | si 00 $eol wm b4> ]  # show prompt if new line
-  getc
+  tr                               # read char from terminal
   [ du si 13 eq |                  # on enter,
     si 01 $eol wm word ]           # execute word (does nothing yet)
   [ du si 04 eq | exit ]           # on ^d, exit
-  [ du si 31 lt | du a+ putc ] }   # copy non-ctrl chars to buffer and echo
+  [ du si 31 lt | du a+ tw ] }   # copy non-ctrl chars to buffer and echo
 
 # this should be compiled, but never execute:
 hl ]
 #--- end of bios ------------------/
 
 # -- main --
-si 15 { dec du | du attr si '. putc } zp # draw colors
+si 15 { dec du | du ta si '. tw } zp # draw colors
 init repl
