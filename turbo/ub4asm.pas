@@ -81,7 +81,7 @@ procedure b4as;
         lit : begin val(tok.str, v, err);
                 if err=0 then emit_lit(v) else unknown(tok.str) end;
         chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
-              else emit_lit(ord(tok.str[1]));
+              else emit(ord(tok.str[1]));
         def : if ents > 31 then err := -12345
               else begin
                 dict[ents].key := tok.str; dict[ents].val := here-1; inc(ents) end;

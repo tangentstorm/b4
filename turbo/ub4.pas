@@ -211,8 +211,8 @@ function step : value;
     case ram[ram[ip]] of
       { Do not reformat this function! mkoptbl.pas uses it! }
       00 : {ok  } ; { no-op }
-      01 : {si  } ; { todo: short int }
-      02 : {li  } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
+      01 : {si  } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
+      02 : {li  } begin inc(ram[ip]); dput(ram[ram[ip]]) end; { todo: long int }
       03 : {sw  } swap;
       04 : {du  } dput(tos);
       05 : {ov  } dput(nos);

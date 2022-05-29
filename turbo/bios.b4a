@@ -27,14 +27,14 @@
 :word rt                           # word handler (does nothing so far)
 
 :exit nl 01 attr                   # red
-  'e putc 'n putc 'd putc nl       # echo 'end'
-  hl
+  si 'e putc si 'n putc si 'd putc # echo 'end'
+  nl hl
 
 :prompt
   nl 02 attr                       # green on black
-  'o putc 'k putc '> putc          # echo 'ok>'
-  02 attr 32 putc 07 attr          # gray on black for user input.
-  rt rt                            # TODO: !!! ub4a.pas bug: why is first one not emitted?!?
+  si 'o putc si 'k putc si '> putc # echo 'ok>'
+  02 attr 32 putc 07 attr rt       # gray on black for user input.
+  rt rt
 
 :eol =1                            # end of line flag
 
@@ -50,5 +50,5 @@ hl ]
 #--- end of bios ------------------/
 
 # -- main --
-15 { dec du | du attr '- putc } zp # draw colors
+15 { dec du | du attr si '. putc } zp # draw colors
 init repl
