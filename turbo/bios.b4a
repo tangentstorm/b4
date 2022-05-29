@@ -3,6 +3,7 @@
 :here 3 rt                         # names for some important registers
 :last 4 rt
 :ap   5 rt
+:dbg  7 wm rt                      # turn debugger on or off
 
 :inc  1 ad rt
 :dec -1 ad rt
