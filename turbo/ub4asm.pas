@@ -39,8 +39,8 @@ function next( var tok : token; var ch : char ) : boolean;
     case ch of
       #0..#32: begin tok.tag := wsp; repeat until eof or (nextchar(ch) >= #32) end;
       '#' : begin tok.tag := cmt; readln(tok.str); ch := nextchar(ch) end;
-      '-', '=', '0'..'9': begin
-        if ch='=' then begin tok.tag := raw; tok.str := '' end else tok.tag := lit;
+      '0'..'9': begin { TODO : this should be hex! }
+        tok.tag := raw;
         while nextchar(ch) in ['0'..'9'] do keep end;
       '''' : begin tok.tag := chr; tok.str := ''; while nextchar(ch) > #32 do keep end;
       ':' : begin tok.tag := def; tok.str := ''; while nextchar(ch) > #32 do keep end;
@@ -78,7 +78,7 @@ procedure b4as;
         {=123 is a raw number, 123 is 'lit 123'}
         raw : begin val(tok.str, v, err);
                 if err=0 then emit(v) else unknown(tok.str) end;
-        lit : begin val(tok.str, v, err);
+        lit : begin val(tok.str, v, err); { todo: introduce new syntax for lit #? }
                 if err=0 then emit_lit(v) else unknown(tok.str) end;
         chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
               else emit(ord(tok.str[1]));

@@ -1,12 +1,12 @@
-[ 0 |                              # jump over bios
+[ si 00 |                          # jump over bios
 #--- begin bios -------------------\
-:here 3 rt                         # names for some important registers
-:last 4 rt
-:ap   5 rt
-:dbg  1 7 wm rt                    # turn debugger on
+:here si 03 rt                     # names for some important registers
+:last si 04 rt
+:ap   si 05 rt
+:dbg  si 01 si 07 wm rt            # turn debugger on
 
-:inc  1 ad rt
-:dec -1 ad rt
+:inc  si 01 ad rt
+:dec  si 01 sb rt
 
 :a+ ap rm du dr wm                 # a+ ( n - ) , writes a value to the
     rd inc ap wm rt                #    address in ap and increments ap.
@@ -20,35 +20,36 @@
   42 44 46 48 50 52 54 56 58 60
   62 64 66 68 70 72 74 76 78 80
 
-:nl 10 putc 13 putc rt             # emit CRLF
+:nl si 10 putc si 13 putc rt       # emit CRLF
 
 :init $buf ap wm rt                # set ap = buf
 
 :word rt                           # word handler (does nothing so far)
 
-:exit nl 01 attr                   # red
+:exit nl si 01 attr                # red
   si 'e putc si 'n putc si 'd putc # echo 'end'
   nl hl
 
-:prompt
-  nl 02 attr                       # green on black
+:b4>
+  nl si 02 attr                    # green on black
   si 'b putc si '4 putc si '> putc # echo 'b4>'
-  02 attr 32 putc 07 attr rt       # gray on black for user input.
+  si 02 attr si 32 putc si 07 attr # gray on black for user input.
   rt rt
 
-:eol =1                            # end of line flag
+:eol 01                            # end of line flag
 
-:repl { 1 |
-  [ $eol rm | 0 $eol wm prompt ]   # show prompt if new line
+:repl { si 01 |
+  [ $eol rm | si 00 $eol wm b4> ]  # show prompt if new line
   getc
-  [ du 13 eq | 1 $eol wm word ]    # on cr, set newline and run word
-  [ du 04 eq | exit ]              # on ^d, exit
-  [ du 31 lt | du a+ putc ] }      # copy non-ctrl chars to buffer and echo
+  [ du si 13 eq |                  # on enter,
+    si 01 $eol wm word ]           # execute word (does nothing yet)
+  [ du si 04 eq | exit ]           # on ^d, exit
+  [ du si 31 lt | du a+ putc ] }   # copy non-ctrl chars to buffer and echo
 
 # this should be compiled, but never execute:
 hl ]
 #--- end of bios ------------------/
 
 # -- main --
-15 { dec du | du attr si '. putc } zp # draw colors
+si 15 { dec du | du attr si '. putc } zp # draw colors
 init repl
