@@ -54,8 +54,8 @@ procedure dump;
                 write(ram[i]:5); target := false
           end
         else if i > high(ram) then begin fg('K'); write('xxxxx') end
-        else if (ram[i] in [1..high(optbl)]) then
-          begin fg('W'); write(optbl[ram[i]]:5);
+        else if ram[i] in [$80 .. $BF] then
+          begin fg('W'); write(optbl[byte(ram[i])] :5);
             if ram[i] = opli then literal := true;
             if (ram[i] = opjm) or (ram[i] = opj0) then target := true;
           end

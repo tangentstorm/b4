@@ -14,8 +14,8 @@ implementation
 
 function b4op(code : opstring; out op:byte) : boolean;
   var found : boolean;
-  begin op := 0; found := false;
-    while (op < 64) and not found do begin
+  begin op := low(optbl); found := false;
+    while (op < high(optbl)) and not found do begin
       found := code = optbl[op];
       if not found then inc(op) end;
     b4op := found end;

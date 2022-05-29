@@ -14,7 +14,7 @@ const
 
 var
  line  : string;
- optbl : array[0..63] of string[4];
+ optbl : array[$80..$BF] of string[4];
 
 function match(have, want:string) : boolean;
   var i : byte; sofar : boolean;
@@ -30,6 +30,15 @@ function match(have, want:string) : boolean;
   end;
 
 
+
+function unhex(c : char) : byte;
+  const hexits = '0123456789ABCDEF';
+  var i : byte;
+  begin
+    unhex := 0;
+    for i := 0 to 15 do if c = hexits[i+1] then unhex := i
+  end;
+
 procedure readops;
   var i, op : byte;
   begin
@@ -41,16 +50,15 @@ procedure readops;
     repeat
       readln(line);
       { lines we want look like: }
-      { '      00 : (code) ... '  }
+      { '      $00 : (code) ... ' }
       { #123456789012             }
-      if line[7] in ['0'..'9'] then
+      if line[7] = '$' then
         begin
-          op := 10 * (ord(line[7]) - ord('0'))
-                   + (ord(line[8]) - ord('0'));
+          op := 16 * unhex(line[8]) + unhex(line[9]);
           for i := 1 to 4 do
-            if line[12+i] <> ' ' then
+            if line[13+i] <> ' ' then
               begin
-                optbl[op][i] := line[12+i];
+                optbl[op][i] := line[13+i];
                 inc(optbl[op][0]); { length byte }
               end
         end
@@ -66,10 +74,10 @@ begin
   writeln(out, 'unit ub4ops;');
   writeln(out, 'interface');
   writeln(out, '  type opstring = string[4];');
-  writeln(out, '  var optbl : array[ 0 .. 63 ] of opstring;');
+  writeln(out, '  var optbl : array[ $80 .. $BF ] of opstring;');
   writeln(out, 'implementation');
   writeln(out, 'begin');
-  for i := 0 to 63 do
+  for i := $80 to $BF do
     writeln(out, '  optbl[', i:2, '] := ''', optbl[ i ], ''';');
   writeln(out, 'end.');
   close(out);

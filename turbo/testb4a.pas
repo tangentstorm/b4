@@ -9,8 +9,8 @@ procedure b4tests(testnum : word);
     case testnum of
 
       00: begin test('registers');
-            assert(ram[ip] = 64,
-              'Code should start at IP=64 to avoid opcode collisions.')
+            assert(ram[ip] = ub4.minheap,
+            'Code should start at ub4.minheap to avoid opcode collisions.')
           end;
 
       else tptester.stop

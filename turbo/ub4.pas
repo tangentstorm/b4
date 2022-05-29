@@ -22,7 +22,7 @@ const
   maxwork = minbuff-1;
   minwork = maxwork-256;
   maxheap = maxbuff; { so you can read/write the i/o buffer }
-  minheap = 64;
+  minheap = 256;
   maxblok = 1023;
 var
   ram  : array[0..maxcell] of value;
@@ -37,7 +37,6 @@ const {-- these are all offsets into the ram array --}
   ap    =  5; { the 'a' register }
   ep    =  6; { the editor pointer }
   dbg   =  7; { debug flag }
-  ml    = 64; { main loop }
 
   procedure open( path : string );
   procedure boot;
@@ -56,10 +55,10 @@ procedure boot;
     fillchar(ram, (maxcell + 1) * sizeof(value), 0);
     ram[dp] := maxdata;
     ram[rp] := maxretn;
-    ram[ip] := 64;
-    ram[hp] := 64;
-    ram[ap] := 64;
-    ram[ep] := 64;
+    ram[ip] := minheap;
+    ram[hp] := minheap;
+    ram[ep] := minheap;
+    ram[ap] := minheap;
   end;
 
 procedure halt;
@@ -70,7 +69,7 @@ procedure halt;
 procedure open(path:string);
   begin
     assign(disk, path);
-    {$i-}
+  {$i-}
       reset(disk);
       if ioresult <> 0 then rewrite(disk);
       if ioresult <> 0 then
@@ -78,7 +77,7 @@ procedure open(path:string);
           writeln('error: couldn''t open ', path);
           halt;
         end;
-    {$i+}
+  {$i+}
   end;
 
 function dpop : value;
@@ -210,68 +209,68 @@ function step : value;
   begin
     case ram[ram[ip]] of
       { Do not reformat this function! mkoptbl.pas uses it! }
-      00 : {ok  } ; { no-op }
-      01 : {si  } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
-      02 : {li  } begin inc(ram[ip]); dput(ram[ram[ip]]) end; { todo: long int }
-      03 : {sw  } swap;
-      04 : {du  } dput(tos);
-      05 : {ov  } dput(nos);
-      06 : {zp  } zap(dpop);
-      07 : {dr  } rput(dpop);
-      08 : {rd  } dput(rpop);
-      09 : {ad  } dput(dpop  + dpop);
-      10 : {sb  } dput(-dpop + dpop);
-      11 : {ml  } dput(dpop * dpop);
-      12 : {dv  } dput(dpop div dpop);
-      13 : {md  } dput(dpop mod dpop);
-      14 : {ng  } dput(-dpop);
-      15 : {sl  } begin swap; dput(dpop shl dpop) end;
-      16 : {sr  } begin swap; dput(dpop shr dpop) end;
-      17 : {an  } dput(dpop and dpop);
-      18 : {or  } dput(dpop or dpop);
-      19 : {xr  } dput(dpop xor dpop);
-      20 : {nt  } dput(dpop xor dpop);
-      21 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
-      22 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
-      23 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
-      24 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
-      25 : {ge  } if dpop >= dpop then dput(-1) else dput(0);
-      26 : {le  } if dpop <= dpop then dput(-1) else dput(0);
-      27 : {dx  } todo('dx');
-      28 : {dy  } todo('dy');
-      29 : {dz  } todo('dz');
-      30 : {dc  } todo('dc');
-      31 : {xd  } todo('xd');
-      32 : {yd  } todo('yd');
-      33 : {zd  } todo('zd');
-      34 : {cd  } todo('cd');
-      35 : {hl  } halt;
-      36 : {jm  } ram[ip] := ram[ram[ip]+1];
-      37 : {j0  } if dpop = 0 then begin ram[ip] := ram[ram[ip]+1] end
-                  else inc(ram[ip]) { skip over the address };
-      38 : {hp  } todo('hp'); { hop }
-      39 : {h0  } todo('h0'); { hop if 0 }
-      40 : {h1  } todo('h1'); { hop if 1 }
-      41 : {nx  } todo('nx'); { next }
-      42 : {cl  } todo('cl'); { call }
-      43 : {rt  } ram[ip] := rpop;
-      44 : {r0  } if tos = 0 then begin zap(dpop); ram[ip] := rpop end;
-      45 : {r1  } if tos<> 0 then begin zap(dpop); ram[ip] := rpop end;
-      46 : {ev  } todo('ev'); { eval - like call, but address comes from stack }
-      47 : {rm  } dput(ram[dpop]);    { read memory }
-      48 : {wm  } ram[dpop] := dpop;  { write memory }
-      49 : {tg  } begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
-      50 : {ta  } kvm.textattr := dpop;
-      51 : {tw  } write(chr(dpop));
-      52 : {tr  } getc;
-      53 : {tk  } if keypressed then dput(-1) else dput(0);
-      54 : {ts  } kvm.clrscr;
-      55 : {tl  } kvm.clreol;
-      56 : {tc  } begin dput(kvm.wherex); dput(kvm.wherey) end;
-      57 : {boot} boot;
-      58 : {load} load;
-      59 : {save} save;
-      { reserved: } 60 .. 63 : begin end;
+      $80 : {ok  } ; { no-op }
+      $81 : {si  } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
+      $82 : {li  } begin inc(ram[ip]); dput(ram[ram[ip]]) end; { todo: long int }
+      $83 : {sw  } swap;
+      $84 : {du  } dput(tos);
+      $85 : {ov  } dput(nos);
+      $86 : {zp  } zap(dpop);
+      $87 : {dr  } rput(dpop);
+      $88 : {rd  } dput(rpop);
+      $89 : {ad  } dput(dpop  + dpop);
+      $8A : {sb  } dput(-dpop + dpop);
+      $8B : {ml  } dput(dpop * dpop);
+      $8C : {dv  } dput(dpop div dpop);
+      $8D : {md  } dput(dpop mod dpop);
+      $8E : {ng  } dput(-dpop);
+      $8F : {sl  } begin swap; dput(dpop shl dpop) end;
+      $90 : {sr  } begin swap; dput(dpop shr dpop) end;
+      $91 : {an  } dput(dpop and dpop);
+      $92 : {or  } dput(dpop or dpop);
+      $93 : {xr  } dput(dpop xor dpop);
+      $94 : {nt  } dput(dpop xor dpop);
+      $95 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
+      $96 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
+      $97 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
+      $98 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
+      $99 : {ge  } if dpop >= dpop then dput(-1) else dput(0);
+      $9A : {le  } if dpop <= dpop then dput(-1) else dput(0);
+      $9B : {dx  } todo('dx');
+      $9C : {dy  } todo('dy');
+      $9D : {dz  } todo('dz');
+      $9E : {dc  } todo('dc');
+      $9F : {xd  } todo('xd');
+      $A0 : {yd  } todo('yd');
+      $A1 : {zd  } todo('zd');
+      $A2 : {cd  } todo('cd');
+      $A3 : {hl  } halt;
+      $A4 : {jm  } ram[ip] := ram[ram[ip]+1];
+      $A5 : {j0  } if dpop = 0 then begin ram[ip] := ram[ram[ip]+1] end
+                   else inc(ram[ip]) { skip over the address };
+      $A6 : {hp  } todo('hp'); { hop }
+      $A7 : {h0  } todo('h0'); { hop if 0 }
+      $A8 : {h1  } todo('h1'); { hop if 1 }
+      $A9 : {nx  } todo('nx'); { next }
+      $AA : {cl  } todo('cl'); { call }
+      $AB : {rt  } ram[ip] := rpop;
+      $AC : {r0  } if tos = 0 then begin zap(dpop); ram[ip] := rpop end;
+      $AD : {r1  } if tos<> 0 then begin zap(dpop); ram[ip] := rpop end;
+      $AE : {ev  } todo('ev'); { eval - like call, but address comes from stack }
+      $AF : {rm  } dput(ram[dpop]);    { read memory }
+      $B0 : {wm  } ram[dpop] := dpop;  { write memory }
+      $B1 : {tg  } begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
+      $B2 : {ta  } kvm.textattr := dpop;
+      $B3 : {tw  } write(chr(dpop));
+      $B4 : {tr  } getc;
+      $B5 : {tk  } if keypressed then dput(-1) else dput(0);
+      $B6 : {ts  } kvm.clrscr;
+      $B7 : {tl  } kvm.clreol;
+      $B8 : {tc  } begin dput(kvm.wherex); dput(kvm.wherey) end;
+      $B9 : {boot} boot;
+      $BA : {load} load;
+      $BB : {save} save;
+      { reserved: } $BC .. $BF : begin end;
       else rput(ram[ip]); ram[ip] := ram[ram[ip]]
     end;
     inc(ram[ip]);
