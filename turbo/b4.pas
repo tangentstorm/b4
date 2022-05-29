@@ -5,7 +5,7 @@ uses xpc, ub4, ub4asm, ub4ops, kvm, kbd;
 
 const pgsz = 8 * 8; { should be multiple of 8 to come out even }
 
-var opli, opjm, opj0 : value;
+var opli, opsi, opjm, opj0, opcl : value;
 
 procedure draw_stack(x,y : byte; id:char; minaddr,maxaddr:value);
   var i : value;
@@ -18,7 +18,7 @@ procedure draw_stack(x,y : byte; id:char; minaddr,maxaddr:value);
 
 procedure wv(k: string; v:value); { write value }
   begin fg('w'); write(k); fg('k'); write(': ');
-    fg('W'); write(v); write(' ')
+    fg('W'); write(hex(v,4)); write(' ')
   end;
 
 
@@ -39,28 +39,34 @@ procedure dump;
     { draw ram }
     gotoxy(0,16); pg := pgsz * (ram[ep] div pgsz);
     literal := false; target := false; { next cell is literal or jump target }
-    for i := pg to pg + pgsz-1 do
-      begin
-        if (i=ram[ip]) and (i=ram[ep]) then begin bg('m'); fg('M') end
-        else if i=ram[ip] then begin bg('c'); fg('m') end
-        else if i=ram[ep] then begin bg('r'); fg('M') end
-        else begin bg('k'); fg('m') end;
-        if (i>pg) and (i mod 8 = 0) then writeln;
-        write(i:5);
-        if literal or (i < 64) { 0..63 is a register } then
-          begin fg('y'); write(ram[i]:5); literal := false end
-        else if target then
+    for i := pg to pg + pgsz-1 do begin
+      { color cell based on ip / editor cursor positions }
+      if (i=ram[ip]) and (i=ram[ep]) then begin bg('m'); fg('M') end
+      else if i=ram[ip] then begin bg('c'); fg('m') end
+      else if i=ram[ep] then begin bg('r'); fg('M') end
+      else begin bg('k'); fg('m') end;
+      if (i mod 8 = 0) and (i>pg) then writeln;
+      if (i mod 8 = 0) then write(hex(i,4));
+      { literal numbers (after si/li) }
+      if literal or (i < 32) then begin fg('y'); write(hex(ram[i],2):4); literal := false end
+      else if target then { target adress for jump/etc }
           begin if i = ram[ep] then fg('k') else fg('r');
-                write(ram[i]:5); target := false
+                write(hex(ram[i],2):4); target := false
           end
-        else if i > high(ram) then begin fg('K'); write('xxxxx') end
-        else if ram[i] in [$80 .. $BF] then
-          begin fg('W'); write(optbl[byte(ram[i])] :5);
-            if ram[i] = opli then literal := true;
-            if (ram[i] = opjm) or (ram[i] = opj0) then target := true;
-          end
-        else begin fg('b'); write(ram[i]:5) end;
-      end;
+      { past end of memory }
+      else if i > high(ram) then begin fg('K'); write('xx') end
+      { opcodes }
+      else if ram[i] in [$80 .. $BF] then
+        begin fg('W'); write(optbl[byte(ram[i])] :4);
+          if ram[i] in [opli,opsi] then literal := true;
+          if ram[i] in [opjm,opj0,opcl] then target := true;
+        end
+      { ascii characters }
+      else if (ram[i] >= 32) and (ram[i] < 128) then
+        begin fg('g'); write('  '''); write(chr(ram[i])) end
+      { anything else }
+      else begin fg('b'); write(hex(ram[i],2):4) end
+    end;
     { for ui debugging, draw line numbers on the right: }
     bg('K'); fg('k'); for i := 0 to 24 do begin gotoxy(xMax-1,i); write(i:2) end;
     gotoxy(0,24); for i := 1 to 8 do write(i*10:10);
