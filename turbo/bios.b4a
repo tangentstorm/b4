@@ -22,7 +22,7 @@
 
 :nl si 10 tw si 13 tw rt           # emit CRLF
 
-:init $buf ap wm rt                # set ap = buf
+:init li $buf ap wm rt             # set ap = buf
 
 :word rt                           # word handler (does nothing so far)
 
@@ -39,10 +39,11 @@
 :eol 01                            # end of line flag
 
 :repl { si 01 |
-  [ $eol rm | si 00 $eol wm b4> ]  # show prompt if new line
+  [ li $eol rm |                   # if end of line flag
+    si 00 li $eol wm b4> ]         # show prompt if new line
   tr                               # read char from terminal
   [ du si 13 eq |                  # on enter,
-    si 01 $eol wm word ]           # execute word (does nothing yet)
+    si 01 li $eol wm word ]        # execute word (does nothing yet)
   [ du si 04 eq | exit ]           # on ^d, exit
   [ du si 31 lt | du a+ tw ] }     # copy non-ctrl chars to buffer and echo
 

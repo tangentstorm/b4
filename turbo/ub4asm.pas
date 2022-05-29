@@ -86,7 +86,7 @@ procedure b4as;
               else begin
                 dict[ents].key := tok.str; dict[ents].val := here-1; inc(ents) end;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
-        adr : emit_lit(find_addr(tok.str));
+        adr : emit(find_addr(tok.str));
         _wh : dput(here-1); {(- wh)}
         _do : begin {(- do)} emit(b4opc('j0')); emit(0); dput(here-1) end;
         _od : begin { compile time: (wh do -)}
