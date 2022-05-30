@@ -97,6 +97,11 @@ function tos : value;
     tos := ram[ram[dp]]
   end;
 
+function tor : value;
+  begin
+    tor := ram[ram[rp]]
+  end;
+
 function nos : value;
   begin
     if ram[dp] = mindata
@@ -245,14 +250,16 @@ function step : value;
       $A1 : {zd  } todo('zd');
       $A2 : {cd  } todo('cd');
       $A3 : {hl  } halt;
-      $A4 : {jm  } ram[ip] := ram[ram[ip]+1];
-      $A5 : {j0  } if dpop = 0 then begin ram[ip] := ram[ram[ip]+1] end
+      $A4 : {jm  } ram[ip] := ram[ram[ip]+1]-1;
+      $A5 : {j0  } if dpop = 0 then begin ram[ip] := ram[ram[ip]+1]-1 end
                    else inc(ram[ip]) { skip over the address };
       $A6 : {hp  } todo('hp'); { hop }
       $A7 : {h0  } todo('h0'); { hop if 0 }
       $A8 : {h1  } todo('h1'); { hop if 1 }
-      $A9 : {nx  } todo('nx'); { next }
-      $AA : {cl  } begin rput(ram[ip]); ram[ip] := ram[ram[ip]+1] end; { call }
+      $A9 : {nx  } begin if tor > 0 then ram[ram[rp]]:=tor-1;
+                     if tor = 0 then begin zap(rpop); inc(ram[ip]) end
+                     else ram[ip]:=ram[ram[ip]+1]-1; end;
+      $AA : {cl  } begin rput(ram[ip]); ram[ip] := ram[ram[ip]+1]-1 end; { call }
       $AB : {rt  } ram[ip] := rpop;
       $AC : {r0  } if tos = 0 then begin zap(dpop); ram[ip] := rpop end;
       $AD : {r1  } if tos<> 0 then begin zap(dpop); ram[ip] := rpop end;

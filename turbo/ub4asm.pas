@@ -84,18 +84,18 @@ procedure b4as;
               else emit(ord(tok.str[1]));
         def : if ents > 31 then err := -12345
               else begin
-                dict[ents].key := tok.str; dict[ents].val := here-1; inc(ents) end;
+                dict[ents].key := tok.str; dict[ents].val := here; inc(ents) end;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
         adr : emit(find_addr(tok.str));
-        _wh : dput(here-1); {(- wh)}
+        _wh : dput(here); {(- wh)}
         _do : begin {(- do)} emit(b4opc('j0')); emit(0); dput(here-1) end;
         _od : begin { compile time: (wh do -)}
                 { first, an unconditional jump back to the _do }
                 emit(b4opc('jm')); swap; emit(dpop);
                 { now go back to the guard and compile the forward jump }
-                ram[dpop] := here-1; end;
+                ram[dpop] := here; end;
         _if : ; { 'if' does nothing. just syntactic sugar. }
-        _fi : {(do-)} ram[dpop] := here-1; { jump to 'end' when 'if' test fails }
+        _fi : {(do-)} ram[dpop] := here; { jump to 'end' when 'if' test fails }
       end end;
   begin
     err := 0; ents := 0; here := ram[hp]; read(ch);
