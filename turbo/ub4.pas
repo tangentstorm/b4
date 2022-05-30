@@ -24,6 +24,9 @@ const
   maxheap = maxbuff; { so you can read/write the i/o buffer }
   minheap = 256;
   maxblok = 1023;
+type
+  address = 0..maxcell;
+  opcodes = $80..$BF;
 var
   ram  : array[0..maxcell] of value;
   bytes: array[0..maxcell*sizeof(value)] of byte;
@@ -37,6 +40,7 @@ const {-- these are all offsets into the ram array --}
   ap    =  5; { the 'a' register }
   ep    =  6; { the editor pointer }
   dbgf  =  7; { debug flag }
+  stop  =  8; { breakpoint }
 
   procedure open( path : string );
   procedure boot;
@@ -59,6 +63,7 @@ procedure boot;
     ram[hp] := minheap;
     ram[ep] := minheap;
     ram[ap] := minheap;
+    ram[stop] := maxcell;
   end;
 
 procedure halt;

@@ -21,6 +21,11 @@ procedure wv(k: string; v:value); { write value }
     fg('W'); write(hex(v,4)); write(' ')
   end;
 
+
+procedure draw_help(x,y : byte);
+  begin gotoxy(x,y); write('keys. (0)top (I)P (q)uit (s)tep (o)ver, (r)un, to (c)ursor, (q)uit')
+  end;
+
 
 procedure dump;
   { this displays the visual debugger }
@@ -71,11 +76,21 @@ procedure dump;
     { for ui debugging, draw line numbers on the right: }
     bg('K'); fg('k'); for i := 0 to 24 do begin gotoxy(xMax-1,i); write(i:2) end;
     gotoxy(0,24); for i := 1 to 8 do write(i*10:10);
+    { help text }
+    draw_help(0, 24);
     { restore cursor position and color so we don't break the vm }
     gotoxy(x,y); textattr := oldattr;
   end;
 
 
+function step_over_addr: ub4.address;
+  begin
+    repeat if ram[ep] < ub4.maxcell then inc(ram[ep])
+    until (ram[ram[ep]] = ub4.maxcell)
+       or (ram[ram[ep]] in [low(ub4.opcodes)..high(ub4.opcodes)]);
+    result := ram[ep];
+  end;
+
 var ch: ansichar; pause: boolean = false;
 begin
   opli := b4opc('li');  opjm := b4opc('jm'); opj0 := b4opc('j0');
@@ -84,6 +99,7 @@ begin
   reset(input); b4as;
   if paramstr(1)='-d' then ram[dbgf] := 1;
   while ram[ip] <= maxheap do begin
+    if ram[ip] = ram[stop] then begin ram[dbgf]:=1; ram[stop] := high(ub4.address) end;
     if ram[dbgf]=1 then begin
       if not pause then ram[ep] := ram[ip];
       pause := true;
@@ -96,8 +112,9 @@ begin
         ^B : dec(ram[ep]);
         ^V : inc(ram[ep], pgsz);
         'I': ram[ep] := ram[ip];
-        'S',
-        ' ': pause := false;
+        'S': pause := false;
+        'C': begin pause := false; ram[stop] := ram[ep] end;
+        'O': begin pause := false; ram[dbgf]:=0; ram[stop] := step_over_addr end;
         'G': ram[dbgf] := 0;
         'Q': halt;
         '0': ram[ep] := 0;
