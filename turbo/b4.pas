@@ -1,7 +1,8 @@
 {$mode delphi}{$i xpc}
 { this is the main entry point for b4 }
 program b4;
-uses xpc, ub4, ub4asm, ub4ops, kvm, kbd;
+uses xpc, ub4, ub4asm, ub4ops, kvm, kbd,
+ sysutils; // for format
 
 const pgsz = 8 * 8; { should be multiple of 8 to come out even }
 
@@ -26,13 +27,23 @@ procedure draw_help(x,y : byte);
   begin gotoxy(x,y); write('keys. (0)top (I)P (q)uit (s)tep (o)ver, (r)un, to (c)ursor, (q)uit')
   end;
 
+procedure dump_dict;
+  var i : byte;
+  begin
+    for i := 0 to ub4asm.ents do begin
+      write(dict[i].id:8, ': ', hex(dict[i].adr,4) );
+      if (i>0) and (i mod 4 = 0) then writeln;
+    end;
+    repeat until keypressed;
+  end;
 
 procedure dump;
   { this displays the visual debugger }
-  var x, y, oldattr: word; i, pg: value; literal, target: boolean;
+  var x, y, oldattr: word; i, pg: value;
+      literal, target, hide: boolean; id: ub4asm.ident;
   begin
     x := wherex; y := wherey; oldattr := textattr;
-
+    id := 'call';
     { draw the data and return stacks }
     draw_stack(0, 13, 'd', ram[dp], maxdata);
     draw_stack(0, 14, 'r', ram[rp], maxretn);
@@ -44,17 +55,18 @@ procedure dump;
 
     { draw ram }
     gotoxy(0,16); pg := pgsz * (ram[ep] div pgsz);
-    literal := false; target := false; { next cell is literal or jump target }
+    hide := false; literal := false; target := false; { next cell is literal or jump target }
     for i := pg to pg + pgsz-1 do begin
+      if (i mod 8 = 0) and (i>pg) then begin bg('k'); writeln; clreol end;
       { color cell based on ip / editor cursor positions }
       if (i=ram[ip]) and (i=ram[ep]) then begin bg('m'); fg('M') end
       else if i=ram[ip] then begin bg('c'); fg('m') end
       else if i=ram[ep] then begin bg('r'); fg('M') end
       else begin bg('k'); fg('m') end;
-      if (i mod 8 = 0) and (i>pg) then writeln;
       if (i mod 8 = 0) then write(hex(i,4));
       { literal numbers (after si/li) }
-      if literal or (i < 32) then begin fg('y'); write(hex(ram[i],2):4); literal := false end
+      if hide then hide := false
+      else if literal or (i < 32) then begin fg('y'); write(hex(ram[i],2):4); literal := false end
       else if target then { target adress for jump/etc }
           begin if i = ram[ep] then fg('k') else fg('r');
                 write(hex(ram[i],2):4); target := false
@@ -63,9 +75,12 @@ procedure dump;
       else if i > high(ram) then begin fg('K'); write('xx') end
       { opcodes }
       else if ram[i] in [$80 .. $BF] then
-        begin fg('W'); write(optbl[byte(ram[i])] :4);
+        begin
           if ram[i] in [opli,opsi] then literal := true;
           if ram[i] in [opjm,opj0,opcl] then target := true;
+          if (ram[i] = opcl) and find_ident(ram[i+1], id)
+            then begin fg('W'); write(' ',format('%-7s',[id])); hide := true end
+            else begin fg('C'); write(optbl[byte(ram[i])] :4) end;
         end
       { ascii characters }
       else if (ram[i] >= 32) and (ram[i] < 128) then
@@ -93,7 +108,7 @@ function step_over_addr: ub4.address;
 
 var ch: ansichar; pause: boolean = false;
 begin
-  opli := b4opc('li');  opjm := b4opc('jm'); opj0 := b4opc('j0');
+  opli := b4opc('li');  opjm := b4opc('jm'); opj0 := b4opc('j0'); opcl := b4opc('cl');
   open('disk.b4'); boot; clrscr;
   assign(input, 'bios.b4a');
   reset(input); b4as;
@@ -115,9 +130,10 @@ begin
         'S': pause := false;
         'C': begin pause := false; ram[stop] := ram[ep] end;
         'O': begin pause := false; ram[dbgf]:=0; ram[stop] := step_over_addr end;
-        'G': ram[dbgf] := 0;
+        'R': ram[dbgf] := 0;
         'Q': halt;
         '0': ram[ep] := 0;
+        'D': dump_dict;
       end;
       if ram[ep] < 0 then ram[ep] := maxcell;
       if ram[ep] > maxcell then ram[ep] := 0;

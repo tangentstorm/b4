@@ -2,15 +2,19 @@
 unit ub4asm;
 interface uses xpc, ub4ops, ub4;
 
-  type chargen = function( var ch : char ) : char;
+  type ident = string[8];
+  type entry = record id: ident; adr: ub4.address end;
+  var dict: array[0..128] of entry; ents : byte;
 
-  var nextchar : chargen;
-  function b4op(code : opstring; out op:byte) : boolean;
   function b4opc(code:opstring) : byte;
-  function readnext( var ch : char ) : char;
+  function find_ident(adr:ub4.address; out id:ident): boolean;
   procedure b4as;
+
 
 implementation
+
+  type chargen = function( var ch : char ) : char;
+  var nextchar : chargen;
 
 function b4op(code : opstring; out op:byte) : boolean;
   var found : boolean;
@@ -28,10 +32,26 @@ function b4opc(code:opstring) : byte;
 type
   tokentag = ( wsp, cmt, raw, lit, chr, def, ref, adr, _wh, _do, _od, _if, _fi );
   token = record tag : tokentag; str : string; end;
-  entry = record key : string[32]; val : value; end;
 
 function readnext( var ch : char ) : char;
   begin read(ch); readnext := ch; end;
+
+
+function find_ident(adr:ub4.address; out id:ident): boolean;
+  var i : integer;
+  begin result := false;
+    for i := high(dict) downto 0 do
+      if dict[i].adr = adr then
+        begin id := dict[i].id; result := true; break end;
+  end;
+
+procedure clear_dict;
+  var i : byte;
+  begin
+    for i := 0 to high(dict) do begin dict[i].id := ''; dict[i].adr := 0 end
+  end;
+
+
 
 function next( var tok : token; var ch : char ) : boolean;
   procedure keep; begin tok.str := tok.str + ch end;
@@ -59,7 +79,6 @@ function next( var tok : token; var ch : char ) : boolean;
 
 procedure b4as;
   var here: value; err: integer; tok: token; ch: char;
-      dict: array[0..128] of entry; ents : byte;
   procedure emit(v:value); begin ram[here] := v; inc(here); end;
   procedure emit_call(v:value); begin emit(b4opc('cl')); emit(v) end;
   procedure emit_lit(v:value); begin emit(b4opc('li')); emit(v); end;
@@ -67,11 +86,11 @@ procedure b4as;
   function find_addr(s:string): value; { return address of label }
     var op:byte = 0; found: boolean=false;
     begin while (op < ents) and not found do begin
-      if dict[op].key = tok.str then begin find_addr := dict[op].val; found:=true end;
+      if dict[op].id = tok.str then begin find_addr := dict[op].adr; found:=true end;
       inc(op) end;
       if not found then unknown(tok.str) end;
   procedure compile;
-    var op : byte; v : value;
+    var op,i : byte; v : value;
     begin
       case tok.tag of
         wsp, cmt : ok; { do nothing }
@@ -84,7 +103,7 @@ procedure b4as;
               else emit(ord(tok.str[1]));
         def : if ents = high(dict) then begin writeln('too many definitions'); halt end
               else begin
-                dict[ents].key := tok.str; dict[ents].val := here; inc(ents) end;
+                dict[ents].id := tok.str; dict[ents].adr := here; inc(ents) end;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
         adr : emit(find_addr(tok.str));
         _wh : dput(here); {(- wh)}
@@ -98,7 +117,7 @@ procedure b4as;
         _fi : {(do-)} ram[dpop] := here; { jump to 'end' when 'if' test fails }
       end end;
   begin
-    err := 0; ents := 0; here := ram[hp]; read(ch);
+    clear_dict; err := 0; ents := 0; here := ram[hp]; read(ch);
     while (err = 0) and not eof do if next(tok, ch) then compile;
     if err <> 0 then dput(err) else ram[hp] := here;
   end;
