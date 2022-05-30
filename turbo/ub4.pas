@@ -111,7 +111,7 @@ function nos : value;
   begin
     if ram[dp] = mindata
       then nos := ram[maxdata]
-      else nos := ram[ram[dp]]
+      else nos := ram[ram[dp]+1]
   end;
 
 procedure zap( v : value );
