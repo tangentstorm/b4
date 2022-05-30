@@ -65,7 +65,7 @@ begin
   optbl[185] := 'boot';
   optbl[186] := 'load';
   optbl[187] := 'save';
-  optbl[188] := '';
+  optbl[188] := 'dbg';
   optbl[189] := '';
   optbl[190] := '';
   optbl[191] := '';

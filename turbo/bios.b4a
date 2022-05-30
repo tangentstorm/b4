@@ -3,7 +3,6 @@
 :here si 03 rt                     # names for some important registers
 :last si 04 rt
 :ap   si 05 rt
-:dbg  si 01 si 07 wm rt            # turn debugger on
 
 :inc  si 01 ad rt
 :dec  si 01 sb rt

@@ -13,7 +13,7 @@ procedure draw_stack(x,y : byte; id:char; minaddr,maxaddr:value);
     gotoxy(x,y); bg('k'); clreol; fg('w'); write(id,':');
     fg('Y'); write(' <'); fg('y'); write(maxaddr-minaddr); fg('Y');
     write('> '); fg('y');
-    for i := maxaddr-1 downto minaddr do write(ram[i],' ');
+    for i := maxaddr-1 downto minaddr do write(hex(ram[i],1),' ');
   end;
 
 procedure wv(k: string; v:value); { write value }
@@ -34,7 +34,8 @@ procedure dump;
 
     { draw some important registers }
     gotoxy(0, 15); bg('K'); clreol;
-    wv('ip', ram[ip]); wv('hp', ram[hp]); wv('ep',ram[ep]);
+    wv('ip', ram[ip]); wv('dp',ram[dp]);  wv('rp', ram[rp]);
+    wv('hp', ram[hp]); wv('ep',ram[ep]);  wv('last',ram[last]);
 
     { draw ram }
     gotoxy(0,16); pg := pgsz * (ram[ep] div pgsz);
@@ -81,9 +82,9 @@ begin
   open('disk.b4'); boot; clrscr;
   assign(input, 'bios.b4a');
   reset(input); b4as;
-  ram[dbg] := 1;
+  if paramstr(1)='-d' then ram[dbgf] := 1;
   while ram[ip] <= maxheap do begin
-    if ram[dbg]=1 then begin
+    if ram[dbgf]=1 then begin
       if not pause then ram[ep] := ram[ip];
       pause := true;
       dump;
@@ -97,15 +98,14 @@ begin
         'I': ram[ep] := ram[ip];
         'S',
         ' ': pause := false;
-        'G': ram[dbg] := 0;
+        'G': ram[dbgf] := 0;
         'Q': halt;
-        '0'..'9' : fillchar(ram[minbuff],
-                            (maxbuff-minbuff)*sizeof(value), ch);
+        '0': ram[ep] := 0;
       end;
       if ram[ep] < 0 then ram[ep] := maxcell;
       if ram[ep] > maxcell then ram[ep] := 0;
     end; { if ram[debug] }
-    if not (pause and (ram[dbg]=1)) then step;
+    if not (pause and (ram[dbgf]=1)) then step;
   end; { while }
   close(disk);
   {$IFDEF pauseafter} { for turbo pascal }

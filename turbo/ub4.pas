@@ -36,7 +36,7 @@ const {-- these are all offsets into the ram array --}
   last  =  4; { last dictionary entry }
   ap    =  5; { the 'a' register }
   ep    =  6; { the editor pointer }
-  dbg   =  7; { debug flag }
+  dbgf  =  7; { debug flag }
 
   procedure open( path : string );
   procedure boot;
@@ -270,7 +270,8 @@ function step : value;
       $B9 : {boot} boot;
       $BA : {load} load;
       $BB : {save} save;
-      { reserved: } $BC .. $BF : begin end;
+      $BC : {dbg } ram[dbgf] := 1;
+      { reserved: } $BD .. $BF : begin end;
       else { no-op };
     end;
     inc(ram[ip]);
