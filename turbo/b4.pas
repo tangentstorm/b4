@@ -65,7 +65,7 @@ procedure dump;
       else begin bg('k'); fg('m') end;
       if (i mod 8 = 0) then write(hex(i,4));
       { literal numbers (after si/li) }
-      if hide then hide := false
+      if hide then begin hide := false; target := false; end
       else if literal or (i < 32) then begin fg('y'); write(hex(ram[i],2):4); literal := false end
       else if target then { target adress for jump/etc }
           begin if i = ram[ep] then fg('k') else fg('r');
