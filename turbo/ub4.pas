@@ -261,7 +261,7 @@ function step : value;
       $B0 : {wm  } ram[dpop] := dpop;  { write memory }
       $B1 : {tg  } begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
       $B2 : {ta  } kvm.textattr := dpop;
-      $B3 : {tw  } write(chr(dpop));
+      $B3 : {tw  } if tos in [$00..$ff] then write(chr(dpop)) else write('[',dpop,']');
       $B4 : {tr  } getc;
       $B5 : {tk  } if keypressed then dput(-1) else dput(0);
       $B6 : {ts  } kvm.clrscr;
