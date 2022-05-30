@@ -22,6 +22,7 @@
 :, here rm du dr wm
     rd inc here wm rt              # , is exact same thing for the heap
 
+:buf-len 00                        # length of the buffer
 :buf                               # 64-character input buffer
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -31,8 +32,7 @@
 :sp si 32 tw rt                    # emit space
 :nl si 10 tw si 13 tw rt           # emit CRLF
 
-:word rt                           # word handler (does nothing so far)
-
+:bye^ $,^ 03 'b 'y 'e
 :exit nl si 01 ta                  # red
   si 'e tw si 'n tw si 'd tw       # echo 'end'
   nl hl
@@ -46,7 +46,7 @@
 :eol 01                            # end of line flag
 
 
-:puts^ $,^ 04 'p 'u 't 's
+:puts^ $bye^ 04 'p 'u 't 's
 :puts                              # given address of counted string, write the string
   du rm dr inc                     # push str start to d, len to r (loop counter)
   :for
@@ -62,22 +62,79 @@
     du si 1 ad
     puts sp                        # emit str
     rm }                           # move to next entry
+  zp rt
+
+
+:dyn-call cl :dyn-adr 00 rt
+:exec^ $words^ 04 'e 'x 'e 'c
+:exec
+  li $dyn-adr wm
+  dyn-call
   rt
+
+:e-nm^ $exec^ 04 'e '- 'n 'm
+:e-nm si 1 ad rt                   # (e-s) address of string for enttry
+:e-xt e-nm du rm ad rt             # (e-a) address of code for entry "execution token"
+
+:s-eq^ $e-nm^ 04 's '- 'e 'q
+:s-eq?                             # (st-?) are strings s and t the same?
+  [ ov ov eq | eq rt ]             # a. if the addresses are the same, return 1
+  [ ov rm du dr ov rm ne |         # b. (st-st?|n) if the lengths are different,
+    rd zp eq rt ]                  #   drop loop counter and return 0 (we know eq=0 from a.)
+  :for-s-eq                        # st|n   -> ready for a for -loop
+    inc sw inc                     # st-TS  -> next char (doesn't matter that we swap order)
+    [ ov rm ov rm ne |                   # if the characters are not equal
+      rd zp eq rt ]                #   drop counter and return 0 (same as in b. before)
+  nx $for-s-eq
+  zp zp si 1 rt                    # everything matched, so return 1
+
+:word?^ $s-eq^ 05 'w 'o 'r 'd '?
+:word?                             # (s-e)   attempt to find word in dictionary
+  dr                               # s - |s  push s to return stack
+  last rm                          # ..-e|s  fetch last entry
+  { du si 0 ne |                   # while e!=0 do:
+    du e-nm                        #  ..- et|s     fetch the entry's name (t)
+    rd du dr                       #  ..- ets|s
+    [ s-eq? | rd zp rt ]           # return e if strings match
+    rm }                           # otherwise, visit next string
+  rd zp rt                         # (e|s - e)
+
+   # instead of 'rd du dr'
+   # :ru rd rd sw dr du dr rt           # (-s) copy top of R to D
+   # !! might be nice to have macros for inlining this
+
+
+# :words-s li $words^ si 1 ad rt   # (-s) address of the string "words"
+:words-s li $words^ e-nm rt        # (-s) address of the string "words"
+:word?-s li $word? e-nm rt        # (-s) address of the string "word?"
 
 :init
   li $buf ap wm                    # set ap = buf
-  li $words^ last  wm
+  li $word?^ last  wm
   rt
+
+:unkno-s 07 'u 'n 'k 'n 'o 'w 'n
+:unknown
+ si 08 ta sp li $unkno-s puts nl rt
+ # word?-s puts nl rt
 
 :repl { si 01 |
   [ li $eol rm |                   # if end of line flag
     si 00 li $eol wm b4> ]         # show prompt if new line
   tr                               # read char from terminal
   [ du si '` eq | dbg ]            # ` = debugger
-  [ du si 13 eq |                  # on enter,
-    si 01 li $eol wm word ]        # execute word (does nothing yet)
+  [ du si 32 eq | tw si 0          # on space,  (echo space and add dummy char)
+    si 01 li $eol wm               #    set the eol flag
+    li $buf-len
+    ap rm li $buf sb               #    calculate the length
+    ov wm                          #    save length to the buffer
+    li $buf ap wm                  #    reset ap to start of buffer
+    word?                          #    look up the word
+    [ du si 0 eq | zp unknown ]    #  if not found, complain
+    [ du si 0 ne | exec ] ]        #  if found, execute   (# TODO: 'else' !!)
+  [ du si 31 lt | du du a+ tw ]    # copy non-ctrl chars to buffer and echo
   [ du si 04 eq | exit ]           # on ^d, exit
-  [ du si 31 lt | du a+ tw ] }     # copy non-ctrl chars to buffer and echo
+  zp }                             # drop the character
 
 # this should never excute, so trigger debugger if we get here:
 dbg ]
@@ -85,8 +142,17 @@ dbg ]
 
 # -- main --
 
-si 15 { dec du | du ta si '. tw } zp # draw colors
+[ si 0 |
+:word-a 03 'a 'b 'c
+:word-b 03 'a 'b 'c ]
+li $word-a li $word-b s-eq?
+
+
+# word?-s words-s s-eq? dbg   (s-eq working)
+# words-s word? dbg           ( word? seems to be working)
+
+si 15 { dec du | du ta si '. tw } zp nl # draw colors
 init
-nl si 14 ta li $words^ si 1 ad puts si ': tw sp si 07 ta
-words
+# show the word list:
+si 14 ta words-s puts si ': tw sp si 07 ta words nl
 repl
