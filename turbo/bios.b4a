@@ -1,15 +1,24 @@
 [ si 00 |                          # jump over bios
 #--- begin bios -------------------\
-:here si 03 rt                     # names for some important registers
-:last si 04 rt
+# names for some important registers
+:here^ 00000000 04 'h 'e 'r 'e
+:here  si 03 rt
+
+:last^ $here^ 04 'l 'a 's 't
+:last  si 04 rt
+
 :ap   si 05 rt
 
+:inc^ $last^ 03 'i 'n 'c
 :inc  si 01 ad rt
+
+:dec^ $inc^ 03 'd 'e 'c
 :dec  si 01 sb rt
 
 :a+ ap rm du dr wm                 # a+ ( n - ) , writes a value to the
     rd inc ap wm rt                #    address in ap and increments ap.
 
+:,^ $dec^ 01 ',
 :, here rm du dr wm
     rd inc here wm rt              # , is exact same thing for the heap
 
@@ -19,9 +28,8 @@
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
+:sp si 32 tw rt                    # emit space
 :nl si 10 tw si 13 tw rt           # emit CRLF
-
-:init li $buf ap wm rt             # set ap = buf
 
 :word rt                           # word handler (does nothing so far)
 
@@ -33,23 +41,52 @@
   nl si 02 ta                      # green on black
   si 'b tw si '4 tw si '> tw       # echo 'b4>'
   si 32 tw si 07 ta                # gray on black for user input.
-  rt rt                            # !! TODO: do i still need this? (it wasn't emitting the first one)
+  rt
 
 :eol 01                            # end of line flag
+
+
+:puts^ $,^ 04 'p 'u 't 's
+:puts                              # given address of counted string, write the string
+  du rm dr inc                     # push str start to d, len to r (loop counter)
+  :for
+    du rm tw
+    inc
+  nx $for
+  zp rt
+
+:words^ $puts^ 05 'w 'o 'r 'd 's
+:words                             # list known words, starting at last entry:
+  last rm
+  { du si 0 ne |                   # we are looking at a non-0 pointer to entry
+    du si 1 ad
+    puts sp                        # emit str
+    rm }                           # move to next entry
+  rt
+
+:init
+  li $buf ap wm                    # set ap = buf
+  li $words^ last  wm
+  rt
 
 :repl { si 01 |
   [ li $eol rm |                   # if end of line flag
     si 00 li $eol wm b4> ]         # show prompt if new line
   tr                               # read char from terminal
+  [ du si '` eq | dbg ]            # ` = debugger
   [ du si 13 eq |                  # on enter,
     si 01 li $eol wm word ]        # execute word (does nothing yet)
   [ du si 04 eq | exit ]           # on ^d, exit
   [ du si 31 lt | du a+ tw ] }     # copy non-ctrl chars to buffer and echo
 
-# this should be compiled, but never execute:
-hl ]
+# this should never excute, so trigger debugger if we get here:
+dbg ]
 #--- end of bios ------------------/
 
 # -- main --
+
 si 15 { dec du | du ta si '. tw } zp # draw colors
-init repl
+init
+nl si 14 ta li $words^ si 1 ad puts si ': tw sp si 07 ta
+words
+repl
