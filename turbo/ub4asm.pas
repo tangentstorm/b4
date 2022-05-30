@@ -59,7 +59,7 @@ function next( var tok : token; var ch : char ) : boolean;
 
 procedure b4as;
   var here: value; err: integer; tok: token; ch: char;
-      dict: array[0..31] of entry; ents : byte;
+      dict: array[0..128] of entry; ents : byte;
   procedure emit(v:value); begin ram[here] := v; inc(here); end;
   procedure emit_call(v:value); begin emit(b4opc('cl')); emit(v) end;
   procedure emit_lit(v:value); begin emit(b4opc('li')); emit(v); end;
@@ -82,7 +82,7 @@ procedure b4as;
                 if err=0 then emit_lit(v) else unknown(tok.str) end;
         chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
               else emit(ord(tok.str[1]));
-        def : if ents > 31 then err := -12345
+        def : if ents = high(dict) then begin writeln('too many definitions'); halt end
               else begin
                 dict[ents].key := tok.str; dict[ents].val := here; inc(ents) end;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
