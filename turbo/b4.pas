@@ -78,9 +78,11 @@ procedure dump;
         begin
           if ram[i] in [opli,opsi] then literal := true;
           if ram[i] in [opjm,opj0,opcl] then target := true;
-          if (ram[i] = opcl) and find_ident(ram[i+1], id)
-            then begin fg('W'); write(' ',format('%-7s',[id])); hide := true end
-            else begin fg('C'); write(optbl[byte(ram[i])] :4) end;
+          if (ram[i] in [opcl,opli]) and find_ident(ram[i+1], id) then begin
+            hide := true; { hide next token }
+            if ram[i] = opcl then fg('W') else fg('K');
+            write(' ',format('%-6s',[id])) end
+          else begin fg('C'); write(optbl[byte(ram[i])] :4) end;
         end
       { ascii characters }
       else if (ram[i] >= 32) and (ram[i] < 128) then
