@@ -39,8 +39,8 @@ procedure dump_dict;
 
 procedure dump;
   { this displays the visual debugger }
-  var x, y, oldattr: word; i, pg: value;
-      literal, target, hide: boolean; id: ub4asm.ident;
+  var x, y, oldattr: word; i, pg: value; skip: byte=0;
+      literal, target: boolean; id: ub4asm.ident;
   begin
     x := wherex; y := wherey; oldattr := textattr;
     id := 'call';
@@ -55,17 +55,19 @@ procedure dump;
 
     { draw ram }
     gotoxy(0,16); pg := pgsz * (ram[ep] div pgsz);
-    hide := false; literal := false; target := false; { next cell is literal or jump target }
+    literal := false; target := false; { next cell is literal or jump target }
     for i := pg to pg + pgsz-1 do begin
-      if (i mod 8 = 0) and (i>pg) then begin bg('k'); writeln; clreol end;
+      if (i mod 8 = 0) then begin
+        bg('k'); if (i>pg) then writeln; clreol;
+        fg('m'); write(hex(i,4));
+      end;
       { color cell based on ip / editor cursor positions }
-      if (i=ram[ip]) and (i=ram[ep]) then begin bg('m'); fg('M') end
-      else if i=ram[ip] then begin bg('c'); fg('m') end
-      else if i=ram[ep] then begin bg('r'); fg('M') end
-      else begin bg('k'); fg('m') end;
-      if (i mod 8 = 0) then write(hex(i,4));
+      if (i=ram[ip]) and (i=ram[ep]) then bg('m')
+      else if i=ram[ip] then bg('c')
+      else if i=ram[ep] then bg('r')
+      else bg('k');
       { literal numbers (after si/li) }
-      if hide then begin hide := false; target := false; literal := false end
+      if skip>0 then begin dec(skip); target := false; literal := false end
       else if literal or (i < 32) then begin fg('y'); write(hex(ram[i],2):4); literal := false end
       else if target then { target adress for jump/etc }
           begin if i = ram[ep] then fg('k') else fg('r');
@@ -78,10 +80,15 @@ procedure dump;
         begin
           if ram[i] in [opli,opsi] then literal := true;
           if ram[i] in [opjm,opj0,opcl] then target := true;
-          if (ram[i] in [opcl,opli]) and find_ident(ram[i+1], id) then begin
-            write('  '); hide := true; { hide next token }
-            if ram[i] = opcl then fg('W') else begin fg('K'); write('$') end;
-            write(format('%-6s',[id])) end
+          if (ram[i] = opli) or ((ram[i] in [opcl]) and (rdval(i+1) < high(address))) then
+            begin
+              if ram[i] = opcl
+                then begin skip := 4; find_ident(rdval(i+1), id) end
+                else begin skip := 1; find_ident(ram[i+1], id) end;
+              write('  ');
+              if ram[i] = opcl then fg('W') else begin fg('K'); write('$') end;
+              write(format('%-6s',[id]))
+            end
           else begin fg('C'); write(optbl[byte(ram[i])] :4) end;
         end
       { ascii characters }

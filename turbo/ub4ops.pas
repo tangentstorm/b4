@@ -63,8 +63,8 @@ begin
   optbl[183] := 'tl';
   optbl[184] := 'tc';
   optbl[185] := 'db';
-  optbl[186] := '';
-  optbl[187] := '';
+  optbl[186] := 'rv';
+  optbl[187] := 'wv';
   optbl[188] := '';
   optbl[189] := '';
   optbl[190] := '';

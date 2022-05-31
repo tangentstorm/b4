@@ -80,7 +80,8 @@ function next( var tok : token; var ch : char ) : boolean;
 procedure b4as;
   var here: value; err: integer; tok: token; ch: char;
   procedure emit(v:value); begin ram[here] := v; inc(here); end;
-  procedure emit_call(v:value); begin emit(b4opc('cl')); emit(v) end;
+  procedure emitv(v:value); begin wrval(here, v); inc(here,4) end;
+  procedure emit_call(v:value); begin emit(b4opc('cl')); emitv(v) end;
   procedure unknown(s:string); begin writeln('unknown word:', s); halt end;
   function find_addr(s:string): value; { return address of label }
     var op:byte = 0; found: boolean=false;

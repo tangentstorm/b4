@@ -62,18 +62,22 @@
   zp rt
 
 
-:dyn-call cl :dyn-adr 00 rt
-:exec^ $words^ 04 'e 'x 'e 'c
+:e-nm^ $words^ 04 'e '- 'n 'm
+:e-nm si 1 ad rt                   # (e-s) address of string for enttry
+
+:e-xt^ $e-nm^ 04 'e '- 'x 't
+:e-xt e-nm du rm ad rt             # (e-a) address of code for entry "execution token"
+
+:dyn-call cl :dyn-adr 00 00 00 00 rt
+:exec^ $e-xt^ 04 'e 'x 'e 'c
 :exec
-  li $dyn-adr wm
+  e-xt
+  li $dyn-adr wv
   dyn-call
   rt
 
-:e-nm^ $exec^ 04 'e '- 'n 'm
-:e-nm si 1 ad rt                   # (e-s) address of string for enttry
-:e-xt e-nm du rm ad rt             # (e-a) address of code for entry "execution token"
 
-:s-eq^ $e-nm^ 04 's '- 'e 'q
+:s-eq^ $exec^ 04 's '- 'e 'q
 :s-eq?                             # (st-?) are strings s and t the same?
   [ ov ov eq | eq rt ]             # a. if the addresses are the same, return 1
   [ ov rm du dr ov rm ne |         # b. (st-st?|n) if the lengths are different,

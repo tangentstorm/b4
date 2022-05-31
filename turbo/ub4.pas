@@ -45,6 +45,8 @@ const {-- these are all offsets into the ram array --}
   procedure open( path : string );
   procedure boot;
   function step : value;
+  function rdval(adr:address): value;
+  procedure wrval(adr:address; v: value);
 
   { these internal ops are used in the assembler }
   procedure dput( val : value );
@@ -214,7 +216,24 @@ procedure todo(op : string);
     halt
   end;
 
+
+function rdval(adr:address) : value;
+  { read a longint (little-endian) }
+  var i : byte;
+  begin
+    result := 0;
+    for i := 0 to 3 do result := result + (byte(ram[adr+i]) shl (8*i));
+  end;
+
+procedure wrval(adr: address; v:value);
+  var i :byte;
+  begin
+    for i:= 0 to 3 do begin ram[adr] := byte(v shr (8*i)); inc(adr); end
+  end;
+
+
 function step : value;
+  var t : value;
   { execute next instruction, then increment and return the IP }
   begin
     case ram[ram[ip]] of
@@ -264,8 +283,8 @@ function step : value;
       $A9 : {nx  } begin if tor > 0 then ram[ram[rp]]:=tor-1;
                      if tor = 0 then begin zap(rpop); inc(ram[ip]) end
                      else ram[ip]:=ram[ram[ip]+1]-1; end;
-      $AA : {cl  } begin rput(ram[ip]); ram[ip] := ram[ram[ip]+1]-1 end; { call }
-      $AB : {rt  } ram[ip] := rpop;
+      $AA : {cl  } begin rput(ram[ip]+4); ram[ip]:=rdval(ram[ip]+1)-1 end; { call }
+      $AB : {rt  } ram[ip] := rpop-1;
       $AC : {r0  } if tos = 0 then begin zap(dpop); ram[ip] := rpop end;
       $AD : {r1  } if tos<> 0 then begin zap(dpop); ram[ip] := rpop end;
       $AE : {ev  } todo('ev'); { eval - like call, but address comes from stack }
@@ -280,7 +299,9 @@ function step : value;
       $B7 : {tl  } kvm.clreol;
       $B8 : {tc  } begin dput(kvm.wherex); dput(kvm.wherey) end;
       $B9 : {db  } ram[dbgf] := 1;
-      { reserved: } $BA .. $BF : begin end;
+      $BA : {rv  } dput(rdval(dpop));
+      $BB : {wv  } begin t := dpop; wrval(t, dpop); end;
+      { reserved: } $BC..$BF : begin end;
       else { no-op };
     end;
     inc(ram[ip]);
