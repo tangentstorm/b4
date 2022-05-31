@@ -43,9 +43,6 @@
   si 32 tw si 07 ta                # gray on black for user input.
   rt
 
-:eol 01                            # end of line flag
-
-
 :puts^ $bye^ 04 'p 'u 't 's
 :puts                              # given address of counted string, write the string
   du rm dr inc                     # push str start to d, len to r (loop counter)
@@ -113,11 +110,12 @@
   li $word?^ last  wm
   rt
 
-:unkno-s 07 'u 'n 'k 'n 'o 'w 'n
+:unkno-s 13 'u 'n 'k 'n 'o 'w 'n 32 'w 'o 'r 'd '.
 :unknown
  si 08 ta sp li $unkno-s puts nl rt
  # word?-s puts nl rt
 
+:eol 01                            # end of line flag
 :repl { si 01 |
   [ li $eol rm |                   # if end of line flag
     si 00 li $eol wm b4> ]         # show prompt if new line
@@ -125,18 +123,17 @@
   [ du si '` eq | dbg ]            # ` = debugger
   [ du si 32 eq | tw si 0          # on space,  (echo space and add dummy char)
     si 01 li $eol wm               #    set the eol flag
-    li $buf-len
-    ap rm li $buf sb               #    calculate the length
-    ov wm                          #    save length to the buffer
+    ap rm li $buf sb               #    calculate length: start of buffer
+    li $buf-len sw ov wm           #    save the lenegth
     li $buf ap wm                  #    reset ap to start of buffer
     word?                          #    look up the word
-    [ du si 0 eq | zp unknown ]    #  if not found, complain
-    [ du si 0 ne | exec ] ]        #  if found, execute   (# TODO: 'else' !!)
+    [ du si 0 eq | zp unknown ]    #    if not found, complain
+    [ du si 0 ne | exec ] ]        #    if found, execute   (# TODO: 'else' !!)
   [ du si 31 lt | du du a+ tw ]    # copy non-ctrl chars to buffer and echo
   [ du si 04 eq | exit ]           # on ^d, exit
   zp }                             # drop the character
 
-# this should never excute, so trigger debugger if we get here:
+# this should never execute, so trigger debugger if we get here:
 dbg ]
 #--- end of bios ------------------/
 
@@ -151,7 +148,7 @@ li $word-a li $word-b s-eq?
 # word?-s words-s s-eq? dbg   (s-eq working)
 # words-s word? dbg           ( word? seems to be working)
 
-si 15 { dec du | du ta si '. tw } zp nl # draw colors
+si 16 { dec du | du ta si '. tw } zp nl # draw colors
 init
 # show the word list:
 si 14 ta words-s puts si ': tw sp si 07 ta words nl
