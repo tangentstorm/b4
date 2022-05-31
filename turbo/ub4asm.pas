@@ -30,7 +30,7 @@ function b4opc(code:opstring) : byte;
     else begin writeln('invalid op: ', code); halt end end;
 
 type
-  tokentag = ( wsp, cmt, raw, lit, chr, def, ref, adr, _wh, _do, _od, _if, _fi );
+  tokentag = ( wsp, cmt, raw, chr, def, ref, adr, _wh, _do, _od, _if, _fi );
   token = record tag : tokentag; str : string; end;
 
 function readnext( var ch : char ) : char;
@@ -81,7 +81,6 @@ procedure b4as;
   var here: value; err: integer; tok: token; ch: char;
   procedure emit(v:value); begin ram[here] := v; inc(here); end;
   procedure emit_call(v:value); begin emit(b4opc('cl')); emit(v) end;
-  procedure emit_lit(v:value); begin emit(b4opc('li')); emit(v); end;
   procedure unknown(s:string); begin writeln('unknown word:', s); halt end;
   function find_addr(s:string): value; { return address of label }
     var op:byte = 0; found: boolean=false;
@@ -94,11 +93,8 @@ procedure b4as;
     begin
       case tok.tag of
         wsp, cmt : ok; { do nothing }
-        {=123 is a raw number, 123 is 'lit 123'}
         raw : begin val(tok.str, v, err);
                 if err=0 then emit(v) else unknown(tok.str) end;
-        lit : begin val(tok.str, v, err); { todo: introduce new syntax for lit #? }
-                if err=0 then emit_lit(v) else unknown(tok.str) end;
         chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
               else emit(ord(tok.str[1]));
         def : if ents = high(dict) then begin writeln('too many definitions'); halt end
