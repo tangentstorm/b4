@@ -137,18 +137,14 @@
 dbg ]
 #--- end of bios ------------------/
 
-# -- main --
-
-[ si 0 |
-:word-a 03 'a 'b 'c
-:word-b 03 'a 'b 'c ]
-li $word-a li $word-b s-eq?
-
-
+# -- debug /test stuff --
+# [ si 0 | :word-a 03 'a 'b 'c :word-b 03 'a 'b 'c ]
+# li $word-a li $word-b s-eq?
 # word?-s words-s s-eq? dbg   (s-eq working)
 # words-s word? dbg           ( word? seems to be working)
+# si 16 { dec du | du ta si '. tw } zp nl # draw colors
 
-si 16 { dec du | du ta si '. tw } zp nl # draw colors
+# -- main --
 init
 # show the word list:
 si 14 ta words-s puts si ': tw sp si 07 ta words nl
