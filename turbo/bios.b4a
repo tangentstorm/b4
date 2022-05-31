@@ -2,12 +2,12 @@
 #--- begin bios -------------------\
 # names for some important registers
 :here^ 00000000 04 'h 'e 'r 'e
-:here  si 03 rt
+:here  si 12 rt
 
 :last^ $here^ 04 'l 'a 's 't
-:last  si 04 rt
+:last  si 16 rt
 
-:ap   si 05 rt
+:ap   si 20 rt
 
 :inc^ $last^ 03 'i 'n 'c
 :inc  si 01 ad rt

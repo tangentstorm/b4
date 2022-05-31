@@ -32,15 +32,15 @@ var
   bytes: array[0..maxcell*sizeof(value)] of byte;
   disk : file of block;
 const {-- these are all offsets into the ram array --}
-  reg_ip : ^value = @ram[0]; { instruction pointer }
-  reg_dp : ^value = @ram[1]; { data stack pointer }
-  reg_rp : ^value = @ram[2]; { retn stack pointer }
-  reg_hp : ^value = @ram[3]; { heap pointer }
-  reg_lp : ^value = @ram[4]; { last dictionary entry }
-  reg_ap : ^value = @ram[5]; { the 'a' register }
-  reg_ep : ^value = @ram[6]; { the editor pointer }
-  reg_db : ^value = @ram[7]; { debug flag }
-  reg_bp : ^value = @ram[8]; { breakpoint }
+  reg_ip : ^value = @ram[$00]; { instruction pointer }
+  reg_dp : ^value = @ram[$04]; { data stack pointer }
+  reg_rp : ^value = @ram[$08]; { retn stack pointer }
+  reg_hp : ^value = @ram[$0C]; { heap pointer }
+  reg_lp : ^value = @ram[$10]; { last dictionary entry }
+  reg_ap : ^value = @ram[$14]; { the 'a' register }
+  reg_ep : ^value = @ram[$18]; { the editor pointer }
+  reg_db : ^value = @ram[$1C]; { debug flag }
+  reg_bp : ^value = @ram[$20]; { breakpoint }
 
   procedure open( path : string );
   procedure boot;
