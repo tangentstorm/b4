@@ -120,7 +120,7 @@
   [ li $eol rm |                   # if end of line flag
     si 00 li $eol wm b4> ]         # show prompt if new line
   tr                               # read char from terminal
-  [ du si '` eq | dbg ]            # ` = debugger
+  [ du si '` eq | db ]             # ` = debugger
   [ du si 32 eq | tw si 0          # on space,  (echo space and add dummy char)
     si 01 li $eol wm               #    set the eol flag
     ap rm li $buf sb               #    calculate length: start of buffer
@@ -134,14 +134,14 @@
   zp }                             # drop the character
 
 # this should never execute, so trigger debugger if we get here:
-dbg ]
+db ]
 #--- end of bios ------------------/
 
 # -- debug /test stuff --
 # [ si 0 | :word-a 03 'a 'b 'c :word-b 03 'a 'b 'c ]
 # li $word-a li $word-b s-eq?
-# word?-s words-s s-eq? dbg   (s-eq working)
-# words-s word? dbg           ( word? seems to be working)
+# word?-s words-s s-eq? db   (s-eq working)
+# words-s word? db           ( word? seems to be working)
 # si 16 { dec du | du ta si '. tw } zp nl # draw colors
 
 # -- main --
