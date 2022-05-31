@@ -65,7 +65,7 @@ procedure dump;
       else begin bg('k'); fg('m') end;
       if (i mod 8 = 0) then write(hex(i,4));
       { literal numbers (after si/li) }
-      if hide then begin hide := false; target := false; end
+      if hide then begin hide := false; target := false; literal := false end
       else if literal or (i < 32) then begin fg('y'); write(hex(ram[i],2):4); literal := false end
       else if target then { target adress for jump/etc }
           begin if i = ram[ep] then fg('k') else fg('r');
@@ -79,9 +79,9 @@ procedure dump;
           if ram[i] in [opli,opsi] then literal := true;
           if ram[i] in [opjm,opj0,opcl] then target := true;
           if (ram[i] in [opcl,opli]) and find_ident(ram[i+1], id) then begin
-            hide := true; { hide next token }
-            if ram[i] = opcl then fg('W') else fg('K');
-            write(' ',format('%-6s',[id])) end
+            write('  '); hide := true; { hide next token }
+            if ram[i] = opcl then fg('W') else begin fg('K'); write('$') end;
+            write(format('%-6s',[id])) end
           else begin fg('C'); write(optbl[byte(ram[i])] :4) end;
         end
       { ascii characters }
