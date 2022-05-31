@@ -114,9 +114,9 @@ procedure b4as;
         _fi : {(do-)} ram[dpop] := here; { jump to 'end' when 'if' test fails }
       end end;
   begin
-    clear_dict; err := 0; ents := 0; here := ram[hp]; read(ch);
+    clear_dict; err := 0; ents := 0; here := reg_hp^; read(ch);
     while (err = 0) and not eof do if next(tok, ch) then compile;
-    if err <> 0 then dput(err) else ram[hp] := here;
+    if err <> 0 then dput(err) else reg_hp^ := here;
   end;
 
 begin

@@ -32,15 +32,15 @@ var
   bytes: array[0..maxcell*sizeof(value)] of byte;
   disk : file of block;
 const {-- these are all offsets into the ram array --}
-  ip    =  0; { instruction pointer }
-  dp    =  1; { data stack pointer }
-  rp    =  2; { retn stack pointer }
-  hp    =  3; { heap pointer }
-  last  =  4; { last dictionary entry }
-  ap    =  5; { the 'a' register }
-  ep    =  6; { the editor pointer }
-  dbgf  =  7; { debug flag }
-  stop  =  8; { breakpoint }
+  reg_ip : ^value = @ram[0]; { instruction pointer }
+  reg_dp : ^value = @ram[1]; { data stack pointer }
+  reg_rp : ^value = @ram[2]; { retn stack pointer }
+  reg_hp : ^value = @ram[3]; { heap pointer }
+  reg_lp : ^value = @ram[4]; { last dictionary entry }
+  reg_ap : ^value = @ram[5]; { the 'a' register }
+  reg_ep : ^value = @ram[6]; { the editor pointer }
+  reg_db : ^value = @ram[7]; { debug flag }
+  reg_bp : ^value = @ram[8]; { breakpoint }
 
   procedure open( path : string );
   procedure boot;
@@ -59,13 +59,13 @@ implementation
 procedure boot;
   begin
     fillchar(ram, (maxcell + 1) * sizeof(value), 0);
-    ram[dp] := maxdata;
-    ram[rp] := maxretn;
-    ram[ip] := minheap;
-    ram[hp] := minheap;
-    ram[ep] := minheap;
-    ram[ap] := minheap;
-    ram[stop] := maxcell;
+    reg_dp^ := maxdata;
+    reg_rp^ := maxretn;
+    reg_ip^ := minheap;
+    reg_hp^ := minheap;
+    reg_ep^ := minheap;
+    reg_ap^ := minheap;
+    reg_bp^ := maxcell;
   end;
 
 procedure halt;
@@ -89,31 +89,31 @@ procedure open(path:string);
 
 function dpop : value;
   begin
-    dpop := ram[ram[dp]]; inc(ram[dp]);
-    if ram[dp] > maxdata then ram[dp] := mindata;
+    dpop := ram[reg_dp^]; inc(reg_dp^);
+    if reg_dp^ > maxdata then reg_dp^ := mindata;
   end;
 
 function rpop : value;
   begin
-    rpop := ram[ram[rp]]; inc(ram[rp]);
-    if ram[rp] > maxretn then ram[rp] := minretn;
+    rpop := ram[reg_rp^]; inc(reg_rp^);
+    if reg_rp^ > maxretn then reg_rp^ := minretn;
   end;
 
 function tos : value;
   begin
-    tos := ram[ram[dp]]
+    tos := ram[reg_dp^]
   end;
 
 function tor : value;
   begin
-    tor := ram[ram[rp]]
+    tor := ram[reg_rp^]
   end;
 
 function nos : value;
   begin
-    if ram[dp] = mindata
+    if reg_dp^ = mindata
       then nos := ram[maxdata]
-      else nos := ram[ram[dp]+1]
+      else nos := ram[reg_dp^+1]
   end;
 
 procedure zap( v : value );
@@ -123,27 +123,27 @@ procedure zap( v : value );
 { the stacks are really rings, so no over/underflows }
 procedure dput( val : value );
   begin
-    dec(ram[dp]);
-    if ram[dp] < mindata then ram[dp] := maxdata;
-    ram[ram[dp]] := val;
+    dec(reg_dp^);
+    if reg_dp^ < mindata then reg_dp^ := maxdata;
+    ram[reg_dp^] := val;
   end;
 
 procedure rput( val : value );
   begin
-    dec(ram[rp]);
-    if ram[rp] < minretn then ram[rp] := maxretn;
-    ram[ram[rp]] := val;
+    dec(reg_rp^);
+    if reg_rp^ < minretn then reg_rp^ := maxretn;
+    ram[reg_rp^] := val;
   end;
 
 procedure comma;
   begin
-    ram[ram[hp]] := dpop;
-    inc(ram[hp]);
+    ram[reg_hp^] := dpop;
+    inc(reg_hp^);
   end;
 
 procedure bye;
   begin
-    ram[ip] := maxheap
+    reg_ip^ := maxheap
   end;
 
 procedure swap;
@@ -236,11 +236,11 @@ function step : value;
   var t : value;
   { execute next instruction, then increment and return the IP }
   begin
-    case ram[ram[ip]] of
+    case ram[reg_ip^] of
       { Do not reformat this function! mkoptbl.pas uses it! }
       $80 : {ok  } ; { no-op }
-      $81 : {si  } begin inc(ram[ip]); dput(ram[ram[ip]]) end;
-      $82 : {li  } begin inc(ram[ip]); dput(ram[ram[ip]]) end; { todo: long int }
+      $81 : {si  } begin inc(reg_ip^); dput(ram[reg_ip^]) end;
+      $82 : {li  } begin inc(reg_ip^); dput(ram[reg_ip^]) end; { todo: long int }
       $83 : {sw  } swap;
       $84 : {du  } dput(tos);
       $85 : {ov  } dput(nos);
@@ -274,19 +274,19 @@ function step : value;
       $A1 : {zd  } todo('zd');
       $A2 : {cd  } todo('cd');
       $A3 : {hl  } halt;
-      $A4 : {jm  } ram[ip] := ram[ram[ip]+1]-1;
-      $A5 : {j0  } if dpop = 0 then begin ram[ip] := ram[ram[ip]+1]-1 end
-                   else inc(ram[ip]) { skip over the address };
+      $A4 : {jm  } reg_ip^ := ram[reg_ip^+1]-1;
+      $A5 : {j0  } if dpop = 0 then begin reg_ip^ := ram[reg_ip^+1]-1 end
+                   else inc(reg_ip^) { skip over the address };
       $A6 : {hp  } todo('hp'); { hop }
       $A7 : {h0  } todo('h0'); { hop if 0 }
       $A8 : {h1  } todo('h1'); { hop if 1 }
-      $A9 : {nx  } begin if tor > 0 then ram[ram[rp]]:=tor-1;
-                     if tor = 0 then begin zap(rpop); inc(ram[ip]) end
-                     else ram[ip]:=ram[ram[ip]+1]-1; end;
-      $AA : {cl  } begin rput(ram[ip]+4); ram[ip]:=rdval(ram[ip]+1)-1 end; { call }
-      $AB : {rt  } ram[ip] := rpop-1;
-      $AC : {r0  } if tos = 0 then begin zap(dpop); ram[ip] := rpop end;
-      $AD : {r1  } if tos<> 0 then begin zap(dpop); ram[ip] := rpop end;
+      $A9 : {nx  } begin if tor > 0 then ram[reg_rp^]:=tor-1;
+                     if tor = 0 then begin zap(rpop); inc(reg_ip^) end
+                     else reg_ip^:=ram[reg_ip^+1]-1; end;
+      $AA : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
+      $AB : {rt  } reg_ip^ := rpop-1;
+      $AC : {r0  } if tos = 0 then begin zap(dpop); reg_ip^ := rpop end;
+      $AD : {r1  } if tos<> 0 then begin zap(dpop); reg_ip^ := rpop end;
       $AE : {ev  } todo('ev'); { eval - like call, but address comes from stack }
       $AF : {rm  } dput(ram[dpop]);    { read memory }
       $B0 : {wm  } ram[dpop] := dpop;  { write memory }
@@ -298,14 +298,14 @@ function step : value;
       $B6 : {ts  } kvm.clrscr;
       $B7 : {tl  } kvm.clreol;
       $B8 : {tc  } begin dput(kvm.wherex); dput(kvm.wherey) end;
-      $B9 : {db  } ram[dbgf] := 1;
+      $B9 : {db  } reg_db^ := 1;
       $BA : {rv  } dput(rdval(dpop));
       $BB : {wv  } begin t := dpop; wrval(t, dpop); end;
       { reserved: } $BC..$BF : begin end;
       else { no-op };
     end;
-    inc(ram[ip]);
-    step := ram[ip];
+    inc(reg_ip^);
+    step := reg_ip^;
   end;
 
 begin

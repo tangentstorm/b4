@@ -45,16 +45,16 @@ procedure dump;
     x := wherex; y := wherey; oldattr := textattr;
     id := 'call';
     { draw the data and return stacks }
-    draw_stack(0, 13, 'd', ram[dp], maxdata);
-    draw_stack(0, 14, 'r', ram[rp], maxretn);
+    draw_stack(0, 13, 'd', reg_dp^, maxdata);
+    draw_stack(0, 14, 'r', reg_rp^, maxretn);
 
     { draw some important registers }
     gotoxy(0, 15); bg('K'); clreol;
-    wv('ip', ram[ip]); wv('dp',ram[dp]);  wv('rp', ram[rp]);
-    wv('hp', ram[hp]); wv('ep',ram[ep]);  wv('last',ram[last]);
+    wv('ip', reg_ip^); wv('dp',reg_dp^);  wv('rp', reg_rp^);
+    wv('hp', reg_hp^); wv('ep',reg_ep^);  wv('lp', reg_lp^);
 
     { draw ram }
-    gotoxy(0,16); pg := pgsz * (ram[ep] div pgsz);
+    gotoxy(0,16); pg := pgsz * (reg_ep^ div pgsz);
     literal := false; target := false; { next cell is literal or jump target }
     for i := pg to pg + pgsz-1 do begin
       if (i mod 8 = 0) then begin
@@ -62,15 +62,15 @@ procedure dump;
         fg('m'); write(hex(i,4));
       end;
       { color cell based on ip / editor cursor positions }
-      if (i=ram[ip]) and (i=ram[ep]) then bg('m')
-      else if i=ram[ip] then bg('c')
-      else if i=ram[ep] then bg('r')
+      if (i=reg_ip^) and (i=reg_ep^) then bg('m')
+      else if i=reg_ip^ then bg('c')
+      else if i=reg_ep^ then bg('r')
       else bg('k');
       { literal numbers (after si/li) }
       if skip>0 then begin dec(skip); target := false; literal := false end
       else if literal or (i < 32) then begin fg('y'); write(hex(ram[i],2):4); literal := false end
       else if target then { target adress for jump/etc }
-          begin if i = ram[ep] then fg('k') else fg('r');
+          begin if i = reg_ep^ then fg('k') else fg('r');
                 write(hex(ram[i],2):4); target := false
           end
       { past end of memory }
@@ -109,10 +109,10 @@ procedure dump;
 
 function step_over_addr: ub4.address;
   begin
-    repeat if ram[ep] < ub4.maxcell then inc(ram[ep])
-    until (ram[ram[ep]] = ub4.maxcell)
-       or (ram[ram[ep]] in [low(ub4.opcodes)..high(ub4.opcodes)]);
-    result := ram[ep];
+    repeat if reg_ep^ < ub4.maxcell then inc(reg_ep^)
+    until (ram[reg_ep^] = ub4.maxcell)
+       or (ram[reg_ep^] in [low(ub4.opcodes)..high(ub4.opcodes)]);
+    result := reg_ep^;
   end;
 
 var ch: ansichar; pause: boolean = false;
@@ -121,33 +121,33 @@ begin
   open('disk.b4'); boot; clrscr;
   assign(input, 'bios.b4a');
   reset(input); b4as;
-  if paramstr(1)='-d' then ram[dbgf] := 1;
-  while ram[ip] <= maxheap do begin
-    if ram[ip] = ram[stop] then begin ram[dbgf]:=1; ram[stop] := high(ub4.address) end;
-    if ram[dbgf]=1 then begin
-      if not pause then ram[ep] := ram[ip];
+  if paramstr(1)='-d' then reg_db^ := 1;
+  while reg_ip^ <= maxheap do begin
+    if reg_ip^ = reg_bp^ then begin reg_db^:=1; reg_bp^ := high(ub4.address) end;
+    if reg_db^=1 then begin
+      if not pause then reg_ep^ := reg_ip^;
       pause := true;
       dump;
       ch := readkey;
       case upcase(ch) of
-        ^N : inc(ram[ep],8);
-        ^P : if ram[ep] >= 8 then dec(ram[ep],8);
-        ^F : inc(ram[ep]);
-        ^B : dec(ram[ep]);
-        ^V : inc(ram[ep], pgsz);
-        'I': ram[ep] := ram[ip];
+        ^N : inc(reg_ep^,8);
+        ^P : if reg_ep^ >= 8 then dec(reg_ep^,8);
+        ^F : inc(reg_ep^);
+        ^B : dec(reg_ep^);
+        ^V : inc(reg_ep^, pgsz);
+        'I': reg_ep^ := reg_ip^;
         'S': pause := false;
-        'C': begin pause := false; ram[stop] := ram[ep] end;
-        'O': begin pause := false; ram[dbgf]:=0; ram[stop] := step_over_addr end;
-        'R': ram[dbgf] := 0;
+        'C': begin pause := false; reg_bp^ := reg_ep^ end;
+        'O': begin pause := false; reg_db^:=0; reg_bp^ := step_over_addr end;
+        'R': reg_db^ := 0;
         'Q': halt;
-        '0': ram[ep] := 0;
+        '0': reg_ep^ := 0;
         'D': dump_dict;
       end;
-      if ram[ep] < 0 then ram[ep] := maxcell;
-      if ram[ep] > maxcell then ram[ep] := 0;
+      if reg_ep^ < 0 then reg_ep^ := maxcell;
+      if reg_ep^ > maxcell then reg_ep^ := 0;
     end; { if ram[debug] }
-    if not (pause and (ram[dbgf]=1)) then step;
+    if not (pause and (reg_db^=1)) then step;
   end; { while }
   close(disk);
   {$IFDEF pauseafter} { for turbo pascal }
