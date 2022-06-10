@@ -102,12 +102,12 @@ procedure b4as;
               else begin
                 dict[ents].id := tok.str; dict[ents].adr := here; inc(ents) end;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
-        adr : emit(find_addr(tok.str));
+        adr : emitv(find_addr(tok.str));
         _wh : dput(here); {(- wh)}
         _do : begin {(- do)} emit(b4opc('j0')); dput(here); emitv(0); end;
         _od : begin { compile time: (wh do -)}
                 { first, an unconditional jump back to the _do }
-                emit(b4opc('jm')); swap; emit(dpop);
+                emit(b4opc('jm')); swap; emitv(dpop);
                 { now go back to the guard and compile the forward jump }
                 wrval(dpop, here); end;
         _if : ; { 'if' does nothing. just syntactic sugar. }

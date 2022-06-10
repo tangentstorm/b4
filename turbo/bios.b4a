@@ -1,7 +1,7 @@
 [ si 00 |                          # jump over bios
 #--- begin bios -------------------\
 # names for some important registers
-:here^ 00000000 04 'h 'e 'r 'e
+:here^ 00 00 00 00 04 'h 'e 'r 'e
 :here  si 12 rt
 
 :last^ $here^ 04 'l 'a 's 't
@@ -52,24 +52,23 @@
   nx $for
   zp rt
 
-:words^ $puts^ 05 'w 'o 'r 'd 's
-:words                             # list known words, starting at last entry:
-  last rm
-  { du si 0 ne |                   # we are looking at a non-0 pointer to entry
-    du si 1 ad
-    puts sp                        # emit str
-    rm }                           # move to next entry
-  zp rt
-
-
-:e-nm^ $words^ 04 'e '- 'n 'm
-:e-nm si 1 ad rt                   # (e-s) address of string for enttry
+:e-nm^ $puts^ 04 'e '- 'n 'm
+:e-nm si 4 ad rt                   # (e-s) address of name relative to entry
 
 :e-xt^ $e-nm^ 04 'e '- 'x 't
 :e-xt e-nm du rm ad rt             # (e-a) address of code for entry "execution token"
 
+:words^ $e-nm^ 05 'w 'o 'r 'd 's
+:words                             # list known words, starting at last entry:
+  last rv
+  { du si 0 ne |                   # we are looking at a non-0 pointer to entry
+    du e-nm
+    puts sp                        # emit str
+    rv }                           # move to next entry
+  zp rt
+
 :dyn-call cl :dyn-adr 00 00 00 00 rt
-:exec^ $e-xt^ 04 'e 'x 'e 'c
+:exec^ $words^ 04 'e 'x 'e 'c
 :exec
   e-xt
   li $dyn-adr wv
@@ -92,12 +91,12 @@
 :word?^ $s-eq^ 05 'w 'o 'r 'd '?
 :word?                             # (s-e)   attempt to find word in dictionary
   dr                               # s - |s  push s to return stack
-  last rm                          # ..-e|s  fetch last entry
+  last rv                          # ..-e|s  fetch last entry
   { du si 0 ne |                   # while e!=0 do:
     du e-nm                        #  ..- et|s     fetch the entry's name (t)
     rd du dr                       #  ..- ets|s
     [ s-eq? | rd zp rt ]           # return e if strings match
-    rm }                           # otherwise, visit next string
+    rv }                           # otherwise, visit next string
   rd zp rt                         # (e|s - e)
 
    # instead of 'rd du dr'
@@ -110,8 +109,8 @@
 :word?-s li $word? e-nm rt        # (-s) address of the string "word?"
 
 :init
-  li $buf ap wm                    # set ap = buf
-  li $word?^ last  wm
+  li $buf ap wv                    # set ap = buf
+  li $word?^ last  wv
   rt
 
 :unkno-s 13 'u 'n 'k 'n 'o 'w 'n 32 'w 'o 'r 'd '.
