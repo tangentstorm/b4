@@ -250,70 +250,69 @@ function step : value;
   begin
     case ram[reg_ip^] of
       { Do not reformat this function! mkoptbl.pas uses it! }
-      $80 : {ok  } ; { no-op }
-      $81 : {si  } begin inc(reg_ip^); dput(ram[reg_ip^]) end;
-      $82 : {li  } begin inc(reg_ip^); dput(ram[reg_ip^]) end; { todo: long int }
-      $83 : {sw  } swap;
-      $84 : {du  } dput(tos);
-      $85 : {ov  } dput(nos);
-      $86 : {zp  } zap(dpop);
-      $87 : {dr  } rput(dpop);
-      $88 : {rd  } dput(rpop);
-      $89 : {ad  } dput(dpop  + dpop);
-      $8A : {sb  } dput(-dpop + dpop);
-      $8B : {ml  } dput(dpop * dpop);
-      $8C : {dv  } dput(dpop div dpop);
-      $8D : {md  } dput(dpop mod dpop);
-      $8E : {ng  } dput(-dpop);
-      $8F : {sl  } begin swap; dput(dpop shl dpop) end;
-      $90 : {sr  } begin swap; dput(dpop shr dpop) end;
-      $91 : {an  } dput(dpop and dpop);
-      $92 : {or  } dput(dpop or dpop);
-      $93 : {xr  } dput(dpop xor dpop);
-      $94 : {nt  } dput(dpop xor dpop);
-      $95 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
-      $96 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
-      $97 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
-      $98 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
-      $99 : {ge  } if dpop >= dpop then dput(-1) else dput(0);
-      $9A : {le  } if dpop <= dpop then dput(-1) else dput(0);
-      $9B : {dx  } todo('dx');
-      $9C : {dy  } todo('dy');
-      $9D : {dz  } todo('dz');
-      $9E : {dc  } todo('dc');
-      $9F : {xd  } todo('xd');
-      $A0 : {yd  } todo('yd');
-      $A1 : {zd  } todo('zd');
-      $A2 : {cd  } todo('cd');
-      $A3 : {hl  } halt;
-      $A4 : {jm  } reg_ip^ := ram[reg_ip^+1]-1;
-      $A5 : {j0  } if dpop = 0 then begin reg_ip^ := ram[reg_ip^+1]-1 end
+      $80 : {si  } begin inc(reg_ip^); dput(ram[reg_ip^]) end;
+      $81 : {li  } begin inc(reg_ip^); dput(ram[reg_ip^]) end; { todo: long int }
+      $82 : {sw  } swap;
+      $83 : {du  } dput(tos);
+      $84 : {ov  } dput(nos);
+      $85 : {zp  } zap(dpop);
+      $86 : {dr  } rput(dpop);
+      $87 : {rd  } dput(rpop);
+      $88 : {ad  } dput(dpop  + dpop);
+      $89 : {sb  } dput(-dpop + dpop);
+      $8A : {ml  } dput(dpop * dpop);
+      $8B : {dv  } dput(dpop div dpop);
+      $8C : {md  } dput(dpop mod dpop);
+      $8D : {ng  } dput(-dpop);
+      $8E : {sl  } begin swap; dput(dpop shl dpop) end;
+      $8F : {sr  } begin swap; dput(dpop shr dpop) end;
+      $90 : {an  } dput(dpop and dpop);
+      $91 : {or  } dput(dpop or dpop);
+      $92 : {xr  } dput(dpop xor dpop);
+      $93 : {nt  } dput(dpop xor dpop);
+      $94 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
+      $95 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
+      $96 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
+      $97 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
+      $98 : {ge  } if dpop >= dpop then dput(-1) else dput(0);
+      $99 : {le  } if dpop <= dpop then dput(-1) else dput(0);
+      $9A : {dx  } todo('dx');
+      $9B : {dy  } todo('dy');
+      $9C : {dz  } todo('dz');
+      $9D : {dc  } todo('dc');
+      $9E : {xd  } todo('xd');
+      $9F : {yd  } todo('yd');
+      $A0 : {zd  } todo('zd');
+      $A1 : {cd  } todo('cd');
+      $A2 : {hl  } halt;
+      $A3 : {jm  } reg_ip^ := ram[reg_ip^+1]-1;
+      $A4 : {j0  } if dpop = 0 then begin reg_ip^ := ram[reg_ip^+1]-1 end
                    else inc(reg_ip^) { skip over the address };
-      $A6 : {hp  } todo('hp'); { hop }
-      $A7 : {h0  } todo('h0'); { hop if 0 }
-      $A8 : {h1  } todo('h1'); { hop if 1 }
-      $A9 : {nx  } begin if tor > 0 then ram[reg_rp^]:=tor-1;
+      $A5 : {hp  } todo('hp'); { hop }
+      $A6 : {h0  } todo('h0'); { hop if 0 }
+      $A7 : {h1  } todo('h1'); { hop if 1 }
+      $A8 : {nx  } begin if tor > 0 then ram[reg_rp^]:=tor-1;
                      if tor = 0 then begin zap(rpop); inc(reg_ip^) end
                      else reg_ip^:=ram[reg_ip^+1]-1; end;
-      $AA : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
-      $AB : {rt  } reg_ip^ := rpop-1;
-      $AC : {r0  } if tos = 0 then begin zap(dpop); reg_ip^ := rpop end;
-      $AD : {r1  } if tos<> 0 then begin zap(dpop); reg_ip^ := rpop end;
-      $AE : {ev  } todo('ev'); { eval - like call, but address comes from stack }
-      $AF : {rm  } dput(ram[dpop]);    { read memory }
-      $B0 : {wm  } ram[dpop] := dpop;  { write memory }
-      $B1 : {tg  } begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
-      $B2 : {ta  } kvm.textattr := dpop;
-      $B3 : {tw  } if tos in [$00..$ff] then write(chr(dpop)) else write('[',dpop,']');
-      $B4 : {tr  } getc;
-      $B5 : {tk  } if keypressed then dput(-1) else dput(0);
-      $B6 : {ts  } kvm.clrscr;
-      $B7 : {tl  } kvm.clreol;
-      $B8 : {tc  } begin dput(kvm.wherex); dput(kvm.wherey) end;
-      $B9 : {db  } reg_db^ := 1;
-      $BA : {rv  } dput(rdval(dpop));
-      $BB : {wv  } begin t := dpop; wrval(t, dpop); end;
-      { reserved: } $BC..$BF : begin end;
+      $A9 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
+      $AA : {rt  } reg_ip^ := rpop-1;
+      $AB : {r0  } if tos = 0 then begin zap(dpop); reg_ip^ := rpop end;
+      $AC : {r1  } if tos<> 0 then begin zap(dpop); reg_ip^ := rpop end;
+      $AD : {ev  } todo('ev'); { eval - like call, but address comes from stack }
+      $AE : {rm  } dput(ram[dpop]);    { read memory }
+      $AF : {wm  } ram[dpop] := dpop;  { write memory }
+      $B0 : {tg  } begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
+      $B1 : {ta  } kvm.textattr := dpop;
+      $B2 : {tw  } if tos in [$00..$ff] then write(chr(dpop)) else write('[',dpop,']');
+      $B3 : {tr  } getc;
+      $B4 : {tk  } if keypressed then dput(-1) else dput(0);
+      $B5 : {ts  } kvm.clrscr;
+      $B6 : {tl  } kvm.clreol;
+      $B7 : {tc  } begin dput(kvm.wherex); dput(kvm.wherey) end;
+      $B8 : {db  } reg_db^ := 1;
+      $B9 : {rv  } dput(rdval(dpop));
+      $BA : {wv  } begin t := dpop; wrval(t, dpop); end;
+      { reserved: } $BB..$BF : begin end;
       else { no-op };
     end;
     inc(reg_ip^);
