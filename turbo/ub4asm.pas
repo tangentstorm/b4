@@ -104,14 +104,14 @@ procedure b4as;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
         adr : emit(find_addr(tok.str));
         _wh : dput(here); {(- wh)}
-        _do : begin {(- do)} emit(b4opc('j0')); emit(0); dput(here-1) end;
+        _do : begin {(- do)} emit(b4opc('j0')); dput(here); emitv(0); end;
         _od : begin { compile time: (wh do -)}
                 { first, an unconditional jump back to the _do }
                 emit(b4opc('jm')); swap; emit(dpop);
                 { now go back to the guard and compile the forward jump }
-                ram[dpop] := here; end;
+                wrval(dpop, here); end;
         _if : ; { 'if' does nothing. just syntactic sugar. }
-        _fi : {(do-)} ram[dpop] := here; { jump to 'end' when 'if' test fails }
+        _fi : {(do-)} wrval(dpop, here); { jump to 'end' when 'if' test fails }
       end end;
   begin
     clear_dict; err := 0; ents := 0; here := reg_hp^; read(ch);

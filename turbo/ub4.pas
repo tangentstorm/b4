@@ -290,7 +290,7 @@ function step : value;
       $A1 : {cd  } todo('cd');
       $A2 : {hl  } halt;
       $A3 : {jm  } reg_ip^ := mget(reg_ip^+1)-1;
-      $A4 : {j0  } if dpop = 0 then begin reg_ip^ := mget(reg_ip^+1)-1 end
+      $A4 : {j0  } if dpop = 0 then begin reg_ip^ := rdval(reg_ip^+1)-1 end
                    else inc(reg_ip^) { skip over the address };
       $A5 : {hp  } todo('hp'); { hop }
       $A6 : {h0  } todo('h0'); { hop if 0 }
