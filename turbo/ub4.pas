@@ -235,6 +235,10 @@ function mget(a:address):value;
   begin result := ram[a]
   end;
 
+function bget(a:address):byte;
+  begin result := byte(ram[a])
+  end;
+
 procedure mset(a:address; v:value);
   begin ram[a] := v
   end;
@@ -245,13 +249,13 @@ function dpon:value;
 
 
 function step : value;
-  var t : value;
+  var t,x,y : value;
   { execute next instruction, then increment and return the IP }
   begin
     case ram[reg_ip^] of
       { Do not reformat this function! mkoptbl.pas uses it! }
-      $80 : {si  } begin inc(reg_ip^); dput(ram[reg_ip^]) end;
-      $81 : {li  } begin inc(reg_ip^); dput(ram[reg_ip^]) end; { todo: long int }
+      $80 : {si  } begin inc(reg_ip^); dput(bget(reg_ip^)) end;
+      $81 : {li  } begin inc(reg_ip^); dput(mget(reg_ip^)) end; { todo: long int }
       $82 : {sw  } swap;
       $83 : {du  } dput(tos);
       $84 : {ov  } dput(nos);
@@ -285,22 +289,22 @@ function step : value;
       $A0 : {zd  } todo('zd');
       $A1 : {cd  } todo('cd');
       $A2 : {hl  } halt;
-      $A3 : {jm  } reg_ip^ := ram[reg_ip^+1]-1;
-      $A4 : {j0  } if dpop = 0 then begin reg_ip^ := ram[reg_ip^+1]-1 end
+      $A3 : {jm  } reg_ip^ := mget(reg_ip^+1)-1;
+      $A4 : {j0  } if dpop = 0 then begin reg_ip^ := mget(reg_ip^+1)-1 end
                    else inc(reg_ip^) { skip over the address };
       $A5 : {hp  } todo('hp'); { hop }
       $A6 : {h0  } todo('h0'); { hop if 0 }
       $A7 : {h1  } todo('h1'); { hop if 1 }
-      $A8 : {nx  } begin if tor > 0 then ram[reg_rp^]:=tor-1;
+      $A8 : {nx  } begin if tor > 0 then mset(reg_rp^, tor-1);
                      if tor = 0 then begin zap(rpop); inc(reg_ip^) end
-                     else reg_ip^:=ram[reg_ip^+1]-1; end;
+                     else reg_ip^:=mget(reg_ip^+1)-1; end;
       $A9 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
       $AA : {rt  } reg_ip^ := rpop-1;
       $AB : {r0  } if tos = 0 then begin zap(dpop); reg_ip^ := rpop end;
       $AC : {r1  } if tos<> 0 then begin zap(dpop); reg_ip^ := rpop end;
       $AD : {ev  } todo('ev'); { eval - like call, but address comes from stack }
-      $AE : {rm  } dput(ram[dpop]);    { read memory }
-      $AF : {wm  } ram[dpop] := dpop;  { write memory }
+      $AE : {rm  } dput(ram[dpop]);    { read byte }
+      $AF : {wm  } begin t:= dpop; ram[t]:= dpop; end;  { write byte  }
       $B0 : {tg  } begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
       $B1 : {ta  } kvm.textattr := dpop;
       $B2 : {tw  } if tos in [$00..$ff] then write(chr(dpop)) else write('[',dpop,']');
