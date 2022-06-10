@@ -1,35 +1,35 @@
 
 * opcode mnemonics
 
-** stack ops: si li sw du ov zp dr rd
+** stack ops: lb li sw du ov zp dr rd
 ** math ops: ad sb ml dv md ng sl sr
 ** logic ops: an or xr nt
 ** comparison ops: eq ne gt lt ge le
 ** register ops: dx xd dy yd dz zd dc cd
-** control flow ops: hl jm hp h0 h1 cl rt r0 r1 ev
-** memory ops: rm wm yr zw wp rp qp
+** control flow ops: hl jm hp h0 cl rt r0 nx ev
+** memory ops: rb wb ri wi yr zw wp rp qp
 ** dictionary ops: bw go
 
 * what individual letters mean
 
 a: add(ad) and(an)
-b: begin(bw)
+b: byte(lb,rb,wb) begin(bw)
 c: call(cl) char(dc,cd)
 d: dupe(du) data(dr,rd,dx,xd,dy,yd,dz,zd,dc,cd) divide(dv)
 e: equal(eq,ne,ge,le) eval(ev)
 g: greater(gt,ge) go(go)
 h: halt(hl) hop(hp,h0,h1)
-i: int(si,li)
+i: int(li,ri,wi)
 j: jump(jm,j0)
-l: long(li) left(sl) less(lt,le)
-m: multiply(ml) modulo(md) memory(rm,wm)
-n: negate(ng) not(nt,ne)
+l: load(lb,li) left(sl) less(lt,le)
+m: multiply(ml) modulo(md)
+n: negate(ng) not(nt,ne) next(nx)
 o: over(ov) or(or)
 p: port(rp,wp,qp)
 q: query(qp)
-s: short(si) swap(sw) subtract(sb) shift(sl,sr)
-r: return(dr,rd,rt,r0,r1) right(sr) read(rm,ry)
-w: write(wm,zw) word(bw)
+r: return(dr,rd,rt,r0,r1) right(sr) read(ri,rb)
+s: swap(sw) subtract(sb) shift(sl,sr)
+w: write(wb,wi,zw) word(bw)
 x: xor(xr) x-register(xd,dx)
 y: y-register(yr)
 z: zap(zp) z-register(zw)
