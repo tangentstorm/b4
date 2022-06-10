@@ -15,12 +15,12 @@
 :dec^ $inc^ 03 'd 'e 'c
 :dec  si 01 sb rt
 
-:a+ ap rm du dr wm                 # a+ ( n - ) , writes a value to the
-    rd inc ap wm rt                #    address in ap and increments ap.
+:a+ ap rv du dr wm                 # a+ ( n - ) , writes a value to the
+    rd inc ap wv rt                #    address in ap and increments ap.
 
 :,^ $dec^ 01 ',
-:, here rm du dr wm
-    rd inc here wm rt              # , is exact same thing for the heap
+:, here rv du dr wm
+    rd inc here wv rt              # , is exact same thing for the heap
 
 :buf-len 00                        # length of the buffer
 :buf                               # 64-character input buffer
@@ -106,7 +106,7 @@
 
 # :words-s li $words^ si 1 ad rt   # (-s) address of the string "words"
 :words-s li $words^ e-nm rt        # (-s) address of the string "words"
-:word?-s li $word? e-nm rt        # (-s) address of the string "word?"
+:word?-s li $word? e-nm rt         # (-s) address of the string "word?"
 
 :init
   li $buf ap wv                    # set ap = buf
@@ -116,7 +116,6 @@
 :unkno-s 13 'u 'n 'k 'n 'o 'w 'n 32 'w 'o 'r 'd '.
 :unknown
  si 08 ta sp li $unkno-s puts nl rt
- # word?-s puts nl rt
 
 :eol 01                            # end of line flag
 :repl { si 01 |
@@ -126,9 +125,9 @@
   [ du si '` eq | db ]             # ` = debugger
   [ du si 32 eq | tw si 0          # on space,  (echo space and add dummy char)
     si 01 li $eol wm               #    set the eol flag
-    ap rm li $buf sb               #    calculate length: start of buffer
+    ap rv li $buf sb               #    calculate length: start of buffer
     li $buf-len sw ov wm           #    save the lenegth
-    li $buf ap wm                  #    reset ap to start of buffer
+    li $buf ap wv                  #    reset ap to start of buffer
     word?                          #    look up the word
     [ du si 0 eq | zp unknown ]    #    if not found, complain
     [ du si 0 ne | exec ] ]        #    if found, execute   (# TODO: 'else' !!)
