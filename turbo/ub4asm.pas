@@ -90,7 +90,7 @@ procedure b4as;
       inc(op) end;
       if not found then unknown(tok.str) end;
   procedure compile;
-    var op,i : byte; v : value;
+    var op : byte; v : value;
     begin
       case tok.tag of
         wsp, cmt : ok; { do nothing }

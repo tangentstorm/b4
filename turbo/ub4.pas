@@ -249,7 +249,7 @@ function dpon:value;
 
 
 function step : value;
-  var t,x,y : value;
+  var t : value;
   { execute next instruction, then increment and return the IP }
   begin
     case ram[reg_ip^] of

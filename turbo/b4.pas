@@ -6,7 +6,7 @@ uses xpc, ub4, ub4asm, ub4ops, kvm, kbd,
 
 const pgsz = 8 * 8; { should be multiple of 8 to come out even }
 
-var opli, opsi, opjm, opj0, opcl : value;
+var opli, oplb, opjm, opj0, opcl : value;
 
 procedure draw_stack(x,y : byte; id:char; minaddr,maxaddr:value);
   var i : value;
@@ -78,7 +78,7 @@ procedure dump;
       { opcodes }
       else if ram[i] in [$80 .. $BF] then
         begin
-          if ram[i] in [opli,opsi] then literal := true;
+          if ram[i] in [opli,oplb] then literal := true;
           if ram[i] in [opjm,opj0,opcl] then target := true;
           if (ram[i] = opli) or ((ram[i] in [opcl]) and (rdval(i+1) < high(address))) then
             begin
@@ -117,7 +117,8 @@ function step_over_addr: ub4.address;
 
 var ch: ansichar; pause: boolean = false;
 begin
-  opli := b4opc('li');  opjm := b4opc('jm'); opj0 := b4opc('j0'); opcl := b4opc('cl');
+  opli := b4opc('li');  oplb := b4opc('lb');
+  opjm := b4opc('jm'); opj0 := b4opc('j0'); opcl := b4opc('cl');
   open('disk.b4'); boot; clrscr;
   assign(input, 'bios.b4a');
   reset(input); b4as;
