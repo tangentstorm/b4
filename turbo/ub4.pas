@@ -254,7 +254,7 @@ function step : value;
   begin
     case ram[reg_ip^] of
       { Do not reformat this function! mkoptbl.pas uses it! }
-      $80 : {si  } begin dput(bget(reg_ip^+1)); inc(reg_ip^) end;
+      $80 : {lb  } begin dput(bget(reg_ip^+1)); inc(reg_ip^) end;
       $81 : {li  } begin dput(rdval(reg_ip^+1)); inc(reg_ip^,3) end;
       $82 : {sw  } swap;
       $83 : {du  } dput(tos);
@@ -275,36 +275,36 @@ function step : value;
       $92 : {xr  } dput(dpop xor dpop);
       $93 : {nt  } dput(dpop xor dpop);
       $94 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
-      $95 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
-      $96 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
-      $97 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
+      $95 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
+      $96 : {gt  } if dpop >  dpop then dput(-1) else dput(0);
+      $97 : {lt  } if dpop <  dpop then dput(-1) else dput(0);
       $98 : {ge  } if dpop >= dpop then dput(-1) else dput(0);
       $99 : {le  } if dpop <= dpop then dput(-1) else dput(0);
       $9A : {dx  } todo('dx');
-      $9B : {dy  } todo('dy');
-      $9C : {dz  } todo('dz');
-      $9D : {dc  } todo('dc');
-      $9E : {xd  } todo('xd');
-      $9F : {yd  } todo('yd');
-      $A0 : {zd  } todo('zd');
+      $9B : {xd  } todo('xd');
+      $9C : {dy  } todo('dy');
+      $9D : {yd  } todo('yd');
+      $9E : {dz  } todo('dz');
+      $9F : {zd  } todo('zd');
+      $A0 : {dc  } todo('dc');
       $A1 : {cd  } todo('cd');
       $A2 : {hl  } halt;
       $A3 : {jm  } reg_ip^ := rdval(reg_ip^+1)-1;
-      $A4 : {j0  } if dpop = 0 then begin reg_ip^ := rdval(reg_ip^+1)-1 end
+      $A4 : {hp  } todo('hp'); { hop }
+      $A5 : {j0  } if dpop = 0 then begin reg_ip^ := rdval(reg_ip^+1)-1 end
                    else inc(reg_ip^) { skip over the address };
-      $A5 : {hp  } todo('hp'); { hop }
       $A6 : {h0  } todo('h0'); { hop if 0 }
-      $A7 : {h1  } todo('h1'); { hop if 1 }
-      $A8 : {nx  } begin if tor > 0 then mset(reg_rp^, tor-1);
+      $A7 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
+      $A8 : {rt  } reg_ip^ := rpop-1;
+      $A9 : {r0  } if tos = 0 then begin zap(dpop); reg_ip^ := rpop end;
+      $AA : {nx  } begin if tor > 0 then mset(reg_rp^, tor-1);
                      if tor = 0 then begin zap(rpop); inc(reg_ip^,3) end
                      else reg_ip^:=rdval(reg_ip^+1)-1; end;
-      $A9 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
-      $AA : {rt  } reg_ip^ := rpop-1;
-      $AB : {r0  } if tos = 0 then begin zap(dpop); reg_ip^ := rpop end;
-      $AC : {r1  } if tos<> 0 then begin zap(dpop); reg_ip^ := rpop end;
-      $AD : {ev  } todo('ev'); { eval - like call, but address comes from stack }
-      $AE : {rm  } dput(ram[dpop]);    { read byte }
-      $AF : {wm  } begin t:= dpop; ram[t]:= dpop; end;  { write byte  }
+      $AB : {ev  } todo('ev'); { eval - like call, but address comes from stack }
+      $AC : {rb  } dput(ram[dpop]);    { read byte }
+      $AD : {wb  } begin t:= dpop; ram[t]:= dpop; end;  { write byte  }
+      $AE : {ri  } dput(rdval(dpop));
+      $AF : {wi  } begin t := dpop; wrval(t, dpop); end;
       $B0 : {tg  } begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
       $B1 : {ta  } kvm.textattr := dpop;
       $B2 : {tw  } if tos in [$00..$ff] then write(chr(dpop)) else write('[',dpop,']');
@@ -314,9 +314,7 @@ function step : value;
       $B6 : {tl  } kvm.clreol;
       $B7 : {tc  } begin dput(kvm.wherex); dput(kvm.wherey) end;
       $B8 : {db  } reg_db^ := 1;
-      $B9 : {rv  } dput(rdval(dpop));
-      $BA : {wv  } begin t := dpop; wrval(t, dpop); end;
-      { reserved: } $BB..$BF : begin end;
+      { reserved: } $B9..$BF : begin end;
       else { no-op };
     end;
     inc(reg_ip^);

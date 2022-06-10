@@ -1,26 +1,26 @@
-[ si 00 |                          # jump over bios
+[ lb 00 |                          # jump over bios
 #--- begin bios -------------------\
 # names for some important registers
 :here^ 00 00 00 00 04 'h 'e 'r 'e
-:here  si 12 rt
+:here  lb 12 rt
 
 :last^ $here^ 04 'l 'a 's 't
-:last  si 16 rt
+:last  lb 16 rt
 
-:ap   si 20 rt
+:ap   lb 20 rt
 
 :inc^ $last^ 03 'i 'n 'c
-:inc  si 01 ad rt
+:inc  lb 01 ad rt
 
 :dec^ $inc^ 03 'd 'e 'c
-:dec  si 01 sb rt
+:dec  lb 01 sb rt
 
-:a+ ap rv du dr wm                 # a+ ( n - ) , writes a value to the
-    rd inc ap wv rt                #    address in ap and increments ap.
+:a+ ap ri du dr wb                 # a+ ( n - ) , writes a value to the
+    rd inc ap wi rt                #    address in ap and increments ap.
 
 :,^ $dec^ 01 ',
-:, here rv du dr wm
-    rd inc here wv rt              # , is exact same thing for the heap
+:, here ri du dr wb
+    rd inc here wi rt              # , is exact same thing for the heap
 
 :buf-len 00                        # length of the buffer
 :buf                               # 64-character input buffer
@@ -29,49 +29,49 @@
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
-:sp si 32 tw rt                    # emit space
-:nl si 10 tw si 13 tw rt           # emit CRLF
+:sp lb 32 tw rt                    # emit space
+:nl lb 10 tw lb 13 tw rt           # emit CRLF
 
 :bye^ $,^ 03 'b 'y 'e
-:exit nl si 01 ta                  # red
-  si 'e tw si 'n tw si 'd tw       # echo 'end'
+:exit nl lb 01 ta                  # red
+  lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
   nl hl
 
 :b4>
-  nl si 02 ta                      # green on black
-  si 'b tw si '4 tw si '> tw       # echo 'b4>'
-  si 32 tw si 07 ta                # gray on black for user input.
+  nl lb 02 ta                      # green on black
+  lb 'b tw lb '4 tw lb '> tw       # echo 'b4>'
+  lb 32 tw lb 07 ta                # gray on black for user input.
   rt
 
 :puts^ $bye^ 04 'p 'u 't 's
 :puts                              # given address of counted string, write the string
-  du rm dr inc                     # push str start to d, len to r (loop counter)
+  du rb dr inc                     # push str start to d, len to r (loop counter)
   :for
-    du rm tw
+    du rb tw
     inc
   nx $for
   zp rt
 
 :e-nm^ $puts^ 04 'e '- 'n 'm
-:e-nm si 4 ad rt                   # (e-s) address of name relative to entry
+:e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
 
 :e-xt^ $e-nm^ 04 'e '- 'x 't
-:e-xt e-nm du rm ad rt             # (e-a) address of code for entry "execution token"
+:e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
 
 :words^ $e-nm^ 05 'w 'o 'r 'd 's
 :words                             # list known words, starting at last entry:
-  last rv
-  { du si 0 ne |                   # we are looking at a non-0 pointer to entry
+  last ri
+  { du lb 0 ne |                   # we are looking at a non-0 pointer to entry
     du e-nm
     puts sp                        # emit str
-    rv }                           # move to next entry
+    ri }                           # move to next entry
   zp rt
 
 :dyn-call cl :dyn-adr 00 00 00 00 rt
 :exec^ $words^ 04 'e 'x 'e 'c
 :exec
   e-xt
-  li $dyn-adr wv
+  li $dyn-adr wi
   dyn-call
   rt
 
@@ -79,24 +79,24 @@
 :s-eq^ $exec^ 04 's '- 'e 'q
 :s-eq?                             # (st-?) are strings s and t the same?
   [ ov ov eq | eq rt ]             # a. if the addresses are the same, return 1
-  [ ov rm du dr ov rm ne |         # b. (st-st?|n) if the lengths are different,
+  [ ov rb du dr ov rb ne |         # b. (st-st?|n) if the lengths are different,
     rd zp eq rt ]                  #   drop loop counter and return 0 (we know eq=0 from a.)
   :for-s-eq                        # st|n   -> ready for a for -loop
     inc sw inc                     # st-TS  -> next char (doesn't matter that we swap order)
-    [ ov rm ov rm ne |                   # if the characters are not equal
+    [ ov rb ov rb ne |                   # if the characters are not equal
       rd zp eq rt ]                #   drop counter and return 0 (same as in b. before)
   nx $for-s-eq
-  zp zp si 1 rt                    # everything matched, so return 1
+  zp zp lb 1 rt                    # everything matched, so return 1
 
 :word?^ $s-eq^ 05 'w 'o 'r 'd '?
 :word?                             # (s-e)   attempt to find word in dictionary
   dr                               # s - |s  push s to return stack
-  last rv                          # ..-e|s  fetch last entry
-  { du si 0 ne |                   # while e!=0 do:
+  last ri                          # ..-e|s  fetch last entry
+  { du lb 0 ne |                   # while e!=0 do:
     du e-nm                        #  ..- et|s     fetch the entry's name (t)
     rd du dr                       #  ..- ets|s
     [ s-eq? | rd zp rt ]           # return e if strings match
-    rv }                           # otherwise, visit next string
+    ri }                           # otherwise, visit next string
   rd zp rt                         # (e|s - e)
 
    # instead of 'rd du dr'
@@ -104,35 +104,35 @@
    # !! might be nice to have macros for inlining this
 
 
-# :words-s li $words^ si 1 ad rt   # (-s) address of the string "words"
+# :words-s li $words^ lb 1 ad rt   # (-s) address of the string "words"
 :words-s li $words^ e-nm rt        # (-s) address of the string "words"
 :word?-s li $word? e-nm rt         # (-s) address of the string "word?"
 
 :init
-  li $buf ap wv                    # set ap = buf
-  li $word?^ last  wv
+  li $buf ap wi                    # set ap = buf
+  li $word?^ last  wi
   rt
 
 :unkno-s 13 'u 'n 'k 'n 'o 'w 'n 32 'w 'o 'r 'd '.
 :unknown
- si 08 ta sp li $unkno-s puts nl rt
+ lb 08 ta sp li $unkno-s puts nl rt
 
 :eol 01                            # end of line flag
-:repl { si 01 |
-  [ li $eol rm |                   # if end of line flag
-    si 00 li $eol wm b4> ]         # show prompt if new line
+:repl { lb 01 |
+  [ li $eol rb |                   # if end of line flag
+    lb 00 li $eol wb b4> ]         # show prompt if new line
   tr                               # read char from terminal
-  [ du si '` eq | db ]             # ` = debugger
-  [ du si 32 eq | tw si 0          # on space,  (echo space and add dummy char)
-    si 01 li $eol wm               #    set the eol flag
-    ap rv li $buf sb               #    calculate length: start of buffer
-    li $buf-len sw ov wm           #    save the lenegth
-    li $buf ap wv                  #    reset ap to start of buffer
+  [ du lb '` eq | db ]             # ` = debugger
+  [ du lb 32 eq | tw lb 0          # on space,  (echo space and add dummy char)
+    lb 01 li $eol wb               #    set the eol flag
+    ap ri li $buf sb               #    calculate length: start of buffer
+    li $buf-len sw ov wb           #    save the lenegth
+    li $buf ap wi                  #    reset ap to start of buffer
     word?                          #    look up the word
-    [ du si 0 eq | zp unknown ]    #    if not found, complain
-    [ du si 0 ne | exec ] ]        #    if found, execute   (# TODO: 'else' !!)
-  [ du si 31 lt | du du a+ tw ]    # copy non-ctrl chars to buffer and echo
-  [ du si 04 eq | exit ]           # on ^d, exit
+    [ du lb 0 eq | zp unknown ]    #    if not found, complain
+    [ du lb 0 ne | exec ] ]        #    if found, execute   (# TODO: 'else' !!)
+  [ du lb 31 lt | du du a+ tw ]    # copy non-ctrl chars to buffer and echo
+  [ du lb 04 eq | exit ]           # on ^d, exit
   zp }                             # drop the character
 
 # this should never execute, so trigger debugger if we get here:
@@ -140,14 +140,14 @@ db ]
 #--- end of bios ------------------/
 
 # -- debug /test stuff --
-# [ si 0 | :word-a 03 'a 'b 'c :word-b 03 'a 'b 'c ]
+# [ lb 0 | :word-a 03 'a 'b 'c :word-b 03 'a 'b 'c ]
 # li $word-a li $word-b s-eq?
 # word?-s words-s s-eq? db   (s-eq working)
 # words-s word? db           ( word? seems to be working)
-# si 16 { dec du | du ta si '. tw } zp nl # draw colors
+# lb 16 { dec du | du ta lb '. tw } zp nl # draw colors
 
 # -- main --
 init
 # show the word list:
-si 14 ta words-s puts si ': tw sp si 07 ta words nl
+lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
 repl
