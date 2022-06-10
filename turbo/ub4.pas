@@ -231,6 +231,18 @@ procedure wrval(adr: address; v:value);
     for i:= 0 to 3 do begin ram[adr] := byte(v shr (8*i)); inc(adr); end
   end;
 
+function mget(a:address):value;
+  begin result := ram[a]
+  end;
+
+procedure mset(a:address; v:value);
+  begin ram[a] := v
+  end;
+
+function dpon:value;
+  begin swap; result:=dpop
+  end;
+
 
 function step : value;
   var t : value;
