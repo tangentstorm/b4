@@ -107,7 +107,7 @@ procedure b4as;
         _do : begin {(- do)} emit(b4opc('j0')); dput(here); emitv(0); end;
         _od : begin { compile time: (wh do -)}
                 { first, an unconditional jump back to the _do }
-                emit(b4opc('jm')); swap; emitv(dpop);
+                emit(b4opc('jm')); dswp; emitv(dpop);
                 { now go back to the guard and compile the forward jump }
                 wrval(dpop, here); end;
         _if : ; { 'if' does nothing. just syntactic sugar. }

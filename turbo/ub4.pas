@@ -57,12 +57,12 @@ const {-- these are all offsets into the ram array --}
   procedure boot;
   function step : value;
   function rdval(adr:address): value;
-  procedure wrval(adr:address; v: value);
+  procedure wrval(adr:address; v:value);
 
   { these internal ops are used in the assembler }
   procedure dput( val : value );
   function dpop:value;
-  procedure swap;
+  procedure dswp;
 
 
 implementation
@@ -146,13 +146,13 @@ function nos : value;
       else nos := ram[reg_dp^+1]
   end;
 
-procedure swap;
+procedure dswp;
   var a,b : value;
   begin a := dpop; b := dpop; dput(a); dput(b);
   end;
 
 function dpon:value; { pop the nos }
-  begin swap; result:=dpop
+  begin dswp; result:=dpop
   end;
 
 
@@ -260,7 +260,7 @@ function step : value;
       { Do not reformat this function! mkoptbl.pas uses it! }
       $80 : {lb  } begin dput(bget(reg_ip^+1)); inc(reg_ip^) end;
       $81 : {li  } begin dput(rdval(reg_ip^+1)); inc(reg_ip^,3) end;
-      $82 : {sw  } swap;
+      $82 : {sw  } dswp;
       $83 : {du  } dput(tos);
       $84 : {ov  } dput(nos);
       $85 : {zp  } zap(dpop);
@@ -272,8 +272,8 @@ function step : value;
       $8B : {dv  } dput(dpop div dpop);
       $8C : {md  } dput(dpop mod dpop);
       $8D : {ng  } dput(-dpop);
-      $8E : {sl  } begin swap; dput(dpop shl dpop) end;
-      $8F : {sr  } begin swap; dput(dpop shr dpop) end;
+      $8E : {sl  } begin dswp; dput(dpop shl dpop) end;
+      $8F : {sr  } begin dswp; dput(dpop shr dpop) end;
       $90 : {an  } dput(dpop and dpop);
       $91 : {or  } dput(dpop or dpop);
       $92 : {xr  } dput(dpop xor dpop);
@@ -309,7 +309,7 @@ function step : value;
       $AD : {wb  } begin t:= dpop; ram[t]:= dpop; end;  { write byte  }
       $AE : {ri  } dput(rdval(dpop));
       $AF : {wi  } begin t := dpop; wrval(t, dpop); end;
-      $B0 : {tg  } begin swap; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
+      $B0 : {tg  } begin dswp; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
       $B1 : {ta  } kvm.textattr := dpop;
       $B2 : {tw  } if tos in [$00..$ff] then write(chr(dpop)) else write('[',dpop,']');
       $B3 : {tr  } getc;
