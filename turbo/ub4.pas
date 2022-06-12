@@ -7,31 +7,39 @@ type
   block = array[0..1023] of byte;
 
 const
+  stacksize = 256;
+  datasize = stacksize;
+  retnsize = stacksize;
+  cellsize = sizeof(value);
   {-- memory layout --}
   maxcell = 4095;
+  maxbyte = ((maxcell+1) * cellsize)-1;
   { return stack }
   maxretn = maxcell;
-  minretn = maxretn-256;
+  minretn = maxretn-retnsize;
   { data stack }
   maxdata = minretn-1;
-  mindata = maxdata-256;
+  mindata = maxdata-datasize;
   { io buffer }
   maxbuff = mindata-1;
   minbuff = maxbuff-256;
   { scratch workspace }
-  maxwork = minbuff-1;
-  minwork = maxwork-256;
   maxheap = maxbuff; { so you can read/write the i/o buffer }
   minheap = 256;
   maxblok = 1023;
 type
   address = 0..maxcell;
   opcodes = $80..$BF;
+  stack = array[0..stacksize-1] of value;
+
+
 var
   ram  : array[0..maxcell] of value;
-  bytes: array[0..maxcell*sizeof(value)] of byte;
+  bytes: array[0..maxcell*cellsize] of byte;
   disk : file of block;
+
 const {-- these are all offsets into the ram array --}
+{$TYPEDADDRESS OFF}
   reg_ip : ^value = @ram[$00]; { instruction pointer }
   reg_dp : ^value = @ram[$04]; { data stack pointer }
   reg_rp : ^value = @ram[$08]; { retn stack pointer }
@@ -41,6 +49,9 @@ const {-- these are all offsets into the ram array --}
   reg_ep : ^value = @ram[$18]; { the editor pointer }
   reg_db : ^value = @ram[$1C]; { debug flag }
   reg_bp : ^value = @ram[$20]; { breakpoint }
+  ds : ^stack = @ram[mindata];
+  rs : ^stack = @ram[minretn];
+{$TYPEDADDRESS ON}
 
   procedure open( path : string );
   procedure boot;
@@ -58,7 +69,7 @@ implementation
 
 procedure boot;
   begin
-    fillchar(ram, (maxcell + 1) * sizeof(value), 0);
+    fillchar(ram, (maxcell + 1) * cellsize, 0);
     reg_dp^ := maxdata;
     reg_rp^ := maxretn;
     reg_ip^ := minheap;
@@ -66,11 +77,6 @@ procedure boot;
     reg_ep^ := minheap;
     reg_ap^ := minheap;
     reg_bp^ := maxcell;
-  end;
-
-procedure halt;
-  begin
-    system.halt;
   end;
 
 procedure open(path:string);
@@ -87,6 +93,7 @@ procedure open(path:string);
   {$i+}
   end;
 
+
 function dpop : value;
   begin
     dpop := ram[reg_dp^]; inc(reg_dp^);
