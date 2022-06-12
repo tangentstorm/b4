@@ -22,8 +22,8 @@
 :, here ri du dr wb
     rd inc here wi rt              # , is exact same thing for the heap
 
-:buf-len 00                        # length of the buffer
-:buf                               # 64-character input buffer
+:tok-len 00                        # length of the current token
+:tok                               # 64-byte token buffer
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -109,7 +109,7 @@
 :word?-s li $word? e-nm rt         # (-s) address of the string "word?"
 
 :init
-  li $buf ap wi                    # set ap = buf
+  li $tok ap wi                    # set ap = tok
   li $word?^ last  wi
   rt
 
@@ -125,9 +125,9 @@
   [ du lb '` eq | db ]             # ` = debugger
   [ du lb 32 eq | tw lb 0          # on space,  (echo space and add dummy char)
     lb 01 li $eol wb               #    set the eol flag
-    ap ri li $buf sb               #    calculate length: start of buffer
-    li $buf-len sw ov wb           #    save the lenegth
-    li $buf ap wi                  #    reset ap to start of buffer
+    ap ri li $tok sb               #    calculate length: start of token buffer
+    li $tok-len sw ov wb           #    save the length
+    li $tok ap wi                  #    reset ap to start of buffer
     word?                          #    look up the word
     [ du lb 0 eq | zp unknown ]    #    if not found, complain
     [ du lb 0 ne | exec ] ]        #    if found, execute   (# TODO: 'else' !!)
