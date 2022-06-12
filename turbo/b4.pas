@@ -50,8 +50,7 @@ procedure dump;
 
     { draw some important registers }
     gotoxy(0, 15); bg('K'); clreol;
-    wv('ip', reg_ip^); wv('dp',reg_dp^);  wv('rp', reg_rp^);
-    wv('hp', reg_hp^); wv('ep',reg_ep^);  wv('lp', reg_lp^);
+    wv('ip', reg_ip^); wv('hp', reg_hp^); wv('lp', reg_lp^); wv('ep',reg_ep^);
 
     { draw ram }
     gotoxy(0,16); pg := pgsz * (reg_ep^ div pgsz);
