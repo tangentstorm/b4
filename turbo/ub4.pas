@@ -79,142 +79,10 @@ procedure boot;
     reg_bp^ := maxcell;
   end;
 
-procedure open(path:string);
-  begin
-    assign(disk, path);
-  {$i-}
-      reset(disk);
-      if ioresult <> 0 then rewrite(disk);
-      if ioresult <> 0 then
-        begin
-          writeln('error: couldn''t open ', path);
-          halt;
-        end;
-  {$i+}
-  end;
-
-
-function dpop : value;
-  begin
-    dpop := ram[reg_dp^]; inc(reg_dp^);
-    if reg_dp^ > maxdata then reg_dp^ := mindata;
-  end;
-
-function rpop : value;
-  begin
-    rpop := ram[reg_rp^]; inc(reg_rp^);
-    if reg_rp^ > maxretn then reg_rp^ := minretn;
-  end;
-
-function tos : value;
-  begin
-    tos := ram[reg_dp^]
-  end;
-
-function tor : value;
-  begin
-    tor := ram[reg_rp^]
-  end;
-
-function nos : value;
-  begin
-    if reg_dp^ = mindata
-      then nos := ram[maxdata]
-      else nos := ram[reg_dp^+1]
-  end;
+{ helpers }
 
 procedure zap( v : value );
   begin { discards a value (for turbo pascal) }
-  end;
-
-{ the stacks are really rings, so no over/underflows }
-procedure dput( val : value );
-  begin
-    dec(reg_dp^);
-    if reg_dp^ < mindata then reg_dp^ := maxdata;
-    ram[reg_dp^] := val;
-  end;
-
-procedure rput( val : value );
-  begin
-    dec(reg_rp^);
-    if reg_rp^ < minretn then reg_rp^ := maxretn;
-    ram[reg_rp^] := val;
-  end;
-
-procedure comma;
-  begin
-    ram[reg_hp^] := dpop;
-    inc(reg_hp^);
-  end;
-
-procedure bye;
-  begin
-    reg_ip^ := maxheap
-  end;
-
-procedure swap;
-  var tmp : value;
-  begin
-    tmp := dpop; rput(dpop); dput(tmp); dput(rpop);
-  end;
-
-{$IFDEF TURBO}
-function xmax : byte;
-  begin
-    xmax := lo( kvm.windmax ) - lo( kvm.windmin )
-  end;
-
-function maxy : byte;
-  begin
-    ymax := hi( kvm.windmax ) - hi( kvm.windmin )
-  end;
-{$ENDIF}
-
-procedure goxy( x, y : byte );
-  begin
-    kvm.gotoxy( x+1, y+1 )
-  end;
-
-procedure blok( n : value );
-  begin
-    if (n < 0) or (n > maxblok)
-      then seek(disk, 0)
-      else seek(disk, n);
-  end;
-
-procedure load;
-  var tmp : block;
-  begin
-    read(disk, tmp);
-    move(tmp, ram[minbuff], 1024);
-  end;
-
-function size : word;
-  { size of disk, in blocks }
-  begin
-    size := filesize(disk)
-  end;
-
-function grow : word;
-  var i : word;
-  begin
-    i := size;
-    if i + 1 < maxblok then begin inc(i); seek(disk, i) end;
-    grow := i;
-  end;
-
-procedure save;
-  var tmp : block;
-  begin
-    move(ram[minbuff], tmp, 1024);
-    write(disk, tmp);
-  end;
-
-procedure getc;
-  begin dput(value(kbd.readkey));
-    { we have 32 bits & only need 16. we can store extended keys in one cell }
-    if tos = 0 then begin zap(dpop); dput(value(kbd.readkey) shl 8) end
   end;
 
 procedure todo(op : string);
@@ -223,6 +91,7 @@ procedure todo(op : string);
     halt
   end;
 
+{ memory routines }
 
 function rdval(adr:address) : value;
   { read a longint (little-endian) }
@@ -250,8 +119,136 @@ procedure mset(a:address; v:value);
   begin ram[a] := v
   end;
 
-function dpon:value;
+
+{ data stack }
+
+procedure dput( val : value );
+  begin
+    dec(reg_dp^);
+    if reg_dp^ < mindata then reg_dp^ := maxdata;
+    ram[reg_dp^] := val;
+  end;
+
+function dpop : value;
+  begin
+    dpop := ram[reg_dp^]; inc(reg_dp^);
+    if reg_dp^ > maxdata then reg_dp^ := mindata;
+  end;
+
+function tos : value;
+  begin tos := ram[reg_dp^]
+  end;
+
+function nos : value;
+  begin
+    if reg_dp^ = mindata
+      then nos := ram[maxdata]
+      else nos := ram[reg_dp^+1]
+  end;
+
+procedure swap;
+  var a,b : value;
+  begin a := dpop; b := dpop; dput(a); dput(b);
+  end;
+
+function dpon:value; { pop the nos }
   begin swap; result:=dpop
+  end;
+
+
+{ return stack }
+
+procedure rput( val : value );
+  begin
+    dec(reg_rp^);
+    if reg_rp^ < minretn then reg_rp^ := maxretn;
+    ram[reg_rp^] := val;
+  end;
+
+function rpop : value;
+  begin
+    rpop := ram[reg_rp^]; inc(reg_rp^);
+    if reg_rp^ > maxretn then reg_rp^ := minretn;
+  end;
+
+function tor : value;
+  begin tor := ram[reg_rp^]
+  end;
+
+
+{ terminal routines }
+
+{$IFDEF TURBO}
+function xmax : byte;
+  begin
+    xmax := lo( kvm.windmax ) - lo( kvm.windmin )
+  end;
+
+function maxy : byte;
+  begin
+    ymax := hi( kvm.windmax ) - hi( kvm.windmin )
+  end;
+{$ENDIF}
+
+procedure goxy( x, y : byte );
+  begin
+    kvm.gotoxy( x+1, y+1 )
+  end;
+
+procedure getc;
+  begin dput(value(kbd.readkey));
+    { we have 32 bits & only need 16. we can store extended keys in one cell }
+    if tos = 0 then begin zap(dpop); dput(value(kbd.readkey) shl 8) end
+  end;
+
+{ file routines }
+
+procedure open(path:string);
+  begin
+    assign(disk, path);
+  {$i-}
+      reset(disk);
+      if ioresult <> 0 then rewrite(disk);
+      if ioresult <> 0 then
+        begin
+          writeln('error: couldn''t open ', path);
+          halt;
+        end;
+  {$i+}
+  end;
+
+procedure blok( n : value );
+  begin
+    if (n < 0) or (n > maxblok)
+      then seek(disk, 0)
+      else seek(disk, n);
+  end;
+
+procedure load;
+  var tmp : block;
+  begin
+    read(disk, tmp);
+    move(tmp, ram[minbuff], 1024);
+  end;
+
+function size : word;
+  { size of disk, in blocks }
+  begin size := filesize(disk)
+  end;
+
+function grow : word;
+  var i : word;
+  begin
+    i := size;
+    if i + 1 < maxblok then begin inc(i); seek(disk, i) end;
+    grow := i;
+  end;
+
+procedure save;
+  var tmp : block;
+  begin
+    move(ram[minbuff], tmp, 1024);
+    write(disk, tmp);
   end;
 
 
