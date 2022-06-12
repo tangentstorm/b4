@@ -84,11 +84,14 @@ procedure zap( v : value );
   begin { discards a value (for turbo pascal) }
   end;
 
-procedure todo(op : string);
-  begin
-    writeln('todo: ', op);
-    halt
+procedure fail(msg: string);
+  begin writeln(msg); halt
   end;
+
+procedure todo(op : string);
+  begin fail('todo: ' + op);
+  end;
+
 
 { memory routines }
 
@@ -130,7 +133,7 @@ procedure dput( val : value );
 
 function dpop : value;
   begin
-    if reg_dp^ = -1 then begin writeln('underflow(data)'); halt end;
+    if reg_dp^ = -1 then fail('underflow(data)');
     dpop := ds[reg_dp^]; dec(reg_dp^);
   end;
 
@@ -166,7 +169,7 @@ procedure rput( val : value );
 
 function rpop : value;
   begin
-    if reg_rp^ = -1 then begin writeln('underflow(retn)'); halt end;
+    if reg_rp^ = -1 then fail('underflow(retn)');
     rpop := rs[reg_rp^]; dec(reg_rp^);
   end;
 
@@ -208,11 +211,7 @@ procedure open(path:string);
   {$i-}
       reset(disk);
       if ioresult <> 0 then rewrite(disk);
-      if ioresult <> 0 then
-        begin
-          writeln('error: couldn''t open ', path);
-          halt;
-        end;
+      if ioresult <> 0 then fail('couldn''t open '+ path);
   {$i+}
   end;
 
