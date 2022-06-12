@@ -34,8 +34,7 @@ type
 
 
 var
-  ram  : array[0..maxcell] of value;
-  bytes: array[0..maxcell*cellsize] of byte;
+  ram  : array[0..maxcell*cellsize] of byte;
   disk : file of block;
 
 const {-- these are all offsets into the ram array --}
