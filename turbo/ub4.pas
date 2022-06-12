@@ -301,7 +301,7 @@ function step : value;
       $A7 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
       $A8 : {rt  } reg_ip^ := rpop-1;
       $A9 : {r0  } if tos = 0 then begin zap(dpop); reg_ip^ := rpop end;
-      $AA : {nx  } begin if tor > 0 then mset(reg_rp^, tor-1);
+      $AA : {nx  } begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
                      if tor = 0 then begin zap(rpop); inc(reg_ip^,3) end
                      else reg_ip^:=rdval(reg_ip^+1)-1; end;
       $AB : {ev  } todo('ev'); { eval - like call, but address comes from stack }
