@@ -8,13 +8,13 @@ const pgsz = 8 * 8; { should be multiple of 8 to come out even }
 
 var opli, oplb, opjm, opj0, opcl : value;
 
-procedure draw_stack(x,y : byte; id:char; minaddr,maxaddr:value);
+procedure draw_stack(x,y : byte; id:char; var s:stack; n:value);
   var i : value;
   begin
     gotoxy(x,y); bg('k'); clreol; fg('w'); write(id,':');
-    fg('Y'); write(' <'); fg('y'); write(maxaddr-minaddr); fg('Y');
+    fg('Y'); write(' <'); fg('y'); write(n+1); fg('Y');
     write('> '); fg('y');
-    for i := maxaddr-1 downto minaddr do write(hex(ram[i],1),' ');
+    for i := 0 to n do write(hex(s[i],1),' ');
   end;
 
 procedure wv(k: string; v:value); { write value }
@@ -45,8 +45,8 @@ procedure dump;
     x := wherex; y := wherey; oldattr := textattr;
     id := 'call';
     { draw the data and return stacks }
-    draw_stack(0, 13, 'd', reg_dp^, maxdata);
-    draw_stack(0, 14, 'r', reg_rp^, maxretn);
+    draw_stack(0, 13, 'd', ds^, reg_dp^);
+    draw_stack(0, 14, 'r', rs^, reg_rp^);
 
     { draw some important registers }
     gotoxy(0, 15); bg('K'); clreol;

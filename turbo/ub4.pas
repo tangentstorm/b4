@@ -70,8 +70,8 @@ implementation
 procedure boot;
   begin
     fillchar(ram, (maxcell + 1) * cellsize, 0);
-    reg_dp^ := maxdata;
-    reg_rp^ := maxretn;
+    reg_dp^ := -1;
+    reg_rp^ := -1;
     reg_ip^ := minheap;
     reg_hp^ := minheap;
     reg_ep^ := minheap;
@@ -124,26 +124,26 @@ procedure mset(a:address; v:value);
 
 procedure dput( val : value );
   begin
-    dec(reg_dp^);
-    if reg_dp^ < mindata then reg_dp^ := maxdata;
-    ram[reg_dp^] := val;
+    inc(reg_dp^);
+    if reg_dp^ = datasize then reg_dp^ := 0;
+    ds[reg_dp^] := val;
   end;
 
 function dpop : value;
   begin
-    dpop := ram[reg_dp^]; inc(reg_dp^);
-    if reg_dp^ > maxdata then reg_dp^ := mindata;
+    if reg_dp^ = -1 then begin writeln('underflow(data)'); halt end;
+    dpop := ds[reg_dp^]; dec(reg_dp^);
   end;
 
 function tos : value;
-  begin tos := ram[reg_dp^]
+  begin tos := ds[reg_dp^]
   end;
 
 function nos : value;
   begin
-    if reg_dp^ = mindata
-      then nos := ram[maxdata]
-      else nos := ram[reg_dp^+1]
+    if reg_dp^ = 0
+      then nos := ds[datasize-1]
+      else nos := ds[reg_dp^-1]
   end;
 
 procedure dswp;
@@ -160,19 +160,19 @@ function dpon:value; { pop the nos }
 
 procedure rput( val : value );
   begin
-    dec(reg_rp^);
-    if reg_rp^ < minretn then reg_rp^ := maxretn;
-    ram[reg_rp^] := val;
+    inc(reg_rp^);
+    if reg_rp^ = retnsize then reg_rp^ := 0;
+    rs[reg_rp^] := val;
   end;
 
 function rpop : value;
   begin
-    rpop := ram[reg_rp^]; inc(reg_rp^);
-    if reg_rp^ > maxretn then reg_rp^ := minretn;
+    if reg_rp^ = -1 then begin writeln('underflow(retn)'); halt end;
+    rpop := rs[reg_rp^]; dec(reg_rp^);
   end;
 
 function tor : value;
-  begin tor := ram[reg_rp^]
+  begin tor := rs[reg_rp^]
   end;
 
 
