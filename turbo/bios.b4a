@@ -126,7 +126,7 @@
     word?                          #    look up the word
     !i du lb 0 eq !t zp unknown    #    if not found, complain
     !e exec !z !z                  #    else execute
-  !i du lb 31 lt !t du du a+ tw !z # copy non-ctrl chars to buffer and echo
+  !i du lb 31 gt !t du du a+ tw !z # copy non-ctrl chars to buffer and echo
   !i du lb 04 eq !t exit !z        # on ^d, exit
   zp !o                            # drop the character
 
