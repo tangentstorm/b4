@@ -22,6 +22,8 @@
 :, here ri du dr wb
     rd inc here wi rt              # , is exact same thing for the heap
 
+:n1 lb 00 nt rt                    # TODO: better way to write "-1"
+
 :tok-len 00                        # length of the current token
 :tok                               # 64-byte token buffer
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -76,7 +78,7 @@
 :s-eq^ $exec^ 04 's '- 'e 'q
 :s-eq?                             # (st-?) are strings s and t the same?
   !i ov ov eq !t eq rt !z          # a. if the addresses are the same, return 1
-  !i ov rb du dr ov rb ne !t       # b. (st-st?!tn) if the lengths are different,
+  !i ov rb du dr ov rb ne !t       # b. (st-st?|n) if the lengths are different,
      rd zp eq rt !z                #   drop loop counter and return 0 (we know eq=0 from a.)
   !f inc sw inc                    # st-TS  -> next char (doesn't matter that we swap order)
      !i ov rb ov rb ne !t          # if the characters are not equal
@@ -98,7 +100,6 @@
    # :ru rd rd sw dr du dr rt           # (-s) copy top of R to D
    # !! might be nice to have macros for inlining this
 
-
 # :words-s li $words^ lb 1 ad rt   # (-s) address of the string "words"
 :words-s li $words^ e-nm rt        # (-s) address of the string "words"
 :word?-s li $word? e-nm rt         # (-s) address of the string "word?"
@@ -111,6 +112,29 @@
 :unkno-s 13 'u 'n 'k 'n 'o 'w 'n 32 'w 'o 'r 'd '.
 :unknown
  lb 08 ta sp li $unkno-s puts nl rt
+
+:between?                          # (x hi lo - x f)
+  dr ov le                         # (x <=hi? |lo)
+  ov rd le an rt                   # (x f)
+
+:digit?                            # (c-d1) or (c-0)
+ !i du lb '0 lb '9 between? !t
+    zp lb '0 sb n1
+ !e zp lb 0 !z
+ rt
+
+'t 'r 'y '- 'n 'u 'm
+:try-num                           # (s-n) try to parse string as number
+  du rb dr                         # (s    - s|i) a=addr of string
+  lb 0                             # (s|i  - sr|i) r=0
+  !f dr inc du rb                  # (ar|i - ac|ri) a=addr of char, c=char
+     !i digit? !t
+        rd lb 10 ml ad dr          #  r= r*10+d
+     !e unknown
+        zp rd zp rd zp rt !z       # drop result and return
+     rd                            # (p|ri - pr|i) so next can do its thing
+  !n
+  sw zp rt                         # (pr-r)
 
 :eol 01                            # end of line flag
 
@@ -128,9 +152,9 @@
   !i du lb '` eq !t db !z          # ` = debugger
   !i du lb 32 eq !t tw             # on space,  (echo space and add dummy char)
     end-token
-    word?                          #    look up the word
-    !i du lb 0 eq !t zp unknown    #    if not found, complain
-    !e exec !z                     #    else execute
+    du word?                       #    look up the word
+    !i du lb 0 eq !t zp try-num    #    if not found, complain
+    !e sw zp exec !z               #    else execute
   !e
     !i du lb 31 gt !t du du a+ tw  # copy non-ctrl chars to buffer and echo
     !e !i du lb 04 eq !t exit !z   # on ^d, exit
