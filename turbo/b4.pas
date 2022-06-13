@@ -6,7 +6,7 @@ uses xpc, ub4, ub4asm, ub4ops, kvm, kbd,
 
 const pgsz = 8 * 8; { should be multiple of 8 to come out even }
 
-var opli, oplb, opjm, opj0, opcl : value;
+var opli, oplb, opjm, opj0, opcl, opnx, ophp, oph0 : value;
 
 procedure draw_stack(x,y : byte; id:char; var s:stack; n:value);
   var i : value;
@@ -106,18 +106,24 @@ procedure dump;
   end;
 
 
-function step_over_addr: ub4.address;
+function step_over: boolean;
+  { what this does is fast-forward the editor pointer.
+    result = true if stepping over a call }
+  var skip : byte = 0;
   begin
-    repeat if reg_ep^ < ub4.maxcell then inc(reg_ep^)
-    until (ram[reg_ep^] = ub4.maxcell)
-       or (ram[reg_ep^] in [low(ub4.opcodes)..high(ub4.opcodes)]);
-    result := reg_ep^;
+    result := ram[reg_ep^] = opcl;
+    if ram[reg_ep^] in [opcl,opjm,opj0,opli,opnx] then skip := 4
+    else if ram[reg_ep^] in [oplb,ophp,oph0] then skip := 1;
+    inc(reg_ep^);
+    inc(reg_ep^, skip);
   end;
 
 var ch: ansichar; pause: boolean = false;
 begin
-  opli := b4opc('li');  oplb := b4opc('lb');
-  opjm := b4opc('jm'); opj0 := b4opc('j0'); opcl := b4opc('cl');
+  opli := b4opc('li'); oplb := b4opc('lb');
+  opjm := b4opc('jm'); opj0 := b4opc('j0');
+  ophp := b4opc('hp'); oph0 := b4opc('h0');
+  opcl := b4opc('cl'); opnx := b4opc('nx');
   open('disk.b4'); boot; clrscr;
   assign(input, 'bios.b4a');
   reset(input); b4as;
@@ -138,7 +144,9 @@ begin
         'I': reg_ep^ := reg_ip^;
         'S': pause := false;
         'C': begin pause := false; reg_bp^ := reg_ep^ end;
-        'O': begin pause := false; reg_db^:=0; reg_bp^ := step_over_addr end;
+        'O': begin pause := false;
+               if step_over then begin reg_db^:=0; reg_bp^ := reg_ep^ end
+             end;
         'R': reg_db^ := 0;
         'Q': halt;
         '0': reg_ep^ := 0;
