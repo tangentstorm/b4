@@ -30,7 +30,8 @@ function b4opc(code:opstring) : byte;
     else begin writeln('invalid op: ', code); halt end end;
 
 type
-  tokentag = ( wsp, cmt, raw, chr, def, ref, adr, _wh, _do, _od, _if, _fi );
+  tokentag = ( wsp, cmt, raw, chr, def, ref, adr,
+              _if, _th, _el, _fi, _wh, _do, _od, _fr, _nx );
   token = record tag : tokentag; str : string; end;
 
 function readnext( var ch : char ) : char;
@@ -66,14 +67,23 @@ function next( var tok : token; var ch : char ) : boolean;
       ':' : begin tok.tag := def; tok.str := ''; while nextchar(ch) > #32 do keep end;
       '$' : begin tok.tag := adr; tok.str := ''; while nextchar(ch) > #32 do keep end;
       'a'..'z' : begin tok.tag := ref; while nextchar(ch) > #32 do keep end;
-      { curly = (while | body) }
-      '{' : begin tok.tag := _wh; ch:=nextchar(ch) end;
-      '|' : begin tok.tag := _do; ch:=nextchar(ch) end;
-      '}' : begin tok.tag := _od; ch:=nextchar(ch) end;
-      '[' : begin tok.tag := _if; ch:=nextchar(ch) end;
-      ']' : begin tok.tag := _fi; ch:=nextchar(ch) end;
-      else  begin tok.tag := ref; ch:=nextchar(ch) end;
-    end
+      '!' :
+        begin
+          case nextchar(ch) of
+            'i': tok.tag := _if;
+            't': tok.tag := _th;
+            'e': tok.tag := _el;
+            'z': tok.tag := _fi;
+            'w': tok.tag := _wh;
+            'd': tok.tag := _do;
+            'o': tok.tag := _od;
+            'f': tok.tag := _fr;
+            'n': tok.tag := _nx;
+            otherwise begin writeln('unknown macro: !',ch); halt end;
+          end;
+          ch:=nextchar(ch);
+        end
+    end;
   end;
 
 
@@ -104,6 +114,7 @@ procedure b4as;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
         adr : emitv(find_addr(tok.str));
         _wh : dput(here); {(- wh)}
+        _th ,
         _do : begin {(- do)} emit(b4opc('j0')); dput(here); emitv(0); end;
         _od : begin { compile time: (wh do -)}
                 { first, an unconditional jump back to the _do }

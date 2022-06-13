@@ -1,4 +1,4 @@
-[ lb 00 |                          # jump over bios
+!i lb 00 !t                        # jump over bios
 #--- begin bios -------------------\
 # names for some important registers
 :here^ 00 00 00 00 04 'h 'e 'r 'e
@@ -61,10 +61,10 @@
 :words^ $e-nm^ 05 'w 'o 'r 'd 's
 :words                             # list known words, starting at last entry:
   last ri
-  { du lb 0 ne |                   # we are looking at a non-0 pointer to entry
+  !w du lb 0 ne !d                 # we are looking at a non-0 pointer to entry
     du e-nm
     puts sp                        # emit str
-    ri }                           # move to next entry
+    ri !o                          # move to next entry
   zp rt
 
 :dyn-call cl :dyn-adr 00 00 00 00 rt
@@ -78,26 +78,26 @@
 
 :s-eq^ $exec^ 04 's '- 'e 'q
 :s-eq?                             # (st-?) are strings s and t the same?
-  [ ov ov eq | eq rt ]             # a. if the addresses are the same, return 1
-  [ ov rb du dr ov rb ne |         # b. (st-st?|n) if the lengths are different,
-    rd zp eq rt ]                  #   drop loop counter and return 0 (we know eq=0 from a.)
-  :for-s-eq                        # st|n   -> ready for a for -loop
+  !i ov ov eq !t eq rt !z          # a. if the addresses are the same, return 1
+  !i ov rb du dr ov rb ne !t       # b. (st-st?!tn) if the lengths are different,
+    rd zp eq rt !z                 #   drop loop counter and return 0 (we know eq=0 from a.)
+  :for-s-eq                        # st!tn   -> ready for a for -loop
     inc sw inc                     # st-TS  -> next char (doesn't matter that we swap order)
-    [ ov rb ov rb ne |                   # if the characters are not equal
-      rd zp eq rt ]                #   drop counter and return 0 (same as in b. before)
+    !i ov rb ov rb ne !t           # if the characters are not equal
+      rd zp eq rt !z               #   drop counter and return 0 (same as in b. before)
   nx $for-s-eq
   zp zp lb 1 rt                    # everything matched, so return 1
 
 :word?^ $s-eq^ 05 'w 'o 'r 'd '?
 :word?                             # (s-e)   attempt to find word in dictionary
-  dr                               # s - |s  push s to return stack
-  last ri                          # ..-e|s  fetch last entry
-  { du lb 0 ne |                   # while e!=0 do:
-    du e-nm                        #  ..- et|s     fetch the entry's name (t)
-    rd du dr                       #  ..- ets|s
-    [ s-eq? | rd zp rt ]           # return e if strings match
-    ri }                           # otherwise, visit next string
-  rd zp rt                         # (e|s - e)
+  dr                               # s - !ts  push s to return stack
+  last ri                          # ..-e!ts  fetch last entry
+  !w du lb 0 ne !d                 # while e!=0 do:
+    du e-nm                        #  ..- et!ts     fetch the entry's name (t)
+    rd du dr                       #  ..- ets!ts
+    !i s-eq? !t rd zp rt !z        # return e if strings match
+    ri !o                          # otherwise, visit next string
+  rd zp rt                         # (e!ts - e)
 
    # instead of 'rd du dr'
    # :ru rd rd sw dr du dr rt           # (-s) copy top of R to D
@@ -118,33 +118,33 @@
  lb 08 ta sp li $unkno-s puts nl rt
 
 :eol 01                            # end of line flag
-:repl { lb 01 |
-  [ li $eol rb |                   # if end of line flag
-    lb 00 li $eol wb b4> ]         # show prompt if new line
+:repl !w lb 01 !d
+  !i li $eol rb !t                 # if end of line flag
+    lb 00 li $eol wb b4> !z        # show prompt if new line
   tr                               # read char from terminal
-  [ du lb '` eq | db ]             # ` = debugger
-  [ du lb 32 eq | tw lb 0          # on space,  (echo space and add dummy char)
+  !i du lb '` eq !t db !z          # ` = debugger
+  !i du lb 32 eq !t tw lb 0        # on space,  (echo space and add dummy char)
     lb 01 li $eol wb               #    set the eol flag
     ap ri li $tok sb               #    calculate length: start of token buffer
     li $tok-len sw ov wb           #    save the length
     li $tok ap wi                  #    reset ap to start of buffer
     word?                          #    look up the word
-    [ du lb 0 eq | zp unknown ]    #    if not found, complain
-    [ du lb 0 ne | exec ] ]        #    if found, execute   (# TODO: 'else' !!)
-  [ du lb 31 lt | du du a+ tw ]    # copy non-ctrl chars to buffer and echo
-  [ du lb 04 eq | exit ]           # on ^d, exit
-  zp }                             # drop the character
+    !i du lb 0 eq !t zp unknown !z #    if not found, complain
+    !i du lb 0 ne !t exec !z !z    #    if found, execute   (# TODO: 'else' !!)
+  !i du lb 31 lt !t du du a+ tw !z # copy non-ctrl chars to buffer and echo
+  !i du lb 04 eq !t exit !z        # on ^d, exit
+  zp !o                            # drop the character
 
 # this should never execute, so trigger debugger if we get here:
-db ]
+db !z
 #--- end of bios ------------------/
 
 # -- debug /test stuff --
-# [ lb 0 | :word-a 03 'a 'b 'c :word-b 03 'a 'b 'c ]
+# !i lb 0 !t :word-a 03 'a 'b 'c :word-b 03 'a 'b 'c !z
 # li $word-a li $word-b s-eq?
 # word?-s words-s s-eq? db   (s-eq working)
 # words-s word? db           ( word? seems to be working)
-# lb 16 { dec du | du ta lb '. tw } zp nl # draw colors
+# lb 16 !w dec du !d du ta lb '. tw !z zp nl # draw colors
 
 # -- main --
 init
