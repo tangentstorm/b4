@@ -294,7 +294,7 @@ function step : value;
       $A3 : {jm  } reg_ip^ := rdval(reg_ip^+1)-1;
       $A4 : {hp  } todo('hp'); { hop }
       $A5 : {j0  } if dpop = 0 then begin reg_ip^ := rdval(reg_ip^+1)-1 end
-                   else inc(reg_ip^) { skip over the address };
+                   else inc(reg_ip^,4) { skip over the address };
       $A6 : {h0  } todo('h0'); { hop if 0 }
       $A7 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
       $A8 : {rt  } reg_ip^ := rpop-1;
@@ -304,7 +304,7 @@ function step : value;
                      else reg_ip^:=rdval(reg_ip^+1)-1; end;
       $AB : {ev  } todo('ev'); { eval - like call, but address comes from stack }
       $AC : {rb  } dput(ram[dpop]);    { read byte }
-      $AD : {wb  } begin t:= dpop; ram[t]:= dpop; end;  { write byte  }
+      $AD : {wb  } begin t:= dpop; ram[t]:= byte(dpop); end;  { write byte  }
       $AE : {ri  } dput(rdval(dpop));
       $AF : {wi  } begin t := dpop; wrval(t, dpop); end;
       $B0 : {tg  } begin dswp; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
