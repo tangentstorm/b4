@@ -100,13 +100,30 @@
    # :ru rd rd sw dr du dr rt           # (-s) copy top of R to D
    # !! might be nice to have macros for inlining this
 
+:dvm  # n d
+  ov ov md      # (xy-xy|m)
+  dr dv rd rt   # (xy|m-dm|)
+
+:base 10 :digit  '0 '1 '2 '3 '4 '5 '6 '7 '8 '9 'A 'B 'C 'D 'E 'F
+:putn^ $word?^ 04 'p 'u 't 'n
+:putn # (n - )
+  !i du lb 00 eq !t lb '0 tw rt
+  !e lb 00 sw                      # ( n-kn) k:digit count=0
+     !w du lb 00 ne !d             # while n!=0 do
+        li $base rb dvm            # (kn-kdm) divmod
+        li $digit ad rb dr         # (kdm-kd|c) push char to retn stack
+        sw inc sw !o               # k++, d is new n
+      zp dr                        # (kd- |k)
+      !f rd rd tw dr !n !z         # loop through the characters
+  rt
+
 # :words-s li $words^ lb 1 ad rt   # (-s) address of the string "words"
 :words-s li $words^ e-nm rt        # (-s) address of the string "words"
 :word?-s li $word? e-nm rt         # (-s) address of the string "word?"
 
 :init
   li $tok ap wi                    # set ap = tok
-  li $word?^ last  wi
+  li $putn^ last  wi
   rt
 
 :unkno-s 13 'u 'n 'k 'n 'o 'w 'n 32 'w 'o 'r 'd '.
