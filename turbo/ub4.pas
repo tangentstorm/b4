@@ -275,7 +275,7 @@ function step : value;
       $90 : {an  } dput(dpop and dpop);
       $91 : {or  } dput(dpop or dpop);
       $92 : {xr  } dput(dpop xor dpop);
-      $93 : {nt  } dput(dpop xor dpop);
+      $93 : {nt  } dput(not dpop);
       $94 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
       $95 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
       $96 : {gt  } begin t:=dpop; if dpop >  t then dput(-1) else dput(0) end;
