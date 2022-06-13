@@ -122,7 +122,10 @@ procedure b4as;
                 { now go back to the guard and compile the forward jump }
                 wrval(dpop, here); end;
         _if : ; { 'if' does nothing. just syntactic sugar. }
+        _el : ;
         _fi : {(do-)} wrval(dpop, here); { jump to 'end' when 'if' test fails }
+        _fr : dput(here);
+        _nx : begin emit(b4opc('nx')); emitv(dpop) end;
       end end;
   begin
     clear_dict; err := 0; ents := 0; here := reg_hp^; read(ch);

@@ -46,10 +46,7 @@
 :puts^ $bye^ 04 'p 'u 't 's
 :puts                              # given address of counted string, write the string
   du rb dr inc                     # push str start to d, len to r (loop counter)
-  :for
-    du rb tw
-    inc
-  nx $for
+  !f du rb tw inc !n
   zp rt
 
 :e-nm^ $puts^ 04 'e '- 'n 'm
@@ -80,12 +77,10 @@
 :s-eq?                             # (st-?) are strings s and t the same?
   !i ov ov eq !t eq rt !z          # a. if the addresses are the same, return 1
   !i ov rb du dr ov rb ne !t       # b. (st-st?!tn) if the lengths are different,
-    rd zp eq rt !z                 #   drop loop counter and return 0 (we know eq=0 from a.)
-  :for-s-eq                        # st!tn   -> ready for a for -loop
-    inc sw inc                     # st-TS  -> next char (doesn't matter that we swap order)
-    !i ov rb ov rb ne !t           # if the characters are not equal
-      rd zp eq rt !z               #   drop counter and return 0 (same as in b. before)
-  nx $for-s-eq
+     rd zp eq rt !z                #   drop loop counter and return 0 (we know eq=0 from a.)
+  !f inc sw inc                    # st-TS  -> next char (doesn't matter that we swap order)
+     !i ov rb ov rb ne !t          # if the characters are not equal
+        rd zp eq rt !z !n          #   drop counter and return 0 (same as in b. before)
   zp zp lb 1 rt                    # everything matched, so return 1
 
 :word?^ $s-eq^ 05 'w 'o 'r 'd '?
