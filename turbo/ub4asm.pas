@@ -2,7 +2,7 @@
 unit ub4asm;
 interface uses xpc, ub4ops, ub4;
 
-  type ident = string[8];
+  type ident = string[16];
   type entry = record id: ident; adr: ub4.address end;
   var dict: array[0..128] of entry; ents : byte;
 
