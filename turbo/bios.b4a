@@ -113,22 +113,29 @@
  lb 08 ta sp li $unkno-s puts nl rt
 
 :eol 01                            # end of line flag
+
+:end-token
+  lb 01 li $eol wb                 # set the eol flag
+  ap ri li $tok sb                 # calculate length: start of token buffer
+  li $tok-len sw ov wb             # save the length
+  li $tok ap wi                    # reset ap to start of buffer for next time
+  rt
+
 :repl !w lb 01 !d
   !i li $eol rb !t                 # if end of line flag
     lb 00 li $eol wb b4> !z        # show prompt if new line
   tr                               # read char from terminal
   !i du lb '` eq !t db !z          # ` = debugger
-  !i du lb 32 eq !t tw lb 0        # on space,  (echo space and add dummy char)
-    lb 01 li $eol wb               #    set the eol flag
-    ap ri li $tok sb               #    calculate length: start of token buffer
-    li $tok-len sw ov wb           #    save the length
-    li $tok ap wi                  #    reset ap to start of buffer
+  !i du lb 32 eq !t tw             # on space,  (echo space and add dummy char)
+    end-token
     word?                          #    look up the word
     !i du lb 0 eq !t zp unknown    #    if not found, complain
-    !e exec !z !z                  #    else execute
-  !i du lb 31 gt !t du du a+ tw !z # copy non-ctrl chars to buffer and echo
-  !i du lb 04 eq !t exit !z        # on ^d, exit
-  zp !o                            # drop the character
+    !e exec !z                     #    else execute
+  !e
+    !i du lb 31 gt !t du du a+ tw  # copy non-ctrl chars to buffer and echo
+    !e !i du lb 04 eq !t exit !z   # on ^d, exit
+    !z zp
+  !z !o
 
 # this should never execute, so trigger debugger if we get here:
 db !z
