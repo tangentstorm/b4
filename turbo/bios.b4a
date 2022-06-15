@@ -1,19 +1,19 @@
 .i lb 00 .t                        # jump over bios
 #--- begin bios -------------------\
 # names for some important registers
-:here^ 00 00 00 00 04 'h 'e 'r 'e
+:here^ 00 00 00 00 04 'h'e'r'e
 :here  lb 12 rt
 
-:last^ $here^ 04 'l 'a 's 't
+:last^ $here^ 04 'l'a's't
 :last  lb 16 rt
 
 :ap   lb 20 rt
 
 # arithmetic
-:inc^ $last^ 03 'i 'n 'c
+:inc^ $last^ 03 'i'n'c
 :inc  lb 01 ad rt
 
-:dec^ $inc^ 03 'd 'e 'c
+:dec^ $inc^ 03 'd'e'c
 :dec  lb 01 sb rt
 
 :dvm  # n d
@@ -49,7 +49,7 @@
 :sp lb 32 tw rt                    # emit space
 :nl lb 10 tw lb 13 tw rt           # emit CRLF
 
-:bye^ $,^ 03 'b 'y 'e
+:bye^ $,^ 03 'b'y'e
 :exit nl lb 01 ta                  # red
   lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
   nl hl
@@ -60,7 +60,7 @@
   lb 32 tw lb 07 ta                # gray on black for user input.
   rt
 
-:puts^ $bye^ 04 'p 'u 't 's
+:puts^ $bye^ 04 'p'u't's
 :puts                              # given address of counted string, write the string
   du rb dr inc                     # push str start to d, len to r (loop counter)
   .f du rb tw inc .n
@@ -69,13 +69,13 @@
 
 # dictionary
 
-:e-nm^ $puts^ 04 'e '- 'n 'm
+:e-nm^ $puts^ 04 'e'-'n'm
 :e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
 
-:e-xt^ $e-nm^ 04 'e '- 'x 't
+:e-xt^ $e-nm^ 04 'e'-'x't
 :e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
 
-:words^ $e-nm^ 05 'w 'o 'r 'd 's
+:words^ $e-nm^ 05 'w'o'r'd's
 :words                             # list known words, starting at last entry:
   last ri
   .w du lb 0 ne .d                 # we are looking at a non-0 pointer to entry
@@ -85,7 +85,7 @@
   zp rt
 
 :dyn-call cl :dyn-adr 00 00 00 00 rt
-:exec^ $words^ 04 'e 'x 'e 'c
+:exec^ $words^ 04 'e'x'e'c
 :exec
   e-xt
   li $dyn-adr wi
@@ -93,7 +93,7 @@
   rt
 
 # string compare
-:s-eq^ $exec^ 04 's '- 'e 'q
+:s-eq^ $exec^ 04 's'-'e'q
 :s-eq?                             # (st-?) are strings s and t the same?
   .i ov ov eq .t eq rt .z          # a. if the addresses are the same, return 1
   .i ov rb du dr ov rb ne .t       # b. (st-st?|n) if the lengths are different,
@@ -103,7 +103,7 @@
         rd zp eq rt .z .n          #   drop counter and return 0 (same as in b. before)
   zp zp lb 1 rt                    # everything matched, so return 1
 
-:word?^ $s-eq^ 05 'w 'o 'r 'd '?
+:word?^ $s-eq^ 05 'w'o'r'd'?
 :word?                             # (s-e)   attempt to find word in dictionary
   dr                               # s - |ts  push s to return stack
   last ri                          # ..-e|ts  fetch last entry
@@ -117,8 +117,8 @@
 
 # reading/writing numbers
 
-:base 10 :digit  '0 '1 '2 '3 '4 '5 '6 '7 '8 '9 'A 'B 'C 'D 'E 'F
-:putn^ $word?^ 04 'p 'u 't 'n
+:base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
+:putn^ $word?^ 04 'p'u't'n
 :putn # (n - )
   .i du lb 00 eq .t lb '0 tw rt
   .e lb 00 sw                      # ( n-kn) k:digit count=0
@@ -130,7 +130,7 @@
       .f rd rd tw dr .n .z         # loop through the characters
   rt
 
-:unkno-s 13 'u 'n 'k 'n 'o 'w 'n 32 'w 'o 'r 'd '.
+:unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
 :unknown
  lb 08 ta sp li $unkno-s puts nl rt
 
@@ -141,7 +141,6 @@
  .e zp lb 0 .z
  rt
 
-'t 'r 'y '- 'n 'u 'm
 :try-num                           # (s-n) try to parse string as number
   du rb dr                         # (s    - s|i) a=addr of string
   lb 0                             # (s|i  - sr|i) r=0
@@ -198,7 +197,7 @@ db .z
 #--- end of bios ------------------/
 
 # -- debug /test stuff --
-# .i lb 0 .t :word-a 03 'a 'b 'c :word-b 03 'a 'b 'c .z
+# .i lb 0 .t :word-a 03 'a'b'c :word-b 03 'a'b'c .z
 # li $word-a li $word-b s-eq?
 # word?-s words-s s-eq? db   (s-eq working)
 # words-s word? db           ( word? seems to be working)
