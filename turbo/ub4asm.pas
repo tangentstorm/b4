@@ -30,7 +30,7 @@ function b4opc(code:opstring) : byte;
     else begin writeln('invalid op: ', code); halt end end;
 
 type
-  tokentag = ( wsp, cmt, raw, chr, def, ref, adr,
+  tokentag = ( wsp, cmt, raw, chr, def, ref, adr, get, put,
               _if, _th, _el, _fi, _wh, _do, _od, _fr, _nx );
   token = record tag : tokentag; str : string; end;
 
@@ -56,6 +56,8 @@ procedure clear_dict;
 
 function next( var tok : token; var ch : char ) : boolean;
   procedure keep; begin tok.str := tok.str + ch end;
+  procedure rest(t:tokentag);
+    begin tok.tag := t; tok.str := ''; while nextchar(ch) > #32 do keep end;
   begin tok.str := ch; next := true;
     case ch of
       #0..#32: begin tok.tag := wsp; repeat until eof or (nextchar(ch) >= #32) end;
@@ -63,9 +65,11 @@ function next( var tok : token; var ch : char ) : boolean;
       '0'..'9': begin { TODO : this should be hex! }
         tok.tag := raw;
         while nextchar(ch) in ['0'..'9'] do keep end;
-      '''' : begin tok.tag := chr; tok.str := ''; while nextchar(ch) > #32 do keep end;
-      ':' : begin tok.tag := def; tok.str := ''; while nextchar(ch) > #32 do keep end;
-      '$' : begin tok.tag := adr; tok.str := ''; while nextchar(ch) > #32 do keep end;
+      '''' : begin tok.tag := chr; tok.str := nextchar(ch); nextchar(ch); end;
+      ':' : rest(def);
+      '$' : rest(adr);
+      '@' : rest(get);
+      '!' : rest(put);
       'a'..'z' : begin tok.tag := ref; while nextchar(ch) > #32 do keep end;
       '.' :
         begin
@@ -114,6 +118,8 @@ procedure b4as;
                 dict[ents].id := tok.str; dict[ents].adr := here; inc(ents) end;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
         adr : emitv(find_addr(tok.str));
+        get : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('ri')) end;
+        put : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wi')) end;
         _wh : dput(here); {(- wh)}
         _th ,
         _do : emit_slot('j0');
