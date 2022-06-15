@@ -27,7 +27,7 @@ procedure ParseParams(var ifn, ofn: string; var fmt: tfmt);
   end;
 
 procedure emit_b4x(ofn: string);
-  var out : file of ub4.value;
+  var out : file of byte;
   begin assign(out, ofn); rewrite(out);
     for i := 0 to ub4.maxcell do write(out, ub4.ram[i]);
     close(out)
