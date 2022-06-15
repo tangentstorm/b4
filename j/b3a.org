@@ -47,7 +47,7 @@ The b3 version provides only the opcodes necessary to run this assembler on itse
       'gt',  'h0',  'h1',  'hl',  'hp',  'jm',  'le',  'li',
       'lt',  'md',  'ml',  'ne',  'ng',  'nt',  'nx',  'or',
       'ov',  'qp',  'r0',  'r1',  'rd',  'rm',  'rp',  'rt',
-      'sb',  'si',  'sl',  'sr',  'sw',  'wm',  'wp',  'xd',
+      'sb',  'lb',  'sl',  'sr',  'sw',  'wm',  'wp',  'xd',
       'xr',  'yd',  'yr',  'zd',  'zp',  'zw' ]
 
   SEEN = collections.Counter()
@@ -98,21 +98,21 @@ We should have templates for doing basic things:
 
 ** macros used:
 #+begin_src b3a
-!b # write byte (probably going to be a plain op)
+.b # write byte (probably going to be a plain op)
 
 # assembler macros that anyone can use
-![ #quote compiler
-!] #end quote compiler
-!d #do
-!e #else
-!f #for
-!i #if
-!j #loop index
-!n #next
-!o #od
-!t #then
-!w #while
-!z #fi
+.[ #quote compiler
+.] #end quote compiler
+.d #do
+.e #else
+.f #for
+.i #if
+.j #loop index
+.n #next
+.o #od
+.t #then
+.w #while
+.z #fi
 
 # macros
 ^a invokes the assembler
@@ -139,25 +139,25 @@ We should have templates for doing basic things:
 ** DONE [7/7] basic control flow templates, based on the basic programs from [[#APTOP]]
 *** note: register =Z= contains the address we're writing to as we assemble.
 *** DONE 'ok' does nothing, so no bytecode is emitted and it isn't used in the assembler. (' ' works)
-*** DONE =!i .. !t .. !e .. !z= provides conditionals
+*** DONE =.i .. .t .. .e .. .z= provides conditionals
 #+name: macros-if
 #+begin_src b3a
 
 # if .. then .. else .. end
 bw ^i rt go
-bw ^t si h0 zw si 00 zw zd rt go
-bw ^e ![ hp 00 !] zd sw ov ^z ev rt go
+bw ^t lb h0 zw lb 00 zw zd rt go
+bw ^e .[ hp 00 .] zd sw ov ^z ev rt go
 bw ^z du zd sw sb wb rt go
 #+end_src
-**** =!i= is ~[ ( - ) ]~
+**** =.i= is ~[ ( - ) ]~
 "If" is pretty much a no-op and only there for human readers.
-**** =!t= ("then")  is ~[ ( -z) si h0 zw si 00 zw zd ]~
-~[ si h0 zw ]~ emits the opcode for h0
-~[ si 00 zw ]~ emits the byte 0
+**** =.t= ("then")  is ~[ ( -z) lb h0 zw lb 00 zw zd ]~
+~[ lb h0 zw ]~ emits the opcode for h0
+~[ lb 00 zw ]~ emits the byte 0
 ~[ zd ]~ is the opcode that puts the address in register Z onto the stack
 
 We want to jump if the condition is /false/, but at compile time, we don't know where we're jumping yet, so we need to leave some space for the jump target, and also push the current position onto the stack so we can come back and fill it in later.
-**** =!z= ("endif") is ~[ (a- ) du zd sw sb wb ]~
+**** =.z= ("endif") is ~[ (a- ) du zd sw sb wb ]~
 - if the input we're assembling is well formed, address =a= of the hop distance from =th= should still be on the stack. So now:
 - =(a- aa)=  du  duplicate a
 - =(.. aaz)= zd  take the new address in z
@@ -165,70 +165,70 @@ We want to jump if the condition is /false/, but at compile time, we don't know 
 - =(.. ad)=  sb  subtract to get the distance between =a= and =Z= (and thus how far to jump)
 - =(.. )=    wb  writes the distance byte to the address
 
-**** =!e= ("else") is ~[ (a-z) si hp zw     si 00 zw   zd sw ov  ^z ex ]~
+**** =.e= ("else") is ~[ (a-z) lb hp zw     lb 00 zw   zd sw ov  ^z ex ]~
 ( a-az)  hp, 0, zd  - unconditional hop to fill in later (jump from end of then to end of else)
 (.. zaz) sw ov      -
 (.. z)   ^z ex      - we jump to 'el' branch if condition after 'th' is false, which is
                       the same logic as jumping to the end of if..fi so we can just call fi here.
                       the difference is we're keeping another address on the stack for the
                       next =fi= to fill in.
-*** DONE =!w .. !d .. !o= provides while loops
+*** DONE =.w .. .d .. .o= provides while loops
 #+name: macros-while
 #+begin_src b3a
 
 # while .. do .. od
 bw ^w zd rt go
 bw ^d ^t ev rt go
-bw ^o sw ![ hp !] ^b ev ^z ev rt go
+bw ^o sw .[ hp .] ^b ev ^z ev rt go
 #+end_src
-**** =!w= is ~[ (  -w) zd ]~
-**** =!d= is ~[ (  -d) !t ]~
-**** =!o= is ~[ (wd- ) sw ![ hp !] zd sw sb zw !z ]~
+**** =.w= is ~[ (  -w) zd ]~
+**** =.d= is ~[ (  -d) .t ]~
+**** =.o= is ~[ (wd- ) sw .[ hp .] zd sw sb zw .z ]~
 (wd-dw)  =sw=
-(.. dw)  ~![ hp !]~ →  =si hp zw=  emits 'hop' instruction
+(.. dw)  ~.[ hp .]~ →  =lb hp zw=  emits 'hop' instruction
 (.. dzw) =zd sw=
 (.. dv)  =su= calculate hop vector v: backward jump of distance z-w to the 'wh' address
 (.. d)   =zw= emits v as the argument to =hp=
-(.. )    =!z= fills in the jump over the loop from 'do' if the condition fails.
-*** DONE =!b= backwards jump helper
+(.. )    =.z= fills in the jump over the loop from 'do' if the condition fails.
+*** DONE =.b= backwards jump helper
 #+name: <<macros-back>>
 #+begin_src b3a
 bw ^b zd sw sb zw rt go   # backwards jump
 #+end_src
 
-*** DONE =n !f .. !n= is a for loop. (count down from n to 0)
+*** DONE =n .f .. .n= is a for loop. (count down from n to 0)
 #+name: macros-for
 #+begin_src b3a
 
   # for-next loop
-  bw ^f zd ![ dr !] rt go
-  # bw ^n ![ nx !] ^b ev rt go
-  bw ^n ![
-    rd si
+  bw ^f zd .[ dr .] rt go
+  # bw ^n .[ nx .] ^b ev rt go
+  bw ^n .[
+    rd lb
     01 sb du
     h0 03
-    dr hp !]
+    dr hp .]
     ^b ev
-    ![ zp !]
+    .[ zp .]
     rt go
 #+end_src
 
-**** =!f= is ~[ ( -a) zd ![ dr !] ]~
+**** =.f= is ~[ ( -a) zd .[ dr .] ]~
 At compile time, it writes the current address to top of ram. (so we can compile the jump later)
 At runtime, it pushes the number of times to loop to the return stack.
-**** =!n= is ~[ (a-) ![ nx !] zw ]~
-*** DONE =![= .. =!]= for emitting instructions which emit the ops inside the brackets
+**** =.n= is ~[ (a-) .[ nx .] zw ]~
+*** DONE =.[= .. =.]= for emitting instructions which emit the ops inside the brackets
 #+name: macros-quote
 #+begin_src b3a
 
 # quote compiler macro
-bw ^[ !w ^k ev du ![ FF 1C !] ad eq nt !d ![ si !] zw !o zp rt go
+bw ^[ .w ^k ev du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt go
 #+end_src
-=![= - offset of the ![ in the source is already in y, since we're assembling.
+=.[= - offset of the .[ in the source is already in y, since we're assembling.
      - no need to preserve y, since we're still reading the same source
      - no need to preserve z, since we're still emitting to the same place
-   - ~bw ^[ !w ^k ev du ![ FF 1C !] ad eq nt !d ![ si !] zw !o zp rt go~
-=!]= - does nothing. it's just used as an end marker.
+   - ~bw ^[ .w ^k ev du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt go~
+=.]= - does nothing. it's just used as an end marker.
 *** DONE =bw ^c .. =go= provides both assignment and function definition
 binds a 'word'(ascii control character) to the next address
 as in forth, a word can act as a function, constant, or variable
@@ -239,13 +239,13 @@ as in forth, a word can act as a function, constant, or variable
 / vm should have already executed the instructions in the assembler binary,
 / and be in calculator mode (since 'hl' gets called at the end)
 
-M[ibuf+!#src] = src
+M[ibuf+.#src] = src
 dput ibuf
 dput #src
 dput obuf
 chev 1             / ^a opcode, placing address of assembler on stack
 gs[]
-o: M[obuf+!tos[]]  / the assembled bytecode output
+o: M[obuf+.tos[]]  / the assembled bytecode output
 #+end_src
 ** TODO [4/6] 2-char assembler
 *** DONE =^c= puts the next non-whitespace, non-comment character on the stack
@@ -253,12 +253,12 @@ o: M[obuf+!tos[]]  / the assembled bytecode output
 #+begin_src b3a
 
 bw ^c   # ( -c) fetch next non-whitespace, non-comment character
-   !w si 01 !d                       # infinite outer loop
-      !w ry du si 20 le !d zp !o     # leave first non-whitespace char on stack
-      !i du si '# eq !t              # if it's a "#" character...
-         !w ry si 0A eq nt !d !o     #   loop until we reach a linefeed
-      !e rt !z                       # first char was not a "#" so return it
-   !o rt go
+   .w lb 01 .d                       # infinite outer loop
+      .w ry du lb 20 le .d zp .o     # leave first non-whitespace char on stack
+      .i du lb '# eq .t              # if it's a "#" character...
+         .w ry lb 0A eq nt .d .o     #   loop until we reach a linefeed
+      .e rt .z                       # first char was not a "#" so return it
+   .o rt go
 #+end_src
 
 *** DONE =^s= (csl-i?b) "string search") is []
@@ -269,16 +269,16 @@ find index of char =c= in string (address) =s= with length =l=. return 0 if not 
 bw ^s  # (csl-i?b) search for c in string s with len l
    yd dr              # (csl-csl) copy current read pointer to return stack
    sw dy              # ( .. cl)now start reading from s
-   si 00 sw           # ( .. cil)put index on stack under s (!f..!n counts i-- and we want i++)
-   !f                 # ( .. ci)   for loop. (at runtime, this pushes length to stack)
+   lb 00 sw           # ( .. cil)put index on stack under s (.f...n counts i-- and we want i++)
+   .f                 # ( .. ci)   for loop. (at runtime, this pushes length to stack)
       ov ry           # ( .. cicv) copy c, read the byte value from index i
-      !i eq !t        # ( .. ci)   if they match..
+      .i eq .t        # ( .. ci)   if they match..
          rd zp        #   ( .. ci)    remove the loop counter
          rd dy        #   ( .. ci)    restore the read pointer
          sw zp        #   ( .. i)     remove the character from the stack
-         si 01 rt     #   ( .. i1)    and return the index and a found=1 flag.
-      !e si 01 ad     # ( .. ci')   else add 1 to the index
-      !z !n           # ( .. ci')  .. and go on to the next iteration
+         lb 01 rt     #   ( .. i1)    and return the index and a found=1 flag.
+      .e lb 01 ad     # ( .. ci')   else add 1 to the index
+      .z .n           # ( .. ci')  .. and go on to the next iteration
    zp zp 00 rt go     # ( .. 0) if not found, clear c,i and return 0
 #+end_src
 
@@ -288,7 +288,7 @@ bw ^s  # (csl-i?b) search for c in string s with len l
 
 # ^h : (c-n) hex digit to 00,..15 (capitals only. 00 on fail)
 bw ^x '0 '1 '2 '3 '4 '5 '6 '7 '8 '9 'A 'B 'C 'D 'E 'F go
-bw ^h !i ^x si 10 ^s ev nt !t si 00 !z rt go
+bw ^h .i ^x lb 10 ^s ev nt .t lb 00 .z rt go
 #+end_src
 
 *** TODO =^k= fetches the byte for the next 2-character token, and tags it with a type code
@@ -309,15 +309,15 @@ bw ^q # second chars of alphabetized mnemonics
 
 bw ^k  # ( -kt) fetch next token k, with type-tag t
    ^c ev  # fetch first character after whitespace and comments
-   !i du si '' eq !t ry si 00 rt !z   # "'x" -> x 0
-   !i du si '^ eq !t ry si 01 rt !z   # "^x" -> x 1
-   !i du si '! eq !t ry si 02 rt !z   # "!x" -> x 2
-   !i du ^p ^s ev !t                  # try matiching an opcode
+   .i du lb '' eq .t ry lb 00 rt .z   # "'x" -> x 0
+   .i du lb '^ eq .t ry lb 01 rt .z   # "^x" -> x 1
+   .i du lb '. eq .t ry lb 02 rt .z   # ".x" -> x 2
+   .i du ^p ^s ev .t                  # try matiching an opcode
       # TODO
-   !z
+   .z
    # as a last resort, parse as two (uppercase) hex digits, or 00
    # first digit << 4   # add second digit     return with tag=_1
-   ^h ev si 04 sl       ry ^h ev ad si         FF rt go
+   ^h ev lb 04 sl       ry ^h ev ad lb         FF rt go
 #+end_src
 
 use ^s to find position of first character in ^x
@@ -370,7 +370,7 @@ bw ^r sw dr sw rd rt go
           SEEN[t] += 1
           if   t[0]=="'": yield (ord(t[1]),    1)
           elif t[0]=="^": yield (ord(t[1].upper())-64, 1)
-          elif t[0]=="!": yield (t[1], 0)
+          elif t[0]==".": yield (t[1], 0)
           elif t in OPS:
               yield (bc(t), 1)
           else: yield ((hexit(t[0]) << 4) + hexit(t[1]), 1)
@@ -413,14 +413,14 @@ bw ^r sw dr sw rd rt go
   def t(res):
       """the THEN part of IF .. THEN .. ELSE .. END"""
       # <<ctl-t>>
-      # bw ^t si h0 zw si 00 zw zd rt go
-      res.extend([bc('si'), 0])
+      # bw ^t lb h0 zw lb 00 zw zd rt go
+      res.extend([bc('lb'), 0])
       ZD(res)
 
   def e(res):
       """the ELSE part of IF .. THEN .. ELSE .. END"""
       # <<ctl-e>>
-      # bw ^e ![ hp 00 !] zd sw ov ^z ev rt go
+      # bw ^e .[ hp 00 .] zd sw ov ^z ev rt go
       res.extend([bc('hp'), 0])
       ZD(res); SW(); OV(); z(res)
 
@@ -449,7 +449,7 @@ bw ^r sw dr sw rd rt go
   def o(res):
       """the OD part of WHILE .. DO .. OD"""
       # <<ctl-o>>
-      # bw ^o sw ![ hp !] zd sw sb zw ^z ev rt go
+      # bw ^o sw .[ hp .] zd sw sb zw ^z ev rt go
       backjump(res, 'hp')
       z(res) # fwd jump when condition fails
 
@@ -458,14 +458,14 @@ bw ^r sw dr sw rd rt go
   def f(res):
       """the FOR part of FOR .. NEXT"""
       # <<ctl-f>>
-      # bw ^f zd ![ dr !] rt go
+      # bw ^f zd .[ dr .] rt go
       ZD(res)
       res.extend([bc('dr')])
 
   def n(res):
       """the NEXT part of FOR .. NEXT"""
       # <<ctl-f>>
-      # bw ^n ![ nx !] ^b ev rt go
+      # bw ^n .[ nx .] ^b ev rt go
       res.extend([bc('nx')])
       backjump(res, 'nx')
 
@@ -476,13 +476,13 @@ bw ^r sw dr sw rd rt go
 
   def quote(res, toks):
       """ quote handler: ( ) """
-      # bw ^[ !w ^k ev du ![ FF 1C !] ad eq nt !d ![ si !] zw !o zp rt go
+      # bw ^[ .w ^k ev du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt go
       for tok,ready in toks:
           if ready: res.append(tok)
           elif tok == ']': return
-          elif tok == '[': raise "cannot handle nested ![ .. !]"
+          elif tok == '[': raise "cannot handle nested .[ .. .]"
           elif tok in MACROS: MACROS[tok](res)
-          else: raise "cannot handle '!"+tok+"' inside ![...!]"
+          else: raise "cannot handle '."+tok+"' inside .[....]"
 
 #+end_src
 *** DONE assembler
@@ -511,7 +511,7 @@ bw ^r sw dr sw rd rt go
   def print_stats():
       print("opcodes that appeared in the source code:")
       for (tok,count) in SEEN.most_common():
-          if tok in OPS: # or tok.startswith('!') or tok.startswith('^'):
+          if tok in OPS: # or tok.startswith('.') or tok.startswith('^'):
               print (tok, '%2i|'%count, '*'*count)
       print("unused: ", ' '.join(sorted({op for op in OPS if not SEEN[op]})))
 
@@ -548,8 +548,8 @@ bw ^r sw dr sw rd rt go
 #+begin_src b4a
 
 :nibl (x-xd)  # extract next nibble
-du si 0F an   # x → xx → xxF → xd  (where d=x & F)
-sw si 04 sr   # xd → dx → dx'      (where x'=x>>4)
+du lb 0F an   # x → xx → xxF → xd  (where d=x & F)
+sw lb 04 sr   # xd → dx → dx'      (where x'=x>>4)
 rt .. .. ..
 #+end_src
 
@@ -557,8 +557,8 @@ rt .. .. ..
 : jump, loop, or macro, or duplicate code ?
 #+begin_src b4a
 # break tos into 8 hex digits
-dusi0Fanswsi04sr dusi0Fanswsi04sr dusi0Fanswsi04sr dusi0Fanswsi04sr
-dusi0Fanswsi04sr dusi0Fanswsi04sr dusi0Fanswsi04sr dusi0Fanswsi04sr
+dulb0Fanswlb04sr dulb0Fanswlb04sr dulb0Fanswlb04sr dulb0Fanswlb04sr
+dulb0Fanswlb04sr dulb0Fanswlb04sr dulb0Fanswlb04sr dulb0Fanswlb04sr
 zp
 
 # or, if we can call subroutines:
@@ -601,12 +601,12 @@ just use it as index into buffer
 - with range matching
 ** implementing some ops in b3a
 *** DONE implementing =nx= if it weren't an opcode
-![ rd si 01 sb du !]  (leaving two copies of (ii-1))
-![ h0 03 !]           (if 0, hop over the next 3 bytes)
-![ dr hp !] zw        (>0, so put back on return stack and hop backwards)
-![ zp !]              (zap extra 0 at runtime)
+.[ rd si 01 sb du .]  (leaving two copies of (ii-1))
+.[ h0 03 .]           (if 0, hop over the next 3 bytes)
+.[ dr hp .] zw        (>0, so put back on return stack and hop backwards)
+.[ zp .]              (zap extra 0 at runtime)
 
-*** DONE =!b= ('wb' when I only had 'wm') writes a single byte to an address, while preserving Z
+*** DONE =.b= ('wb' when I only had 'wm') writes a single byte to an address, while preserving Z
  sw (ab-ba)
  zd (.. baz)
  sw (.. bza)
