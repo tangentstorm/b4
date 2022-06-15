@@ -67,7 +67,7 @@ function next( var tok : token; var ch : char ) : boolean;
       ':' : begin tok.tag := def; tok.str := ''; while nextchar(ch) > #32 do keep end;
       '$' : begin tok.tag := adr; tok.str := ''; while nextchar(ch) > #32 do keep end;
       'a'..'z' : begin tok.tag := ref; while nextchar(ch) > #32 do keep end;
-      '!' :
+      '.' :
         begin
           case nextchar(ch) of
             'i': tok.tag := _if;
