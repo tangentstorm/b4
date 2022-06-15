@@ -154,6 +154,72 @@
   sw zp rt                         # (pr-r)
 
 
+# memory management
+
+# this is meant to be a separate area from the main forth heap.
+# the forth heap is basically unmanaged, contiguous memory.
+# this area is meant for dynamicaally allocated buffers.
+
+:m0 li 00 02 00 00 rt                 # $0200 = addres 512 (little-endian)
+:mm-next rt
+:mm-size lb 04 ad rt                  # field for size of the block, in bytes
+:mm-used lb 08 ad rt                  # field for used amount (in bytes)
+:mm-data lb 12 ad rt
+:mm-split lb 10 ad rt                 # split blocks if at least this many bytes left
+
+:mm-init
+  lb 00 m0 mm-next wi                 # initial 'next' is 0 (null)
+  lb 01 lb 12 sl m0 mm-size wi        # initial size (1<<12 = 4kb) TODO: calculate this
+  lb 00 m0 mm-used wi                 # initial used = 0
+  rt
+
+
+:mm-align                             # (n-n) align n to cell size
+  lb 04 ov lb 03 an sb lb 03 an       # (n-nk) k= (4-(n&3))&3
+  ad rt                               # (nk-a)
+
+
+# memory management -- alloc / free
+
+:mu 00 00 00 00 :ms 00 00 00 00       # local variables for alloc
+:mp 00 00 00 00
+
+:mm-claim                             # (-a) claim mp (and possibly split end off)
+  @mp mm-used @mu wi                  # (-) mem[a] := used
+  @mp mm-size ri @ms sb               # (-r) remainder = block size - size
+  .i du mm-split gt .t                # (r-r) if worth splitting
+    # shrink old block:
+    @ms @mp mm-size wi                # (r-r) mem[mp+SIZE] = ms
+    @mp mm-data @ms ad                # (r-rn) n=(mp+DATA)+ms  (n=new next)
+    du @mp mm-next du ri dr wi        # (rn-rn|o) mem[mp+NEXT]=n, o=old next
+    # add new block:
+    du mm-next rd wi                  # (rn|o-rn) mem[n+NEXT]=old_next
+    sw lb 0 mm-data sb                # (rn-nz) z: new size (remainder-header size)
+    ov mm-size wi                     # (nz-n) mem[n+SIZE]=z
+    mm-used lb 0 wi .z                # (n-)  mem[n+USED]=0
+  @mp rt                              # (-a) address of block
+
+:mm-alloc^ $putn^ 08 'm'm'-'a'l'l'o'c
+:mm-alloc                             # (n-a) allocate block of n bytes
+  du !mu                              # (n-) store needed buffer size in mu(sed)
+  mm-align !ms                        # (n-) round up to word and store in ms(ize)
+  m0 !mp                              #  p = pointer (set to start block)
+  :mm-loop
+    .i @mp mm-size @ms ge             # if mem[p+SIZE] >= mn
+       @mp mm-used ri lb 0 eq an      #    and mem[p+USED]=0
+    .t @mp mm-claim rt
+    .e @mp mm-next ri                 # consider p^.next
+       .i du @mp lb 0 eq .t rt        # if next=null return null
+       .e !mp .z .z                   # else update p
+  jm $mm-loop
+
+:mm-free^ $mm-alloc^ 07 'm'm'-'f'r'e'e
+:mm-free                              # (a-) deallocate block
+  lb 0 wi sw                          # (a-0a)
+  lb 0 mm-data sb mm-used ri ad       # (0a-b) b=(a-DATA)+USED
+  wi rt                               # mem[b]:0
+
+
 # repl
 
 :eol 01                            # end of line flag
@@ -183,7 +249,7 @@
 
 :init
   li $tok ap wi                    # set ap = tok
-  li $putn^ last  wi
+  li $mm-free^ last  wi
   rt
 
 
