@@ -9,11 +9,26 @@
 
 :ap   lb 20 rt
 
+# arithmetic
 :inc^ $last^ 03 'i 'n 'c
 :inc  lb 01 ad rt
 
 :dec^ $inc^ 03 'd 'e 'c
 :dec  lb 01 sb rt
+
+:dvm  # n d
+  ov ov md      # (xy-xy|m)
+  dr dv rd rt   # (xy|m-dm|)
+
+:between?                          # (x hi lo - x f)
+  dr ov le                         # (x <=hi? |lo)
+  ov rd le an rt                   # (x f)
+
+:n1 lb 00 nt rt                    # TODO: better way to write "-1"
+
+
+
+# write cursors
 
 :a+ ap ri du dr wb                 # a+ ( n - ) , writes a value to the
     rd inc ap wi rt                #    address in ap and increments ap.
@@ -22,8 +37,8 @@
 :, here ri du dr wb
     rd inc here wi rt              # , is exact same thing for the heap
 
-:n1 lb 00 nt rt                    # TODO: better way to write "-1"
-
+
+# shell
 :tok-len 00                        # length of the current token
 :tok                               # 64-byte token buffer
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -51,6 +66,9 @@
   !f du rb tw inc !n
   zp rt
 
+
+# dictionary
+
 :e-nm^ $puts^ 04 'e '- 'n 'm
 :e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
 
@@ -74,7 +92,7 @@
   dyn-call
   rt
 
-
+# string compare
 :s-eq^ $exec^ 04 's '- 'e 'q
 :s-eq?                             # (st-?) are strings s and t the same?
   !i ov ov eq !t eq rt !z          # a. if the addresses are the same, return 1
@@ -96,13 +114,8 @@
     ri !o                          # otherwise, visit next string
   rd zp rt                         # (e!ts - e)
 
-   # instead of 'rd du dr'
-   # :ru rd rd sw dr du dr rt           # (-s) copy top of R to D
-   # !! might be nice to have macros for inlining this
-
-:dvm  # n d
-  ov ov md      # (xy-xy|m)
-  dr dv rd rt   # (xy|m-dm|)
+
+# reading/writing numbers
 
 :base 10 :digit  '0 '1 '2 '3 '4 '5 '6 '7 '8 '9 'A 'B 'C 'D 'E 'F
 :putn^ $word?^ 04 'p 'u 't 'n
@@ -117,22 +130,10 @@
       !f rd rd tw dr !n !z         # loop through the characters
   rt
 
-# :words-s li $words^ lb 1 ad rt   # (-s) address of the string "words"
-:words-s li $words^ e-nm rt        # (-s) address of the string "words"
-:word?-s li $word? e-nm rt         # (-s) address of the string "word?"
-
-:init
-  li $tok ap wi                    # set ap = tok
-  li $putn^ last  wi
-  rt
-
 :unkno-s 13 'u 'n 'k 'n 'o 'w 'n 32 'w 'o 'r 'd '.
 :unknown
  lb 08 ta sp li $unkno-s puts nl rt
 
-:between?                          # (x hi lo - x f)
-  dr ov le                         # (x <=hi? |lo)
-  ov rd le an rt                   # (x f)
 
 :digit?                            # (c-d1) or (c-0)
  !i du lb '0 lb '9 between? !t
@@ -152,6 +153,9 @@
      rd                            # (p|ri - pr|i) so next can do its thing
   !n
   sw zp rt                         # (pr-r)
+
+
+# repl
 
 :eol 01                            # end of line flag
 
@@ -178,6 +182,17 @@
     !z zp
   !z !o
 
+:init
+  li $tok ap wi                    # set ap = tok
+  li $putn^ last  wi
+  rt
+
+
+# debug stuff
+:words-s li $words^ e-nm rt        # (-s) address of the string "words"
+:word?-s li $word? e-nm rt         # (-s) address of the string "word?"
+
+
 # this should never execute, so trigger debugger if we get here:
 db !z
 #--- end of bios ------------------/
@@ -189,6 +204,7 @@ db !z
 # words-s word? db           ( word? seems to be working)
 # lb 16 !w dec du !d du ta lb '. tw !z zp nl # draw colors
 
+
 # -- main --
 init
 # show the word list:
