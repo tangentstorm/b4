@@ -3,13 +3,18 @@
 (require 'generic-x)
 (define-generic-mode 'b3a-mode
   '(" #") ; comments start with # but we need to allow '#
-  '("si" "du" "ad" "su" "ov" "sw" "zd" "dz" "dr" "rd" "hp" "h0" "rt" "eq" "zp"
-    "dy" "yd" "ry" "eq" "ne" "nx" "le" "rb" "an" "sl" "nt")
+  '("lb" "li" "sw" "du" "ov" "zp" "dr" "rd"
+    "ad" "sb" "ml" "dv" "md" "ng" "sl" "sr"
+    "an" "or" "xr" "nt"
+    "eq" "ne" "gt" "lt" "ge" "le"
+    "dx" "xd" "dy" "yd" "dz" "zd" "dc" "cd"
+    "hl" "jm" "hp" "h0" "cl" "rt" "r0" "nx" "ev"
+    "rb" "wb" "ri" "wi" "yr" "zw" "wp" "rp" "qp"
+    ) ; bw go)
   '(("^#.*" . 'font-lock-comment-face)
-    ("[!][a-z]" . 'font-lock-preprocessor-face)
     ("\\^[][a-z]" . 'font-lock-variable-name-face)
     ("bw\\|go\\|ev"  . 'font-lock-variable-name-face)
-    ("\\![][a-z]" . 'font-lock-preprocessor-face)
+    ("[.][][a-z^\\\\]" . 'font-lock-preprocessor-face)
     ("wb\\|zw" . 'font-lock-function-name-face)
     ("[']." . 'font-lock-string-face)
     ("[0-9A-Z][0-9A-Z]" . 'font-lock-constant-face))
