@@ -1,6 +1,19 @@
-* b4/old
+* b4/ref
 
-This directory contains some old files that I'm keeping around for reference or future use.
+** this is a junk drawer :)
+
+One of the ideas behind =b4= was to create a teaching tool, to accompany a series of lessons about programming.
+
+Over the years, the =b4= repo accumulated a bunch of notes and experiments related to that idea,
+and many of them are still in this directory.
+
+None of this is really tied to the current b4 virtual machine, but I'm keeping it around for future use.
 
 
-- b4.rkt :: partial implementation of b4vm in racket.
+** some highlights:
+
+- [[b4.rkt]] partial implementation of b4vm in racket.
+- [[go/risc.pas]] is an niklaus wirth's risc machine from [[http://www.projectoberon.com/][project oberon]].
+- [[go/ukanren.py]] is a port of [[https://github.com/jasonhemann/microKanren][microkanren]] to python
+- [[go/logic.py]] seems to be some kind of proof assistant i don't remember writing. :)
+
