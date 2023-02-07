@@ -1,0 +1,6 @@
+* b4/old
+
+This directory contains some old files that I'm keeping around for reference or future use.
+
+
+- b4.rkt :: partial implementation of b4vm in racket.
