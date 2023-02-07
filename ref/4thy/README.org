@@ -1,0 +1,2 @@
+4thy is the core of a pure-javascript forth-like interpreter.
+mostly a proof of concept.
