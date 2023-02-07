@@ -1,5 +1,5 @@
 #lang racket
-; b4 virtual machine
+; a start on implementing the b4 virtual machine in racket
 (require (for-syntax racket/syntax))
 (provide make-b4-cpu)
 
