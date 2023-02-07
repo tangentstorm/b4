@@ -1,0 +1,5 @@
+The files in this directory are various old attempts at building
+assemblers in different languages.
+
+They use older variations of an instruction set based on ngaro,
+so aren't actually part of the current b4 project.
