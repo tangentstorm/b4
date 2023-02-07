@@ -34,7 +34,7 @@ SKIPPY =: 2b1000  NB. skipping evaluation until we see 'go' op
 
 CMASK =: 31 NB. ctrl code mask
 
-
+
 NB. "microcode"
 NB. not part of the instruction set, but each instruction
 NB. is composed of these building blocks.
@@ -70,7 +70,7 @@ NB. there are 32 "C" registers, so cget/set take an argument
 NB. monad/dyad: lifts 1/2-arg J verbs to VM
 dy =: {{ dput mask (dpop u dpop) y }}  NB. !! this conflicts with 'dy' op below
 mo =: {{ dput mask u dpop y }}
-
+
 NB. instruction set
 NB. ---------------------------------------------------------------------
 s_ops=:' lb li sw du ov zp dr rd' [ n_ops=:' ad sb ml dv md ng sl sr'
@@ -113,12 +113,11 @@ hl =: pset@END                  NB. halt
 jm =: pset@<:@mget@inc4         NB. jump to M[P+1 2 3 4]-1 (because every op is followed by p++)
 hp =: pset@<:@(pget+bget)@incp  NB. hop to P+M[P+1]-1 (relative short jump)
 h0 =: hp`incp@.(0-:dpop)        NB. hop if tos==0 else skip addr
-h1 =: hp`incp@.(0~:dpop)        NB. hop if tos!=0 else skip addr
 nx =: (hp@rput@<:)`incp@.(0-:])@ rpop  NB. 'next': if (rtos--)==0 proceed, else hop
 cl =: jm@rput@pget              NB. call. like jump, but push P to return stack first
 rt =: pset&(rpop-1:)            NB. return
+NB. !! TODO: r0 should leave non-0 on stack?
 r0 =: rt^:(0-:dpop)             NB. return if tos==0
-r1 =: rt^:(0~:dpop)             NB. return if tos!=0
 ev =: pset@<:@dpop@rput@pget    NB. eval. like call, but take address from stack instead of M[1+P]
 
 NB. memory / messaging instructions
@@ -144,7 +143,7 @@ NB. this does not have a specific opcode, but is invoked for
 NB. every input sequence that designates a valid utf-8
 NB. codepoint.
 chev =: ev@cget@0@dput
-
+
 NB. cpu emulator
 NB. ---------------------------------------------------------------------
 GO =: 128 + ops i. <'go'
@@ -195,7 +194,7 @@ s =: log@step
 NB. launch a new vm with given memory image and trace what happens:
 trace =: {{ (fmt,s 0}[:,/ log@step^:a:) 0 0$s=.log new y }}
 boot =: [: ". 'D' [[: (log@step^:a:) new
-
+
 NB. asm: bootstrap assembler: 2 chars per byte
 NB. ---------------------------------------------------------------------
 NB. a0: strip out spaces. every pair of characters remaining
