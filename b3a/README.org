@@ -1,0 +1,32 @@
+#+title: b3a
+
+~b3a.b3a~ is (or is intended to be) a self-hosting assembler for the b4
+instruction set. The assembly language used is a subset of "standard" b4a.
+
+"Self-hosting" means that the assembler (running on a proper b4vm)
+should be able to assemble itself.
+
+(Note: b3a has not yet been run on an actual b4 vm)
+
+In order to run the assembler the first time, some other program
+needs to be used, and so a bootstrap assembler is provided in python.
+
+The two were written side by side using the literate programming features
+of emacs org-mode.
+
+If you load ~b3a.org~ into emacs and run ~org-babel-tangle~, it
+will produce new copies of ~b3a0.py~ and ~b3a.b3a~.
+
+You can then assembly ~b3a.b3a~ into the binary file ~b3a0.out~ by running:
+
+: python b3a0.py b3a.b3a > ops.txt
+
+In theory, if you then ran ~b3a0.out~ as a b4 executable, and fed it ~b3a.b3a~
+as input, it would output an exact copy of ~b3a0.out~.
+
+The `ops.txt` file contains information on the distribution of b4 opcodes
+actually used in writing the assembler.
+
+As far as I can recall, none of this code has been thoroughly tested,
+because the b4 implementation at the time did not support IO, and the
+b4 opcodes have also changed slightly from the ones in the code.
