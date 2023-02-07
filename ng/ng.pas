@@ -16,11 +16,12 @@ type
 { interface > types }
 
   TNgaroVM = class (TComponent)
-    private
+    public { !! only because the terminal needs it for some reason }
       data, addr : TInt32Stack;
+      done       : boolean;
+    private
       ram, ports : array of int32;
       ip         : integer;           { instruction pointer }
-      done       : boolean;
       inputs     : array of textfile; { input files - see ng.input.pas }
       input      : ^textfile;
       optbl      : array of oprec;
@@ -147,7 +148,7 @@ procedure TNgaroVM.Load;
   var i : int32; f : file of int32;
   begin
     {$i-}
-    system.assign( f, imgpath );
+    system.assign( f, self.imgpath );
     reset( f );
     {$i+}
     if ioresult = 0 then begin

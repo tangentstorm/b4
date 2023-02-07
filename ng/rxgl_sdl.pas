@@ -14,7 +14,7 @@ type
     procedure Display; override;
   end;
 
-  procedure Main( rxvm : ng.TRetroVM );
+  procedure Main( rxvm : ng.TNgaroVM );
   procedure step_sdl(vdp : TSDLVDP);
 
 implementation
@@ -49,7 +49,7 @@ procedure TSDLVDP.CreateCanvas;
   end;
 {$ENDIF}
 
-procedure TSDLVDP.PlotPixel(adr: Int32; Value: byte); inline;
+procedure TSDLVDP.PlotPixel(adr: Int32; Value: byte);
   var rBitmap: ^TRGBA;
   begin
     if not assigned(self.pBitmap) then
@@ -68,12 +68,12 @@ procedure TSDLVDP.PlotPixel(adr: Int32; Value: byte); inline;
       end
   end;
 
-procedure TSDLVDP.Display; inline;
+procedure TSDLVDP.Display;
   begin
     SDL_FLIP(self.pBitmap);
   end;
 
-procedure step_sdl(vdp : TSDLVDP); inline;
+procedure step_sdl(vdp : TSDLVDP);
   var
     evt : pSDL_Event;
     key : TSDLKey;
@@ -142,15 +142,16 @@ begin
 end;
 }
 
-procedure Main( rxvm : ng.TRetroVM );
+procedure Main( rxvm : ng.TNgaroVM );
   var vdp : TSDLVDP;
 begin
+{!! this seems to be obsolete.
   vdp := TSDLVDP.Create;
   vdp.Attach( rxvm );
   repeat
     rxvm.step; step_sdl(vdp)
   until rxvm.done;
-  vdp.Destroy;
+  vdp.Destroy; }
 end;
 
 initialization

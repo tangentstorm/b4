@@ -1,5 +1,5 @@
 { retroterm: retro extended terminal }
-{$i xpc.inc}
+{$i xpc.inc}{$mode objfpc}
 unit rt_term;
 
 { There's a compiler issue preventing modernized aggpas from
@@ -199,7 +199,7 @@ procedure TRxConsole.DrawGlyphTable;
     end
   end;
 
-procedure TRxConsole.clear; inline;
+procedure TRxConsole.clear;
   begin
     inherited Clear; cx := 0; cy := 0;
     RenderDisplay; { actually wipe the screen }
@@ -314,7 +314,7 @@ constructor TScreen.Create;
   end;
 
 
-procedure TScreen.Clear; inline;
+procedure TScreen.Clear;
   begin
     self.buffer.Clear;
   end;
@@ -478,7 +478,7 @@ constructor TRxCanvas.Create( width, height : int32; bitmap : Pointer );
       raise EObjectCheck.Create( 'bitmap pointer is nil' )
     else
       begin
-        inherited CreateAt( width, height, 0, bitmap );
+        inherited Create( width, height ); //, 0, bitmap );
         writeln( 'TRxCavanvas.Create( ',
                 width, ', ', height, ', <$', HexStr( bitmap ), '>)' );
         writeln( self[ 10, 20 ] );
@@ -554,7 +554,7 @@ function TRxConsole.handle_keyboard( msg : int32 ) : int32;
   begin
     { ensure a refresh of the screen wehn it's time to input text,
       but only if we're just waiting. }
-    if keyboard.needKey then pass else self.Display;
+    if keyboard.needKey then ok else self.Display;
     result := ord(keyboard.ReadKey);
     if keyboard.needKey then
       raise ENotFinished.Create('ReadKey');

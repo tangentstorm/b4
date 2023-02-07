@@ -15,7 +15,7 @@ interface uses xpc, ng, sysutils, rt_term,
   zgl_timers,
   zgl_utils;
 
-procedure Main( rxvm : ng.TRetroVM );
+procedure Main( rxvm : ng.TNgaroVM );
 
 type
   TZenGLVDP = class (rt_term.TRxConsole)
@@ -29,7 +29,7 @@ type
 implementation
 
 var
-  vm : ng.TRetroVM;
+  vm : ng.TNgaroVM;
   vt : TZenGLVDP;
 
 constructor TZenGLVDP.Create;
@@ -69,7 +69,7 @@ procedure OnStep;
   begin
     rtarget_Set( vt.target );
     if vm.done then zgl_exit
-    else if vt.keyboard.needKey then pass
+    else if vt.keyboard.needKey then ok
     else
       repeat inc(i); vm.step
       until (i = opsPerStep) or vm.done or vt.keyboard.needKey;
@@ -100,7 +100,7 @@ procedure OnExit;
     vt.Destroy;
   end;
 
-procedure Main( rxvm : ng.TRetroVM );
+procedure Main( rxvm : ng.TNgaroVM );
   begin
     vm := rxvm;
     zgl_init;

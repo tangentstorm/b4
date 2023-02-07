@@ -5,15 +5,15 @@
 //
 // see: http://retroforth.org/
 //
-{$i xpc.inc}{$mode delphi}
+{$i xpc.inc}{$mode objfpc}
 program retro;
 uses
   xpc, sysutils, classes, lined, kvm,
   {$IFDEF GL}
     {$IFDEF SDL}
-       rxgl in 'ng/rxgl_sdl.pas',
+       rxgl in 'ng\rxgl_sdl.pas',
     {$ELSE}
-       rxgl in 'ng/rxgl_zen.pas',
+       rxgl in 'ng\rxgl_zen.pas',
     {$ENDIF}
   {$ENDIF}
   ng;
@@ -21,13 +21,13 @@ uses
 { configuration / startup  helpers }
 type
   TRetroConfig = record
-		   minSize   : int32;
-		   imgPath   : TStr;
-		   debug     : boolean;
-		   dumpAfter : boolean;
-		   lineEdit  : boolean;
-		   inputs    : array of TStr;
-		 end;
+    minSize   : int32;
+    imgPath   : TStr;
+    debug     : boolean;
+    dumpAfter : boolean;
+    lineEdit  : boolean;
+    inputs    : array of TStr;
+  end;
 
 procedure fail( msg : TStr );
   begin
@@ -63,15 +63,15 @@ function configure( var cfg : TRetroConfig ) : boolean;
       else if p = '--dump' then cfg.dumpAfter := true
       else if (p = '--editline') or (p = '-e') then cfg.lineEdit := true
       else if p = '--with' then
-	if haveparam then include( cfg, nextparam )
-	else fail( 'no filename given for --with' )
+        if haveparam then include( cfg, nextparam )
+        else fail( 'no filename given for --with' )
       else if p = '--pad' then
-	if haveparam then cfg.minsize := strtoint( nextparam )
-	else fail( 'expected a number after --pad' )
+        if haveparam then cfg.minsize := strtoint( nextparam )
+        else fail( 'expected a number after --pad' )
       else if p = '--image' then cfg.imgPath := nextparam
       else begin { no prefix, so expect image name }
-	if cfg.imgpath = '' then cfg.imgpath := p
-	else fail( 'error: more than one image path given.' )
+        if cfg.imgpath = '' then cfg.imgpath := p
+        else fail( 'error: more than one image path given.' )
       end;
     end;
     if cfg.imgPath = '' then cfg.imgPath := 'retroImage';
@@ -128,8 +128,8 @@ begin
       vm.minsize := cfg.minsize;
       for path in cfg.inputs do vm.include( path );
       if cfg.lineEdit then begin // replace ngaro's keyboard driver
-	ed := TEdlnDevice.Create(vm);
-	vm.devices[1] := ed.handle;
+        ed := TEdlnDevice.Create(vm);
+        vm.devices[1] := @ed.handle;
       end;
       {$IFDEF GL} rxgl.Main(vm); {$ELSE} vm.Loop; {$ENDIF}
       if cfg.dumpAfter then vm.dump;
