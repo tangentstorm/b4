@@ -13,7 +13,7 @@ ZGL       = lib/zengl
 
 # TODO: figure out how to not hard-code this path :/
 #       (probably means fpc.cfg)
-PLATFORM  = x86_64-linux
+PLATFORM  = i386-win64
 ZENGLAGG  = -Fu$(AGG) -Fu$(ZGL)/src \
 	-Fu$(ZGL)/lib/ogg/$(PLATFORM) \
 	-Fu$(ZGL)/lib/theora/$(PLATFORM) \
@@ -32,12 +32,11 @@ PYTHON    = python
 targets:
 	@echo 'available targets:'
 	@echo '--------------------------'
-	@echo 'make build   -> build ./gen/retro'
-	@echo 'make retro   -> build and run ./gen/retrovm'
-	@echo 'make retrogl -> build and run ./gen/retrogl'
-	@echo 'make shrx    -> build and run ./gen/shrx'
-	@echo 'make test    -> run all tests'
-	@echo
+	@echo "make build   -> build ./gen/retro"
+	@echo "make retro   -> build and run ./gen/retrovm"
+	@echo "make retrogl -> build and run ./gen/retrogl"
+	@echo "make test    -> run all tests"
+	@echo .
 	@echo for grammar engine, cd ./pre
 
 retro : build
@@ -49,14 +48,14 @@ retro-e : build
 build : init any.ng
 
 rxsdl :
-	@$(FPC) -Mdelphi -dGL -dSDL $(ZENGLAGG) ng/retro.pas -oretrogl
-	cd $(GEN); ./retrogl $(args)
+	@$(FPC) -Mdelphi -dGL -dSDL $(ZENGLAGG) -dVIDEOKVM ng/retro.pas -oretrogl.exe
+	$(GEN)\retrogl $(args)
 
 rxzen :
 	@$(FPC) -Mdelphi -dGL -dZEN $(ZENGLAGG) ng/retro.pas -oretrogl
 	cd $(GEN); ./retrogl $(args)
 
-retrogl : rxzen
+retrogl : rxsdl
 
 init    :
 	@mkdir -p $(GEN)
@@ -70,11 +69,6 @@ init    :
 any.xpl : lib/xpl/code/*.pas lib/xpl/code/*.pas
 any.ng  : ng/*.pas
 	@$(FPC) ng/retro.pas
-
-shrx : any.xpl any.ng shrx/*.pas
-	@$(FPC) shrx/shrx.pas
-	cd $(GEN); ./shrx $(args)
-
 
 test: test.ngaro test.core test.files. test.clean
 
