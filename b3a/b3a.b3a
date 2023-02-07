@@ -1,0 +1,84 @@
+# b3a.b3a : a bootstrap assembler for b4 vm, written in itself.
+
+#= macros =====================================================
+
+# if .. then .. else .. end
+bw ^i rt go
+bw ^t lb h0 zw lb 00 zw zd rt go
+bw ^e .[ hp 00 .] zd sw ov ^z ev rt go
+bw ^z du zd sw sb wb rt go
+
+
+# while .. do .. od
+bw ^w zd rt go
+bw ^d ^t ev rt go
+bw ^o sw .[ hp .] ^b ev ^z ev rt go
+
+# for-next loop
+bw ^f zd .[ dr .] rt go
+# bw ^n .[ nx .] ^b ev rt go
+bw ^n .[
+  rd lb
+  01 sb du
+  h0 03
+  dr hp .]
+  ^b ev
+  .[ zp .]
+  rt go
+
+# quote compiler macro
+bw ^[ .w ^k ev du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt go
+
+#= runtime ====================================================
+
+bw ^c   # ( -c) fetch next non-whitespace, non-comment character
+   .w lb 01 .d                       # infinite outer loop
+      .w ry du lb 20 le .d zp .o     # leave first non-whitespace char on stack
+      .i du lb '# eq .t              # if it's a "#" character...
+         .w ry lb 0A eq nt .d .o     #   loop until we reach a linefeed
+      .e rt .z                       # first char was not a "#" so return it
+   .o rt go
+
+bw ^s  # (csl-i?b) search for c in string s with len l
+   yd dr              # (csl-csl) copy current read pointer to return stack
+   sw dy              # ( .. cl)now start reading from s
+   lb 00 sw           # ( .. cil)put index on stack under s (.f...n counts i-- and we want i++)
+   .f                 # ( .. ci)   for loop. (at runtime, this pushes length to stack)
+      ov ry           # ( .. cicv) copy c, read the byte value from index i
+      .i eq .t        # ( .. ci)   if they match..
+         rd zp        #   ( .. ci)    remove the loop counter
+         rd dy        #   ( .. ci)    restore the read pointer
+         sw zp        #   ( .. i)     remove the character from the stack
+         lb 01 rt     #   ( .. i1)    and return the index and a found=1 flag.
+      .e lb 01 ad     # ( .. ci')   else add 1 to the index
+      .z .n           # ( .. ci')  .. and go on to the next iteration
+   zp zp 00 rt go     # ( .. 0) if not found, clear c,i and return 0
+
+# ^h : (c-n) hex digit to 00,..15 (capitals only. 00 on fail)
+bw ^x '0 '1 '2 '3 '4 '5 '6 '7 '8 '9 'A 'B 'C 'D 'E 'F go
+bw ^h .i ^x lb 10 ^s ev nt .t lb 00 .z rt go
+
+bw ^p # firt chars of alphebetized mnemonics
+   'a 'a 'b 'c 'c 'd 'd 'd 'd 'd 'd 'd 'e 'e 'g 'g 'g
+   'h 'h 'h 'h 'j 'l 'l 'l 'm 'm 'n 'n 'n 'o 'o 'q 'r
+   'r 'r 'r 'r 'r 's 's 's 's 's 'w 'w 'x 'x 'y 'y 'z
+   'z 'z go
+
+bw ^q # second chars of alphabetized mnemonics
+   'd 'n 'w 'd 'l 'c 'r 'u 'v 'x 'y 'z 'q 'v 'e 'o 't
+   '0 '1 'l 'p 'm 'e 'i 't 'd 'l 'e 'g 't 'r 'v 'p '0
+   '1 'd 'm 'p 't 'b 'i 'l 'r 'w 'm 'p 'd 'r 'd 'r 'd
+   'p 'w go
+
+bw ^k  # ( -kt) fetch next token k, with type-tag t
+   ^c ev  # fetch first character after whitespace and comments
+   .i du lb '' eq .t ry lb 00 rt .z   # "'x" -> x 0
+   .i du lb '^ eq .t ry lb 01 rt .z   # "^x" -> x 1
+   .i du lb '. eq .t ry lb 02 rt .z   # ".x" -> x 2
+   .i du ^p ^s ev .t                  # try matiching an opcode
+      # TODO
+   .z
+   # as a last resort, parse as two (uppercase) hex digits, or 00
+   # first digit << 4   # add second digit     return with tag=_1
+   ^h ev lb 04 sl       ry ^h ev ad lb         FF rt go
+# ^a - the assembler

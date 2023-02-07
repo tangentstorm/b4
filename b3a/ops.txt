@@ -1,0 +1,25 @@
+opcodes that appeared in the source code:
+lb 21| *********************
+rt 19| *******************
+bw 17| *****************
+go 17| *****************
+ev 11| ***********
+du  9| *********
+zp  7| *******
+eq  7| *******
+sw  6| ******
+zd  5| *****
+zw  3| ***
+hp  3| ***
+dr  3| ***
+rd  3| ***
+ad  3| ***
+nt  3| ***
+h0  2| **
+ov  2| **
+sb  2| **
+dy  2| **
+le  1| *
+yd  1| *
+sl  1| *
+unused:  an cd cl dc dv dx dz ge gt h1 hl jm li lt md ml ne ng nx or qp r0 r1 rm rp sr wm wp xd xr yr
