@@ -33,7 +33,7 @@ For example, the tests for the [[https://github.com/tangentstorm/b4-gd/][godot i
 :  python testris.py ./Godot_v4.2.1-stable_win64_console.exe --path b4-gd --headless --script cli.gd -- input.txt
 
 
-* DONE [6/8] debugger interface
+* DONE [6/6] debugger interface
 ** DONE establish a command loop and a way to exit
 #+name: io.%q
 #+begin_src
@@ -62,8 +62,6 @@ cs: [] # should be an empty array
 = ?c : query the call stack
 #+end_src
 
-** TODO always write an even number of hex digits
-** TODO allow reading negative numbers
 ** DONE push a hex number to the stack
 #+name: io.hex
 #+begin_src
@@ -104,7 +102,7 @@ ds: [$6C $70 $74 $78 $7C]
 : there are 5 control characters after ^Z that use punctuation.
 #+end_src
 
-* [17/17] alu / stack operations
+* DONE [17/17] alu / stack operations
 ** DONE =ad= op
 #+name: op.ad
 #+begin_src
@@ -225,7 +223,7 @@ ds: [$A]
 cs: []
 #+end_src
 
-* debugger/stepper
+* DONE [2/2] debugger/stepper
 ** DONE query instruction pointer
 #+name: dbg.%i
 #+begin_src
@@ -243,14 +241,14 @@ ip: $101
 = %s : step
 : step and execute a no-op
 #+end_src
-* TODO debugger memory access
+* DONE [2/2] batch memory access from debugger
 ** DONE inspect ram
 #+name: io.mem-read
 #+begin_src
 > @0100 %q
 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
-** TODO write to ram
+** DONE write to ram
 #+name: io.mem-write
 #+begin_src
 > @0100
@@ -260,7 +258,7 @@ ip: $101
 .. AA BB CC .. .. .. .. .. .. .. .. .. .. .. ..
 #+end_src
 
-* TODO [3/3] memory operations
+* DONE [3/3] memory operations
 ** DONE =lb= op
 #+name: op.lb
 #+begin_src
@@ -293,45 +291,54 @@ ds: [$0]
 ds: [$1]
 #+end_src
 
-* TODO extended ops
-** TODO =rb= op
+* DONE [6/6] simple memory ops
+** DONE =rb= op
 #+name: op.rb
 #+begin_src
 > !0100 AA BB 00 CC
 > @0100
 AA BB .. CC .. .. .. .. .. .. .. .. .. .. .. ..
-> 0103 rb ?d
+> 0103 rb ?d %q
 ds: [$CC]
 #+end_src
 
-** TODO =ri= op
+** DONE =ri= op
 #+name: op.ri
 #+begin_src
-> !0100 AA BB 00 CC
+> !0100 AA BB CC 00
 > @0100
-AA BB .. CC .. .. .. .. .. .. .. .. .. .. .. ..
-> 0100 ri ?d
-ds: [$CC00BBAA]
+AA BB CC .. .. .. .. .. .. .. .. .. .. .. .. ..
+> 0100 ri ?d %q
+ds: [$CCBBAA]
 = ri : read integer
-Note that the bytes are "backwards" from the way we
-write them! B4 reads and writes integers in little-endian format.
+: Note that the bytes are "backwards" from the way we write them!
+: B4 reads and writes integers in little-endian format.
+#+end_src
+** DONE =wi= op
+#+name: op.wi
+#+begin_src
+> 12345678 `X wi ?d
+ds: []
+> `X ri ?d %q
+ds: [$12345678]
+= wi : write integer
 #+end_src
 
-** TODO =rx= op
+** DONE =rx= op
 #+name: op.rx
 #+begin_src
-> `A 11223344 wi
-> `B 55667788 wi ?d
+> 11223344 `A wi
+> 55667788 `B wi ?d
 > `A `X wi
 ds: []
 # read twice, loading `A and `B
 > rx rx ?d
-ds: [11223344 55667788]
+ds: [$11223344 $55667788]
 # now `X should be pointing at `C
-> zp zp `X ri `C eq ?d
+> zp zp `X ri `C eq ?d %q
 ds: [$-1]
 = rx : read from and incement `X
-: same as following assembly:
+: same as the following assembly:
 :
 : read from address in `X
 :   li `X ri ri
@@ -339,37 +346,35 @@ ds: [$-1]
 :   li `X du ri 01 ad wi
 #+end_src
 
-** TODO =ry= op
+** DONE =ry= op
 #+name: op.ry
 #+begin_src
-> `A 11223344 wi
-> `B 55667788 wi ?d
+> 11223344 `A wi
+> 55667788 `B wi ?d
 > `A `Y wi
 ds: []
 # read twice, loading `A and `B
 > ry ry ?d
-ds: [11223344 55667788]
+ds: [$11223344 $55667788]
 # now `Y should be pointing at `C
-> zp zp `X ri `C eq ?d
+> zp zp `Y ri `C eq ?d %q
 ds: [$-1]
 = ry : read from and incement `Y
 : ry is exactly the same as rx, except it uses the `Y register.
 #+end_src
 
-** TODO =wz= op
+** DONE =wz= op
 #+name: op.wz
 #+begin_src
 > `A `Z wi
-> ABCDEF zw
-> 123456 zw ?d
+> ABCDEF wz
+> 123456 wz ?d
 ds: []
-> `A ri `B ri
+> `A ri `B ri ?d
 ds: [$ABCDEF $123456]
 # now `Z should be pointing at `C
-> zp zp `Z ri `C eq ?d
+> zp zp `Z ri `C eq ?d %q
 ds: [$-1]
 = wz : write to and increment `Z
 #+end_src
 
-* step through those words
-* test call-stack growth to introduce tail calls
