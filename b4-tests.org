@@ -33,7 +33,7 @@ For example, the tests for the [[https://github.com/tangentstorm/b4-gd/][godot i
 :  python testris.py ./Godot_v4.2.1-stable_win64_console.exe --path b4-gd --headless --script cli.gd -- input.txt
 
 
-* DONE [3/5] debugger interface
+* DONE [6/8] debugger interface
 ** DONE establish a command loop and a way to exit
 #+name: io.%q
 #+begin_src
@@ -62,10 +62,9 @@ cs: [] # should be an empty array
 = ?c : query the call stack
 #+end_src
 
-** TODO always raw an even number of hex digits
+** TODO always write an even number of hex digits
 ** TODO allow reading negative numbers
-* math ops
-** push a hex number to the stack
+** DONE push a hex number to the stack
 #+name: io.hex
 #+begin_src
 > FF CC ?d %q
@@ -73,7 +72,39 @@ ds: [$FF $CC]
 = hex numbers are pushed to data stack
 : it should print in hex
 #+end_src
+** DONE push an ascii character onto the stack
+#+name: io.ascii
+#+begin_src
+> 'a 'A ' ?d %q
+ds: [$61 $41 $20]
+= ascii syntax
+: note lack of a second space after the '
+: it should print in hex
+#+end_src
+** DONE push control character addresses to stack
+#+name: io.ctrl
+#+begin_src
+> `@ `A `B `C `X `Y `Z ?d %q
+ds: [$0 $4 $8 $C $60 $64 $68]
+= control characters
+: the 32 ascii control characters act as a dictionary.
+: (^@ is written 00 and is a no-op)
+: ^@ calls the word whose address is at address 0000
+:   (but the actual code emitted is =lb 00 cl= op, as bytecode 0 is a null op)
+: ^A calls the word whose address is at address (4 * 1 = 0004)
+: ^X calls the word whose address is at address (4 * ord('X')-ord('A') = $5C)
+: But if we want handy way to refer to the address, we use `X
+#+end_src
 
+#+name: io.ctrl2
+#+begin_src
+> `[ `\ `] `^ `_ ?d %q
+ds: [$6C $70 $74 $78 $7C]
+= non-alphabetic control characters
+: there are 5 control characters after ^Z that use punctuation.
+#+end_src
+
+* [17/17] alu / stack operations
 ** DONE =ad= op
 #+name: op.ad
 #+begin_src
@@ -194,30 +225,7 @@ ds: [$A]
 cs: []
 #+end_src
 
-* define sequences via debugger
-** DONE inspect ram through the debugger
-#+name: io.mem-read
-#+begin_src
-> @0100 %q
-.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
-#+end_src
-** DONE =wb= op
-#+name: io.wb
-#+begin_src
-> 0100 01 wb
-> @0100 %q
-^A .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
-#+end_src
-** DONE =rb= op
-#+name: io.rb
-#+begin_src
-> 0100 rb ?d zp
-ds: [$0]
-> 0100 du 01 wb rb ?d %q
-ds: [$1]
-#+end_src
-
-* step through a sequence
+* debugger/stepper
 ** DONE query instruction pointer
 #+name: dbg.%i
 #+begin_src
@@ -235,6 +243,24 @@ ip: $101
 = %s : step
 : step and execute a no-op
 #+end_src
+* TODO debugger memory access
+** DONE inspect ram
+#+name: io.mem-read
+#+begin_src
+> @0100 %q
+.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
+#+end_src
+** TODO write to ram
+#+name: io.mem-write
+#+begin_src
+> @0100
+.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+> !0100 00 AA BB CC
+> @0100 %q
+.. AA BB CC .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+* TODO [3/3] memory operations
 ** DONE =lb= op
 #+name: op.lb
 #+begin_src
@@ -251,11 +277,99 @@ ip: $102
 : we never needed it before because our debug shell
 : is pushing numbers directly to the stack
 #+end_src
+** DONE =wb= op
+#+name: io.wb
+#+begin_src
+> 0100 01 wb
+> @0100 %q
+^A .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
+#+end_src
+** DONE =rb= op
+#+name: io.rb
+#+begin_src
+> 0100 rb ?d zp
+ds: [$0]
+> 0100 du 01 wb rb ?d %q
+ds: [$1]
+#+end_src
+
 * TODO extended ops
+** TODO =rb= op
+#+name: op.rb
+#+begin_src
+> !0100 AA BB 00 CC
+> @0100
+AA BB .. CC .. .. .. .. .. .. .. .. .. .. .. ..
+> 0103 rb ?d
+ds: [$CC]
+#+end_src
+
 ** TODO =ri= op
+#+name: op.ri
+#+begin_src
+> !0100 AA BB 00 CC
+> @0100
+AA BB .. CC .. .. .. .. .. .. .. .. .. .. .. ..
+> 0100 ri ?d
+ds: [$CC00BBAA]
+= ri : read integer
+Note that the bytes are "backwards" from the way we
+write them! B4 reads and writes integers in little-endian format.
+#+end_src
+
 ** TODO =rx= op
+#+name: op.rx
+#+begin_src
+> `A 11223344 wi
+> `B 55667788 wi ?d
+> `A `X wi
+ds: []
+# read twice, loading `A and `B
+> rx rx ?d
+ds: [11223344 55667788]
+# now `X should be pointing at `C
+> zp zp `X ri `C eq ?d
+ds: [$-1]
+= rx : read from and incement `X
+: same as following assembly:
+:
+: read from address in `X
+:   li `X ri ri
+: increment address in `X:
+:   li `X du ri 01 ad wi
+#+end_src
+
 ** TODO =ry= op
+#+name: op.ry
+#+begin_src
+> `A 11223344 wi
+> `B 55667788 wi ?d
+> `A `Y wi
+ds: []
+# read twice, loading `A and `B
+> ry ry ?d
+ds: [11223344 55667788]
+# now `Y should be pointing at `C
+> zp zp `X ri `C eq ?d
+ds: [$-1]
+= ry : read from and incement `Y
+: ry is exactly the same as rx, except it uses the `Y register.
+#+end_src
+
 ** TODO =wz= op
+#+name: op.wz
+#+begin_src
+> `A `Z wi
+> ABCDEF zw
+> 123456 zw ?d
+ds: []
+> `A ri `B ri
+ds: [$ABCDEF $123456]
+# now `Z should be pointing at `C
+> zp zp `Z ri `C eq ?d
+ds: [$-1]
+= wz : write to and increment `Z
+#+end_src
 
 * step through those words
 * test call-stack growth to introduce tail calls
