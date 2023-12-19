@@ -42,7 +42,7 @@ function unhex(c : char) : byte;
 procedure readops;
   var i, op : byte;
   begin
-    fillchar(optbl[0], sizeof(optbl), 0);
+    fillchar(optbl, sizeof(optbl), 0);
     assign(input, ipath);
     reset(input);
     repeat readln(line) until match(line, 'function step');
