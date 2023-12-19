@@ -1,0 +1,261 @@
+#+title: b4 vm/debugger test suite
+
+* About this file
+This is a suite of acceptance tests for the B4 virtual machine.
+There are B4 implementations in multiple languages, so this file
+helps to make sure they are all compatible and follow the spec.
+
+* Running the tests
+
+This is a slightly messy process at the moment, as test runner is currently in another repository:
+
+https://github.com/tangentstorm/learntris
+
+(Probably this will be moved to its own repo at some point.)
+
+Use the =TEST_PLAN= environment variable to specify a path to this file.
+
+For example, the tests for the [[https://github.com/tangentstorm/b4-gd/][godot implementation]] are currently run with the following script:
+
+:  # path to the b4 repo, containing the master copy of the tests:
+:  export TEST_PLAN=../b4/b4-tests.org
+:
+:  # godot outputs a version header and blank line that cannot be suppressed:
+:  export SKIP_LINES=2
+:
+:  # godot 4.2.1 also doesn't won't read "stdin" lines from a pipe on windows,
+:  # so we write the commands to a file and then tell
+:  export INPUT_PATH=b4-gd/input.txt
+:
+:  # use python3 to run testris.py, and pass it the godot command line:
+:  # after the '--' comes the argument to cli.gd itself, which is the
+:  # path to look for the input commands (corresponding to INPUT_PATH, above)
+:  python testris.py ./Godot_v4.2.1-stable_win64_console.exe --path b4-gd --headless --script cli.gd -- input.txt
+
+
+* DONE [3/5] debugger interface
+** DONE establish a command loop and a way to exit
+#+name: io.%q
+#+begin_src
+> %q
+= %q : quit
+: The '%q' command instructs b4 to quit.
+:
+: b4 should not produce any output unless
+: explicitly instructed to do so.
+#+end_src
+
+** DONE print the data stack
+#+name: io.%d
+#+begin_src
+> ?d %q
+ds: [] # should be an empty array
+= ?d : query the data stack
+#+end_src
+
+** DONE print the call stack
+
+#+name: io.%c
+#+begin_src
+> ?c %q
+cs: [] # should be an empty array
+= ?c : query the call stack
+#+end_src
+
+** TODO always raw an even number of hex digits
+** TODO allow reading negative numbers
+* math ops
+** push a hex number to the stack
+#+name: io.hex
+#+begin_src
+> FF CC ?d %q
+ds: [$FF $CC]
+= hex numbers are pushed to data stack
+: it should print in hex
+#+end_src
+
+** DONE =ad= op
+#+name: op.ad
+#+begin_src
+> 01 02 ad ?d %q
+ds: [$3]
+= ad: add top two items on the stack
+: result is pushed back to stack
+#+end_src
+** DONE =ml= op
+#+name: op.ml
+#+begin_src
+> 03 03 ml ?d %q
+ds: [$9]
+#+end_src
+** DONE =sb= op
+#+name: io.math
+#+begin_src
+> 0A 05 sb ?d %q
+ds: [$5]
+#+end_src
+
+** DONE =dv= op
+#+name: math.dv
+#+begin_src
+> 0A 05 dv ?d %q
+ds: [$2]
+#+end_src
+** DONE =md= op
+#+name: math.md
+#+begin_src
+> 0A 05 md ?d
+ds: [$0]
+> zp 0A 03 md ?d %q
+ds: [$1]
+#+end_src
+** DONE =sh= op
+#+name: math.sh
+#+begin_src
+> 06 01 sh ?d %q
+ds: [$C]
+#+end_src
+
+** DONE =an= op
+#+name: math.an
+#+begin_src
+> 12 35 an ?d %q
+ds: [$10]
+#+end_src
+
+** DONE =or= op
+#+name: math.or
+#+begin_src
+> 12 35 or ?d %q
+ds: [$37]
+#+end_src
+
+** DONE =xr= op
+#+name: math.xr
+#+begin_src
+> 12 35 xr ?d %q
+ds: [$27]
+#+end_src
+
+** DONE =nt= op
+#+name: math.nt
+#+begin_src
+> 12 nt ?d %q
+ds: [$-13]
+#+end_src
+
+** DONE =eq= op
+#+name: math.eq
+#+begin_src
+> AA BB eq CC CC eq ?d %q
+ds: [$0 $-1]
+#+end_src
+
+** DONE =lt= op
+#+name: op.lt
+#+begin_src
+> AA BB lt DD CC lt EE EE lt ?d %q
+ds: [$-1 $0 $0]
+#+end_src
+
+** DONE =du= op
+#+name: op.du
+#+begin_src
+> 0A du ?d %q
+ds: [$A $A]
+#+end_src
+** DONE =zp= op
+#+name: op.zp
+#+begin_src
+> 0A ?d zp ?d %q
+ds: [$A]
+ds: []
+#+end_src
+** DONE =sw= op
+#+name: io.sw
+#+begin_src
+> 0A 0B sw ?d %q
+ds: [$B $A]
+#+end_src
+** DONE =ov= op
+#+name: op.ov
+#+begin_src
+> 0A 0B ov ?d %q
+ds: [$A $B $A]
+#+end_src
+** DONE =cd= and =dc= ops
+#+name: op.cd-dc
+#+begin_src
+> 0A dc ?d ?c
+ds: []
+cs: [$A]
+> cd ?d ?c %q
+ds: [$A]
+cs: []
+#+end_src
+
+* define sequences via debugger
+** DONE inspect ram through the debugger
+#+name: io.mem-read
+#+begin_src
+> @0100 %q
+.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
+#+end_src
+** DONE =wb= op
+#+name: io.wb
+#+begin_src
+> 0100 01 wb
+> @0100 %q
+^A .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
+#+end_src
+** DONE =rb= op
+#+name: io.rb
+#+begin_src
+> 0100 rb ?d zp
+ds: [$0]
+> 0100 du 01 wb rb ?d %q
+ds: [$1]
+#+end_src
+
+* step through a sequence
+** DONE query instruction pointer
+#+name: dbg.%i
+#+begin_src
+> ?i %q
+ip: $100
+= ?i : query instruction pointer
+: it should print in hex
+#+end_src
+** DONE %s step command
+#+name: dbg.%s
+#+begin_src
+> ?i %s ?i %q
+ip: $100
+ip: $101
+= %s : step
+: step and execute a no-op
+#+end_src
+** DONE =lb= op
+#+name: op.lb
+#+begin_src
+> !0100 lb AB
+> @0100
+lb AB .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+> ?d
+ds: [] # it should not be on the stack YET
+> %s ?d ?i %q
+ds: [$AB]
+ip: $102
+= lb: load byte
+: lb loads a byte from memory at runtime.
+: we never needed it before because our debug shell
+: is pushing numbers directly to the stack
+#+end_src
+* TODO extended ops
+** TODO =ri= op
+** TODO =rx= op
+** TODO =ry= op
+** TODO =wz= op
+
+* step through those words
+* test call-stack growth to introduce tail calls
