@@ -1,6 +1,6 @@
 {$mode delphi}{$i xpc}
 unit ub4; { the b4 virtual machine }
-interface uses xpc, kvm, kbd;
+interface uses kvm, kbd, uhw;
 
 type
   value = longint;
@@ -36,6 +36,7 @@ type
 var
   ram  : array[0..maxcell*cellsize] of byte;
   disk : file of block;
+  term : uhw.TB4Term;
 
 const {-- these are all offsets into the ram array --}
 {$TYPEDADDRESS OFF}
@@ -58,11 +59,12 @@ const {-- these are all offsets into the ram array --}
   function rdval(adr:address): value;
   procedure wrval(adr:address; v:value);
 
-  { these internal ops are used in the assembler }
+  { these internal ops are used in the assembler and/or hardware}
   procedure dput( val : value );
   function dpop:value;
+  function tos:value;
   procedure dswp;
-
+  procedure zap(v :value);
 
 implementation
 
@@ -178,31 +180,6 @@ function tor : value;
   end;
 
 
-{ terminal routines }
-
-{$IFDEF TURBO}
-function xmax : byte;
-  begin
-    xmax := lo( kvm.windmax ) - lo( kvm.windmin )
-  end;
-
-function maxy : byte;
-  begin
-    ymax := hi( kvm.windmax ) - hi( kvm.windmin )
-  end;
-{$ENDIF}
-
-procedure goxy( x, y : byte );
-  begin
-    kvm.gotoxy( x+1, y+1 )
-  end;
-
-procedure getc;
-  begin dput(value(kbd.readkey));
-    { we have 32 bits & only need 16. we can store extended keys in one cell }
-    if tos = 0 then begin zap(dpop); dput(value(kbd.readkey) shl 8) end
-  end;
-
 { file routines }
 
 procedure open(path:string);
@@ -250,6 +227,7 @@ procedure save;
   end;
 
 
+
 function step : value;
   var t : value;
   { execute next instruction, then increment and return the IP }
@@ -307,14 +285,14 @@ function step : value;
       $AD : {wb  } begin t:= dpop; ram[t]:= byte(dpop); end;  { write byte  }
       $AE : {ri  } dput(rdval(dpop));
       $AF : {wi  } begin t := dpop; wrval(t, dpop); end;
-      $B0 : {tg  } begin dswp; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
-      $B1 : {ta  } kvm.textattr := dpop;
-      $B2 : {tw  } if tos in [$00..$ff] then write(chr(dpop)) else write('[',dpop,']');
-      $B3 : {tr  } getc;
-      $B4 : {tk  } if keypressed then dput(-1) else dput(0);
-      $B5 : {ts  } kvm.clrscr;
-      $B6 : {tl  } kvm.clreol;
-      $B7 : {tc  } begin dput(kvm.wherex); dput(kvm.wherey) end;
+      $B0 : {tg  } term.invoke(vtTG);
+      $B1 : {ta  } term.invoke(vtTA);
+      $B2 : {tw  } term.invoke(vtTW);
+      $B3 : {tr  } term.invoke(vtTR);
+      $B4 : {tk  } term.invoke(vtTK);
+      $B5 : {ts  } term.invoke(vtTS);
+      $B6 : {tl  } term.invoke(vtTS);
+      $B7 : {tc  } term.invoke(vtTS);
       $B8 : {db  } reg_db^ := 1;
       { reserved: } $B9..$BF : begin end;
       else { no-op };
@@ -324,4 +302,5 @@ function step : value;
   end;
 
 begin
+  term := TB4Term.create;
 end.

@@ -1,7 +1,7 @@
 {$mode delphi}{$i xpc}
 { this is the main entry point for b4 }
 program b4;
-uses xpc, ub4, ub4asm, ub4ops, kvm, kbd,
+uses xpc, ub4, ub4asm, ub4ops, kvm, kbd, uhw_vt,
  sysutils; // for format
 
 const pgsz = 8 * 8; { should be multiple of 8 to come out even }
@@ -120,6 +120,7 @@ function step_over: boolean;
 
 var ch: ansichar; pause: boolean = false;
 begin
+  ub4.term := uhw_vt.TB4KVMTerm.Create;
   opli := b4opc('li'); oplb := b4opc('lb');
   opjm := b4opc('jm'); opj0 := b4opc('j0');
   ophp := b4opc('hp'); oph0 := b4opc('h0');
