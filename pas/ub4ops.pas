@@ -46,10 +46,10 @@ begin
   optbl[166] := 'wb';
   optbl[167] := 'ri';
   optbl[168] := 'wi';
-  optbl[169] := '';
+  optbl[169] := 'rx';
   optbl[170] := '';
-  optbl[171] := '';
-  optbl[172] := '';
+  optbl[171] := 'ry';
+  optbl[172] := 'wz';
   optbl[173] := '';
   optbl[174] := '';
   optbl[175] := '';

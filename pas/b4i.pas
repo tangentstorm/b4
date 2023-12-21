@@ -95,7 +95,7 @@ begin
                  else dput(ord(tok[2])); // char literals
           '`'  : if length(tok)=1 then err('invalid ctrl char')
                    // TODO test this against chars out of range
-                 else dput(4 * (ord(upcase(tok[2])) - ord('@')));
+                 else dput(rega(tok[2]));
           '@'  : ShowMem(parseAddress(tok));
           else if PutHex(tok) then ok
           else Writeln('what does "', tok, '" mean?');

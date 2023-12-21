@@ -66,6 +66,7 @@ const {-- these are all offsets into the ram array --}
   procedure dswp;
   procedure zap(v :value);
   procedure runop(op : byte);
+  function rega(ch : char):value;
 
 
 implementation
@@ -228,9 +229,14 @@ procedure save;
     write(disk, tmp);
   end;
 
+function rega(ch : char):value;
+  begin
+    result := 4 * (ord(upcase(ch)) - ord('@'))
+  end;
+
 
 procedure runop(op : byte);
-  var t : value;
+  var t,a : value;
   begin
     case op of
       { Do not reformat this function! mkoptbl.pas uses it! }
@@ -272,6 +278,21 @@ procedure runop(op : byte);
       $A6 : {wb  } begin t:= dpop; ram[t]:= byte(dpop); end;  { write byte  }
       $A7 : {ri  } dput(rdval(dpop));
       $A8 : {wi  } begin t := dpop; wrval(t, dpop); end;
+      $A9 : {rx  } begin
+                     a := rega('X'); t := rdval(a);
+                     dput(rdval(t));
+                     wrval(a, t+4)
+                   end;
+      $AB : {ry  } begin
+                     a := rega('Y'); t := rdval(a);
+                     dput(rdval(t));
+                     wrval(a, t+4)
+                   end;
+      $AC : {wz  } begin
+                     a := rega('Z'); t := rdval(a);
+                     wrval(t, dpop);
+                     wrval(a, t+4)
+                   end;
       $B0 : {tg  } term.invoke(vtTG);
       $B1 : {ta  } term.invoke(vtTA);
       $B2 : {tw  } term.invoke(vtTW);
