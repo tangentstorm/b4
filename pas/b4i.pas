@@ -1,6 +1,6 @@
 { b4 debugger/interpreter }
 program b4i(input, output);
-  uses sysutils, strutils, ub4;
+  uses sysutils, strutils, ub4, ub4asm;
 
 type pstack = ^stack;
 procedure PrintStack(pre : string; s:pstack; count:integer);
@@ -11,7 +11,8 @@ begin
   if count > 0 then for i := 1 to count do begin
     if i>1 then Write(' ');
     v := s^[i];
-    Write(Format('$%x',[v]));
+    if v < 0 then Write(Format('$-%x',[-v]))
+    else Write(Format('$%x',[v]));
   end;
   WriteLn(']');
 end;
@@ -30,13 +31,14 @@ begin
   halt;
 end;
 
-var str, tok : string; done: boolean = false;
+var str, tok : string; done: boolean = false; op:byte;
 begin
   while not (done or eof) do begin
     readln(str);
     for tok in SplitString(str, ' ') do begin
       if tok = '' then continue;
-      case tok of
+      if ub4asm.b4op(tok, op) then runop(op)
+      else case tok of
         '%q' : done := true;
         '?d' : PrintStack('ds: ', ds, reg_dp^);
         '?c' : PrintStack('cs: ', rs, reg_rp^);
