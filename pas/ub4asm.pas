@@ -6,6 +6,7 @@ interface uses xpc, ub4ops, ub4;
   type entry = record id: ident; adr: ub4.address end;
   var dict: array[0..128] of entry; ents : byte;
 
+  function b4op(code : opstring; out op:byte) : boolean;
   function b4opc(code:opstring) : byte;
   function find_ident(adr:ub4.address; out id:ident): boolean;
   procedure b4as;
