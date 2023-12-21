@@ -1,6 +1,6 @@
 { b4 debugger/interpreter }
 program b4i(input, output);
-  uses sysutils, strutils, ub4, ub4asm;
+  uses sysutils, strutils, ub4, ub4asm, ub4ops;
 
 // format as hex in b4 style
 function b4mat(v : value):string;
@@ -27,9 +27,14 @@ procedure ShowMem(addr :integer );
   var i: integer; v:byte; tok: string;
 begin
   for i := 0 to 15 do begin
-    v := ram[(addr + i)+1];
-    if v = 0 then tok := '..'
-    else tok := format('%02x', [v]);
+    v := ram[(addr + i)];
+    case v of
+      0 : tok := '..';
+      $01..$1F : tok := '^' + chr(ord('@')+v);
+      $80..$9F : tok := optbl[v];
+      // $B0..$B8 : tok := optbl[v];
+      else tok := format('%02x', [v]);
+    end;
     write(tok,' ')
   end;
   writeln;
@@ -57,9 +62,9 @@ end;
 procedure PutMem(str:string);
   var a,i:integer; v:byte; tok: string;
 begin
-  i := 0;
+  i := -1;
   for tok in SplitString(str, ' ') do begin
-    if i = 0 then a := ParseAddress(tok)
+    if i = -1 then a := ParseAddress(tok)
     else begin
       // TODO: handle integers instead of just bytes
       if not ub4asm.b4op(tok, v) then v := hex2dec(tok);
