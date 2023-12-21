@@ -18,7 +18,7 @@ runi: b4i
 b4i: b4 b4i.pas
 	$(FPC) -B b4i.pas
 
-b4: b4.pas ub4asm.pas ub4.pas mkoptbl.pas uhw.pas uhw_vt.pas
+b4: b4.pas ub4asm.pas ub4.pas ub4ops.pas uhw.pas uhw_vt.pas
 	$(FPC) -B b4.pas
 
 ub4.ppu: ub4.pas
