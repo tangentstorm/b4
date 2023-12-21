@@ -40,15 +40,15 @@ var
 
 const {-- these are all offsets into the ram array --}
 {$TYPEDADDRESS OFF}
-  reg_ip : ^value = @ram[$00]; { instruction pointer }
-  reg_dp : ^value = @ram[$04]; { data stack pointer }
-  reg_rp : ^value = @ram[$08]; { retn stack pointer }
-  reg_hp : ^value = @ram[$0C]; { heap pointer }
-  reg_lp : ^value = @ram[$10]; { last dictionary entry }
-  reg_ap : ^value = @ram[$14]; { the 'a' register }
-  reg_ep : ^value = @ram[$18]; { the editor pointer }
-  reg_db : ^value = @ram[$1C]; { debug flag }
-  reg_bp : ^value = @ram[$20]; { breakpoint }
+  reg_ip : ^value = @ram[$20]; { instruction pointer }
+  reg_dp : ^value = @ram[$24]; { data stack pointer }
+  reg_rp : ^value = @ram[$28]; { retn stack pointer }
+  reg_hp : ^value = @ram[$2C]; { heap pointer }
+  reg_lp : ^value = @ram[$30]; { last dictionary entry }
+  reg_ap : ^value = @ram[$34]; { the 'a' register }
+  reg_ep : ^value = @ram[$38]; { the editor pointer }
+  reg_db : ^value = @ram[$3C]; { debug flag }
+  reg_bp : ^value = @ram[$40]; { breakpoint }
   ds : ^stack = @ram[mindata];
   rs : ^stack = @ram[minretn];
 {$TYPEDADDRESS ON}
