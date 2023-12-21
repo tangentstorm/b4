@@ -25,8 +25,8 @@ begin
   optbl[145] := 'nt';
   optbl[146] := 'eq';
   optbl[147] := 'lt';
-  optbl[148] := 'gt';
-  optbl[149] := 'le';
+  optbl[148] := '';
+  optbl[149] := '';
   optbl[150] := 'hl';
   optbl[151] := 'jm';
   optbl[152] := 'hp';

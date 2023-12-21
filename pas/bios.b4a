@@ -21,8 +21,8 @@
   dc dv cd rt   # (xy|m-dm|)
 
 :between?                          # (x hi lo - x f)
-  dc ov le                         # (x <=hi? |lo)
-  ov cd le an rt                   # (x f)
+  du dc lt nt                      # (x <=hi? |lo)  (x<=y is -.(y>x))
+  ov cd sw lt nt an rt             # (x f)
 
 :n1 lb 00 nt rt                    # TODO: better way to write "-1"
 
@@ -187,7 +187,7 @@
 :mm-claim                             # (-a) claim mp (and possibly split end off)
   @mp mm-used @mu wi                  # (-) mem[a] := used
   @mp mm-size ri @ms sb               # (-r) remainder = block size - size
-  .i du mm-split gt .t                # (r-r) if worth splitting
+  .i mm-split ov lt .t                # (r-r) if worth splitting
     # shrink old block:
     @ms @mp mm-size wi                # (r-r) mem[mp+SIZE] = ms
     @mp mm-data @ms ad                # (r-rn) n=(mp+DATA)+ms  (n=new next)
@@ -242,7 +242,7 @@
     .i du lb 0 eq .t zp try-num    #    if not found, complain
     .e sw zp exec .z               #    else execute
   .e
-    .i du lb 31 gt .t du du a+ tw  # copy non-ctrl chars to buffer and echo
+    .i lb 31 ov lt .t du du a+ tw  # copy non-ctrl chars to buffer and echo
     .e .i du lb 04 eq .t exit .z   # on ^d, exit
     .z zp
   .z .o

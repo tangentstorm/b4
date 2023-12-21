@@ -260,8 +260,6 @@ procedure runop(op : byte);
       $91 : {nt  } dput(not dpop);
       $92 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
       $93 : {lt  } begin t:=dpop; if dpop <  t then dput(-1) else dput(0) end;
-      $94 : {gt  } begin t:=dpop; if dpop >  t then dput(-1) else dput(0) end;
-      $95 : {le  } begin t:=dpop; if dpop <= t then dput(-1) else dput(0) end;
       $96 : {hl  } halt;
       $97 : {jm  } reg_ip^ := rdval(reg_ip^+1)-1;
       $98 : {hp  } todo('hp'); { hop }
