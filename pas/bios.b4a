@@ -78,7 +78,7 @@
 :words^ $e-nm^ 05 'w'o'r'd's
 :words                             # list known words, starting at last entry:
   last ri
-  .w du lb 0 ne .d                 # we are looking at a non-0 pointer to entry
+  .w du lb 0 eq nt .d              # we are looking at a non-0 pointer to entry
     du e-nm
     puts sp                        # emit str
     ri .o                          # move to next entry
@@ -96,10 +96,10 @@
 :s-eq^ $exec^ 04 's'-'e'q
 :s-eq?                             # (st-?) are strings s and t the same?
   .i ov ov eq .t eq rt .z          # a. if the addresses are the same, return 1
-  .i ov rb du dc ov rb ne .t       # b. (st-st?|n) if the lengths are different,
+  .i ov rb du dc ov rb eq nt .t    # b. (st-st?|n) if the lengths are different,
      cd zp eq rt .z                #   drop loop counter and return 0 (we know eq=0 from a.)
   .f inc sw inc                    # st-TS  -> next char (doesn't matter that we swap order)
-     .i ov rb ov rb ne .t          # if the characters are not equal
+     .i ov rb ov rb eq nt .t       # if the characters are not equal
         cd zp eq rt .z .n          #   drop counter and return 0 (same as in b. before)
   zp zp lb 1 rt                    # everything matched, so return 1
 
@@ -107,7 +107,7 @@
 :word?                             # (s-e)   attempt to find word in dictionary
   dc                               # s - |ts  push s to return stack
   last ri                          # ..-e|ts  fetch last entry
-  .w du lb 0 ne .d                 # while e!=0 do:
+  .w du lb 0 eq nt .d              # while e!=0 do:
     du e-nm                        #  ..- et|ts     fetch the entry's name (t)
     cd du dc                       #  ..- ets|ts
     .i s-eq? .t cd zp rt .z        # return e if strings match
@@ -122,7 +122,7 @@
 :putn # (n - )
   .i du lb 00 eq .t lb '0 tw rt
   .e lb 00 sw                      # ( n-kn) k:digit count=0
-     .w du lb 00 ne .d             # while n!=0 do
+     .w du lb 00 eq nt .d          # while n!=0 do
         li $base rb dvm            # (kn-kdm) divmod
         li $digit ad rb dc         # (kdm-kd|c) push char to retn stack
         sw inc sw .o               # k++, d is new n
@@ -205,7 +205,7 @@
   mm-align !ms                        # (n-) round up to word and store in ms(ize)
   m0 !mp                              #  p = pointer (set to start block)
   :mm-loop
-    .i @mp mm-size @ms ge             # if mem[p+SIZE] >= mn
+    .i @mp @ms mm-size lt             # if mn < mem[p+SIZE]
        @mp mm-used ri lb 0 eq an      #    and mem[p+USED]=0
     .t @mp mm-claim rt
     .e @mp mm-next ri                 # consider p^.next

@@ -236,8 +236,8 @@ procedure runop(op : byte);
       { Do not reformat this function! mkoptbl.pas uses it! }
       $80 : {lb  } begin dput(bget(reg_ip^+1)); inc(reg_ip^) end;
       $81 : {li  } begin dput(rdval(reg_ip^+1)); inc(reg_ip^,3) end;
-      $82 : {sw  } dswp;
-      $83 : {du  } dput(tos);
+      $82 : {du  } dput(tos);
+      $83 : {sw  } dswp;
       $84 : {ov  } dput(nos);
       $85 : {zp  } zap(dpop);
       $86 : {dc  } rput(dpop);
@@ -247,40 +247,31 @@ procedure runop(op : byte);
       $8A : {ml  } dput(dpop * dpop);
       $8B : {dv  } begin t:=dpop; dput(dpop div t) end;
       $8C : {md  } begin t:=dpop; dput(dpop mod t) end;
-      $8E : {sh  } begin dswp; dput(dpop shl dpop) end;
-      $90 : {an  } dput(dpop and dpop);
-      $91 : {or  } dput(dpop or dpop);
-      $92 : {xr  } dput(dpop xor dpop);
-      $93 : {nt  } dput(not dpop);
-      $94 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
-      $95 : {ne  } if dpop <> dpop then dput(-1) else dput(0);
-      $96 : {gt  } begin t:=dpop; if dpop >  t then dput(-1) else dput(0) end;
-      $97 : {lt  } begin t:=dpop; if dpop <  t then dput(-1) else dput(0) end;
-      $98 : {ge  } begin t:=dpop; if dpop >= t then dput(-1) else dput(0) end;
-      $99 : {le  } begin t:=dpop; if dpop <= t then dput(-1) else dput(0) end;
-      $9A : {dx  } todo('dx');
-      $9B : {xd  } todo('xd');
-      $9C : {dy  } todo('dy');
-      $9D : {yd  } todo('yd');
-      $9E : {dz  } todo('dz');
-      $9F : {zd  } todo('zd');
-      $A2 : {hl  } halt;
-      $A3 : {jm  } reg_ip^ := rdval(reg_ip^+1)-1;
-      $A4 : {hp  } todo('hp'); { hop }
-      $A5 : {j0  } if dpop = 0 then begin reg_ip^ := rdval(reg_ip^+1)-1 end
+      $8D : {sh  } begin dswp; dput(dpop shl dpop) end;
+      $8E : {an  } dput(dpop and dpop);
+      $8F : {or  } dput(dpop or dpop);
+      $90 : {xr  } dput(dpop xor dpop);
+      $91 : {nt  } dput(not dpop);
+      $92 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
+      $93 : {lt  } begin t:=dpop; if dpop <  t then dput(-1) else dput(0) end;
+      $94 : {gt  } begin t:=dpop; if dpop >  t then dput(-1) else dput(0) end;
+      $95 : {le  } begin t:=dpop; if dpop <= t then dput(-1) else dput(0) end;
+      $96 : {hl  } halt;
+      $97 : {jm  } reg_ip^ := rdval(reg_ip^+1)-1;
+      $98 : {hp  } todo('hp'); { hop }
+      $99 : {j0  } if dpop = 0 then begin reg_ip^ := rdval(reg_ip^+1)-1 end
                    else inc(reg_ip^,4) { skip over the address };
-      $A6 : {h0  } todo('h0'); { hop if 0 }
-      $A7 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
-      $A8 : {rt  } reg_ip^ := rpop-1;
-      $A9 : {r0  } if tos = 0 then begin zap(dpop); reg_ip^ := rpop end;
-      $AA : {nx  } begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
+      $A0 : {h0  } todo('h0'); { hop if 0 }
+      $A1 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
+      $A2 : {rt  } reg_ip^ := rpop-1;
+      $A3 : {r0  } if tos = 0 then begin zap(dpop); reg_ip^ := rpop end;
+      $A4 : {nx  } begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
                      if tor = 0 then begin zap(rpop); inc(reg_ip^,3) end
                      else reg_ip^:=rdval(reg_ip^+1)-1; end;
-      $AB : {ev  } todo('ev'); { eval - like call, but address comes from stack }
-      $AC : {rb  } dput(ram[dpop]);    { read byte }
-      $AD : {wb  } begin t:= dpop; ram[t]:= byte(dpop); end;  { write byte  }
-      $AE : {ri  } dput(rdval(dpop));
-      $AF : {wi  } begin t := dpop; wrval(t, dpop); end;
+      $A5 : {rb  } dput(ram[dpop]);    { read byte }
+      $A6 : {wb  } begin t:= dpop; ram[t]:= byte(dpop); end;  { write byte  }
+      $A7 : {ri  } dput(rdval(dpop));
+      $A8 : {wi  } begin t := dpop; wrval(t, dpop); end;
       $B0 : {tg  } term.invoke(vtTG);
       $B1 : {ta  } term.invoke(vtTA);
       $B2 : {tw  } term.invoke(vtTW);
