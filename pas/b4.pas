@@ -24,7 +24,7 @@ procedure wv(k: string; v:value); { write value }
 
 
 procedure draw_help(x,y : byte);
-  begin gotoxy(x,y); write('keys. (0)top (I)P (q)uit (s)tep (o)ver, (r)un, to (c)ursor, (q)uit')
+  begin gotoxy(x,y); write('keys. (0)top (I)P (s)tep (o)ver, (r)un, to (c)ursor, (q)uit ')
   end;
 
 procedure dump_dict;
