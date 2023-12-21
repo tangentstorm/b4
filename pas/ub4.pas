@@ -1,6 +1,6 @@
 {$mode delphi}{$i xpc}
 unit ub4; { the b4 virtual machine }
-interface uses kvm, kbd, uhw;
+interface uses uhw;
 
 type
   value = longint;
@@ -65,6 +65,8 @@ const {-- these are all offsets into the ram array --}
   function tos:value;
   procedure dswp;
   procedure zap(v :value);
+  procedure runop(op : byte);
+
 
 implementation
 
@@ -227,12 +229,10 @@ procedure save;
   end;
 
 
-
-function step : value;
+procedure runop(op : byte);
   var t : value;
-  { execute next instruction, then increment and return the IP }
   begin
-    case ram[reg_ip^] of
+    case op of
       { Do not reformat this function! mkoptbl.pas uses it! }
       $80 : {lb  } begin dput(bget(reg_ip^+1)); inc(reg_ip^) end;
       $81 : {li  } begin dput(rdval(reg_ip^+1)); inc(reg_ip^,3) end;
@@ -296,7 +296,13 @@ function step : value;
       $B8 : {db  } reg_db^ := 1;
       { reserved: } $B9..$BF : begin end;
       else { no-op };
-    end;
+    end
+  end;
+
+function step : value;
+  { execute next instruction, then increment and return the IP }
+  begin
+    runop(ram[reg_ip^]);
     inc(reg_ip^);
     step := reg_ip^;
   end;

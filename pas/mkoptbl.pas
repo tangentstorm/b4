@@ -45,7 +45,7 @@ procedure readops;
     fillchar(optbl, sizeof(optbl), 0);
     assign(input, ipath);
     reset(input);
-    repeat readln(line) until match(line, 'function step');
+    repeat readln(line) until match(line, 'procedure runop');
     repeat readln(line) until match(line, '    case');
     repeat
       readln(line);
