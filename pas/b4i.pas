@@ -2,8 +2,15 @@
 program b4i(input, output);
   uses sysutils, strutils, ub4, ub4asm;
 
+// format as hex in b4 style
+function b4mat(v : value):string;
+begin
+  if v < 0 then result := Format('$-%x',[-v])
+  else result := Format('$%x',[v])
+end;
+
 type pstack = ^stack;
-procedure PrintStack(pre : string; s:pstack; count:integer);
+procedure WriteStack(pre : string; s:pstack; count:integer);
   var v: ub4.value; i:integer=0;
 begin
   Write(pre);
@@ -11,8 +18,7 @@ begin
   if count > 0 then for i := 1 to count do begin
     if i>1 then Write(' ');
     v := s^[i];
-    if v < 0 then Write(Format('$-%x',[-v]))
-    else Write(Format('$%x',[v]));
+    Write(b4mat(v));
   end;
   WriteLn(']');
 end;
@@ -33,6 +39,7 @@ end;
 
 var str, tok : string; done: boolean = false; op:byte;
 begin
+  reg_ip^ := $100;
   while not (done or eof) do begin
     readln(str);
     for tok in SplitString(str, ' ') do begin
@@ -40,8 +47,9 @@ begin
       if ub4asm.b4op(tok, op) then runop(op)
       else case tok of
         '%q' : done := true;
-        '?d' : PrintStack('ds: ', ds, reg_dp^);
-        '?c' : PrintStack('cs: ', rs, reg_rp^);
+        '?d' : WriteStack('ds: ', ds, reg_dp^);
+        '?c' : WriteStack('cs: ', rs, reg_rp^);
+        '?i' : WriteLn('ip: ', b4mat(reg_ip^));
         else case tok[1] of
           '''' : if length(tok)=1 then dput(32) // space
                  else dput(ord(tok[2])); // char literals
