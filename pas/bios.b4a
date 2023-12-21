@@ -18,11 +18,11 @@
 
 :dvm  # n d
   ov ov md      # (xy-xy|m)
-  dr dv rd rt   # (xy|m-dm|)
+  dc dv cd rt   # (xy|m-dm|)
 
 :between?                          # (x hi lo - x f)
-  dr ov le                         # (x <=hi? |lo)
-  ov rd le an rt                   # (x f)
+  dc ov le                         # (x <=hi? |lo)
+  ov cd le an rt                   # (x f)
 
 :n1 lb 00 nt rt                    # TODO: better way to write "-1"
 
@@ -30,12 +30,12 @@
 
 # write cursors
 
-:a+ ap ri du dr wb                 # a+ ( n - ) , writes a value to the
-    rd inc ap wi rt                #    address in ap and increments ap.
+:a+ ap ri du dc wb                 # a+ ( n - ) , writes a value to the
+    cd inc ap wi rt                #    address in ap and increments ap.
 
 :,^ $dec^ 01 ',
-:, here ri du dr wb
-    rd inc here wi rt              # , is exact same thing for the heap
+:, here ri du dc wb
+    cd inc here wi rt              # , is exact same thing for the heap
 
 
 # shell
@@ -62,7 +62,7 @@
 
 :puts^ $bye^ 04 'p'u't's
 :puts                              # given address of counted string, write the string
-  du rb dr inc                     # push str start to d, len to r (loop counter)
+  du rb dc inc                     # push str start to d, len to r (loop counter)
   .f du rb tw inc .n
   zp rt
 
@@ -96,23 +96,23 @@
 :s-eq^ $exec^ 04 's'-'e'q
 :s-eq?                             # (st-?) are strings s and t the same?
   .i ov ov eq .t eq rt .z          # a. if the addresses are the same, return 1
-  .i ov rb du dr ov rb ne .t       # b. (st-st?|n) if the lengths are different,
-     rd zp eq rt .z                #   drop loop counter and return 0 (we know eq=0 from a.)
+  .i ov rb du dc ov rb ne .t       # b. (st-st?|n) if the lengths are different,
+     cd zp eq rt .z                #   drop loop counter and return 0 (we know eq=0 from a.)
   .f inc sw inc                    # st-TS  -> next char (doesn't matter that we swap order)
      .i ov rb ov rb ne .t          # if the characters are not equal
-        rd zp eq rt .z .n          #   drop counter and return 0 (same as in b. before)
+        cd zp eq rt .z .n          #   drop counter and return 0 (same as in b. before)
   zp zp lb 1 rt                    # everything matched, so return 1
 
 :word?^ $s-eq^ 05 'w'o'r'd'?
 :word?                             # (s-e)   attempt to find word in dictionary
-  dr                               # s - |ts  push s to return stack
+  dc                               # s - |ts  push s to return stack
   last ri                          # ..-e|ts  fetch last entry
   .w du lb 0 ne .d                 # while e!=0 do:
     du e-nm                        #  ..- et|ts     fetch the entry's name (t)
-    rd du dr                       #  ..- ets|ts
-    .i s-eq? .t rd zp rt .z        # return e if strings match
+    cd du dc                       #  ..- ets|ts
+    .i s-eq? .t cd zp rt .z        # return e if strings match
     ri .o                          # otherwise, visit next string
-  rd zp rt                         # (e|ts - e)
+  cd zp rt                         # (e|ts - e)
 
 
 # reading/writing numbers
@@ -124,10 +124,10 @@
   .e lb 00 sw                      # ( n-kn) k:digit count=0
      .w du lb 00 ne .d             # while n!=0 do
         li $base rb dvm            # (kn-kdm) divmod
-        li $digit ad rb dr         # (kdm-kd|c) push char to retn stack
+        li $digit ad rb dc         # (kdm-kd|c) push char to retn stack
         sw inc sw .o               # k++, d is new n
-      zp dr                        # (kd- |k)
-      .f rd rd tw dr .n .z         # loop through the characters
+      zp dc                        # (kd- |k)
+      .f cd cd tw dc .n .z         # loop through the characters
   rt
 
 :unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
@@ -142,14 +142,14 @@
  rt
 
 :try-num                           # (s-n) try to parse string as number
-  du rb dr                         # (s    - s|i) a=addr of string
+  du rb dc                         # (s    - s|i) a=addr of string
   lb 0                             # (s|i  - sr|i) r=0
-  .f dr inc du rb                  # (ar|i - ac|ri) a=addr of char, c=char
+  .f dc inc du rb                  # (ar|i - ac|ri) a=addr of char, c=char
      .i digit? .t
-        rd lb 10 ml ad dr          #  r= r*10+d
+        cd lb 10 ml ad dc          #  r= r*10+d
      .e unknown
-        zp rd zp rd zp rt .z       # drop result and return
-     rd                            # (p|ri - pr|i) so next can do its thing
+        zp cd zp cd zp rt .z       # drop result and return
+     cd                            # (p|ri - pr|i) so next can do its thing
   .n
   sw zp rt                         # (pr-r)
 
@@ -191,9 +191,9 @@
     # shrink old block:
     @ms @mp mm-size wi                # (r-r) mem[mp+SIZE] = ms
     @mp mm-data @ms ad                # (r-rn) n=(mp+DATA)+ms  (n=new next)
-    du @mp mm-next du ri dr wi        # (rn-rn|o) mem[mp+NEXT]=n, o=old next
+    du @mp mm-next du ri dc wi        # (rn-rn|o) mem[mp+NEXT]=n, o=old next
     # add new block:
-    du mm-next rd wi                  # (rn|o-rn) mem[n+NEXT]=old_next
+    du mm-next cd wi                  # (rn|o-rn) mem[n+NEXT]=old_next
     sw lb 0 mm-data sb                # (rn-nz) z: new size (remainder-header size)
     ov mm-size wi                     # (nz-n) mem[n+SIZE]=z
     mm-used lb 0 wi .z                # (n-)  mem[n+USED]=0

@@ -11,8 +11,8 @@ begin
   optbl[131] := 'du';
   optbl[132] := 'ov';
   optbl[133] := 'zp';
-  optbl[134] := 'dr';
-  optbl[135] := 'rd';
+  optbl[134] := 'dc';
+  optbl[135] := 'cd';
   optbl[136] := 'ad';
   optbl[137] := 'sb';
   optbl[138] := 'ml';
@@ -37,8 +37,8 @@ begin
   optbl[157] := 'yd';
   optbl[158] := 'dz';
   optbl[159] := 'zd';
-  optbl[160] := 'dc';
-  optbl[161] := 'cd';
+  optbl[160] := '';
+  optbl[161] := '';
   optbl[162] := 'hl';
   optbl[163] := 'jm';
   optbl[164] := 'hp';
