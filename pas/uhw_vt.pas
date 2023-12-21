@@ -18,16 +18,16 @@ function xmax : byte;
     xmax := lo( kvm.windmax ) - lo( kvm.windmin )
   end;
 
-function maxy : byte;
+function ymax : byte;
   begin
     ymax := hi( kvm.windmax ) - hi( kvm.windmin )
   end;
-{$ENDIF}
 
 procedure goxy( x, y : byte );
   begin
     kvm.gotoxy( x+1, y+1 )
   end;
+{$ENDIF}
 
 procedure getc;
   begin dput(value(kbd.readkey));
