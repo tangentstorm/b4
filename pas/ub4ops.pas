@@ -40,7 +40,7 @@ begin
   optbl[160] := 'h0';
   optbl[161] := 'cl';
   optbl[162] := 'rt';
-  optbl[163] := 'r0';
+  optbl[163] := '';
   optbl[164] := 'nx';
   optbl[165] := 'rb';
   optbl[166] := 'wb';

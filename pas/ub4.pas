@@ -268,7 +268,6 @@ procedure runop(op : byte);
       $A0 : {h0  } todo('h0'); { hop if 0 }
       $A1 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
       $A2 : {rt  } reg_ip^ := rpop-1;
-      $A3 : {r0  } if tos = 0 then begin zap(dpop); reg_ip^ := rpop end;
       $A4 : {nx  } begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
                      if tor = 0 then begin zap(rpop); inc(reg_ip^,3) end
                      else reg_ip^:=rdval(reg_ip^+1)-1; end;
