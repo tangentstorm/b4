@@ -1,4 +1,4 @@
-.i lb 00 .t                        # jump over bios
+jm >-start-                        # jump over bios
 #--- begin bios -------------------\
 # names for some important registers
 :here^ 00 00 00 00 04 'h'e'r'e
@@ -259,8 +259,10 @@
 
 
 # this should never execute, so trigger debugger if we get here:
-db .z
+db
 #--- end of bios ------------------/
+
+:-start-
 
 # -- debug /test stuff --
 # .i lb 0 .t :word-a 03 'a'b'c :word-b 03 'a'b'c .z

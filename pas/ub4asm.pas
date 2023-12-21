@@ -31,7 +31,7 @@ function b4opc(code:opstring) : byte;
     else begin writeln('invalid op: ', code); halt end end;
 
 type
-  tokentag = ( wsp, cmt, raw, chr, def, ref, adr, get, put,
+  tokentag = ( wsp, cmt, raw, chr, def, ref, adr, get, put, fwd,
               _if, _th, _el, _fi, _wh, _do, _od, _fr, _nx );
   token = record tag : tokentag; str : string; end;
 
@@ -71,6 +71,7 @@ function next( var tok : token; var ch : char ) : boolean;
       '$' : rest(adr);
       '@' : rest(get);
       '!' : rest(put);
+      '>' : rest(fwd);
       'a'..'z' : begin tok.tag := ref; while nextchar(ch) > #32 do keep end;
       '.' :
         begin
@@ -101,10 +102,12 @@ procedure b4as;
   function find_addr(s:string): value; { return address of label }
     var op:byte = 0; found: boolean=false;
     begin while (op < ents) and not found do begin
-      if dict[op].id = tok.str then begin find_addr := dict[op].adr; found:=true end;
+      if dict[op].id = s then begin find_addr := dict[op].adr; found:=true end;
       inc(op) end;
-      if not found then unknown(tok.str) end;
+      if not found then unknown(s) end;
   procedure emit_slot(op:string); begin emit(b4opc(op)); dput(here); emitv(0); end;
+  type TFwd = record key: string; at: value end;
+  var fwds : array of TFwd; fw:TFwd;
   procedure compile;
     var op : byte; v : value;
     begin
@@ -118,6 +121,10 @@ procedure b4as;
               else begin
                 dict[ents].id := tok.str; dict[ents].adr := here; inc(ents) end;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
+        fwd : begin
+                fw.key := tok.str; fw.at := here;
+                emitv(0); insert(fw, fwds, maxint);
+              end;
         adr : emitv(find_addr(tok.str));
         get : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('ri')) end;
         put : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wi')) end;
@@ -136,9 +143,11 @@ procedure b4as;
         _nx : begin emit(b4opc('nx')); emitv(dpop) end;
       end end;
   begin
+    SetLength(fwds, 0);
     clear_dict; err := 0; ents := 0; here := reg_hp^; read(ch);
     while (err = 0) and not eof do if next(tok, ch) then compile;
     if err <> 0 then dput(err) else reg_hp^ := here;
+    for fw in fwds do wrval(fw.at, find_addr(fw.key));
   end;
 
 begin
