@@ -105,7 +105,13 @@ procedure b4as;
       if dict[op].id = s then begin find_addr := dict[op].adr; found:=true end;
       inc(op) end;
       if not found then unknown(s) end;
-  procedure emit_slot(op:string); begin emit(b4opc(op)); dput(here); emitv(0); end;
+  procedure hop_slot(op:string); begin emit(b4opc(op)); dput(here); emit(0); end;
+  procedure hop_fill(); var slot,dist:value;
+    begin slot := dpop; dist := here-slot;
+      if dist < 0 then begin writeln('invalid backwards hop at ', here); halt end;
+      if dist > 126 then begin writeln('too far to hop back: ', here, ' -> ', slot); halt end;
+      ram[slot] := dist+1
+    end;
   type TFwd = record key: string; at: value end;
   var fwds : array of TFwd; fw:TFwd;
   procedure compile;
@@ -130,15 +136,15 @@ procedure b4as;
         put : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wi')) end;
         _wh : dput(here); {(- wh)}
         _th ,
-        _do : emit_slot('j0');
+        _do : hop_slot('h0');
         _od : begin { compile time: (wh do -)}
                 { first, an unconditional jump back to the _do }
                 emit(b4opc('jm')); dswp; emitv(dpop);
                 { now go back to the guard and compile the forward jump }
-                wrval(dpop, here); end;
+                hop_fill end;
         _if : ; { 'if' does nothing. just syntactic sugar. }
-        _el : begin emit_slot('jm'); dswp; wrval(dpop, here) end;
-        _fi : {(do-)} wrval(dpop, here); { jump to 'end' when 'if' test fails }
+        _el : begin hop_slot('hp'); dswp; hop_fill end;
+        _fi : {(do-)} hop_fill; { jump to 'end' when 'if' test fails }
         _fr : dput(here);
         _nx : begin emit(b4opc('nx')); emitv(dpop) end;
       end end;

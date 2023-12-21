@@ -262,10 +262,11 @@ procedure runop(op : byte);
       $93 : {lt  } begin t:=dpop; if dpop <  t then dput(-1) else dput(0) end;
       $96 : {hl  } halt;
       $97 : {jm  } reg_ip^ := rdval(reg_ip^+1)-1;
-      $98 : {hp  } todo('hp'); { hop }
+      $98 : {hp  } reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1;
       $99 : {j0  } if dpop = 0 then begin reg_ip^ := rdval(reg_ip^+1)-1 end
                    else inc(reg_ip^,4) { skip over the address };
-      $A0 : {h0  } todo('h0'); { hop if 0 }
+      $A0 : {h0  } if dpop = 0 then reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1
+                   else inc(reg_ip^);
       $A1 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
       $A2 : {rt  } reg_ip^ := rpop-1;
       $A4 : {nx  } begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
