@@ -278,7 +278,7 @@ ip: $102
 ** DONE =wb= op
 #+name: io.wb
 #+begin_src
-> 0100 01 wb
+> 01 0100 wb
 > @0100 %q
 ^A .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
@@ -287,7 +287,7 @@ ip: $102
 #+begin_src
 > 0100 rb ?d zp
 ds: [$0]
-> 0100 du 01 wb rb ?d %q
+> 0100 du 01 sw wb rb ?d %q
 ds: [$1]
 #+end_src
 
