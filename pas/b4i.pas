@@ -23,6 +23,18 @@ begin
   WriteLn(']');
 end;
 
+procedure ShowMem(addr :integer );
+  var i: integer; v:byte; tok: string;
+begin
+  for i := 0 to 15 do begin
+    v := ram[(addr + i)+1];
+    if v = 0 then tok := '..'
+    else tok := format('%02x', [v]);
+    write(tok,' ')
+  end;
+  writeln;
+end;
+
 function PutHex(tok : string): boolean;
 begin
   try dput(Hex2Dec(tok)); result:= true;
@@ -37,16 +49,39 @@ begin
   halt;
 end;
 
+function ParseAddress(tok:string):integer;
+begin
+  result := hex2dec(RightStr(tok, length(tok)-1))
+end;
+
+procedure PutMem(str:string);
+  var a,i:integer; v:byte; tok: string;
+begin
+  i := 0;
+  for tok in SplitString(str, ' ') do begin
+    if i = 0 then a := ParseAddress(tok)
+    else begin
+      // TODO: handle integers instead of just bytes
+      if not ub4asm.b4op(tok, v) then v := hex2dec(tok);
+      ram[a+i] := v
+    end;
+    inc(i);
+  end
+end;
+
+
 var str, tok : string; done: boolean = false; op:byte;
 begin
   reg_ip^ := $100;
   while not (done or eof) do begin
     readln(str);
-    for tok in SplitString(str, ' ') do begin
+    if str[1] = '!' then PutMem(str)
+    else for tok in SplitString(str, ' ') do begin
       if tok = '' then continue;
       if ub4asm.b4op(tok, op) then runop(op)
       else case tok of
         '%q' : done := true;
+        '%s' : ub4.step;
         '?d' : WriteStack('ds: ', ds, reg_dp^);
         '?c' : WriteStack('cs: ', rs, reg_rp^);
         '?i' : WriteLn('ip: ', b4mat(reg_ip^));
@@ -55,7 +90,8 @@ begin
                  else dput(ord(tok[2])); // char literals
           '`'  : if length(tok)=1 then err('invalid ctrl char')
                    // TODO test this against chars out of range
-                 else dput(4 * (ord(upcase(tok[2])) - ord('@')))
+                 else dput(4 * (ord(upcase(tok[2])) - ord('@')));
+          '@'  : ShowMem(parseAddress(tok));
           else if PutHex(tok) then ok
           else Writeln('what does "', tok, '" mean?');
         end
