@@ -18,9 +18,9 @@ begin
   optbl[138] := 'ml';
   optbl[139] := 'dv';
   optbl[140] := 'md';
-  optbl[141] := 'ng';
-  optbl[142] := 'sl';
-  optbl[143] := 'sr';
+  optbl[141] := '';
+  optbl[142] := 'sh';
+  optbl[143] := '';
   optbl[144] := 'an';
   optbl[145] := 'or';
   optbl[146] := 'xr';

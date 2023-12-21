@@ -169,7 +169,7 @@
 
 :mm-init
   lb 00 m0 mm-next wi                 # initial 'next' is 0 (null)
-  lb 01 lb 12 sl m0 mm-size wi        # initial size (1<<12 = 4kb) TODO: calculate this
+  lb 01 lb 12 sh m0 mm-size wi        # initial size (1<<12 = 4kb) TODO: calculate this
   lb 00 m0 mm-used wi                 # initial used = 0
   rt
 
