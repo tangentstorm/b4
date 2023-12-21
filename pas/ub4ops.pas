@@ -30,7 +30,7 @@ begin
   optbl[150] := 'hl';
   optbl[151] := 'jm';
   optbl[152] := 'hp';
-  optbl[153] := 'j0';
+  optbl[153] := '';
   optbl[154] := '';
   optbl[155] := '';
   optbl[156] := '';

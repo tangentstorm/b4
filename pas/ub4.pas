@@ -263,8 +263,6 @@ procedure runop(op : byte);
       $96 : {hl  } halt;
       $97 : {jm  } reg_ip^ := rdval(reg_ip^+1)-1;
       $98 : {hp  } reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1;
-      $99 : {j0  } if dpop = 0 then begin reg_ip^ := rdval(reg_ip^+1)-1 end
-                   else inc(reg_ip^,4) { skip over the address };
       $A0 : {h0  } if dpop = 0 then reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1
                    else inc(reg_ip^);
       $A1 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }

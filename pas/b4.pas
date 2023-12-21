@@ -6,7 +6,7 @@ uses xpc, ub4, ub4asm, ub4ops, kvm, kbd, uhw_vt,
 
 const pgsz = 8 * 8; { should be multiple of 8 to come out even }
 
-var opli, oplb, opjm, opj0, opcl, opnx, ophp, oph0 : value;
+var opli, oplb, opjm, opcl, opnx, ophp, oph0 : value;
 
 procedure draw_stack(x,y : byte; id:char; var s:stack; n:value);
   var i : value;
@@ -78,7 +78,7 @@ procedure dump;
       else if ram[i] in [$80 .. $BF] then
         begin
           if ram[i] in [opli,oplb] then literal := true;
-          if ram[i] in [opjm,opj0,opcl] then target := true;
+          if ram[i] in [opjm,opcl] then target := true;
           if (ram[i] = opli) or ((ram[i] in [opcl]) and (rdval(i+1) < high(address))) then
             begin
               if ram[i] = opcl
@@ -112,7 +112,7 @@ function step_over: boolean;
   var skip : byte = 0;
   begin
     result := ram[reg_ep^] = opcl;
-    if ram[reg_ep^] in [opcl,opjm,opj0,opli,opnx] then skip := 4
+    if ram[reg_ep^] in [opcl,opjm,opli,opnx] then skip := 4
     else if ram[reg_ep^] in [oplb,ophp,oph0] then skip := 1;
     inc(reg_ep^);
     inc(reg_ep^, skip);
@@ -122,7 +122,7 @@ var ch: ansichar; pause: boolean = false;
 begin
   ub4.term := uhw_vt.TB4KVMTerm.Create;
   opli := b4opc('li'); oplb := b4opc('lb');
-  opjm := b4opc('jm'); opj0 := b4opc('j0');
+  opjm := b4opc('jm');
   ophp := b4opc('hp'); oph0 := b4opc('h0');
   opcl := b4opc('cl'); opnx := b4opc('nx');
   open('disk.b4'); boot; clrscr;
