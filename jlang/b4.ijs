@@ -1,5 +1,5 @@
 NB. b4 virtual machine
-NB. cocurrent 'b4'
+cocurrent 'b4'
 
 new =: {{
   NB. CPU
@@ -13,7 +13,7 @@ new =: {{
   M =: (32$0{a.)"_^:(''&-:) y   NB. user-addressable memory
   END =: #M
   0 0$0}}
-
+
 NB. helper defs. these are internal definitions
 NB. that are only used to define the instruction set.
 NB. (at some point, the stacks may just be designated
@@ -33,8 +33,7 @@ OGMASK =: 2b0111  NB. op group mask
 SKIPPY =: 2b1000  NB. skipping evaluation until we see 'go' op
 
 CMASK =: 31 NB. ctrl code mask
-
-
+
 NB. "microcode"
 NB. not part of the instruction set, but each instruction
 NB. is composed of these building blocks.
@@ -70,7 +69,7 @@ NB. there are 32 "C" registers, so cget/set take an argument
 NB. monad/dyad: lifts 1/2-arg J verbs to VM
 dy =: {{ dput mask (dpop u dpop) y }}  NB. !! this conflicts with 'dy' op below
 mo =: {{ dput mask u dpop y }}
-
+
 NB. instruction set
 NB. ---------------------------------------------------------------------
 s_ops=:' lb li sw du ov zp dr rd' [ n_ops=:' ad sb ml dv md ng sl sr'
@@ -81,7 +80,7 @@ m_ops=:' rb wb ri wi yr zw wp rp qp'    [ d_ops=:' bw go'
 ops =: ;: s_ops,n_ops,b_ops,c_ops,r_ops,f_ops,m_ops,d_ops
 
 ok =: ]                          NB. no-op ... this should be op 0 though
-
+
 NB. stack instructions
 lb =: dput@sget@incp             NB. literal (signed) byte to data stack
 li =: dput@mget@inc4             NB. literal/longint -> push next 4 bytes to data stack as i32
@@ -103,7 +102,7 @@ nt =: NOT mo
 NB. comparison instructions
 (eq =: =  dy)`(gt =: >  dy)`(lt =: <  dy)
 (ne =: ~: dy)`(ge =: >: dy)`(le =: <: dy)
-
+
 NB. register instructions
 (dx =: xset@dpop)` (dy=: yset@dpop)` (dz=: zset@dpop) `(dc=: dpop cset AND@CMASK@dpop)
 (xd =: dput@xget)` (yd=: dput@yget)` (zd=: dput@zget) `(cd=: dput@cget@AND@CMASK@dpop)
@@ -119,7 +118,7 @@ rt =: pset&(rpop-1:)            NB. return
 NB. !! TODO: r0 should leave non-0 on stack?
 r0 =: rt^:(0-:dpop)             NB. return if tos==0
 ev =: pset@<:@dpop@rput@pget    NB. eval. like call, but take address from stack instead of M[1+P]
-
+
 NB. memory / messaging instructions
 ri =: dput@mget@dpop         NB. ( a-n) copy memory addr y to stack (i32)
 wi =: (dpop mset dpop)       NB. (na- ) write x to addr y
@@ -143,13 +142,13 @@ NB. this does not have a specific opcode, but is invoked for
 NB. every input sequence that designates a valid utf-8
 NB. codepoint.
 chev =: ev@cget@0@dput
-
+
 NB. cpu emulator
 NB. ---------------------------------------------------------------------
 GO =: 128 + ops i. <'go'
 grps =: <:dfh&> cut'01 80 c0 c2 e0 f0 f5' NB. start of each group of ops
 'gOk gCh gOp gU2 gU3 gU4 gUx' =: i.7
-
+
 NB. eval: evaluate a single byte code. this allows for a
 NB. 'calculator' mode, where the VM is passive and driven
 NB. entirely by input from an external source.
@@ -179,7 +178,7 @@ eval =: {{
     end.
   end.
   G =: (G AND NOT OGMASK) XOR g }}
-
+
 NB. step: read instruction from memory, eval, advance program counter
 NB. loop: does same until the program halts.
 loop =: {{ while. END > pc=.pget'' do. incp@'' eval bget pc end. 0 0$0 }}
@@ -194,27 +193,3 @@ s =: log@step
 NB. launch a new vm with given memory image and trace what happens:
 trace =: {{ (fmt,s 0}[:,/ log@step^:a:) 0 0$s=.log new y }}
 boot =: [: ". 'D' [[: (log@step^:a:) new
-
-NB. asm: bootstrap assembler: 2 chars per byte
-NB. ---------------------------------------------------------------------
-NB. a0: strip out spaces. every pair of characters remaining
-NB. should be either an opcode mnemonic or a pair of hex digits.
-NB. ('ad' for 'add' is both, but you can use 'AD' for the hex number)
-NB. other strings are ignored and compile to 00.
-NB. Following the retroforth/muri convention, you can use '..'
-NB. for 0-padding when you are not explicitly referring to the number 0.
-
-assert 0 128 255 0 -: _2 dfh\'0080ff..'
-
-a0 =: ((128+])`(dfh&>@[)@.((#ops)=]) ops&i.)"0  NB. match boxed 2 char str
-a1 =: {{ a0 (_2<\' '-.~]) y }}  NB. src str -> bytecode str (strips all spaces)
-asm =: a. {~ a1
-
-assert (128 1 131 136 {a.) -: asm 'si 01 du ad'
-
-NB. '1 dup +' should result in D=.,2
-assert (,2) -: boot asm 'si 01 du ad'
-assert (,3) -: boot asm 'si 01 du du ad ad'
-assert (,4) -: boot asm 'si 01 du ad du ad'
-
-new''
