@@ -50,7 +50,7 @@ dswp =: {{ D =: 1 A. D }}
 dpop =: {{ r =. 0 if. #D do. D =: }: D [ r =. {: D end. r }}
 cpop =: {{ r =. 0 if. #C do. C =: }: C [ r =. {: C end. r }}
 bget =: {{ a. i. y { M }}                  NB. fetch a byte  (u8)
-sget =: (_127-~-)^:(127&<)@bget            NB. fetch a short (i8)
+sget =: (>:@-)^:(127&<)@bget            NB. fetch a short (i8)
 bput =: {{ M =: x (a. { 256#:y) } M }}     NB. write y as u8 (_1 as 255)
 mget =: {{ (4#256)#.a.i.(y+i.4) { M }}     NB. fetch i32
 mset =: {{ M =: x (a.{~(4#256)#:y) } M }}  NB. store i32
@@ -90,7 +90,7 @@ ops =: ;: s_ops,n_ops,b_ops,c_ops,f_ops,m_ops,h_ops,e_ops
 ok =: ]                          NB. no-op ... this should be op 0 though
 
 NB. stack instructions
-lb =: dput@sget@incp             NB. literal (signed) byte to data stack
+lb =: dput@bget@incp             NB. literal (unsigned) byte to data stack
 li =: dput@mget@inc4             NB. literal/longint -> push next 4 bytes to data stack as i32
 sw =: dswp                       NB. swap: xy->yx
 du =: dput@dtos                  NB. dup: x->xx
