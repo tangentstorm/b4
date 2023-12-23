@@ -8,10 +8,10 @@ create =: {{
   P =: 0                        NB. program counter
   G =: 0                        NB. group/flags register (private)
   X =: Y =: Z =: 0              NB. registers that programs can use
-  C =: 32$0                     NB. addresses of 'character handler'
+  R =: 32$0                     NB. registers
   NB. Stacks and other RAM
   D =: 0$0                      NB. data stack
-  R =: 0$0                      NB. return stack
+  C =: 0$0                      NB. call stack
   M =: (MSZ$0{a.)"_^:(''&-:) y  NB. user-addressable memory
   END =: #M
   0 0$0}}
@@ -36,19 +36,19 @@ NB. flags/masks for the G register
 OGMASK =: 2b0111  NB. op group mask
 SKIPPY =: 2b1000  NB. skipping evaluation until we see 'go' op
 
-CMASK =: 31 NB. ctrl code mask
+RMASK =: 31 NB. ctrl code mask
 
 NB. "microcode"
 NB. not part of the instruction set, but each instruction
 NB. is composed of these building blocks.
 
 dput =: {{ D =: D, y }}
-cput =: {{ R =: R, y }}
+cput =: {{ C =: C, y }}
 dtos =: {{ {: D }}
 dnos =: {{ {: }: D }}
 dswp =: {{ D =: 1 A. D }}
 dpop =: {{ r =. 0 if. #D do. D =: }: D [ r =. {: D end. r }}
-cpop =: {{ r =. 0 if. #R do. R =: }: R [ r =. {: R end. r }}
+cpop =: {{ r =. 0 if. #C do. C =: }: C [ r =. {: C end. r }}
 bget =: {{ a. i. y { M }}                  NB. fetch a byte  (u8)
 sget =: (_127-~-)^:(127&<)@bget            NB. fetch a short (i8)
 bput =: {{ M =: x (a. { 256#:y) } M }}     NB. write y as u8 (_1 as 255)
@@ -67,8 +67,8 @@ NB. get/set each register
 (zget =: {{ Z }}) ` (zset =: {{ Z =: y }})
 (pget =: {{ P }}) ` (pset =: {{ P =: y }})
 
-NB. there are 32 "C" registers, so cget/set take an argument
-(cget =: {{ (32#:y) { C }}) ` (cset =: {{ C =: x (32#:y) } C }})
+NB. there are 32 "R" registers, so rget/set take an argument
+(rget =: {{ (32#:y) { R }}) ` (rset =: {{ R =: x (32#:y) } R }})
 
 NB. monad/dyad: lifts 1/2-arg J verbs to VM
 dy =: {{ dput mask (dpop u dpop) y }}
@@ -117,9 +117,8 @@ NB. register instructions
 (dx =: xset@dpop)` (dyOLD=: yset@dpop)` (dz=: zset@dpop)
 (xd =: dput@xget)` (yd=: dput@yget)` (zd=: dput@zget)
 
-NB. OLD: `(dc=: dpop cset AND@CMASK@dpop)
-NB.  `(cd=: dput@cget@AND@CMASK@dpop)
-
+(dr=: dpop rset AND@RMASK@dpop) NB. data stack -> register
+(rd=: dput@rget@AND@RMASK@dpop) NB. register -> data
 
 NB. control flow instructions
 hl =: pset@END                  NB. halt
@@ -146,14 +145,14 @@ NB.      the 'words' in the dictionary are the ascii control characters,
 NB.      (a.{~i.32) ops 'bw cw' define the 'control word' cw by setting
 NB.      the corresponding 'c' register to the adress of the next byte.
 NB.      Finally, enter skippy mode so that the definition is ignored.
-bw =: skpy@1@(pget cset AND@CMASK@bget@incp)
+bw =: skpy@1@(pget rset AND@RMASK@bget@incp)
 go =: skpy@0   NB. exit skippy mode
 
-NB. character handler. call address in C with char on stack
+NB. register handler. call address in R with char on stack
 NB. this does not have a specific opcode, but is invoked for
 NB. every input sequence that designates a valid utf-8
 NB. codepoint.
-chev =: ev@cget@0@dput
+chev =: ev@rget@0@dput
 
 NB. cpu emulator
 NB. ---------------------------------------------------------------------
@@ -197,7 +196,7 @@ loop =: {{ while. END > pc=.pget'' do. incp@'' eval bget pc end. 0 0$0 }}
 step =: {{ if.    END > pc=.pget'' do. 0 0 $ incp@'' eval bget pc end. }}
 
 NB. these are helpers for tracing the vm in J:
-fmt =: ;:'P X Y Z R D M'
+fmt =: ;:'P X Y Z C D M'
 log =: {{ (}:,<@,@(' ',.~hfd)@(a.&i.)@>@{:)":@". &.> fmt }}
 sho =: fmt ,: log
 s =: log@step

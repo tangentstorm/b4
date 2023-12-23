@@ -30,7 +30,7 @@ main =: {{
       case. '%q' do. exit''
       case. '%s' do. step''
       case. '?d' do. echo 'ds: [', (stackstr D__vm), ']'
-      case. '?c' do. echo 'cs: [', (stackstr R__vm), ']'
+      case. '?c' do. echo 'cs: [', (stackstr C__vm), ']'
       case. '?i' do. echo 'ip: $', hfd P__vm
       case. '%j' do.
         echo 'Exiting into J. Type "main _" to return' return.
