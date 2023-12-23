@@ -50,10 +50,11 @@ dswp =: {{ D =: 1 A. D }}
 dpop =: {{ r =. 0 if. #D do. D =: }: D [ r =. {: D end. r }}
 cpop =: {{ r =. 0 if. #C do. C =: }: C [ r =. {: C end. r }}
 bget =: {{ a. i. y { M }}                  NB. fetch a byte  (u8)
-sget =: (>:@-)^:(127&<)@bget            NB. fetch a short (i8)
-bput =: {{ M =: x (a. { 256#:y) } M }}     NB. write y as u8 (_1 as 255)
-mget =: {{ (4#256)#.a.i.(y+i.4) { M }}     NB. fetch i32
-mset =: {{ M =: x (a.{~(4#256)#:y) } M }}  NB. store i32
+sget =: (>:@-)^:(127&<)@bget               NB. fetch a short (i8)
+bput =: {{ M =: (a.{~  256  #:x) y } M }}  NB. store x as u8 at y (_1 as 255)
+NB. TODO: mset -> mput
+mset =: {{ M =: (a.{~(4#256)#:x) (y+i._4) } M }}  NB. store i32 x at y
+mget =: {{ (4#256)#.a.i.(y+i._4) { M }}     NB. fetch i32
 skpy =: {{ G =: (G AND NOT SKIPPY) VEL SKIPPY * y }}  NB. set skippy bit to y
 
 incp =: {{ P =: mask P + 1 }}         NB. ++p
@@ -83,7 +84,7 @@ c_ops=:' eq lt'                    NB. comparison ops
 f_ops=:' ok jm hp h0 cl rt'        NB. flow ops
 m_ops=:' rb wb ri wi'              NB. memory ops
 h_ops=:' io'                       NB. hardware i/o ops
-e_ops=:' xr yr zw nx'              NB. extended ops
+e_ops=:' rx ry wz nx'              NB. extended ops
 
 ops =: ;: s_ops,n_ops,b_ops,c_ops,f_ops,m_ops,h_ops,e_ops
 
@@ -133,9 +134,21 @@ r0 =: rt^:(0-:dpop)             NB. return if tos==0
 ev =: pset@<:@dpop@cput@pget    NB. eval. like call, but take address from stack instead of M[1+P]
 
 NB. memory / messaging instructions
-ri =: dput@mget@dpop         NB. ( a-n) copy memory addr y to stack (i32)
+ri =: dput@mget@dpop         NB. ( a-n) copy from addr y to stack (i32)
 wi =: (dpop mset dpop)       NB. (na- ) write x to addr y
-yr =: dput@bget@yinc         NB. (yr -> v) read byte from M[Y:b] and increment Y
+rb =: dput@bget@dpop         NB. ( a-n) copy from addr y to stack (u8)
+wb =: (dpop bput dpop)       NB. (ba- ) write byte x to addr y
+
+ord =: a.&i.
+rega =: 4*(ord'@') -~ ord NB. backtick = register address
+XREG =: rega'X'
+YREG =: rega'Y'
+ZREG =: rega'Z'
+rx =: {{ (t+4) mset XREG [ dput mget t=. mget XREG }}
+ry =: {{ (t+4) mset YREG [ dput mget t=. mget YREG }}
+wz =: {{ (t+4) mset ZREG [ (dpop'') mset t=. mget ZREG }}
+
+NB. yr =: dput@bget@yinc         NB. (yr -> v) read byte from M[Y:b] and increment Y
 zw =: ((8|dpop) bput zinc)   NB. (n zw->)  write low byte of tos to M[Z:b] and increment Z
 io =: [:                     NB. TODO: io
 
