@@ -1,6 +1,8 @@
 NB. b4 virtual machine
 cocurrent 'b4'
 
+MSZ =: 1024                     NB. initial memory size, in bytes
+
 create =: {{
   NB. CPU
   P =: 0                        NB. program counter
@@ -10,7 +12,7 @@ create =: {{
   NB. Stacks and other RAM
   D =: 0$0                      NB. data stack
   R =: 0$0                      NB. return stack
-  M =: (32$0{a.)"_^:(''&-:) y   NB. user-addressable memory
+  M =: (MSZ$0{a.)"_^:(''&-:) y  NB. user-addressable memory
   END =: #M
   0 0$0}}
 
