@@ -1,7 +1,7 @@
 NB. b4 virtual machine
 cocurrent 'b4'
 
-new =: {{
+create =: {{
   NB. CPU
   P =: 0                        NB. program counter
   G =: 0                        NB. group/flags register (private)
@@ -13,6 +13,8 @@ new =: {{
   M =: (32$0{a.)"_^:(''&-:) y   NB. user-addressable memory
   END =: #M
   0 0$0}}
+
+reset =: create                 NB. reset to initial state
 
 NB. helper defs. these are internal definitions
 NB. that are only used to define the instruction set.
@@ -39,12 +41,12 @@ NB. not part of the instruction set, but each instruction
 NB. is composed of these building blocks.
 
 dput =: {{ D =: D, y }}
-rput =: {{ R =: R, y }}
+cput =: {{ R =: R, y }}
 dtos =: {{ {: D }}
 dnos =: {{ {: }: D }}
 dswp =: {{ D =: 1 A. D }}
 dpop =: {{ r =. 0 if. #D do. D =: }: D [ r =. {: D end. r }}
-rpop =: {{ r =. 0 if. #R do. R =: }: R [ r =. {: R end. r }}
+cpop =: {{ r =. 0 if. #R do. R =: }: R [ r =. {: R end. r }}
 bget =: {{ a. i. y { M }}                  NB. fetch a byte  (u8)
 sget =: (_127-~-)^:(127&<)@bget            NB. fetch a short (i8)
 bput =: {{ M =: x (a. { 256#:y) } M }}     NB. write y as u8 (_1 as 255)
@@ -67,17 +69,21 @@ NB. there are 32 "C" registers, so cget/set take an argument
 (cget =: {{ (32#:y) { C }}) ` (cset =: {{ C =: x (32#:y) } C }})
 
 NB. monad/dyad: lifts 1/2-arg J verbs to VM
-dy =: {{ dput mask (dpop u dpop) y }}  NB. !! this conflicts with 'dy' op below
+dy =: {{ dput mask (dpop u dpop) y }}
 mo =: {{ dput mask u dpop y }}
 
 NB. instruction set
 NB. ---------------------------------------------------------------------
-s_ops=:' lb li sw du ov zp dr rd' [ n_ops=:' ad sb ml dv md ng sl sr'
-b_ops=:' an or xr nt'             [ c_ops=:' eq ne gt lt ge le'
-r_ops=:' dx xd dy yd dz zd dc cd' [ f_ops=:' hl jm hp h0 cl rt r0 nx ev'
-m_ops=:' rb wb ri wi yr zw wp rp qp'    [ d_ops=:' bw go'
+s_ops=:' lb li du sw ov zp dc cd'  NB. stack ops
+n_ops=:' ad sb ml dv md sh'        NB. math ops
+b_ops=:' an or xr nt'              NB. bitwise ops
+c_ops=:' eq lt'                    NB. comparison ops
+f_ops=:' ok jm hp h0 cl rt'        NB. flow ops
+m_ops=:' rb wb ri wi'              NB. memory ops
+h_ops=:' io'                       NB. hardware i/o ops
+e_ops=:' xr yr zw nx'              NB. extended ops
 
-ops =: ;: s_ops,n_ops,b_ops,c_ops,r_ops,f_ops,m_ops,d_ops
+ops =: ;: s_ops,n_ops,b_ops,c_ops,f_ops,m_ops,h_ops,e_ops
 
 ok =: ]                          NB. no-op ... this should be op 0 though
 
@@ -88,45 +94,49 @@ sw =: dswp                       NB. swap: xy->yx
 du =: dput@dtos                  NB. dup: x->xx
 ov =: dput@dnos                  NB. over: xy->xyx
 zp =: dpop                       NB. zap: xy->x
-dr =: rput@dpop                  NB. data -> return stack
-rd =: dput@rpop                  NB. return -> data stack
+dc =: cput@dpop                  NB. data stack -> call stack
+cd =: dput@cpop                  NB. call stack -> data stack
 
 NB. numeric instructions
 (ad =: + dy)`(sb =: - dy)`(ml =: * dy)`(dv =: % dy)`(md =: |~dy)
 (ng =: - mo)`(sl =: SHL dy)`(sr =: SHR dy)
+sh =: SHL~ dy
 
 NB. bitwise instructions (and or xor not)
-(an =: (2b0001 b.) dy)` (or =: (2b0111 b.) dy)` (xr =: (2b0110 b.) dy)
+(an =: (2b10001 b.) dy)` (or =: (2b10111 b.) dy)` (xr =: (2b10110 b.) dy)
 nt =: NOT mo
 
 NB. comparison instructions
-(eq =: =  dy)`(gt =: >  dy)`(lt =: <  dy)
-(ne =: ~: dy)`(ge =: >: dy)`(le =: <: dy)
+(eq =: -@= dy) ` (lt =: -@< dy)
+(gt =: >  dy)`(ne =: ~: dy)`(ge =: >: dy)`(le =: <: dy)
+
 
 NB. register instructions
-(dx =: xset@dpop)` (dy=: yset@dpop)` (dz=: zset@dpop) `(dc=: dpop cset AND@CMASK@dpop)
-(xd =: dput@xget)` (yd=: dput@yget)` (zd=: dput@zget) `(cd=: dput@cget@AND@CMASK@dpop)
+(dx =: xset@dpop)` (dyOLD=: yset@dpop)` (dz=: zset@dpop)
+(xd =: dput@xget)` (yd=: dput@yget)` (zd=: dput@zget)
+
+NB. OLD: `(dc=: dpop cset AND@CMASK@dpop)
+NB.  `(cd=: dput@cget@AND@CMASK@dpop)
+
 
 NB. control flow instructions
 hl =: pset@END                  NB. halt
 jm =: pset@<:@mget@inc4         NB. jump to M[P+1 2 3 4]-1 (because every op is followed by p++)
 hp =: pset@<:@(pget+bget)@incp  NB. hop to P+M[P+1]-1 (relative short jump)
 h0 =: hp`incp@.(0-:dpop)        NB. hop if tos==0 else skip addr
-nx =: (hp@rput@<:)`incp@.(0-:])@ rpop  NB. 'next': if (rtos--)==0 proceed, else hop
-cl =: jm@rput@pget              NB. call. like jump, but push P to return stack first
-rt =: pset&(rpop-1:)            NB. return
+nx =: (hp@cput@<:)`incp@.(0-:])@ cpop  NB. 'next': if (rtos--)==0 proceed, else hop
+cl =: jm@cput@pget              NB. call. like jump, but push P to return stack first
+rt =: pset&(cpop-1:)            NB. return
 NB. !! TODO: r0 should leave non-0 on stack?
 r0 =: rt^:(0-:dpop)             NB. return if tos==0
-ev =: pset@<:@dpop@rput@pget    NB. eval. like call, but take address from stack instead of M[1+P]
+ev =: pset@<:@dpop@cput@pget    NB. eval. like call, but take address from stack instead of M[1+P]
 
 NB. memory / messaging instructions
 ri =: dput@mget@dpop         NB. ( a-n) copy memory addr y to stack (i32)
 wi =: (dpop mset dpop)       NB. (na- ) write x to addr y
 yr =: dput@bget@yinc         NB. (yr -> v) read byte from M[Y:b] and increment Y
 zw =: ((8|dpop) bput zinc)   NB. (n zw->)  write low byte of tos to M[Z:b] and increment Z
-wp =: [:                     NB. TODO: write to port
-rp =: [:                     NB. TODO: read from port
-qp =: [:                     NB. TODO: query port
+io =: [:                     NB. TODO: io
 
 NB. dictionary instructions
 NB. 'bw' provides a simple 'dictionary' system at the opcode level.
@@ -191,5 +201,5 @@ sho =: fmt ,: log
 s =: log@step
 
 NB. launch a new vm with given memory image and trace what happens:
-trace =: {{ (fmt,s 0}[:,/ log@step^:a:) 0 0$s=.log new y }}
-boot =: [: ". 'D' [[: (log@step^:a:) new
+trace =: {{ (fmt,s 0}[:,/ log@step^:a:) 0 0$s=.log reset y }}
+boot =: [: ". 'D' [[: (log@step^:a:) reset
