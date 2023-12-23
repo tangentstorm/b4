@@ -123,7 +123,7 @@ NB. register instructions
 NB. control flow instructions
 hl =: pset@END                  NB. halt
 jm =: pset@<:@mget@inc4         NB. jump to M[P+1 2 3 4]-1 (because every op is followed by p++)
-hp =: pset@<:@(pget+bget)@incp  NB. hop to P+M[P+1]-1 (relative short jump)
+hp =: pset@<:@(pget+sget)@incp  NB. hop to P+M[P+1]-1 (relative short jump)
 h0 =: hp`incp@.(0-:dpop)        NB. hop if tos==0 else skip addr
 nx =: (hp@cput@<:)`incp@.(0-:])@ cpop  NB. 'next': if (rtos--)==0 proceed, else hop
 cl =: jm@cput@pget              NB. call. like jump, but push P to return stack first
