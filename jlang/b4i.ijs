@@ -5,9 +5,11 @@ vm =: 'b4' conew~''
 readln =: [: (1!:01) 1:
 doNext =: [: (9!:29) 1: [ 9!:27
 ord =: a.&i.
+chr =: {&a.
 runop =: ".@(,&'__vm _')
 isop =: {{ ops__vm e.~ <y }}
-
+OPCODE =: 16b80 NB. bytecode of first internal instruction
+OPLAST =: OPCODE + # ops__vm
 dput =: dput__vm
 rega =: 4*(ord'@') -~ ord NB. backtick = register address
 addr =: dfh NB. TODO err handling
@@ -16,8 +18,20 @@ isHEX =: *./@(e.&'0123456789ABCDEF') NB. upper case hex num?
 puthex =: {{ if. isHEX y do. 1 [ dput dfh y return. end. 0 }}
 hexstr =: {{ if. y<0 do. '$-',hfd -y else. '$',hfd y end. }}
 stackstr =: ' ' joinstring toupper @ hexstr &.>
-putmem =: [:
-shomem =: [:
+decode =: {{
+  if. (#ops__vm) > ix=.(<y) i.~ ops__vm do. OPCODE + ix
+  else. dfh y
+  end. }}
+putmem =: {{ NB. decode str with '!addr bytes' and store in ram
+  'addr bytes' =. ({.;}.) decode &> ' 'splitstring y
+  M__vm =: (bytes{a.) (addr+i.#bytes) } M__vm }}
+encode =: {{ NB. encode bytes as b4 assembly language
+  if. y = 0 do. '..'
+  elseif. (<:&16b01 *. <:&16b1f) y do. '^', chr(y+ord'@')
+  elseif. (<:&OPCODE *. <:&OPLAST) y do. >(y-OPCODE){ops__vm
+  else. toupper hfd y end. }}
+memstr =: {{ , ' ',.~ encode"0 a.i. (y+i.16) { M__vm  }}
+showmem =: echo@memstr
 
 main =: {{
   P__vm =: 16b100
@@ -41,7 +55,7 @@ main =: {{
           if. 1=#tok do. dput 32 NB. space
           else. dput ord 1{tok end.
         case. '`' do. dput rega 1{tok
-        case. '@' do. showmem addr tok
+        case. '@' do. showmem addr }.tok
         case. do.
           if. puthex tok do.
           else. exit [ echo 'unrecognized token "',tok,'"'
