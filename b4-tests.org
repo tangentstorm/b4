@@ -54,7 +54,6 @@ ds: [] # should be an empty array
 #+end_src
 
 ** DONE print the call stack
-
 #+name: io.%c
 #+begin_src
 > ?c %q

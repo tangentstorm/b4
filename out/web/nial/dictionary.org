@@ -1133,9 +1133,9 @@ The operation breakin installs a break point prior to the first executable expre
 The optional argument Mode is provided to set the internal flag explicitly.  If it is omitted, the internal flag value is toggled.  All breakin flags are initially false.  The value of the breakin flag is retained if the definition is replaced by a loaddefs so that editing a definition and reloading it does not change its breakin status.  However, if definitions are reloaded using a restart then the breakin status is set to false.
 
 The operation returns the previous setting.  If the result of breakin is assigned to a variable, the previous setting can be restored later.  The names of definitions that have breakin set can be viewed by the expression Breaklist.
-:     library ¡°labeltab
+:     library Â¡Â°labeltab
 
-:     see ¡°labeltable
+:     see Â¡Â°labeltable
 
 #+begin_src nial
   labeltable IS OPERATION Corner Rowlabel Columnlabel Table {
