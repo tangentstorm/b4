@@ -1,35 +1,170 @@
+#+title: opcode mnemonics
 
 * opcode mnemonics
 
-** stack ops: lb li sw du ov zp dr rd
-** math ops: ad sb ml dv md ng sl sr
-** logic ops: an or xr nt
-** comparison ops: eq ne gt lt ge le
-** register ops: dx xd dy yd dz zd dc cd
-** control flow ops: hl jm hp h0 cl rt r0 nx ev
-** memory ops: rb wb ri wi yr zw wp rp qp
-** dictionary ops: bw go
+This document lists the 2-letter opcodes of b4 virtual machine instructions.
 
-* what individual letters mean
+See file:../b4-tests.org for the full specification.
 
-a: add(ad) and(an)
-b: byte(lb,rb,wb) begin(bw)
-c: call(cl) char(dc,cd)
-d: dupe(du) data(dr,rd,dx,xd,dy,yd,dz,zd,dc,cd) divide(dv)
-e: equal(eq,ne,ge,le) eval(ev)
-g: greater(gt,ge) go(go)
-h: halt(hl) hop(hp,h0,h1)
-i: int(li,ri,wi)
-j: jump(jm,j0)
-l: load(lb,li) left(sl) less(lt,le)
-m: multiply(ml) modulo(md)
-n: negate(ng) not(nt,ne) next(nx)
-o: over(ov) or(or)
-p: port(rp,wp,qp)
-q: query(qp)
-r: return(dr,rd,rt,r0,r1) right(sr) read(ri,rb)
-s: swap(sw) subtract(sb) shift(sl,sr)
-w: write(wb,wi,zw) word(bw)
-x: xor(xr) x-register(xd,dx)
-y: y-register(yr)
-z: zap(zp) z-register(zw)
+The hex numbers after the opcodes indicate the bytecode in the communication protocol (which is not yet stable, so may change slightly).
+
+* terms
+
+- ds :: data stack
+- cs :: control stack
+- ip :: instruction pointer
+- tos :: top of stack (top item on ds)
+- nos :: next on stack (second item on ds)
+
+* stack diagrams
+
+The stack diagrams show a "before" and "after" picture of the stack.
+For example, here is the stack diagram for =ov= ("over").
+
+~(xy -- xyx)~
+
+In the diagrams, the stack is turned sideways, with the topmost items shown on the right.
+The =--= symbol separates the "before" and "after" parts.
+
+On the left side, =xy= indicates that y is the topmost item on the stack
+(the "tos"), and =x= is the next item ("nos").
+
+On the right side, a new copy of =x= has been pushed onto the stack.
+
+There may be any number of other items on the stack, but they remain
+unchanged after the operation, so they are not included in the
+diagram.
+
+The individual characters represent arbitrary 32-bit numbers, which may
+be assigned various meanings. By convention, =a= would refer to a number
+treated as an address, =x= and =y= as first and second inputs, =n= is a number,
+b is a boolean (either 0 or -1), and =r= as a computed result.
+
+When the same value appears multiple times inside the parens, it always
+represents the same value.
+
+
+* b4vm opcodes
+
+** literal ops
+
+The following two operations load signed numbers onto the stack from the next byte(s) in memory.
+
+- lb :: =$80= load (signed) byte ~( -- n)~ ex: =lb 00= pushes 0 to ds.
+- li :: =$81= load (signed, little-endian) int32 ~(-- n)~  ex: =li 00 01 02 03= pushes =0x03020100= to ds
+
+** stack ops
+
+- du :: =$82= /duplicate/ tos ~( x -- xx )~
+- sw :: =$83= /swap/ tos and nos ~( xy -- yx )~
+- ov :: =$84= /over/. push copy of nos ~( xy -- xyx )~
+- zp :: =$85= /zap/. remove tos from ds ~(x -- )~
+- dc :: =$86= data -> ctrl. pop from ds, push to cs  ~(ds: x | cs:   -- ds:   | cs: x)~
+- cd :: =$87= ctrl -> data. pop from cs, push to ds  ~(ds:   | cs: x -- ds: x | cs:  )~
+
+
+** math ops
+
+- ad :: =$88= /add/ two numbers. ( xy -- r )
+- sb :: =$89= subtract. ~( xy -- r )~ ex: ~( 05 03 sb --> 02 )~
+- ml :: =$8A= multiply ~( xy -- r )~ ex: ~( 05 03 ml --> 0F )~
+- dv :: =$8B= integer division ~( xy -- r )~ ex: ~( 0A 03 dv --> 03 )~
+- md :: =$8C= modulo (remainder) ~( xy -- r )~ ex: ~( 0A 03 md --> 01 )~
+- sh :: =$8D= shift =x= left =y= bits (=y= may be negative) ~(xy - r )~ ex: ~(06 01 sh --> 0C)~
+
+** logic ops
+
+- an :: =$8E= bitwise and ~(xy -- r)~
+- or :: =$8F= bitwise or ~(xy -- r)~
+- xr :: =$90= bitwise xor ~(xy -- r)~
+- nt :: =$91= bitwise not ~(x -- n)~
+
+** comparison ops
+
+- eq :: =$92= equal? ~(xy -- b)~ . pushes -1 to ds if x and y are equal, else 0.
+- lt :: =$93= less than? (x y -- b) pushes -1 if =x < y,= else 0
+
+The other obvious comparison ops (=ne,gt,ge,le=) can be defined in terms of these as extended operations,
+or can be achieved by some combination of re-ordering the arguments and using =nt=.
+
+** control flow ops:
+
+Note that the communication protocol is meant to allow using a b4 vm as a "calculator" or "repl", and control flow ops don't make sense in the communication protocol. The hex numbers here indicate the bytecodes used in the pascal implementation of the virtual machine, but these will probably not be directly part of the communications protocol (with the possible exceptions of =hl= and =db= (?)).
+
+- hl :: =$96= halt (cause the virtual machine to terminate)
+- jm :: =$97= unconditional jump to the address held in next 4 bytes of ram
+- hp :: =$98= /hop/. add next signed byte (minus 1) to ip.
+- h0 :: =$A0= /hop if 0/. remove tos, and if was 0, perform a hop. (otherwise increment ip to ignore the distance byte)
+- cl :: =$A1= /call/. push ip to cs, then jump to address held in next 4 bytes.
+- rt :: =$A2= /return/. jump to address taken from cs.  ~(cs: a -- )~
+- nx :: =$A4= /next/. a kind of hop. uses top of cs as loop counter. if the counter is 0, drop and increment ip to skip the (signed) distance byte, otherwise decrement it and hop. ~(cs: n -- (n-1))~ if n>0 else ~(cs: n --   )~
+- db :: =$B8= trigger the debugger
+
+
+** register ops
+
+- rb :: =$A5= read signed byte from ram  ~( a -- n )~
+- wb :: =$A6= write byte x (~x FF an~)  to address a ~(x a -- )~
+- ri :: =$A7= read signed, little-endian int32 from ram ~( a -- n )~
+- wi :: =$A8= write integer x to address ~( xa -- )~
+
+
+** streaming ops
+
+These are intended for implementing array operations (reading from addresses in registers X and/or Y, performing an operation, and writing to Z in a loop).
+
+- rx :: =$A9= read signed little endian int32 from address in X register, and increment X by 4  ~( -- n)~
+- ry :: =$AB= read signed little endian int32 from address in Y register, and increment Y by 4 ~( -- n)~
+- wz :: =$AC= write int32 (as little indian bytes) to address from Z register, and increment Z by 4  ~( n -- )~
+
+(TODO: /Why is there a gap in the numbering here? This is probably wrong./)
+
+** reserved ops
+
+- io :: reserved for input/output operations
+
+
+** terminal "ops"
+
+These are only implemented in the pascal version (file:../pas/uhw_vt.pas), and are not part of the b4 spec.
+
+B4 will eventually have an official spec for color terminal i/o, but it will just regular forth words that use =io= to talk to virtual hardware, rather than dedicated ops.
+
+(But: the byte-codes $B0 .. = $BF are reserved for you to implement whatever you want, and may even change from instance to instance depending on how you implement the machine, so the current use is valid).
+
+
+- tg :: =$B0= /term.goto/: move cursor to position (x, y) (x y -- )
+- ta :: =$B1= /term.attr/: set foreground and background color for future output to x  ~(x -- )~ fg and bg are 4 bits and packed into the least significant byte of x. (this is an artefact of how the pascal =crt= unit works, and will probably change to allow separate true color fg/bg commands)
+- tw :: =$B2= write a character (unicode code point) to the terminal ~(x -- )~ (should emit utf-8. probably only does ascii in pascal imp.)
+- tr :: =$B3= wait for user to press a key and read the code from the terminal. ~(x -- )~
+- tk :: =$B4= check whether key is pressed (so you don't have to block with =tr=). ~( -- b)~
+- ts :: =$B5= clear terminal screen. (fill entire screen with spaces and current bg color)
+- tl :: =$B6= clear terminal line. (clear from cursor to right side of screen)
+- tc :: =$B7= terminal cursor position ~( - xy)~ (where x and y are the current coordinates of the cursor)
+
+* letter mnemonics
+
+Sometimes the two-letter code itself is mnemonic, and sometimes
+the individual letters refer to a register or stack.
+
+#+begin_src text
+  a: add(ad), and(an)
+  b: byte(lb,rb,wb)
+  c: call(cl), control stack (dc,cd)
+  d: duplicate(du), data stack (dc,cd), divide(dv), debugger(db)
+  e: equal(eq)
+  h: halt(hl), hop(hp,h0)
+  i: int32(li,ri,wi), input(io)
+  j: jump(jm)
+  l: load/literal(lb,li), less-than(lt)
+  m: multiply(ml), modulo(md)
+  n: not(nt), next(nx)
+  o: over(ov), or(or), output(io)
+  r: return(rt), read(ri,rb,rx,ry)
+  s: swap(sw), subtract(sb), shift(sh)
+  t: terminal (tg,ta,tw,tr,tk,ts,tl,tc)
+  w: write(wb,wi,wz)
+  x: xor(xr) x-register(rx)
+  y: y-register(ry)
+  z: zap(zp), z-register(zw)
+#+end_src
