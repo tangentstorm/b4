@@ -1,6 +1,6 @@
 {$mode delphi}{$i xpc}
 unit ub4asm;
-interface uses xpc, ub4ops, ub4;
+interface uses ub4ops, ub4;
 
   type ident = string[16];
   type entry = record id: ident; adr: ub4.address end;
@@ -16,6 +16,8 @@ implementation
 
   type chargen = function( var ch : char ) : char;
   var nextchar : chargen;
+
+procedure ok; begin end;
 
 function b4op(code : opstring; out op:byte) : boolean;
   var found : boolean;
