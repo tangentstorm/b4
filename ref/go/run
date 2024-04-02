@@ -1,7 +1,0 @@
-#!/bin/bash
-# ( I generate *.exe even on unix just so I can hide and delete with *.exe )
-  if [ -f "$1.pas" ];    then  gpc --automake "$1.pas" -o $1.exe && ./$1.exe
-elif [ "$1" == "" ];     then  ./$0 b4
-elif [ "$1" == "test" ]; then  ./$0 test_b4
-else echo "error: $1.pas not found or is not a program"
-fi
