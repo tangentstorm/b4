@@ -1,0 +1,158 @@
+#+title: b4 implementation plan
+
+* DONE get a string match working
+* DONE show labels in the debugger
+- defs could always be line-aligned (just leave spaces)
+  and we could have a comment on the left
+* DONE read/write individual bytes
+    rb/wb
+    ri/wi
+
+    -- stacks and registers are all 32 bits
+    -- but the main content can be bytes
+
+    --  READ byte VS READ value (4 bytes) --
+    -> s-eq? wants to read a byte at a time
+    -> eol flag could just be a byte.
+
+    -- but: we also want to write registers
+* DONE implement number parser
+* DONE implement number printer
+
+* DONE [3/3] bring turbo vm in sync with j version
+** DONE use the new 2-char b4 opcodes
+** DONE allow character literals with 'x
+** DONE fix the existing bios
+
+* DONE add !var and @var to assembler
+
+* TODO [3/4] make the debug display easier to see
+** DONE explicit 'call' op
+** DONE use high bits for ops
+** DONE switch ram to bytes
+* TODO memory allocator
+* TODO add dictionary entries for all non-control-flow ops
+
+* TODO b4a repl
+you should be able to execute assembly language instructions directly
+(in the vm implementation itself)
+- maybe even show exactly how it's getting assembled underneath
+- run opcodes directly
+- show stacks
+- show ram
+
+* TODO [2/4] implement the forth interpreter
+** DONE [4/4] implement a forth-style dictionary
+*** DONE implement headers manually
+*** DONE implement 'words'
+*** DONE implement 'word?' (s-a)
+- find definition
+  - get last entry address
+  - while entry address != 0 do:
+    - use offset to find string
+    - compare entry to goal string
+    - if match, then leave address of value on stack
+  - if entry = 0, say 'not found'
+
+** DONE interpreter word (exec)
+** TODO complier words
+- if compiling:
+  - write 'call' + address
+** TODO defining words
+*** ':' defines new word
+  - creates new entry
+  - reads token for name
+  - copies token to heap
+  - turns on the compiler
+*** ';' emits return and turns off the compiler
+
+*** dictionary entry format
+  - prev: addr
+  - hash: (optional single cell with 32-bit hash/crc)
+  - word: str with len
+  - data: the data or value
+*** create new entry:
+  - last @ ,
+  - here @ last !
+  # - $goal hash ,
+  - str,
+
+*** 'str,' copies a string
+  - args: start, length
+  - duplicate and write the length
+  - copy the string
+
+*** copy tokens to token buffer
+- read name
+- write name
+* TODO read tokens from input buffer instead of keyboard
+* TODO macros for dictionary entries
+maybe .xxx is label
+and   :xxx is dictionary entry?
+
+* TODO have assembler use si, hop, h0 if possible
+stacks are still cell-based
+
+* TODO use hex numbers only in turbo b4a
+* DONE [2/2] add 'step over', 'run to cursor' in debugger
+- [X] 'step over' is only for calls.
+  just move the cursor to the next active cell, and then 'run to cursor'
+- [X] 'run to cursor' should move to next active cell, and then sets a breakpoint
+
+* DONE show name for calls
+[ ] show the label
+
+* TODO show a prettier version of the return stack (with labels)
+[ ] show a stack somewhere
+
+* assembler plan
+- b4a should extend b3a with:
+  - labels
+  - special control words ( { } | [ ]  .data .code )
+  - call and $addr syntax
+- eventually, write b4a in b3a
+
+* b4a spec [runs on the b4 vm, so has a stack, etc]
+- immediate need: dictionary
+- adds labels
+- allow both decimal and hex numbers
+- =.data= to allow building raw binary data
+  - counted strings
+- =.code= to make it nice to write forth-like code
+  - auto-call functions
+  - add 'si' or 'li' before chars, numbers
+- =.dict= to define a dictionary entry
+- structured programming constructs:
+  - .if .th .el .ef .en
+  - .wh .do .od
+  - .fr .nx
+
+* what's the presentation here?
+** operations on state: simple calculator
+- visual 'buttons' that do the work
+- number buttons: multiply by base and add digit
+- clear, inc, dec?
+
+** sequence:
+*** visual virtual machine
+*** no-op, breakpoints
+(so we can see the cursor moving)
+*** place opcodes in the cells directly
+
+** repetition:
+- simple counter
+- implement addition, multiplication
+
+** conditionals
+- show jumping over some code
+- show 'else' using [a?] [b?] [c?] [d?]
+- so consider this instead: [ c ? a | b ]
+- now:
+  [ c0 ? a | [ c1 ? b ] ]
+- so just allow 'elif'
+
+* TODO introduce a debugger flag to toggle 'literal' and 'jump' on/off
+* TODO edit the input buffer directly
+* TODO introduce an enum type for the ops
+* TODO allow setting breakpoints
+* TODO source-level assembly language debugger
