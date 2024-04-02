@@ -1,0 +1,151 @@
+jm >(start)
+
+# -- input string reader
+
+:err-expected rt # TODO
+
+:nx-chr # put next char onto ds
+  lb `S rd
+  du lb 01 ad lb `S dr
+  rb rt
+
+:skp-ws .w du lb 21 lt .d zp nx-chr .o rt
+
+:expect .i du nx-chr eq .t err-expected
+        .e zp .z rt
+
+# -- dynamic types
+
+:dy-typ #(v-at) cell to addr,type
+  du li FF FF FF F0 an lb -1 sh
+  ov lb          0F an rt
+
+# -- symbol
+
+
+:list rt #TODO
+  # keep start/end registers `[ and `]?
+  # init both to nil
+
+:emit rt #TODO
+  # item to emit is on ds
+  # nil cons to make a new tail
+  # if `] nil, set both `[ and `] to new pair
+  # else set `] xdr to new pair
+  # set `] to new pair
+
+
+:new-sym rt
+:cur-sym rt
+
+
+# -- strings --
+
+# TODO: escape chars
+
+:rd-str new-sym
+  .w nx-chr du 22 ne
+  .d kp-chr
+  .o cur-sym rt
+
+:wr-str rt
+
+# -- lists --
+
+:ls-nil rt
+:ls-new rt  #TODO
+:ls-con #(vv-a)
+  ls-new du dc du dc lb 1 ad wi cd wi cd rt
+
+:rd-lst
+  .w skp-ws du lb ', eq
+  .d rd-val
+  .o lb '] expect rt
+
+:ls-car ri rt
+:ls-cdr lb 04 ad ri rt
+
+:wr-lst
+  '[ putc
+  .i du ls-nil eq nt
+  .t du ri wr-val
+  .z .w du is-nil nt
+     .d ', putc
+        '  putc
+        du ls-car wr-val
+        ls-cdr
+     .o zp '] putc rt
+
+
+# -- objects
+
+:rd-obj
+  .w skp-ws du lb ', eq
+  .d .i skp-ws du lb 22 eq
+     .t zp rd-str
+        skp-ws lb ': expect
+        rd-val
+        ls-con
+     .e err-objkey .z
+  .o lb '} expect rt
+
+:wr-ent # write "k":v entry
+  du ls-car wr-str
+  ': putc ' putc
+  du ls-cdr wr-val rt
+
+:wr-obj rt
+  '{ putc
+  .i du is-nil nt
+  .t du ri wr-ent
+  .z .w du is-nil nt
+     .d ', putc '  putc
+        du ls-car wr-val
+        ls-cdr
+     .o zp '} putc rt
+
+# -- read number --
+
+:rd-num rt
+
+
+# -- keywords --
+
+:n-tok 'n 'u 'l 'l 00 00 00 00
+:t-tok 't 'r 'u 'e 00 00 00 00
+:f-tok 'f 'a 'l 's 'e 00 00 00
+
+:rd-n 'n expect 'u expect 'l expect 'l expect $n-tok rt
+:rd-t 't expect 'r expect 'u expect 'e expect $t-tok rt
+:rd-f 'f expect 'a expect 'l expect 's expect 'e expect $f-tok rt
+
+
+# -- top-level routines --
+
+:rd-val skp-ws
+  .i du lb 22 eq    .t zp rd-str
+  .e du lb '[ eq    .t zp rd-lst
+  .e du lb '{ eq    .t zp rd-obj
+  .e du lb '- eq    .t zp rd-num dy-neg
+  .e du lb 'f eq    .t rd-f
+  .e du lb 'n eq    .t rd-n
+  .e du lb 't eq    .t rd-t
+  .e du lb '0 lt nt # '0 >= ov '9 <= and
+     ov lb ': lt an .t rd-num
+  .e js-err
+  .z rt
+
+:wr-val dy-typ
+  .i du lb 00 eq .t wr-lst
+  .e du lb 01 eq .t wr-obj
+  .e du lb 02 eq .t wr-sym
+  .e du lb 03 eq .t wr-str
+  .e du lb 04 eq .t wr-num
+  .e du lb 05 eq .t wr-nnm
+  .e du lb 06 eq .t wr-big
+  .e du lb 07 eq .t wr-nbg
+  .z rt
+
+
+:(start)
+li $emit  lb `D dr
