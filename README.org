@@ -9,7 +9,7 @@ It currently has two (slightly out of sync) implementations:
 - [[b4.ijs]] is an implementation in [[https://code.jsoftware.com/wiki/Main_Page][J]].
 - [[pas/]] contains an implementation in [[https://www.freepascal.org/][free pascal]].
 
-See [[pas/bios.b4a]] for an example of b4 assembly language.
+See [[bios/bios.b4a]] for an example of b4 assembly language.
 
 * Links
 
