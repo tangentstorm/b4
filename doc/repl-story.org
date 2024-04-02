@@ -1,0 +1,146 @@
+#+title: how to make the b4 repl
+
+* the goal: a b4 repl
+#+begin_quote text
+begin with the end in mind
+-- stephen r. covey
+#+end_quote
+
+I want to type words into a prompt, and have b4 execute each word in sequence, and then show the stacks.
+If a word is unknown, it should stop execution and show an 'unknown word' message for the offending word.
+
+The word "words" should give me a list of known words.
+
+# (I already have this much working in turbo/bios.b4a as of this writing.)
+
+Next, I should be able to define new words, using various defining words.
+
+* types of words
+
+First, let's consider the kinds of words we'd like to define.
+
+** types of words in standard forth
+
+# https://galileo.phys.virginia.edu/classes/551.jvn.fall01/primer.htm#create
+
+- =create= :: like =variable= but doesn't allocate any data
+  :  :   CREATE  ]  DOES>  doLIST  ;
+  :  ;   next  [  ;  IMMEDIATE
+- =does>= :: not a defining word, but allows you to define the meaning of the word.
+- colon definitions ( =: name ... ;= )  :: executes the code between the name and =;=
+- =variable= ::
+  C: allocates a cell for the variable
+  R: puts the address of the variable on the stack
+  : VARIABLE  CREATE   1 CELLS  ALLOT ;
+  : VARIABLE  CREATE   0  ,  ; ( same but initialize to 0 )
+- =constant= :: puts the captured value on the stack
+  : CONSTANT  CREATE  ,  DOES>  @  ;
+- =vocabulary= :: switches to a new vocabulary
+
+** retroforth model
+
+In addition to the above, the first character of a word may be a sigil.
+
+# http://retroforth.org/Handbook-Latest.txt
+
+  | Sigil  | Used For                      |
+  | ------ | ----------------------------- |
+  | @      | Fetch from variable           |
+  | !      | Store into variable           |
+  | &      | Pointer to named item         |
+  | #      | Numbers                       |
+  | $      | ASCII characters              |
+  | '      | Strings                       |
+  | (      | Comments                      |
+  | :      | Define a word                 |
+
+#+begin_quote text
+  In a traditional Forth, the interpret process is something like:
+
+    get token
+    is token in the dictionary?
+      yes:
+        is it immediate?
+          yes: call the word.
+          no:  are we interpreting?
+               yes: call the word
+               no:  compile a call to the word
+      no:
+        is it a number?
+          yes: are we interpreting?
+               yes: push the number to the stack
+               no:  compile the number as a literal
+          no:  report an error ("not found")
+
+In Retro, the interpret process is basically:
+
+    get token
+    does the first character match a `sigil:` word?
+      yes: pass the token to the sigil handler
+      no:  is token a word in the dictionary?
+           yes: push the XT to the stack and call the
+                class handler
+           no:  report an error ("not found")
+#+end_quote
+
+** immediate words
+
+forth and retro both contain immediate words. these are words (like '[' and ';' )
+that execute immediately even when the compiler is running (to do things like turning
+the compiler off)
+
+
+** primitive words (assembly) vs threaded code
+
+traditionally, forths allow dropping down into assembly language,
+and generally some core set of primitive words are defined in assembly.
+
+colon definitions, on the other hand, are lists of addresses of forth words.
+(no "call" involved)
+
+- subroutine threaded has a "call" for each word (really just normal assembly code)
+- direct threaded code has a list of addresses (dropping the 'call')
+- indirect threaded has (code, parameter) fields.
+
+** the 'next' word
+generally, in a traditional forth, each word ends with 'next'.
+
+on the b4 virtual machine, each word simply ends with a 'rt' instruction.
+
+
+* current dictionary structure in bios.b4a:
+
+| field | type | notes                                                 |
+|-------+------+-------------------------------------------------------|
+| prev  | a    | address of previous word                              |
+| name  | s    | counted string (len byte followed by that many chars) |
+| data  | *    | raw bytes                                             |
+
+b4 is a virtual machine, so you can get pretty far just executing words directly.
+when i work in b4a, I don't have "variables" or "constant" words, but rather
+two different syntaxes:
+
+   '$w' emits the address of word w (specifically, the start of its "data field")
+   'w' invokes word 'w', emitting 'cl $w'
+
+* the question: whether to add a code field? ("class" in retroforth)
+
+having built this nice virtual machine, the code field feels like
+un-necessary overhead to me, but without it, how do you get special words?
+
+the 'immediate' flag is probably sufficient, and (as in b4a/b3a) this could just be done with a sigil.
+
+but it means remembering to write 'li' in front of every name.
+
+Perhaps a compromise would be to have the class include two fields:
+
+  one for what to do at interpret time (which would incur the indirection cost)
+  one for what to do at compile time (which could be smarter)
+
+that does seem to be how retro does it:
+
+: :class:word (a-) compiling? [ compile:call ] [ call ] choose ;
+
+
+i like this. so... i think my answer is yes, have the field in the dictionary,
+but then the actual code emission is up to the class.
