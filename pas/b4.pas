@@ -126,7 +126,7 @@ begin
   ophp := b4opc('hp'); oph0 := b4opc('h0');
   opcl := b4opc('cl'); opnx := b4opc('nx');
   open('disk.b4'); boot; clrscr;
-  assign(input, 'bios.b4a');
+  assign(input, '../bios/bios.b4a');
   reset(input); b4as;
   if paramstr(1)='-d' then reg_db^ := 1;
   while reg_ip^ <= maxheap do begin

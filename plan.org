@@ -1,5 +1,9 @@
 #+title: b4 implementation plan
 
+* TODO pas: include bios in the executable
+* TODO pas: flags to configure loading bios
+
+
 * DONE get a string match working
 * DONE show labels in the debugger
 - defs could always be line-aligned (just leave spaces)
