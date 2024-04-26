@@ -3,7 +3,6 @@
 * TODO pas: include bios in the executable
 * TODO pas: flags to configure loading bios
 
-
 * DONE get a string match working
 * DONE show labels in the debugger
 - defs could always be line-aligned (just leave spaces)
@@ -22,7 +21,6 @@
     -- but: we also want to write registers
 * DONE implement number parser
 * DONE implement number printer
-
 * DONE [3/3] bring turbo vm in sync with j version
 ** DONE use the new 2-char b4 opcodes
 ** DONE allow character literals with 'x
@@ -36,7 +34,6 @@
 ** DONE switch ram to bytes
 * TODO memory allocator
 * TODO add dictionary entries for all non-control-flow ops
-
 * TODO b4a repl
 you should be able to execute assembly language instructions directly
 (in the vm implementation itself)
@@ -155,8 +152,23 @@ stacks are still cell-based
   [ c0 ? a | [ c1 ? b ] ]
 - so just allow 'elif'
 
-* TODO introduce a debugger flag to toggle 'literal' and 'jump' on/off
 * TODO edit the input buffer directly
 * TODO introduce an enum type for the ops
 * TODO allow setting breakpoints
 * TODO source-level assembly language debugger
+
+* the interpreter (b4i)
+** TODO look up and execute a single word
+
+- last
+- e-nm ("lb 4 ad")
+- s-eq uses "inc" ("lb 1 ad")
+- find (currently "word?")
+
+** TODO number/base
+** TODO quote
+** TODO repeatedly load tokens from input buffer
+** TODO line editor
+** TODO "calculator mode" (send ascii chars)
+- copy input bytes to buffer
+- let enter trigger word
