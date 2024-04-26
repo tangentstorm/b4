@@ -1,1 +1,0 @@
-../../lib/xpl/test/gen-tests.py

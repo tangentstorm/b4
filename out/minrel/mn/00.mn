@@ -1,53 +1,0 @@
-
-titlemino : a !mi.nimal !no.tation
-authormichal j wallace
-changelog
-
-2012-10-11minno->mino, committed older code
-2012-10-05initial version
-
-
-
-abstractThis document describes emino, a minimal notation for encoding, evaluating, and transforming structured text and data, based on the widely supported (yet widely forgotten) ASCII control characters.
-
-Like its competitors - xml, rdf, markdown, restructured text, csv, json, or yaml, to name just a few - mino uses a simple, easily typed, human-readable text. For example, we type numbers digit by digit, rather than using a more compact binary notation.
-
-eunlike those tools, mino makes heavy use of the 32 standard ascii/unicode control characters, U+0000 through U+0001F. Where applicable, mino mirrors the intended use of the control codes. However, some of the codes simply serve no purpose on modern hardware, as the problems they once addressed either no longer occur or now have much better solutions. These we will reclaim for our own use.
-
-
-tablecharacter codes used by mino
-characterhexmeaninguse in mino
-@00NUL
-A01STH
-B02STX
-C03ETX
-D04EOT
-E05ENQ
-F06ACK
-G07BELmark a section than needs attention (like a "TODO")
-H08BSbackspace
-I09TAB
-J0ALFlinefeed
-K0BVTvertical tab
-L0CFFform feed
-M0DCR
-N0ESO
-O0FSI
-P10DLE
-Q11DC1
-R12DC2
-S13DC3
-T14DC4
-U15NAK
-V16SYN
-W17ETB
-X18CAN
-Y19EM
-Z1ASUB
-[1BESC
-\1CFS
-]1DGS
-^1ERS
-_1FUS
-
-
