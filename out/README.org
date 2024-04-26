@@ -3,7 +3,6 @@ This directory contains a bunch of stuff that ought to be moved to other repos.
 | dir    | where to? | what                                                     |
 |--------+-----------+----------------------------------------------------------|
 | minrel | ??        | ancient notes on a small tutorial database               |
-| ngaro  | [[https://github.com/tangentstorm/ngaro-pas][ngaro-pas]] | ngaro virtual machine and retroforth 11 sources          |
 | pre    | ??        | parsing/regex stuff. mostly supplanted by code in [[https://github.com/tangentstorm/syndir][syndir]] |
 
 I'm just keeping them in here until I have time to learn how to (and decide whether to) use [[https://github.com/newren/git-filter-repo/][git-filter-repo]].

@@ -1,9 +1,0 @@
-
-needs vt' with vt'
-: dump ( n -  ) "dump the entire image" :doc
-  [ @ dup $7F > over $20 < or
-    [ |b putn space ] [ |c putc ] if ]
-  iter |w ;
-
-( now actually do it: )
-last @ hex dump bye
