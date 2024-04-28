@@ -1,8 +1,0 @@
-#+TITLE: b4 changelog
-
-* [2/2] phase 1 : retro vm / debugger
-** TODO fill in the early part of the changelog from git history
-** DONE [2012-09-29 Sat] implement hex() correctly
-Fixed, but then I decided not to use it.
-** DONE [2012-09-29 Sat] set up xterm's 256 colors
-Not exactly critical, but it made the debugger a bit more readable.
