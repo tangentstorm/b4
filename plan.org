@@ -1,13 +1,11 @@
 #+title: b4 implementation plan
 
-* TODO pas: include bios in the executable
-* TODO pas: flags to configure loading bios
-
-* DONE get a string match working
-* DONE show labels in the debugger
+* -- b4vm
+* -- debugger
+** DONE show labels in the debugger
 - defs could always be line-aligned (just leave spaces)
   and we could have a comment on the left
-* DONE read/write individual bytes
+** DONE read/write individual bytes
     rb/wb
     ri/wi
 
@@ -19,22 +17,27 @@
     -> eol flag could just be a byte.
 
     -- but: we also want to write registers
-* DONE implement number parser
-* DONE implement number printer
-* DONE [3/3] bring turbo vm in sync with j version
-** DONE use the new 2-char b4 opcodes
-** DONE allow character literals with 'x
-** DONE fix the existing bios
+** DONE [3/3] make the debug display easier to see
+*** DONE explicit 'call' op
+*** DONE use high bits for ops
+*** DONE switch ram to bytes
+** DONE [2/2] add 'step over', 'run to cursor' in debugger
+- [X] 'step over' is only for calls.
+  just move the cursor to the next active cell, and then 'run to cursor'
+- [X] 'run to cursor' should move to next active cell, and then sets a breakpoint
 
-* DONE add !var and @var to assembler
+** TODO show a prettier version of the return stack (with labels)
+[ ] show a stack somewhere
 
-* TODO [3/4] make the debug display easier to see
-** DONE explicit 'call' op
-** DONE use high bits for ops
-** DONE switch ram to bytes
-* TODO memory allocator
-* TODO add dictionary entries for all non-control-flow ops
-* TODO b4a repl
+** DONE show name for calls
+[ ] show the label
+
+** TODO allow setting breakpoints
+** TODO source-level assembly language debugger
+
+* -- b4a assembler
+** DONE add !var and @var to assembler
+** TODO b4a repl
 you should be able to execute assembly language instructions directly
 (in the vm implementation itself)
 - maybe even show exactly how it's getting assembled underneath
@@ -42,78 +45,17 @@ you should be able to execute assembly language instructions directly
 - show stacks
 - show ram
 
-* TODO [2/4] implement the forth interpreter
-** DONE [4/4] implement a forth-style dictionary
-*** DONE implement headers manually
-*** DONE implement 'words'
-*** DONE implement 'word?' (s-a)
-- find definition
-  - get last entry address
-  - while entry address != 0 do:
-    - use offset to find string
-    - compare entry to goal string
-    - if match, then leave address of value on stack
-  - if entry = 0, say 'not found'
-
-** DONE interpreter word (exec)
-** TODO complier words
-- if compiling:
-  - write 'call' + address
-** TODO defining words
-*** ':' defines new word
-  - creates new entry
-  - reads token for name
-  - copies token to heap
-  - turns on the compiler
-*** ';' emits return and turns off the compiler
-
-*** dictionary entry format
-  - prev: addr
-  - hash: (optional single cell with 32-bit hash/crc)
-  - word: str with len
-  - data: the data or value
-*** create new entry:
-  - last @ ,
-  - here @ last !
-  # - $goal hash ,
-  - str,
-
-*** 'str,' copies a string
-  - args: start, length
-  - duplicate and write the length
-  - copy the string
-
-*** copy tokens to token buffer
-- read name
-- write name
-* TODO read tokens from input buffer instead of keyboard
-* TODO macros for dictionary entries
-maybe .xxx is label
-and   :xxx is dictionary entry?
-
-* TODO have assembler use si, hop, h0 if possible
+** TODO have assembler use si, hop, h0 if possible
 stacks are still cell-based
 
-* TODO use hex numbers only in turbo b4a
-* DONE [2/2] add 'step over', 'run to cursor' in debugger
-- [X] 'step over' is only for calls.
-  just move the cursor to the next active cell, and then 'run to cursor'
-- [X] 'run to cursor' should move to next active cell, and then sets a breakpoint
-
-* DONE show name for calls
-[ ] show the label
-
-* TODO show a prettier version of the return stack (with labels)
-[ ] show a stack somewhere
-
-* assembler plan
+** assembler plan
 - b4a should extend b3a with:
   - labels
   - special control words ( { } | [ ]  .data .code )
   - call and $addr syntax
 - eventually, write b4a in b3a
 
-* b4a spec [runs on the b4 vm, so has a stack, etc]
+** b4a spec [runs on the b4 vm, so has a stack, etc]
 - immediate need: dictionary
 - adds labels
 - allow both decimal and hex numbers
@@ -128,7 +70,93 @@ stacks are still cell-based
   - .wh .do .od
   - .fr .nx
 
-* what's the presentation here?
+** DONE use the new 2-char b4 opcodes
+** DONE allow character literals with 'x
+** TODO macros for dictionary entries
+maybe .xxx is label
+and   :xxx is dictionary entry?
+
+** DONE export binary numbers padded to proper size
+** DONE implement enough of minno to allow in-band debug signals
+** TODO only show debug messages when given a flag
+** TODO escape the control codes in the output in debug mode
+* -- bios
+** DONE get a string match working
+** DONE implement number parser
+** DONE implement number printer
+** TODO memory allocator
+* -- interpreter (b4th? b4i?)
+** TODO add dictionary entries for all non-control-flow ops
+** TODO [2/4] implement the forth interpreter
+*** DONE [4/4] implement a forth-style dictionary
+**** DONE implement headers manually
+**** DONE implement 'words'
+**** DONE implement 'word?' (s-a)
+- find definition
+  - get last entry address
+  - while entry address != 0 do:
+    - use offset to find string
+    - compare entry to goal string
+    - if match, then leave address of value on stack
+  - if entry = 0, say 'not found'
+
+*** DONE interpreter word (exec)
+*** TODO complier words
+- if compiling:
+  - write 'call' + address
+*** TODO defining words
+**** ':' defines new word
+  - creates new entry
+  - reads token for name
+  - copies token to heap
+  - turns on the compiler
+**** ';' emits return and turns off the compiler
+
+**** dictionary entry format
+  - prev: addr
+  - hash: (optional single cell with 32-bit hash/crc)
+  - word: str with len
+  - data: the data or value
+**** create new entry:
+  - last @ ,
+  - here @ last !
+  # - $goal hash ,
+  - str,
+
+**** 'str,' copies a string
+  - args: start, length
+  - duplicate and write the length
+  - copy the string
+
+**** copy tokens to token buffer
+- read name
+- write name
+
+** TODO look up and execute a single word
+
+- last
+- e-nm ("lb 4 ad")
+- s-eq uses "inc" ("lb 1 ad")
+- find (currently "word?")
+
+** TODO number/base
+** TODO quote
+** TODO repeatedly load tokens from input buffer
+** TODO line editor
+** TODO "calculator mode" (send ascii chars)
+- copy input bytes to buffer
+- let enter trigger word
+
+** TODO read tokens from input buffer instead of keyboard
+* -- implementations
+** DONE [3/3] bring turbo vm in sync with j version
+
+** TODO use hex numbers only in turbo b4a
+** TODO pas: flags to configure loading bios
+** TODO pas: include bios in the executable
+* -- unclear
+** TODO allow defining aliases up front in a table
+* -- lessons
 ** operations on state: simple calculator
 - visual 'buttons' that do the work
 - number buttons: multiply by base and add digit
@@ -152,81 +180,8 @@ stacks are still cell-based
   [ c0 ? a | [ c1 ? b ] ]
 - so just allow 'elif'
 
-* TODO edit the input buffer directly
-* TODO introduce an enum type for the ops
-* TODO allow setting breakpoints
-* TODO source-level assembly language debugger
-
-* the interpreter (b4i)
-** TODO look up and execute a single word
-
-- last
-- e-nm ("lb 4 ad")
-- s-eq uses "inc" ("lb 1 ad")
-- find (currently "word?")
-
-** TODO number/base
-** TODO quote
-** TODO repeatedly load tokens from input buffer
-** TODO line editor
-** TODO "calculator mode" (send ascii chars)
-- copy input bytes to buffer
-- let enter trigger word
-
-* -- ancient tasks from retro days --
-** DONE [2/2] get the basic retro listener to run correctly
-*** DONE [4/4] trace retro.py at each step and bring pascal in line
-**** DONE retro.py : allow running step by step
-**** DONE run the python and pascal vm's side by side
-**** DONE ng.pas : trace to logfile with same format
-**** DONE fix the discrepancies
-*** DONE [4/4] fix the cursor and color handling for extended console
-**** DONE position cursor on clrscr
-**** DONE position cursor on newline
-**** DONE implement colors
-** TODO [3/4] fill in the retro vm details                     :pas:
-*** DONE load the image (machine code) into an array
-
-Will just do this by hand for now, like I did with javascript, and worry about files when I build the assembler.
-
-I figured using a set type would be cleaner, since it numbers implicitly but now I have to cast everything back to a number because we're mixing them with plain integers.
-
-Probably cleaner would just be to use a file. :)
-
-#+name: machine-code
-#+begin_src delphi
-
-  const ram : array [ 0 .. 25 ] of int32 = (
-
-      // set color to red : 4 1 6 out wait ;
-      oLIT, 4,                    //  0  1
-      oLIT, 1,                    //  2  3
-      oLIT, 6,                    //  4  5
-      oOUT, oWAIT,                //  6  7
-
-      // draw a pixel
-      // : 320 200 2 6 out wait ;
-      oLIT, 320,                  //  8  9
-      oLIT, 200,                  // 10 11
-      oLIT, 2,                    // 12 13
-      oLIT, 6,                    // 14 15
-      oOUT, oWAIT,                // 16 17
-
-      // write 0 to port 3 to force video update.
-      oLIT, 0,                    // 18 19
-      oLIT, 3,                    // 20 21
-      oOUT, oNOP,                 // 22 23
-
-      oNOP, oNOP                  // 24 25
-
-  );
-
-#+end_src
-*** DONE load the image from disk
-*** DONE add ability to halt the program
-*** TODO [0/2] check that we do these the ngaro way
-**** TODO when does ngaro actually do on over/underflow checks?
-**** TODO would nos really trigger underflow?
+** TODO library mode to edit the input buffer directly
+* -- ancient tasks from retro days
 ** TODO [4/9] implement io devices                             :easy:
 *** DONE port 1 : keyboard
 *** DONE port 2 : character generator
@@ -264,13 +219,6 @@ http://www.freepascal.org/docs-html/rtl/sysutils/getenvironmentvariable.html
 **** TODO mouse op 2 | push mb ( button state : 1 bit per button )
 *** DONE port 8 : enhanced text output
 
-** --- testing ---
-** TODO [2/5] implement an assembler
-*** DONE export binary numbers padded to proper size
-*** DONE implement enough of minno to allow in-band debug signals
-*** TODO only show debug messages when given a flag
-*** TODO escape the control codes in the output in debug mode
-*** TODO allow defining aliases up front in a table
 ** TODO [0/1] show user-defined words in the debugger
 *** TODO procedure to walk the dictionary and extract details
 **** COMMENT Crc said that positon 2 in the image is the pointer to "last"
@@ -282,7 +230,6 @@ and file:~/vrx/examples/autopsy.rx
 
 **** TODO define a record structure to hold the word
 **** TODO populate the fields
-** TODO set up fpcunit so i have a real test suite
 ** TODO [0/12] exercise vm with more ngaro assembly programs
 *** TODO square : draw a square                               :nga:
 *** TODO color  : draw the palette                            :nga:
@@ -339,23 +286,8 @@ ok
     rx_xtofs = ;
 
 #+end_src
-** --- cross-platform ---
-** TODO [0/3] bugs in other ngaro vms
-*** TODO py : crashes on "help" - why?
-*** TODO js : direct input for the terminal
-*** TODO js : port 2 : sending negative value should clear the screen, but doesn't, in js version
-#+begin_src javascript
-portHandlers[2] = function()
-{
-  Term.renderChar( data.pop );
-  ports[ 2 ] = 0;
-}
-#+end_src
 
-** TODO discrepencies
-port 5, -16 ( extended console? ) uses -1 to mean true... whereas elsewhere, it's just 1
-
-* -- ancient wishlist ---
+* -- ancient wishlist
 ** NOTE on contributing to this project
 *** these are things that are off the critical path (for now)
 *** ~[#A]~ is easy, ~[#B]~ medium, ~[#C]~ advanced
@@ -366,16 +298,6 @@ port 5, -16 ( extended console? ) uses -1 to mean true... whereas elsewhere, it'
 - if you contribute / port something, make sure license is MIT/ [[http://en.wikipedia.org/wiki/ISC_license][ISC]] compatible ([[http://retroforth.org/license.html][retroforth license]] is ISC)
 - [[http://www.freepascal.org/faq.var#general-license][freepascal]] code has a tendency to use MPL/LGPL style. I'm okay with that, too.
 
-** WANT assembler
-*** TODO make something similar to  [[https://github.com/oriontransfer/PL0-Language-Tools/blob/master/pl0_assemblera.py][pl/0 language tools assembler.py]]
-*** DONE what is license on pl0 tools? -> relicensed under MIT when I asked
-*** TODO compare bytecodes for pl/0 machine and ngaro. see what we need to adjust.
-Both are stack machines and the primitives look similar.
-See also python -> ngaro translator below.
-Combined with PL/0 tools, these would give us all the tools we need.
-*** NOTE I made a start on a completely different assembler in go/c4.py
-*** NOTE pretty sure retroforth has an assembler - see file:ref/crc-retro-wisdom.org
-
 ** WANT relational database (b4 has tiny relational database)
 *** [#C] [[http://en.wikipedia.org/wiki/B-tree][b-tree]] or [[http://en.wikipedia.org/wiki/B%2B_tree][b+-tree]] implementation                     :nga:
 *** [#A] codd's 8 relational operators                        :nga:
@@ -384,12 +306,7 @@ There is psuedocode for all 8 here:
 
 http://science.kennesaw.edu/~mguimara/3310/RA_SQL.htm
 
-** WANT [#B] repl - probably follow itsyforth model
-*** DONE track down itsyforth license  ( it's MIT-style )
-**** ask the author (john metcalf)
-**** [[http://www.retroprogramming.com/2012/03/itsy-forth-1k-tiny-compiler.html][itsyforth interpreter]]
-
-** WANT port of gamesketchlib to ngaro/retroforth/b4
+** WANT port of gamesketchlib to b4
 
 I made the java/processing game library at http://gamesketchlib.org/ and will try to follow the same design patterns as I work on this system.
 
@@ -398,7 +315,7 @@ I made the java/processing game library at http://gamesketchlib.org/ and will tr
 
 ngaro only has 30 instructions, python has around the same. There is much overlap, and in forth-like languages, it's very easy to translate things like this.
 
-So it's possible that at least some python code should be able to run here. 
+So it's possible that at least some python code should be able to run here.
 
 The first step would be to compile a table that compares and contrasts the two sets of bytecode:
 
@@ -406,7 +323,7 @@ The first step would be to compile a table that compares and contrasts the two s
 
 *** ?? pending above step, add new primitives to let us run python
 
-probably the most dynamic aspects of python will not run well, but simpler python code probably can. 
+probably the most dynamic aspects of python will not run well, but simpler python code probably can.
 
 ** WANT modfile player.
 
@@ -422,21 +339,11 @@ I would really really like a modfile player for retro sounds and music. (don't k
 
 #+end_quote
 
-** WANT emacs mode for colorforth-like languages
-
-B4 is a a colorized language: you syntax-highlight it yourself, to simplify the parser, and words change meaning (verb tense) based on color.
-
-This looks promising:
-
-http://www.strangegizmo.com/forth/ColorForth/msg00263.html
-
-I have already written a partial retroforth mode in file://etc/retro-mode.el
-
 ** WANT render org-files to something more readable.           :elisp:
 *** github makes org-code ugly
 *** [#A] org itself does better job... make me a macro?
 **** http://orgmode.org/
-**** http://orgmode.org/worg/org-contrib/babel/ 
+**** http://orgmode.org/worg/org-contrib/babel/
 ** WANT standalone org-babel-tangle (preferably in pascal)
 ** IDEA interface IDebuggable ?
 It would probably have like a .tostring, plus menu options?
@@ -477,13 +384,13 @@ Not really sure what would be included in the interface, but I had the debugger 
 *** module vt : virtual terminal
 *** module ui : text widgets
 *** module sg : scenegraph
-* -- b4th --
-** TODO [1/6] b4th : a bootstrapped forth-like environment
+** IDEA create a simple game in pascal. translate to assembly. (mastermind?)
 :PROPERTIES:
-:TS: <2013-02-26 10:49AM>
-:ID: cp73or9181g0
+:TS: <2013-02-16 07:23AM>
+:ID: e6v3wwq0v0g0
 :END:
-*** TODO license and header
+* -- b4th --
+** TODO license and header
 :PROPERTIES:
 :TS: <2013-02-26 10:51AM>
 :ID: l01epu9181g0
@@ -495,11 +402,12 @@ Not really sure what would be included in the interface, but I had the debugger 
 # --------------------------------------------------------------
 #+end_src
 
-*** DONE layout of the image
+** DONE layout of the image
 :PROPERTIES:
 :TS: <2013-02-25 10:10PM>
 :ID: ihahkx7181g0
 :END:
+*** header
 #+begin_src b4a :tangle "~/b/b4a/b4th.b4a" :padline yes :noweb tangle
 <<b4:header>
 JMP: --begin-- # jump over the data block
@@ -753,63 +661,4 @@ An async version might check a specific port for a signal.
 :TS: <2013-02-01 06:14AM>
 :ID: i18jk3z0b0g0
 :END:
-
-** --- unfiled ---
-:PROPERTIES:
-:TS: <2013-02-26 08:23PM>
-:ID: 0623cql091g0
-:END:
-*** JUNK bootstrap plan
-PROPERTIES:
-:TS: <2013-02-16 08:50AM>
-:ID: ndpdhyu0v0g0
-:END:
-
-boot $okmsg $^heap
-
-( compiler macros )
-.r { .h      } ( repeat )
-.u { .jump,, } ( until )
-
-
-| boot    |   |   | ( put boot code here )          | falls through to main |
-| main    | ? | ? | DRP prompt find process main    | tail call recursion   |
-| prompt  |   | $ | NOP NOP $okmsg wr:s RET         | revectorable          |
-| wr:s    | $ |   | NOP NOP .r DUP 0 EQ .u DRP RET  |                       |
-| accept  | n | $ | NOP NOP 32 accept               |                       |
-| find    |   |   |                                 |                       |
-| process | ? | ? |                                 |                       |
-
-*** IDEA create a simple game in pascal. translate to assembly. (mastermind?)
-:PROPERTIES:
-:TS: <2013-02-16 07:23AM>
-:ID: e6v3wwq0v0g0
-:END:
-*** APPENDIX required word set from 1983
-**** Nucleus layer
-
-!  *  */  */MOD  +  +!  -  /  /MOD  0<  0=  0>  1+  1-  2+
-2-  2/  <  =  >  >R  ?DUP  @  ABS  AND  C!  C@  CMOVE
-CMOVE>  COUNT  D+  D<  DEPTH  DNEGATE  DROP  DUP  EXECUTE
-EXIT  FILL  I  J  MAX  MIN  MOD  NEGATE  NOT  OR  OVER  PICK
-R>  R@  ROLL  ROT  SWAP  U<  UM*  UM/MOD  XOR
-
-**** Device layer
-
-BLOCK  BUFFER  CR  EMIT  EXPECT  FLUSH  KEY  SAVE-BUFFERS
-SPACE  SPACES  TYPE  UPDATE
-
-**** Interpreter layer
-
-#  #>  #S  #TIB  '  (  -TRAILING  .  .(  <#  >BODY  >IN
-ABORT  BASE  BLK  CONVERT  DECIMAL  DEFINITIONS  FIND
-FORGET  FORTH  FORTH-83  HERE  HOLD  LOAD  PAD  QUIT  SIGN
-SPAN  TIB  U.  WORD
-
-**** Compiler layer
-
-+LOOP  ,  ."  :  ;  ABORT"  ALLOT  BEGIN  COMPILE  CONSTANT
-CREATE  DO  DOES>  ELSE  IF  IMMEDIATE  LEAVE  LITERAL  LOOP
-REPEAT  STATE  THEN  UNTIL  VARIABLE  VOCABULARY  WHILE  [
-[']  [COMPILE]  ]
 
