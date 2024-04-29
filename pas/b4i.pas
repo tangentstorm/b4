@@ -31,7 +31,7 @@ begin
     case v of
       0 : tok := '..';
       $01..$1F : tok := '^' + chr(ord('@')+v);
-      $80..$FF : tok := optbl[v];
+      $80..$FF : begin tok := optbl[v]; if tok='' then tok:=format('%02x', [v]) end
       else tok := format('%02x', [v]);
     end;
     write(tok,' ')
