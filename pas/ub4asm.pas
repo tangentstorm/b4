@@ -20,12 +20,14 @@ implementation
 procedure ok; begin end;
 
 function b4op(code : opstring; out op:byte) : boolean;
-  var found : boolean;
-  begin op := low(optbl); found := false;
-    while (op < high(optbl)) and not found do begin
-      found := code = optbl[op];
-      if not found then inc(op) end;
-    b4op := found end;
+  var o : byte;
+  begin
+    result := false;
+    for o := low(optbl) to high(optbl) do
+      if code = optbl[o] then begin
+        op := o; result := true; break
+      end
+  end;
 
 function b4opc(code:opstring) : byte;
   begin
