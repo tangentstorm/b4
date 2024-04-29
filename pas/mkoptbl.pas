@@ -14,7 +14,7 @@ const
 
 var
  line  : string;
- optbl : array[$80..$BF] of string[4];
+ optbl : array[$80..$FF] of string[2];
 
 function match(have, want:string) : boolean;
   var i : byte; sofar : boolean;
@@ -50,12 +50,12 @@ procedure readops;
     repeat
       readln(line);
       { lines we want look like: }
-      { '      $00 : (code) ... ' }
+      { '      $00 : (xx) ... ' }
       { #123456789012             }
       if line[7] = '$' then
         begin
           op := 16 * unhex(line[8]) + unhex(line[9]);
-          for i := 1 to 4 do
+          for i := 1 to 2 do
             if line[13+i] <> ' ' then
               begin
                 optbl[op][i] := line[13+i];
@@ -73,11 +73,11 @@ begin
   writeln(out, '{-- do not edit! regenerate with mkoptbl.pas --}');
   writeln(out, 'unit ub4ops;');
   writeln(out, 'interface');
-  writeln(out, '  type opstring = string[4];');
-  writeln(out, '  var optbl : array[ $80 .. $BF ] of opstring;');
+  writeln(out, '  type opstring = string[2];');
+  writeln(out, '  var optbl : array[ $80 .. $FF ] of opstring;');
   writeln(out, 'implementation');
   writeln(out, 'begin');
-  for i := $80 to $BF do
+  for i := $80 to $FF do
     writeln(out, '  optbl[', i:2, '] := ''', optbl[ i ], ''';');
   writeln(out, 'end.');
   close(out);

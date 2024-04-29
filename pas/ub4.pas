@@ -240,64 +240,56 @@ procedure runop(op : byte);
   begin
     case op of
       { Do not reformat this function! mkoptbl.pas uses it! }
-      $80 : {lb  } begin dput(bget(reg_ip^+1)); inc(reg_ip^) end;
-      $81 : {li  } begin dput(rdval(reg_ip^+1)); inc(reg_ip^,3) end;
-      $82 : {du  } dput(tos);
-      $83 : {sw  } dswp;
-      $84 : {ov  } dput(nos);
-      $85 : {zp  } zap(dpop);
-      $86 : {dc  } rput(dpop);
-      $87 : {cd  } dput(rpop);
-      $88 : {ad  } dput(dpop  + dpop);
-      $89 : {sb  } dput(-dpop + dpop);
-      $8A : {ml  } dput(dpop * dpop);
-      $8B : {dv  } begin t:=dpop; dput(dpop div t) end;
-      $8C : {md  } begin t:=dpop; dput(dpop mod t) end;
-      $8D : {sh  } begin dswp; dput(dpop shl dpop) end;
-      $8E : {an  } dput(dpop and dpop);
-      $8F : {or  } dput(dpop or dpop);
-      $90 : {xr  } dput(dpop xor dpop);
-      $91 : {nt  } dput(not dpop);
-      $92 : {eq  } if dpop =  dpop then dput(-1) else dput(0);
-      $93 : {lt  } begin t:=dpop; if dpop <  t then dput(-1) else dput(0) end;
-      $96 : {hl  } halt;
-      $97 : {jm  } reg_ip^ := rdval(reg_ip^+1)-1;
-      $98 : {hp  } reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1;
-      $A0 : {h0  } if dpop = 0 then reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1
-                   else inc(reg_ip^);
-      $A1 : {cl  } begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
-      $A2 : {rt  } reg_ip^ := rpop-1;
-      $A4 : {nx  } begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
-                     if tor = 0 then begin zap(rpop); inc(reg_ip^,3) end
-                     else reg_ip^:=rdval(reg_ip^+1)-1; end;
-      $A5 : {rb  } dput(ram[dpop]);    { read byte }
-      $A6 : {wb  } begin t:= dpop; ram[t]:= byte(dpop); end;  { write byte  }
-      $A7 : {ri  } dput(rdval(dpop));
-      $A8 : {wi  } begin t := dpop; wrval(t, dpop); end;
-      $A9 : {rx  } begin
-                     a := rega('X'); t := rdval(a);
-                     dput(rdval(t));
-                     wrval(a, t+4)
-                   end;
-      $AB : {ry  } begin
-                     a := rega('Y'); t := rdval(a);
-                     dput(rdval(t));
-                     wrval(a, t+4)
-                   end;
-      $AC : {wz  } begin
-                     a := rega('Z'); t := rdval(a);
-                     wrval(t, dpop);
-                     wrval(a, t+4)
-                   end;
-      $B0 : {tg  } term.invoke(vtTG);
-      $B1 : {ta  } term.invoke(vtTA);
-      $B2 : {tw  } term.invoke(vtTW);
-      $B3 : {tr  } term.invoke(vtTR);
-      $B4 : {tk  } term.invoke(vtTK);
-      $B5 : {ts  } term.invoke(vtTS);
-      $B6 : {tl  } term.invoke(vtTS);
-      $B7 : {tc  } term.invoke(vtTS);
-      $B8 : {db  } reg_db^ := 1;
+      $80 : {lb} begin dput(bget(reg_ip^+1)); inc(reg_ip^) end;
+      $81 : {li} begin dput(rdval(reg_ip^+1)); inc(reg_ip^,3) end;
+      $82 : {du} dput(tos);
+      $83 : {sw} dswp;
+      $84 : {ov} dput(nos);
+      $85 : {zp} zap(dpop);
+      $86 : {dc} rput(dpop);
+      $87 : {cd} dput(rpop);
+      $88 : {ad} dput(dpop  + dpop);
+      $89 : {sb} dput(-dpop + dpop);
+      $8A : {ml} dput(dpop * dpop);
+      $8B : {dv} begin t:=dpop; dput(dpop div t) end;
+      $8C : {md} begin t:=dpop; dput(dpop mod t) end;
+      $8D : {sh} begin dswp; dput(dpop shl dpop) end;
+      $8E : {an} dput(dpop and dpop);
+      $8F : {or} dput(dpop or dpop);
+      $90 : {xr} dput(dpop xor dpop);
+      $91 : {nt} dput(not dpop);
+      $92 : {eq} if dpop =  dpop then dput(-1) else dput(0);
+      $93 : {lt} begin t:=dpop; if dpop <  t then dput(-1) else dput(0) end;
+      $94 : {hl} halt;
+      $95 : {jm} reg_ip^ := rdval(reg_ip^+1)-1;
+      $96 : {hp} reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1;
+      $97 : {h0} if dpop = 0 then reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1
+                 else inc(reg_ip^);
+      $98 : {cl} begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
+      $99 : {rt} reg_ip^ := rpop-1;
+      $9A : {nx} begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
+                   if tor = 0 then begin zap(rpop); inc(reg_ip^,3) end
+                   else reg_ip^:=rdval(reg_ip^+1)-1; end;
+      $9B : {rb} dput(ram[dpop]);    { read byte }
+      $9C : {wb} begin t:= dpop; ram[t]:= byte(dpop); end;  { write byte  }
+      $9D : {ri} dput(rdval(dpop));
+      $9E : {wi} begin t := dpop; wrval(t, dpop); end;
+      $9F : {rx} begin a := rega('X'); t := rdval(a); dput(rdval(t)); wrval(a, t+4)
+                 end;
+      $A0 : {ry} begin a := rega('Y'); t := rdval(a); dput(rdval(t)); wrval(a, t+4)
+                 end;
+      $A1 : {wz} begin a := rega('Z'); t := rdval(a); wrval(t, dpop); wrval(a, t+4)
+                 end;
+      $B0 : {tg} term.invoke(vtTG);
+      $B1 : {ta} term.invoke(vtTA);
+      $B2 : {tw} term.invoke(vtTW);
+      $B3 : {tr} term.invoke(vtTR);
+      $B4 : {tk} term.invoke(vtTK);
+      $B5 : {ts} term.invoke(vtTS);
+      $B6 : {tl} term.invoke(vtTS);
+      $B7 : {tc} term.invoke(vtTS);
+      $FE : {db} reg_db^ := 1;
+      $FF : {hl} halt;
       { reserved: } $B9..$BF : begin end;
       else { no-op };
     end
