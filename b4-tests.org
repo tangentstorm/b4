@@ -336,13 +336,13 @@ ds: [11223344 55667788]
 # now `X should be pointing at `C
 > zp zp `X ri `C eq ?d %q
 ds: [-1]
-= rx : read from and incement `X
+= rx : read from and increment `X
 : same as the following assembly:
 :
 : read from address in `X
 :   li `X ri ri
 : increment address in `X:
-:   li `X du ri 01 ad wi
+:   li `X du ri 04 ad sw wi
 #+end_src
 
 ** DONE =ry= op
@@ -358,7 +358,7 @@ ds: [11223344 55667788]
 # now `Y should be pointing at `C
 > zp zp `Y ri `C eq ?d %q
 ds: [-1]
-= ry : read from and incement `Y
+= ry : read from and increment `Y
 : ry is exactly the same as rx, except it uses the `Y register.
 #+end_src
 
