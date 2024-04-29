@@ -1,0 +1,8 @@
+#!/bin/sh
+export TEST_PLAN=~/b4/b4-tests.org
+
+# TODO: actually use tanco
+TANCO="python /home/michal/ver/learntris/testris.py"
+
+cd pas
+make -q b4i && (cd ..; $TANCO ../b4/pas/b4i)
