@@ -260,25 +260,24 @@ procedure runop(op : byte);
       $91 : {nt} dput(not dpop);
       $92 : {eq} if dpop =  dpop then dput(-1) else dput(0);
       $93 : {lt} begin t:=dpop; if dpop <  t then dput(-1) else dput(0) end;
-      $94 : {hl} halt;
-      $95 : {jm} reg_ip^ := rdval(reg_ip^+1)-1;
-      $96 : {hp} reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1;
-      $97 : {h0} if dpop = 0 then reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1
+      $94 : {jm} reg_ip^ := rdval(reg_ip^+1)-1;
+      $95 : {hp} reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1;
+      $96 : {h0} if dpop = 0 then reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1
                  else inc(reg_ip^);
-      $98 : {cl} begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
-      $99 : {rt} reg_ip^ := rpop-1;
-      $9A : {nx} begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
+      $97 : {cl} begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
+      $98 : {rt} reg_ip^ := rpop-1;
+      $99 : {nx} begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
                    if tor = 0 then begin zap(rpop); inc(reg_ip^,3) end
                    else reg_ip^:=rdval(reg_ip^+1)-1; end;
-      $9B : {rb} dput(ram[dpop]);    { read byte }
-      $9C : {wb} begin t:= dpop; ram[t]:= byte(dpop); end;  { write byte  }
-      $9D : {ri} dput(rdval(dpop));
-      $9E : {wi} begin t := dpop; wrval(t, dpop); end;
-      $9F : {rx} begin a := rega('X'); t := rdval(a); dput(rdval(t)); wrval(a, t+4)
+      $9A : {rb} dput(ram[dpop]);    { read byte }
+      $9B : {wb} begin t:= dpop; ram[t]:= byte(dpop); end;  { write byte  }
+      $9C : {ri} dput(rdval(dpop));
+      $9D : {wi} begin t := dpop; wrval(t, dpop); end;
+      $9E : {rx} begin a := rega('X'); t := rdval(a); dput(rdval(t)); wrval(a, t+4)
                  end;
-      $A0 : {ry} begin a := rega('Y'); t := rdval(a); dput(rdval(t)); wrval(a, t+4)
+      $AF : {ry} begin a := rega('Y'); t := rdval(a); dput(rdval(t)); wrval(a, t+4)
                  end;
-      $A1 : {wz} begin a := rega('Z'); t := rdval(a); wrval(t, dpop); wrval(a, t+4)
+      $A0 : {wz} begin a := rega('Z'); t := rdval(a); wrval(t, dpop); wrval(a, t+4)
                  end;
       $B0 : {tg} term.invoke(vtTG);
       $B1 : {ta} term.invoke(vtTA);
