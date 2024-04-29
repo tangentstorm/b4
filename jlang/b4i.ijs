@@ -16,7 +16,7 @@ addr =: dfh NB. TODO err handling
 step =: step__vm
 isHEX =: *./@(e.&'0123456789ABCDEF') NB. upper case hex num?
 puthex =: {{ if. isHEX y do. 1 [ dput dfh y return. end. 0 }}
-hexstr =: {{ if. y<0 do. '$-',hfd -y else. '$',hfd y end. }}
+hexstr =: {{ if. y<0 do. '-',hfd -y else. hfd y end. }}
 stackstr =: ' ' joinstring toupper @ hexstr &.>
 decode =: {{
   if. (#ops__vm) > ix=.(<y) i.~ ops__vm do. OPCODE + ix
@@ -45,7 +45,7 @@ main =: {{
       case. '%s' do. step''
       case. '?d' do. echo 'ds: [', (stackstr D__vm), ']'
       case. '?c' do. echo 'cs: [', (stackstr C__vm), ']'
-      case. '?i' do. echo 'ip: $', hfd P__vm
+      case. '?i' do. echo 'ip: ', hfd P__vm
       case. '%j' do.
         echo 'Exiting into J. Type "main _" to return' return.
       case. do.

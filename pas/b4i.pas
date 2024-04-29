@@ -5,8 +5,8 @@ program b4i(input, output);
 // format as hex in b4 style
 function b4mat(v : value):string;
 begin
-  if v < 0 then result := Format('$-%x',[-v])
-  else result := Format('$%x',[v])
+  if v < 0 then result := Format('-%x',[-v])
+  else result := Format('%x',[v])
 end;
 
 type pstack = ^stack;

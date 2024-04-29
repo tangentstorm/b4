@@ -65,7 +65,7 @@ cs: [] # should be an empty array
 #+name: io.hex
 #+begin_src
 > FF CC ?d %q
-ds: [$FF $CC]
+ds: [FF CC]
 = hex numbers are pushed to data stack
 : it should print in hex
 #+end_src
@@ -73,7 +73,7 @@ ds: [$FF $CC]
 #+name: io.ascii
 #+begin_src
 > 'a 'A ' ?d %q
-ds: [$61 $41 $20]
+ds: [61 41 20]
 = ascii syntax
 : note lack of a second space after the '
 : it should print in hex
@@ -82,21 +82,21 @@ ds: [$61 $41 $20]
 #+name: io.ctrl
 #+begin_src
 > `@ `A `B `C `X `Y `Z ?d %q
-ds: [$0 $4 $8 $C $60 $64 $68]
+ds: [0 4 8 C 60 64 68]
 = control characters
 : the 32 ascii control characters act as a dictionary.
 : (^@ is written 00 and is a no-op)
 : ^@ calls the word whose address is at address 0000
 :   (but the actual code emitted is =lb 00 cl= op, as bytecode 0 is a null op)
 : ^A calls the word whose address is at address (4 * 1 = 0004)
-: ^X calls the word whose address is at address (4 * ord('X')-ord('A') = $5C)
+: ^X calls the word whose address is at address (4 * ord('X')-ord('A') = 5C)
 : But if we want handy way to refer to the address, we use `X
 #+end_src
 
 #+name: io.ctrl2
 #+begin_src
 > `[ `\ `] `^ `_ ?d %q
-ds: [$6C $70 $74 $78 $7C]
+ds: [6C 70 74 78 7C]
 = non-alphabetic control characters
 : there are 5 control characters after ^Z that use punctuation.
 #+end_src
@@ -106,7 +106,7 @@ ds: [$6C $70 $74 $78 $7C]
 #+name: op.ad
 #+begin_src
 > 01 02 ad ?d %q
-ds: [$3]
+ds: [3]
 = ad: add top two items on the stack
 : result is pushed back to stack
 #+end_src
@@ -114,111 +114,111 @@ ds: [$3]
 #+name: op.ml
 #+begin_src
 > 03 03 ml ?d %q
-ds: [$9]
+ds: [9]
 #+end_src
 ** DONE =sb= op
 #+name: io.math
 #+begin_src
 > 0A 05 sb ?d %q
-ds: [$5]
+ds: [5]
 #+end_src
 
 ** DONE =dv= op
 #+name: math.dv
 #+begin_src
 > 0A 05 dv ?d %q
-ds: [$2]
+ds: [2]
 #+end_src
 ** DONE =md= op
 #+name: math.md
 #+begin_src
 > 0A 05 md ?d
-ds: [$0]
+ds: [0]
 > zp 0A 03 md ?d %q
-ds: [$1]
+ds: [1]
 #+end_src
 ** DONE =sh= op
 #+name: math.sh
 #+begin_src
 > 06 01 sh ?d %q
-ds: [$C]
+ds: [C]
 #+end_src
 
 ** DONE =an= op
 #+name: math.an
 #+begin_src
 > 12 35 an ?d %q
-ds: [$10]
+ds: [10]
 #+end_src
 
 ** DONE =or= op
 #+name: math.or
 #+begin_src
 > 12 35 or ?d %q
-ds: [$37]
+ds: [37]
 #+end_src
 
 ** DONE =xr= op
 #+name: math.xr
 #+begin_src
 > 12 35 xr ?d %q
-ds: [$27]
+ds: [27]
 #+end_src
 
 ** DONE =nt= op
 #+name: math.nt
 #+begin_src
 > 12 nt ?d %q
-ds: [$-13]
+ds: [-13]
 #+end_src
 
 ** DONE =eq= op
 #+name: math.eq
 #+begin_src
 > AA BB eq CC CC eq ?d %q
-ds: [$0 $-1]
+ds: [0 -1]
 #+end_src
 
 ** DONE =lt= op
 #+name: op.lt
 #+begin_src
 > AA BB lt DD CC lt EE EE lt ?d %q
-ds: [$-1 $0 $0]
+ds: [-1 0 0]
 #+end_src
 
 ** DONE =du= op
 #+name: op.du
 #+begin_src
 > 0A du ?d %q
-ds: [$A $A]
+ds: [A A]
 #+end_src
 ** DONE =zp= op
 #+name: op.zp
 #+begin_src
 > 0A ?d zp ?d %q
-ds: [$A]
+ds: [A]
 ds: []
 #+end_src
 ** DONE =sw= op
 #+name: io.sw
 #+begin_src
 > 0A 0B sw ?d %q
-ds: [$B $A]
+ds: [B A]
 #+end_src
 ** DONE =ov= op
 #+name: op.ov
 #+begin_src
 > 0A 0B ov ?d %q
-ds: [$A $B $A]
+ds: [A B A]
 #+end_src
 ** DONE =cd= and =dc= ops
 #+name: op.cd-dc
 #+begin_src
 > 0A dc ?d ?c
 ds: []
-cs: [$A]
+cs: [A]
 > cd ?d ?c %q
-ds: [$A]
+ds: [A]
 cs: []
 #+end_src
 
@@ -227,7 +227,7 @@ cs: []
 #+name: dbg.%i
 #+begin_src
 > ?i %q
-ip: $100
+ip: 100
 = ?i : query instruction pointer
 : it should print in hex
 #+end_src
@@ -235,8 +235,8 @@ ip: $100
 #+name: dbg.%s
 #+begin_src
 > ?i %s ?i %q
-ip: $100
-ip: $101
+ip: 100
+ip: 101
 = %s : step
 : step and execute a no-op
 #+end_src
@@ -267,8 +267,8 @@ lb AB .. .. .. .. .. .. .. .. .. .. .. .. .. ..
 > ?d
 ds: [] # it should not be on the stack YET
 > %s ?d ?i %q
-ds: [$AB]
-ip: $102
+ds: [AB]
+ip: 102
 = lb: load byte
 : lb loads a byte from memory at runtime.
 : we never needed it before because our debug shell
@@ -285,9 +285,9 @@ ip: $102
 #+name: io.rb
 #+begin_src
 > 0100 rb ?d zp
-ds: [$0]
+ds: [0]
 > 0100 du 01 sw wb rb ?d %q
-ds: [$1]
+ds: [1]
 #+end_src
 
 * DONE [6/6] simple memory ops
@@ -298,7 +298,7 @@ ds: [$1]
 > @0100
 AA BB .. CC .. .. .. .. .. .. .. .. .. .. .. ..
 > 0103 rb ?d %q
-ds: [$CC]
+ds: [CC]
 #+end_src
 
 ** DONE =ri= op
@@ -308,7 +308,7 @@ ds: [$CC]
 > @0100
 AA BB CC .. .. .. .. .. .. .. .. .. .. .. .. ..
 > 0100 ri ?d %q
-ds: [$CCBBAA]
+ds: [CCBBAA]
 = ri : read integer
 : Note that the bytes are "backwards" from the way we write them!
 : B4 reads and writes integers in little-endian format.
@@ -319,7 +319,7 @@ ds: [$CCBBAA]
 > 12345678 `X wi ?d
 ds: []
 > `X ri ?d %q
-ds: [$12345678]
+ds: [12345678]
 = wi : write integer
 #+end_src
 
@@ -332,10 +332,10 @@ ds: [$12345678]
 ds: []
 # read twice, loading `A and `B
 > rx rx ?d
-ds: [$11223344 $55667788]
+ds: [11223344 55667788]
 # now `X should be pointing at `C
 > zp zp `X ri `C eq ?d %q
-ds: [$-1]
+ds: [-1]
 = rx : read from and incement `X
 : same as the following assembly:
 :
@@ -354,10 +354,10 @@ ds: [$-1]
 ds: []
 # read twice, loading `A and `B
 > ry ry ?d
-ds: [$11223344 $55667788]
+ds: [11223344 55667788]
 # now `Y should be pointing at `C
 > zp zp `Y ri `C eq ?d %q
-ds: [$-1]
+ds: [-1]
 = ry : read from and incement `Y
 : ry is exactly the same as rx, except it uses the `Y register.
 #+end_src
@@ -370,10 +370,10 @@ ds: [$-1]
 > 123456 wz ?d
 ds: []
 > `A ri `B ri ?d
-ds: [$ABCDEF $123456]
+ds: [ABCDEF 123456]
 # now `Z should be pointing at `C
 > zp zp `Z ri `C eq ?d %q
-ds: [$-1]
+ds: [-1]
 = wz : write to and increment `Z
 #+end_src
 
