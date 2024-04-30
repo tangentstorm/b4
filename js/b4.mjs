@@ -37,10 +37,11 @@ export class CPU {
     this.cs = []
     this.ds = []
     this.reg = new Array(32)
-    this.ram = new Array(4096).fill(0) }
-  tos() { return this.ds[this.ds.length-1]}
-  nos() { return this.ds[this.ds.length-2]}
+    this.ram = new Uint8Array(4096).fill(0) }
+  dtos() { return this.ds[this.ds.length-1]}
+  dnos() { return this.ds[this.ds.length-2]}
   dpop() { return this.ds.pop()}
+  ctos() { return this.cs[this.cs.length-1]}
   cpop() { return this.cs.pop() }
   dput(x) { this.ds.push(x); return this }
   cput(x) { this.cs.push(x) }
@@ -63,17 +64,17 @@ export class CPU {
   eq() { let y=this.dpop(); return this.dput(-(this.dpop()==y)) }
   lt() { let y=this.dpop(); return this.dput(-(this.dpop()<y)) }
   zp() { this.dpop(); return this }
-  du() { return this.dput(this.tos()) }
+  du() { return this.dput(this.dtos()) }
   sw() { let y=this.dpop(),x=this.dpop(); return this.dput(y).dput(x) }
-  ov() { return this.dput(this.nos()) }
+  ov() { return this.dput(this.dnos()) }
   dc() { return this.cput(this.dpop()) }
   cd() { return this.dput(this.cpop()) }
   wb() { this.ram[this.dpop()]=this.dpop(); return this }
   rb() { return this.dput(this.ram[this.dpop()]) }
-  ri() {
-    let a = this.dpop()+3, r =0
-    for (let i=0;i<4;i++) { r<<=8; r+=this.ram[a--] }
-    return this.dput(r) }
+  _ri(a0) {
+    let a = a0+3, r =0
+    for (let i=0;i<4;i++) { r<<=8; r+=this.ram[a--] } return r }
+  ri() { return this.dput(this._ri(this.dpop())) }
   wi() {
     let a = this.dpop(), n=this.dpop()
     for (let i=0;i<4;i++) { this.ram[a++]=n&0xff; n>>=8 }
@@ -84,20 +85,63 @@ export class CPU {
          return this.dput(RegY).du().ri().dput(4).ad().sw().wi() }
   wz() { this.dput(RegZ).ri().wi()
          return this.dput(RegZ).du().ri().dput(4).ad().sw().wi() }
+  _go(a) { this.ip = Math.max(0x100,a)-1 }
+  _i8(a) { let r=this.ram[a]; if (r>=0x80) r=-(r&0x7F)-1; return r }
+  hp() { this._go(this.ip+this._i8(this.ip+1))}
+  h0() { if (this.dpop()==0) this.hp(); else this.ip++ }
+  jm() { this._go(this._ri(this.ip+1)) }
+  cl() { this.cput(this.ip+4); this.jm() }
+  rt() { this._go(this.cpop()) }
+  nx() { if (this.ctos()>0) this.cput(this.cpop()-1)
+         if (this.ctos()==0) { this.cpop(); this.ip++ }
+         else this.hp() }
   step() {
-    switch(this.ram[this.ip++]){
-    case LB: this.dput(this.ram[this.ip++]); break
-/*    LB = 128, LI = 129, DU = 130, SW = 131, OV = 132, ZP = 133,
-      DC = 134, CD = 135, AD = 136, SB = 137, ML = 138, DV = 139,
-      MD = 140, SH = 141, AN = 142, OR = 143, XR = 144, NT = 145,
-      EQ = 146, LT = 147, JM = 148, HP = 149, H0 = 150, CL = 151,
-      RT = 152, NX = 153, RB = 154, WB = 155, RI = 156, WI = 157,
-      RX = 158, RY = 159, WZ = 160, TG = 176, TA = 177, TW = 178,
-      TR = 179, TK = 180, TS = 181, TL = 182, TC = 183,
-      DB = 254, HL = 255; */
-    default: break}}}
-
-
+    switch(this.ram[this.ip]){ // TODO: use a map of bound methods instead
+    case LB: this.dput(this.ram[this.ip+++1]); break
+// TODO:   case LI: this.dput(this._ri(this.ip++)); this.ip+=3; break
+    case DU: this.du(); break
+    case SW: this.sw(); break
+    case OV: this.ov(); break
+    case ZP: this.zp(); break
+    case DC: this.dc(); break
+    case CD: this.cd(); break
+    case AD: this.ad(); break
+    case SB: this.sb(); break
+    case ML: this.ml(); break
+    case DV: this.dv(); break
+    case MD: this.md(); break
+    case SH: this.sh(); break
+    case AN: this.an(); break
+    case OR: this.or(); break
+    case XR: this.xr(); break
+    case NT: this.nt(); break
+    case EQ: this.eq(); break
+    case LT: this.lt(); break
+    case JM: this.jm(); break
+    case HP: this.hp(); break
+    case H0: this.h0(); break
+    case CL: this.cl(); break
+    case RT: this.rt(); break
+    case NX: this.nx(); break
+    case RB: this.rb(); break
+    case WB: this.wb(); break
+    case RI: this.ri(); break
+    case WI: this.wi(); break
+    case RX: this.rx(); break
+    case RY: this.ry(); break
+    case WZ: this.wz(); break
+    case TG: this.tg(); break
+    case TA: this.ta(); break
+    case TW: this.tw(); break
+    case TR: this.tr(); break
+    case TK: this.tk(); break
+    case TS: this.ts(); break
+    case TL: this.tl(); break
+    case TC: this.tc(); break
+    case DB: this.db(); break
+    case HL: this.hl(); break
+    default: break}
+    this.ip++}}
 
 const b4 = new CPU()
 
