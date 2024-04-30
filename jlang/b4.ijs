@@ -50,7 +50,9 @@ dtos =: {{ {: D }}
 dnos =: {{ {: }: D }}
 dswp =: {{ D =: 1 A. D }}
 dpop =: {{ r =. 0 if. #D do. D =: }: D [ r =. {: D end. r }}
+ctos =: {{ {: C }}
 cpop =: {{ r =. 0 if. #C do. C =: }: C [ r =. {: C end. r }}
+cdec =: {{ C =: (}:C),<:{:C }}             NB. decrement ctos (for nx)
 bget =: {{ a. i. y { M }}                  NB. fetch a byte  (u8)
 sget =: (>:@-)^:(127&<)@bget               NB. fetch a short (i8)
 bset =: {{ M =: (a.{~  256  #:x) y } M }}  NB. store x:u8 at y (_1->FF)
@@ -61,7 +63,7 @@ incp =: {{ P =: mask P + 1 }}         NB. ++p
 inc4 =: {{ 3-~P =: mask P + 4 }}      NB. p+=4,p-3
 
 NB. get/set internal registers
-(pget =: {{ P }}) ` (pset =: {{ P =: y }})
+(pget =: {{ P }}) ` (pset =: {{ P =: 16bff >. y }})
 
 NB. there are 32 "R" registers, so rget/set take an argument
 (rget =: {{ (32#:y) { R }}) ` (rset =: {{ R =: x (32#:y) } R }})
@@ -115,10 +117,10 @@ rd=: dput@rget@AND@RMASK@dpop   NB. register -> data
 NB. control flow instructions
 NB. -1/<: is because every op is followed by p++
 jm =: pset@<:@mget@inc4         NB. jump to M[P+1 2 3 4]-1
-hp =: pset@<:@(pget+sget)@incp  NB. hop to P+M[P+1]-1
-h0 =: hp`incp@.(0-:dpop)        NB. hop if tos==0 else skip addr
-nx =: (hp@cput@<:)`incp@.(0-:])@ cpop  NB. 'next': rtos--?hop:pop
-cl =: jm@cput@pget              NB. call: cput P then jump
+hp =: pset@<:@(]+sget@>:)@pget  NB. hop to P+M[P+1]-1
+h0 =: incp`hp@.(0-:dpop)        NB. hop if tos==0 else skip addr
+nx =: [: (hp`(incp@cpop))@.(0=ctos) cdec^:(0<ctos) NB. 'next': rtos--?hop:pop
+cl =: jm@([: cput 4 + pget)     NB. call: cput P then jump
 rt =: pset&(cpop-1:)            NB. return
 
 
@@ -174,7 +176,7 @@ eval =: {{
 NB. step: read instruction from memory, eval, advance program counter
 NB. loop: does same until the program halts.
 loop =: {{ while. END > pc=.pget'' do. incp@'' eval bget pc end. 0 0$0 }}
-step =: {{ if.    END > pc=.pget'' do. 0 0 $ incp@'' eval bget pc end. }}
+step =: {{ if.    END > pc=.pget'' do. 0 0 $ incp eval bget pc end. }}
 
 NB. these are helpers for tracing the vm in J:
 fmt =: ;:'P C D M'

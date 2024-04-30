@@ -12,25 +12,26 @@ OPCODE =: 16b80 NB. bytecode of first internal instruction
 OPLAST =: OPCODE + # ops__vm
 dput =: dput__vm
 rega =: 4*(ord'@') -~ ord NB. backtick = register address
-addr =: dfh NB. TODO err handling
+ihx =: {{ -^:('-'={.y)  dfh y }}  NB. int from hex
+addr =: ihx NB. TODO err handling
 step =: step__vm
-isHEX =: *./@(e.&'0123456789ABCDEF') NB. upper case hex num?
-puthex =: {{ if. isHEX y do. 1 [ dput dfh y return. end. 0 }}
-hexstr =: {{ if. y<0 do. '-',hfd -y else. hfd y end. }}
+isHEX =: [: *./@(e.&'0123456789ABCDEF') }.^:('-'={.) NB. upper case hex num?
+puthex =: {{ if. isHEX y do. 1 [ dput ihx y return. end. 0 }}
+hexstr =: toupper@{{ if. y<0 do. '-',hfd -y else. hfd y end. }}
 stackstr =: ' ' joinstring toupper @ hexstr &.>
-decode =: {{
+asm =: {{
   if. (#ops__vm) > ix=.(<y) i.~ ops__vm do. OPCODE + ix
-  else. dfh y
+  else. ihx y
   end. }}
 putmem =: {{ NB. decode str with '!addr bytes' and store in ram
-  'addr bytes' =. ({.;}.) decode &> ' 'splitstring y
+  'addr bytes' =. ({.;}.) asm &> ' 'splitstring y
   M__vm =: (bytes{a.) (addr+i.#bytes) } M__vm }}
-encode =: {{ NB. encode bytes as b4 assembly language
+dis =: {{ NB. disassemble bytes to b4 assembly language
   if. y = 0 do. '..'
   elseif. (<:&16b01 *. <:&16b1f) y do. '^', chr(y+ord'@')
-  elseif. (<:&OPCODE *. <:&OPLAST) y do. >(y-OPCODE){ops__vm
-  else. toupper hfd y end. }}
-memstr =: {{ , ' ',.~ encode"0 a.i. (y+i.16) { M__vm  }}
+  elseif. (>:&OPCODE *. <:&OPLAST) y do. >(y-OPCODE){ops__vm
+  else. hexstr y end. }}
+memstr =: {{ , ' ',.~ dis"0 a.i. (y+i.16) { M__vm  }}
 showmem =: echo@memstr
 
 main =: {{
@@ -45,7 +46,7 @@ main =: {{
       case. '%s' do. step''
       case. '?d' do. echo 'ds: [', (stackstr D__vm), ']'
       case. '?c' do. echo 'cs: [', (stackstr C__vm), ']'
-      case. '?i' do. echo 'ip: ', hfd P__vm
+      case. '?i' do. echo 'ip: ', hexstr P__vm
       case. '%j' do.
         echo 'Exiting into J. Type "main _" to return' return.
       case. do.
