@@ -26,7 +26,8 @@ function b4op(code : opstring; out op:byte) : boolean;
     for o := low(optbl) to high(optbl) do
       if code = optbl[o] then begin
         op := o; result := true; break
-      end
+      end;
+    if code = '..' then begin op := 0; result := true end
   end;
 
 function b4opc(code:opstring) : byte;
