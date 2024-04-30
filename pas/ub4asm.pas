@@ -149,8 +149,8 @@ procedure b4as;
         _th ,
         _do : hop_slot('h0');
         _od : begin { compile time: (wh do -)}
-                { first, an unconditional jump back to the _do }
-                emit(b4opc('jm')); dswp; emitv(dpop);
+                { first, an unconditional hop back to the _do }
+                emit(b4opc('hp')); dswp; hop_back;
                 { now go back to the guard and compile the forward jump }
                 hop_here end;
         _if : ; { 'if' does nothing. just syntactic sugar. }
