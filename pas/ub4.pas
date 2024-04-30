@@ -70,6 +70,7 @@ const {-- these are all offsets into the ram array --}
 
 
 implementation
+uses math;
 
 procedure boot;
   begin
@@ -234,6 +235,11 @@ function rega(ch : char):value;
     result := 4 * (ord(upcase(ch)) - ord('@'))
   end;
 
+procedure go(addr :integer); inline;
+  begin
+    reg_ip^ := math.max(addr,$100)-1;
+  end;
+
 
 procedure runop(op : byte);
   var t,a : value;
@@ -260,8 +266,8 @@ procedure runop(op : byte);
       $91 : {nt} dput(not dpop);
       $92 : {eq} if dpop =  dpop then dput(-1) else dput(0);
       $93 : {lt} begin t:=dpop; if dpop <  t then dput(-1) else dput(0) end;
-      $94 : {jm} reg_ip^ := rdval(reg_ip^+1)-1;
-      $95 : {hp} reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1;
+      $94 : {jm} go(rdval(reg_ip^+1));
+      $95 : {hp} go(reg_ip^ + int8(ram[reg_ip^+1]));
       $96 : {h0} if dpop = 0 then reg_ip^ := reg_ip^ + ram[reg_ip^+1]-1
                  else inc(reg_ip^);
       $97 : {cl} begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
