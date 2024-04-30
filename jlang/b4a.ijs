@@ -1,3 +1,7 @@
+NB. b4 assembler in j
+NB. TODO: extract and unify with b4i.ijs
+NB. (which can handle negative numbers)
+
 load 'b4.ijs'
 cocurrent 'b4'
 NB. asm: bootstrap assembler: 2 chars per byte
@@ -10,7 +14,9 @@ NB. Following the retroforth/muri convention, you can use '..'
 NB. for 0-padding when you are not explicitly referring to the number 0.
 assert 0 128 255 0 -: _2 dfh\'0080ff..'
 
-a0 =: ((128+])`(dfh&>@[)@.((#ops)=]) ops&i.)"0  NB. match boxed 2 char str
+bop =: 128+]                      NB. byte from op (TODO: fix)
+ihx =: {{ -^:('-'={.y)  dfh y }}  NB. int from hex
+a0 =: (bop`(ihx&>@[)@.((#ops)=]) ops&i.)"0  NB. match boxed 2 char str
 a1 =: {{ a0 (_2<\' '-.~]) y }}  NB. src str -> bytecode str (strips all spaces)
 asm =: a. {~ a1
 
