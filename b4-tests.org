@@ -11,27 +11,7 @@ This is a slightly messy process at the moment, as test runner is currently in a
 
 https://github.com/tangentstorm/learntris
 
-(Probably this will be moved to its own repo at some point.)
-
-Use the =TEST_PLAN= environment variable to specify a path to this file.
-
-For example, the tests for the [[https://github.com/tangentstorm/b4-gd/][godot implementation]] are currently run with the following script:
-
-:  # path to the b4 repo, containing the master copy of the tests:
-:  export TEST_PLAN=../b4/b4-tests.org
-:
-:  # godot outputs a version header and blank line that cannot be suppressed:
-:  export SKIP_LINES=2
-:
-:  # godot 4.2.1 also doesn't won't read "stdin" lines from a pipe on windows,
-:  # so we write the commands to a file and then tell
-:  export INPUT_PATH=b4-gd/input.txt
-:
-:  # use python3 to run testris.py, and pass it the godot command line:
-:  # after the '--' comes the argument to cli.gd itself, which is the
-:  # path to look for the input commands (corresponding to INPUT_PATH, above)
-:  python testris.py ./Godot_v4.2.1-stable_win64_console.exe --path b4-gd --headless --script cli.gd -- input.txt
-
+See the =test-b4-*= scripts in this repository for examples.
 
 * DONE [6/6] debugger interface
 ** DONE establish a command loop and a way to exit
