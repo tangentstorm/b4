@@ -36,7 +36,7 @@ For example, the tests for the [[https://github.com/tangentstorm/b4-gd/][godot i
 * DONE [6/6] debugger interface
 ** DONE establish a command loop and a way to exit
 #+name: io.%q
-#+begin_src
+#+begin_src b4i
 > %q
 = %q : quit
 : The '%q' command instructs b4 to quit.
@@ -47,7 +47,7 @@ For example, the tests for the [[https://github.com/tangentstorm/b4-gd/][godot i
 
 ** DONE print the data stack
 #+name: io.%d
-#+begin_src
+#+begin_src b4i
 > ?d %q
 ds: [] # should be an empty array
 = ?d : query the data stack
@@ -55,7 +55,7 @@ ds: [] # should be an empty array
 
 ** DONE print the call stack
 #+name: io.%c
-#+begin_src
+#+begin_src b4i
 > ?c %q
 cs: [] # should be an empty array
 = ?c : query the call stack
@@ -63,7 +63,7 @@ cs: [] # should be an empty array
 
 ** DONE push a hex number to the stack
 #+name: io.hex
-#+begin_src
+#+begin_src b4i
 > FF CC ?d %q
 ds: [FF CC]
 = hex numbers are pushed to data stack
@@ -71,7 +71,7 @@ ds: [FF CC]
 #+end_src
 ** DONE push an ascii character onto the stack
 #+name: io.ascii
-#+begin_src
+#+begin_src b4i
 > 'a 'A ' ?d %q
 ds: [61 41 20]
 = ascii syntax
@@ -80,7 +80,7 @@ ds: [61 41 20]
 #+end_src
 ** DONE push control character addresses to stack
 #+name: io.ctrl
-#+begin_src
+#+begin_src b4i
 > `@ `A `B `C `X `Y `Z ?d %q
 ds: [0 4 8 C 60 64 68]
 = control characters
@@ -94,7 +94,7 @@ ds: [0 4 8 C 60 64 68]
 #+end_src
 
 #+name: io.ctrl2
-#+begin_src
+#+begin_src b4i
 > `[ `\ `] `^ `_ ?d %q
 ds: [6C 70 74 78 7C]
 = non-alphabetic control characters
@@ -104,7 +104,7 @@ ds: [6C 70 74 78 7C]
 * DONE [17/17] alu / stack operations
 ** DONE =ad= op
 #+name: op.ad
-#+begin_src
+#+begin_src b4i
 > 01 02 ad ?d %q
 ds: [3]
 = ad: add top two items on the stack
@@ -112,26 +112,26 @@ ds: [3]
 #+end_src
 ** DONE =ml= op
 #+name: op.ml
-#+begin_src
+#+begin_src b4i
 > 03 03 ml ?d %q
 ds: [9]
 #+end_src
 ** DONE =sb= op
 #+name: io.math
-#+begin_src
+#+begin_src b4i
 > 0A 05 sb ?d %q
 ds: [5]
 #+end_src
 
 ** DONE =dv= op
 #+name: math.dv
-#+begin_src
+#+begin_src b4i
 > 0A 05 dv ?d %q
 ds: [2]
 #+end_src
 ** DONE =md= op
 #+name: math.md
-#+begin_src
+#+begin_src b4i
 > 0A 05 md ?d
 ds: [0]
 > zp 0A 03 md ?d %q
@@ -139,81 +139,81 @@ ds: [1]
 #+end_src
 ** DONE =sh= op
 #+name: math.sh
-#+begin_src
+#+begin_src b4i
 > 06 01 sh ?d %q
 ds: [C]
 #+end_src
 
 ** DONE =an= op
 #+name: math.an
-#+begin_src
+#+begin_src b4i
 > 12 35 an ?d %q
 ds: [10]
 #+end_src
 
 ** DONE =or= op
 #+name: math.or
-#+begin_src
+#+begin_src b4i
 > 12 35 or ?d %q
 ds: [37]
 #+end_src
 
 ** DONE =xr= op
 #+name: math.xr
-#+begin_src
+#+begin_src b4i
 > 12 35 xr ?d %q
 ds: [27]
 #+end_src
 
 ** DONE =nt= op
 #+name: math.nt
-#+begin_src
+#+begin_src b4i
 > 12 nt ?d %q
 ds: [-13]
 #+end_src
 
 ** DONE =eq= op
 #+name: math.eq
-#+begin_src
+#+begin_src b4i
 > AA BB eq CC CC eq ?d %q
 ds: [0 -1]
 #+end_src
 
 ** DONE =lt= op
 #+name: op.lt
-#+begin_src
+#+begin_src b4i
 > AA BB lt DD CC lt EE EE lt ?d %q
 ds: [-1 0 0]
 #+end_src
 
 ** DONE =du= op
 #+name: op.du
-#+begin_src
+#+begin_src b4i
 > 0A du ?d %q
 ds: [A A]
-#+end_src
+#+end_src b4i
 ** DONE =zp= op
 #+name: op.zp
-#+begin_src
+#+begin_src b4i
 > 0A ?d zp ?d %q
 ds: [A]
 ds: []
 #+end_src
 ** DONE =sw= op
 #+name: io.sw
-#+begin_src
+#+begin_src b4i
 > 0A 0B sw ?d %q
 ds: [B A]
 #+end_src
 ** DONE =ov= op
 #+name: op.ov
-#+begin_src
+#+begin_src b4i
 > 0A 0B ov ?d %q
 ds: [A B A]
 #+end_src
 ** DONE =cd= and =dc= ops
 #+name: op.cd-dc
-#+begin_src
+#+begin_src b4i
 > 0A dc ?d ?c
 ds: []
 cs: [A]
@@ -225,13 +225,13 @@ cs: []
 * DONE [2/2] batch memory access from debugger
 ** DONE inspect ram
 #+name: io.mem-read
-#+begin_src
+#+begin_src b4i
 > @0100 %q
 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
 ** DONE write to ram
 #+name: io.mem-write
-#+begin_src
+#+begin_src b4i
 > @0100
 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
 > !0100 00 AA BB CC
@@ -242,14 +242,14 @@ cs: []
 * DONE [2/2] memory operations
 ** DONE =wb= op
 #+name: io.wb
-#+begin_src
+#+begin_src b4i
 > 01 0100 wb
 > @0100 %q
 ^A .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
 ** DONE =rb= op
 #+name: op.rb
-#+begin_src
+#+begin_src b4i
 > !0100 AA BB 00 CC
 > @0100
 AA BB .. CC .. .. .. .. .. .. .. .. .. .. .. ..
@@ -259,7 +259,7 @@ ds: [CC]
 
 ** DONE =ri= op
 #+name: op.ri
-#+begin_src
+#+begin_src b4i
 > !0100 AA BB CC 00
 > @0100
 AA BB CC .. .. .. .. .. .. .. .. .. .. .. .. ..
@@ -271,7 +271,7 @@ ds: [CCBBAA]
 #+end_src
 ** DONE =wi= op
 #+name: op.wi
-#+begin_src
+#+begin_src b4i
 > 12345678 `X wi ?d
 ds: []
 > `X ri ?d %q
@@ -281,7 +281,7 @@ ds: [12345678]
 
 ** DONE =rx= op
 #+name: op.rx
-#+begin_src
+#+begin_src b4i
 > 11223344 `A wi
 > 55667788 `B wi ?d
 > `A `X wi
@@ -303,7 +303,7 @@ ds: [-1]
 
 ** DONE =ry= op
 #+name: op.ry
-#+begin_src
+#+begin_src b4i
 > 11223344 `A wi
 > 55667788 `B wi ?d
 > `A `Y wi
@@ -320,7 +320,7 @@ ds: [-1]
 
 ** DONE =wz= op
 #+name: op.wz
-#+begin_src
+#+begin_src b4i
 > `A `Z wi
 > ABCDEF wz
 > 123456 wz ?d
@@ -336,7 +336,7 @@ ds: [-1]
 * DONE [2/2] debugger/stepper
 ** DONE query instruction pointer
 #+name: dbg.%i
-#+begin_src
+#+begin_src b4i
 > ?i %q
 ip: 100
 = ?i : query instruction pointer
@@ -344,7 +344,7 @@ ip: 100
 #+end_src
 ** DONE %s step command
 #+name: dbg.%s
-#+begin_src
+#+begin_src b4i
 > ?i %s ?i %q
 ip: 100
 ip: 101
@@ -354,7 +354,7 @@ ip: 101
 * TODO [1/3] sequences
 ** DONE =lb= op
 #+name: op.lb
-#+begin_src
+#+begin_src b4i
 > !0100 lb AB
 > @0100
 lb AB .. .. .. .. .. .. .. .. .. .. .. .. .. ..
@@ -370,20 +370,183 @@ ip: 102
 #+end_src
 ** TODO =li= op
 #+name: op.li
-* TODO [1/7] control flow
+
+* TODO [1/8] control flow
 ** DONE =..= (zero) is no-op
 ** TODO =hp= hop
+Hop is a small relative jump. It takes a signed 8-bit int as a parameter, and can thus move the instruction pointer forward up to 127 bytes, or backwards up to 128 bytes.
+
 *** TODO forward
+#+name: op.hp.forward
+#+begin_src b4i
+> !0100 hp 05
+> ?i %s ?i %q
+ip: 100
+ip: 105
+#+end_src
+*** TODO forward max
+#+name: op.hp.forward-max
+#+begin_src b4i
+> !0100 hp 7F
+> %s ?i
+ip: 17F
+#+end_src
+*** TODO forward wrap
+here we set the high bit so it's the same as negative 1.
+(but then that puts us at address 00FF, which is too small so we clamp to 0100 and then we have an infinite loop)
+#+name: op.hp.forward-wrap
+#+begin_src b4i
+> !0100 hp 80
+> %s ?i
+ip: 100
+#+end_src
+
 *** TODO backward
+#+name: op.hp.backward
+#+begin_src b4i
+> !0100 .. .. .. hp -3
+> %s %s %s ?i %s ?i %q
+ip: 103
+ip: 100
+#+end_src
+*** TODO backward (and out of bounds)
+#+name: op.hp.backward-oob
+#+begin_src b4i
+> !0100 hp -5
+> %s ?i
+ip: 100
+#+end_src
+*** TODO zero?
+This causes an infinite loop.
+#+name: op.hp.zero
+#+begin_src b4i
+> !0100 hp 00
+> %s ?i
+ip: 100
+#+end_src
 ** TODO =h0= hop if 0
-*** TODO 0 branch
-*** TODO 1 branch
+
+=h0= is the same as =hp= but conditional.
+
+It pops a value off the data stack, and only hops if the value is 0.
+
+*** TODO when 0
+We push 0 to the stack and then step, so we should jump to address $0123
+#+name: op.h0.when0
+#+begin_src b4i
+> !0100 h0 23
+> 00 %s ?i
+ip: 123
+#+end_src
+*** TODO when 1
+Here the hop is not taken, but we still hop over the argument.
+#+name: op.h0.when1
+#+begin_src b4i
+> !0100 h0 23
+> 01 %s ?i
+ip: 102
+#+end_src
+
 ** TODO =jm= jump
+
+=jm= is an unconditional jump to a 4-byte address.
+
+#+name: op.jm
+#+begin_src b4i
+> !0100 jm 78 56 34 12
+> %s ?i
+ip: 12345678
+#+end_src
+
+
 ** TODO =cl= call
+
+=cl= is the same as =jm= but also pushes the instruction pointer to the call stack.
+
+Note that the instruction pointer is incremented by 4 first, to skip over the argument.
+
+#+name: op.cl
+#+begin_src b4i
+> !0100 cl 78 56 34 12
+> %s ?i ?c
+ip: 12345678
+cs: [104]
+#+end_src
+
 ** TODO =rt= return
+
+In general, =rt= is used to return control from a called function.
+
+The actual mechanic is a jump to an address popped from the control stack.
+
+To simplify this test, we simply push the address we want to the control stack ourselves.
+
+#+name: op.rt
+#+begin_src b4i
+> !0100 rt
+> 1234 dc ?i ?c %s ?i ?c
+ip: 100
+cs: [1234]
+ip: 1234
+cs: []
+#+end_src
+
+** TODO =rt= dynamic call caveat
+
+Here's a small catch for the "dynamic call" technique used in the previous test.
+
+It =only= comes into play when using the "calculator mode".
+
+Note that in the previous test, we used =%s= to trigger a step. This
+reads an instruction from ram[ip] and then causes the instruction pointer to increment.
+
+If we had simply invoked =rt= directly using the "calculator", no "step" has occured, and so the address would be off by one.
+
+In general, it probably just doesn't make sense to use contrtol flow ops from the "calculator" outside of testing.
+
+#+name: op.rt.b4i
+#+begin_src b4i
+> 1234 dc ?i ?c rt ?i ?c
+ip: 100
+cs: [1234]
+ip: 1233
+cs: []
+#+end_src
+
 ** TODO =nx= next
+
+This is probably the most complicated operation.
+
+It's intended for loops where you do something a fixed number of times.
+
+An integer counter is stored on the control stack. Every time =nx= is run,
+the counter is decremented. The jump is triggered when the result is /not/ zero,
+so that the loop continues until the countdown reaches 0.
+
+On the step where it does reach zero, the counter is dropped.
+
+In this test, we loop back to the starting address twice, and then proceed.
+
+#+name: op.nx
+#+begin_src op.nx
+> !100 nx 00 01 00 00
+> 2 dc
+> ?c ?i
+cs: [2]
+ip: 100
+> %s ?c ?i
+cs: [1]
+ip: 100
+> %s ?c ?i
+cs: []
+ip: 104
+> %s ?c ?i
+cs: []
+ip: 105
+#+end_src
+
 * TODO host language
 * TODO virtual hardware
 * TODO [0/2] system ops (how to test these?)
-** TODO =db=
-** TODO =hl=
+** TODO =db=  triggers the debugger
+** TODO =hl=  halts the virtual machine
