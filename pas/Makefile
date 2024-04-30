@@ -1,5 +1,6 @@
-FPC = fpc -Fu../lib/xpl/code -Fi../lib/xpl/code -Mobjfpc
-FPC = fpc -gl -Fu~/x/code -Fi~/x/code -Mobjfpc
+# XPL is http://github.com/tangentstorm/xpl
+XPL = ~/x
+FPC = fpc -gl -Fu$(XPL)/code -Fi$(XPL)/code -Mobjfpc
 
 main:
 	@echo 'make targets:'
