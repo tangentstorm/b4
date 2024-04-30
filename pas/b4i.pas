@@ -39,9 +39,16 @@ begin
   writeln;
 end;
 
+function unhex(tok:string): integer;
+begin
+  if length(tok) = 0 then raise EConvertError.Create('unhex of empty string?');
+  if tok[1]='-' then result := -Hex2Dec(copy(tok,2,length(tok)-1))
+  else result := Hex2Dec(tok);
+end;
+
 function PutHex(tok : string): boolean;
 begin
-  try dput(Hex2Dec(tok)); result:= true;
+  try dput(unhex(tok)); result := true
   except on EConvertError do result := false; end
 end;
 
@@ -66,7 +73,9 @@ begin
     if i = -1 then a := ParseAddress(tok)
     else begin
       // TODO: handle integers instead of just bytes
-      if not ub4asm.b4op(tok, v) then v := hex2dec(tok);
+      if not ub4asm.b4op(tok, v) then
+        if tok = '..' then v := 0
+        else v := unhex(tok);
       ram[a+i] := v
     end;
     inc(i);
