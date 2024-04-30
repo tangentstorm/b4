@@ -388,7 +388,7 @@ ip: 105
 #+name: op.hp.forward-max
 #+begin_src b4i
 > !0100 hp 7F
-> %s ?i
+> %s ?i %q
 ip: 17F
 #+end_src
 *** TODO forward wrap
@@ -397,7 +397,7 @@ here we set the high bit so it's the same as negative 1.
 #+name: op.hp.forward-wrap
 #+begin_src b4i
 > !0100 hp 80
-> %s ?i
+> %s ?i %q
 ip: 100
 #+end_src
 
@@ -413,7 +413,7 @@ ip: 100
 #+name: op.hp.backward-oob
 #+begin_src b4i
 > !0100 hp -5
-> %s ?i
+> %s ?i %q
 ip: 100
 #+end_src
 *** TODO zero?
@@ -421,7 +421,7 @@ This causes an infinite loop.
 #+name: op.hp.zero
 #+begin_src b4i
 > !0100 hp 00
-> %s ?i
+> %s ?i %q
 ip: 100
 #+end_src
 ** TODO =h0= hop if 0
@@ -435,7 +435,7 @@ We push 0 to the stack and then step, so we should jump to address $0123
 #+name: op.h0.when0
 #+begin_src b4i
 > !0100 h0 23
-> 00 %s ?i
+> 00 %s ?i %q
 ip: 123
 #+end_src
 *** TODO when 1
@@ -443,7 +443,7 @@ Here the hop is not taken, but we still hop over the argument.
 #+name: op.h0.when1
 #+begin_src b4i
 > !0100 h0 23
-> 01 %s ?i
+> 01 %s ?i %q
 ip: 102
 #+end_src
 
@@ -454,10 +454,9 @@ ip: 102
 #+name: op.jm
 #+begin_src b4i
 > !0100 jm 78 56 34 12
-> %s ?i
+> %s ?i %q
 ip: 12345678
 #+end_src
-
 
 ** TODO =cl= call
 
@@ -468,7 +467,7 @@ Note that the instruction pointer is incremented by 4 first, to skip over the ar
 #+name: op.cl
 #+begin_src b4i
 > !0100 cl 78 56 34 12
-> %s ?i ?c
+> %s ?i ?c %q
 ip: 12345678
 cs: [104]
 #+end_src
@@ -484,7 +483,7 @@ To simplify this test, we simply push the address we want to the control stack o
 #+name: op.rt
 #+begin_src b4i
 > !0100 rt
-> 1234 dc ?i ?c %s ?i ?c
+> 1234 dc ?i ?c %s ?i ?c %q
 ip: 100
 cs: [1234]
 ip: 1234
@@ -506,7 +505,7 @@ In general, it probably just doesn't make sense to use contrtol flow ops from th
 
 #+name: op.rt.b4i
 #+begin_src b4i
-> 1234 dc ?i ?c rt ?i ?c
+> 1234 dc ?i ?c rt ?i ?c %q
 ip: 100
 cs: [1234]
 ip: 1233
@@ -543,6 +542,7 @@ ip: 102
 > %s ?c ?i
 cs: []
 ip: 103
+> %q
 #+end_src
 
 * TODO host language
