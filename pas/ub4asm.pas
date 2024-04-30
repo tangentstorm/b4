@@ -111,11 +111,17 @@ procedure b4as;
       inc(op) end;
       if not found then unknown(s) end;
   procedure hop_slot(op:string); begin emit(b4opc(op)); dput(here); emit(0); end;
-  procedure hop_fill(); var slot,dist:value;
+  procedure hop_here(); var slot,dist:value;
     begin slot := dpop; dist := here-slot;
-      if dist < 0 then begin writeln('invalid backwards hop at ', here); halt end;
-      if dist > 126 then begin writeln('too far to hop back: ', here, ' -> ', slot); halt end;
+      if dist < 0 then begin writeln('invalid hop_here at ', here); halt end;
+      if dist > 126 then begin writeln('hop too big: ', here, ' -> ',slot); halt end;
       ram[slot] := dist+1
+    end;
+  procedure hop_back(); var dest,dist:value;
+    begin dest := dpop; dist := dest-here;
+      if dist > 0 then begin writeln('invalid hop_back at ', here); halt end;
+      if dist < -128 then begin writeln('hop too big: ',here, ' -> ',dest); halt end;
+      emit(byte(dist+1))
     end;
   type TFwd = record key: string; at: value end;
   var fwds : array of TFwd; fw:TFwd;
@@ -146,12 +152,12 @@ procedure b4as;
                 { first, an unconditional jump back to the _do }
                 emit(b4opc('jm')); dswp; emitv(dpop);
                 { now go back to the guard and compile the forward jump }
-                hop_fill end;
+                hop_here end;
         _if : ; { 'if' does nothing. just syntactic sugar. }
-        _el : begin hop_slot('hp'); dswp; hop_fill end;
-        _fi : {(do-)} hop_fill; { jump to 'end' when 'if' test fails }
+        _el : begin hop_slot('hp'); dswp; hop_here end;
+        _fi : {(do-)} hop_here; { jump to 'end' when 'if' test fails }
         _fr : dput(here);
-        _nx : begin emit(b4opc('nx')); emitv(dpop) end;
+        _nx : begin emit(b4opc('nx')); hop_back end;
       end end;
   begin
     SetLength(fwds, 0);

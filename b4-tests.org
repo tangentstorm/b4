@@ -520,16 +520,16 @@ This is probably the most complicated operation.
 It's intended for loops where you do something a fixed number of times.
 
 An integer counter is stored on the control stack. Every time =nx= is run,
-the counter is decremented. The jump is triggered when the result is /not/ zero,
-so that the loop continues until the countdown reaches 0.
+the counter is decremented. A hop is triggered when the result is
+/not/ zero, so that the loop continues until the countdown reaches 0.
 
 On the step where it does reach zero, the counter is dropped.
 
 In this test, we loop back to the starting address twice, and then proceed.
 
 #+name: op.nx
-#+begin_src op.nx
-> !100 nx 00 01 00 00
+#+begin_src b4i
+> !0100 nx 00
 > 2 dc
 > ?c ?i
 cs: [2]
@@ -539,10 +539,10 @@ cs: [1]
 ip: 100
 > %s ?c ?i
 cs: []
-ip: 104
+ip: 102
 > %s ?c ?i
 cs: []
-ip: 105
+ip: 103
 #+end_src
 
 * TODO host language
