@@ -63,6 +63,15 @@ on _hop do
   vm.ram.cast:"u8"
 end
 op.hp: on hp do _hop[] end
+op.h0: on h0 do if dpop[] vm.ip:vm.ip+1 else _hop[] end end
+op.jm: on jm do _goto[_ri[vm.ip+1]] end
+op.cl: on cl do cput[vm.ip+4] _goto[_ri[vm.ip+1]] end
+op.rt: on rt do _goto[cpop[]] end
+op.nx: on rt do
+  i:cpop[]-1 if i>0 cput[i] end
+  if i>0 _hop[] else vm.ip:vm.ip+1 end
+end
+
 
 on toHex n do
   if n < 0 "-%H" format -n else "%H" format n end
