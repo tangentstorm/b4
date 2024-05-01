@@ -6,7 +6,7 @@
 vm.ip: 256
 vm.ds: ()
 vm.cs: ()
-vm.ram: array[1024]
+vm.ram: array[1024 "u8"]
 
 on dtos do last vm.ds end
 on dpop do r: last vm.ds vm.ds:-1 drop vm.ds r end
@@ -33,15 +33,25 @@ op.sw: on sw do y:dpop[] x:dpop[] dput[y] dput[x]end
 op.ov: on ov do dput[last -1 drop vm.ds] end
 op.dc: on dc do cput[dpop[]] end
 op.cd: on cd do dput[cpop[]] end
+
+
 op.wb: on wb do vm.ram[dpop[]]: dpop[] end
 op.rb: on rb do dput[vm.ram[dpop[]]] end
-on _ri a do sum(256^range 4)*vm.ram@a+range 4 end
+on _ri a do sum(256^range 4)*vm.ram[a,4] end
 op.ri: on ri do dput[_ri[dpop[]]] end
-op.wi: on wi do a: dpop[] v: dpop[]
-  vm.ram[a+range 4]:
-     each x in range 4 r: bits.and[255,v] v:v/256 r end
+on _bytes n do
+  each _ in range 4 r:bits.and[255,n] n:floor n/256 r end
 end
+on _wi a v do vm.ram[a,4]:_bytes[v] end
+op.wi: on wi do a:dpop[] v:dpop[] _wi[a v] end
 
+on ord c do "%a" parse c end
+on reg uc do 4*ord[uc]-64 end
+RX: reg["X"] RY: reg["Y"] RZ: reg["Z"]
+on _rinc a do r:_ri[a] _wi[a r+4] r end
+op.rx: on rx do dput[_ri[_rinc[RX]]] end
+op.ry: on ry do dput[_ri[_rinc[RY]]] end
+op.wz: on wz do _wi[_rinc[RZ] dpop[]] end
 
 on toHex n do
   if n < 0 "-%H" format -n else "%H" format n end
@@ -50,7 +60,6 @@ on isHex s do
   min each c in s c in "0123456789ABCDEF" end
 end
 on unHex s do "%H" parse s end
-on ord c do "%a" parse c end
 on fmt xs do
   "%s: [%s]" format xs,(" " fuse toHex @ vm[xs])
 end
@@ -92,26 +101,27 @@ on writeMem line do
 end
 
 
-on b4i cmd do
-  if     cmd="%q" exit[0]
-  elseif cmd="?d" print[fmt["ds"]]
-  elseif cmd="?c" print[fmt["cs"]]
-  elseif cmd="?i" print["ip: %02H" format vm.ip]
-  elseif cmd="'" vm.ds: vm.ds,32
-  elseif cmd[0]="@" showMem["@%H" parse cmd]
-  elseif cmd[0]="'" vm.ds: vm.ds,ord[cmd[1]]
-  elseif cmd[0]="`" vm.ds: vm.ds,4*ord[cmd[1]]-64
-  elseif isHex[cmd] vm.ds: vm.ds,unHex[cmd]
-  elseif cmd in op op[cmd][]
-  else print["no: %s" format cmd] end
+on b4i line do
+  if line[0]="!" writeMem[line]
+  elseif line = ""
+  else each cmd in " " split line
+    if     cmd="%q" exit[0]
+    elseif cmd="?d" print[fmt["ds"]]
+    elseif cmd="?c" print[fmt["cs"]]
+    elseif cmd="?i" print["ip: %02H" format vm.ip]
+    elseif cmd="'" vm.ds: vm.ds,32
+    elseif cmd[0]="@" showMem["@%H" parse cmd]
+    elseif cmd[0]="'" vm.ds: vm.ds,ord[cmd[1]]
+    elseif cmd[0]="`" vm.ds: vm.ds,reg[cmd[1]]
+    elseif isHex[cmd] vm.ds: vm.ds,unHex[cmd]
+    elseif cmd in op op[cmd][]
+    else print["no: %s" format cmd] end
+  end end
 end
 
-shell["sleep 0.01"]
-on main do
-  each line in "\n" split read["input.txt"]
-    if line[0]="!" writeMem[line]
-    else b4i @ " " split line end
-  end
+if (count args) > 2
+  shell["sleep 0.01"]
+  b4i @ "\n" split read[args[2]]
+else
+  while 1 b4i[input["b4i> "]] end
 end
-
-main[]
