@@ -1,0 +1,71 @@
+#!/bin/env lilt
+# ------------------------------------------
+# the b4 virtual machine, implemented in Lil
+# ------------------------------------------
+
+vm.ip: 256
+vm.ds: ()
+vm.cs: ()
+
+on dpop do r: last vm.ds vm.ds:-1 drop vm.ds r end
+on dput x do vm.ds: vm.ds,x end
+
+op.ad: on ad do dput[dpop[] + dpop[]] end
+op.ml: on ml do dput[dpop[] * dpop[]] end
+op.sb: on sb do y:dpop[] dput[dpop[]-y] end
+op.dv: on dv do y:dpop[] dput[floor dpop[]/y] end
+op.md: on md do dput[dpop[] % dpop[]] end # !!
+op.sh: on sh do y:2^dpop[] dput[dpop[]*y] end
+op.an: on an do dput[bits.and[dpop[] dpop[]]] end
+op.or: on or do dput[bits.or[dpop[] dpop[]]] end
+op.xr: on xr do dput[bits.xor[dpop[] dpop[]]] end
+op.nt: on nt do dput[-dpop[]-1] end
+op.zp: on zp do dpop[] end
+
+
+on toHex n do
+  if n < 0 "" fuse "-",toHex[-n]
+  else "%H" format n end
+end
+on fmt xs do
+  t: " " fuse each x in vm[xs] toHex[x] end
+  "" fuse xs,": [",t,"]"
+end
+
+on isHex s do
+  min each c in s c in "0123456789ABCDEF" end
+end
+
+on unHex s do
+  "%H" parse s
+end
+
+A:"" fuse(
+  " !\"#$%&'()*+,-./0123456789:;<=>?@",
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`",
+  "abcdefghijklmnopqrstuvwxyz{|}~")
+
+on ord c do
+  first 32 + extract index where value = c from A
+end
+
+on b4i cmd do
+  if     cmd="%q" exit[0]
+  elseif cmd="?d" print[fmt["ds"]]
+  elseif cmd="?c" print[fmt["cs"]]
+  elseif cmd="?i" print[" " fuse ("ip:", "%02H" format vm.ip)]
+  elseif cmd="'" vm.ds: vm.ds,32
+  elseif cmd[0]="'" vm.ds: vm.ds,ord[cmd[1]]
+  elseif cmd[0]="`" vm.ds: vm.ds,4*ord[cmd[1]]-64
+  elseif isHex[cmd] vm.ds: vm.ds,unHex[cmd]
+  elseif cmd in op op[cmd][]
+  else print[" " fuse "no:",cmd] end
+end
+
+on main do
+  each line in "\n" split read["input.txt"]
+    each tok in (" " split line) b4i[tok] end
+  end
+end
+
+main[]
