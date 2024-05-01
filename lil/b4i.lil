@@ -62,6 +62,7 @@ on b4i cmd do
   else print[" " fuse "no:",cmd] end
 end
 
+shell["sleep 0.05"]
 on main do
   each line in "\n" split read["input.txt"]
     each tok in (" " split line) b4i[tok] end
