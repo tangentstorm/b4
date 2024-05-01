@@ -56,6 +56,13 @@ op.wz: on wz do _wi[_rinc[RZ] dpop[]] end
 op.lb: on lb do dput[vm.ram[vm.ip:vm.ip+1]] end
 op.li: on li do dput[_ri[vm.ip+1]] vm.ip: vm.ip+4 end
 
+on _goto a do vm.ip:(max 256,a)-1 end
+on _hop do
+  vm.ram.cast:"i8"
+  _goto[vm.ip+vm.ram[vm.ip+1]]
+  vm.ram.cast:"u8"
+end
+op.hp: on hp do _hop[] end
 
 on toHex n do
   if n < 0 "-%H" format -n else "%H" format n end
