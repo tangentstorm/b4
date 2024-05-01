@@ -36,7 +36,7 @@ begin
   optbl[156] := 'ri';
   optbl[157] := 'wi';
   optbl[158] := 'rx';
-  optbl[159] := '';
+  optbl[159] := 'ry';
   optbl[160] := 'wz';
   optbl[161] := '';
   optbl[162] := '';
@@ -52,7 +52,7 @@ begin
   optbl[172] := '';
   optbl[173] := '';
   optbl[174] := '';
-  optbl[175] := 'ry';
+  optbl[175] := '';
   optbl[176] := 'tg';
   optbl[177] := 'ta';
   optbl[178] := 'tw';

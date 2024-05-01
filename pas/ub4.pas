@@ -285,7 +285,7 @@ procedure runop(op : byte);
       $9D : {wi} begin t := dpop; wrval(t, dpop); end;
       $9E : {rx} begin a := rega('X'); t := rdval(a); dput(rdval(t)); wrval(a, t+4)
                  end;
-      $AF : {ry} begin a := rega('Y'); t := rdval(a); dput(rdval(t)); wrval(a, t+4)
+      $9F : {ry} begin a := rega('Y'); t := rdval(a); dput(rdval(t)); wrval(a, t+4)
                  end;
       $A0 : {wz} begin a := rega('Z'); t := rdval(a); wrval(t, dpop); wrval(a, t+4)
                  end;
