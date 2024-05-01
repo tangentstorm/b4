@@ -6,9 +6,13 @@
 vm.ip: 256
 vm.ds: ()
 vm.cs: ()
+vm.ram: array[1024]
 
+on dtos do last vm.ds end
 on dpop do r: last vm.ds vm.ds:-1 drop vm.ds r end
 on dput x do vm.ds: vm.ds,x end
+on cpop do r: last vm.cs vm.cs:-1 drop vm.cs r end
+on cput x do vm.cs: vm.cs,x end
 
 op.ad: on ad do dput[dpop[] + dpop[]] end
 op.ml: on ml do dput[dpop[] * dpop[]] end
@@ -21,6 +25,19 @@ op.or: on or do dput[bits.or[dpop[] dpop[]]] end
 op.xr: on xr do dput[bits.xor[dpop[] dpop[]]] end
 op.nt: on nt do dput[-1-dpop[]] end
 op.zp: on zp do dpop[] end
+op.eq: on eq do dput[-(dpop[] = dpop[])] end
+op.lt: on lt do y:dpop[] dput[-(dpop[]<y)] end
+op.du: on du do dput[dtos[]] end
+op.sw: on sw do y:dpop[] x:dpop[] dput[y] dput[x]end
+op.ov: on ov do dput[last -1 drop vm.ds] end
+op.dc: on dc do cput[dpop[]] end
+op.cd: on cd do dput[cpop[]] end
+op.wb: on wb do vm.ram[dpop[]]: dpop[] end
+op.rb: on rb do dput[vm.ram[dpop[]]] end
+op.ri: on ri do r:0
+  each b in vm.ram@(dpop[]+3-range 4) r:b+r*256 end
+  dput[r]
+end
 
 
 on toHex n do
@@ -35,12 +52,49 @@ on fmt xs do
   "%s: [%s]" format xs,(" " fuse toHex @ vm[xs])
 end
 
+TBL:
+".. ^A ^B ^C ^D ^E ^F ^G ^H ^I ^J ^K ^L ^M ^N ^O
+^P ^Q ^R ^S ^T ^U ^V ^W ^X ^Y ^Z ^[ ^\\ ^] ^^ ^_
+'* '! '\" '# '$ '% '& '' '( ') '* '+ ', '- '. '/
+'0 '1 '2 '3 '4 '5 '6 '7 '8 '9 ': '; '< '= '> '?
+'@ 'A 'B 'C 'D 'E 'F 'G 'H 'I 'J 'K 'L 'M 'N 'O
+'P 'Q 'R 'S 'T 'U 'V 'W 'X 'Y 'Z '[ '\\ '] '^ '_
+'` 'a 'b 'c 'd 'e 'f 'g 'h 'i 'j 'k 'l 'm 'n 'o
+'p 'q 'r 's 't 'u 'v 'w 'x 'y 'z '{ '| '} '~ ^?
+lb li du sw ov zp dc cd ad sb ml dv md sh an or
+xr nt eq lt jm hp h0 cl rt nx rb wb ri wi rx ry
+wz A1 A2 A3 A4 A5 A6 A7 A8 A9 AA AB AC AD AE AF
+tg ta tw tr tk ts tl tc B8 B9 BA BB BC BD BE BF
+C0 C1 C2 C3 C4 C5 C6 C7 C8 C9 CA CB CC CD CE CF
+D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 DB DB DC DD DE DF
+E0 E1 E2 E3 E4 E5 E6 E7 E8 E9 EC EB EC ED EE EF
+F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 FC FB FC FD db hl"
+TBL: " " split " " fuse "\n" split TBL
+TBL[32]: "' "
+TBL:select op:index code:value from TBL
+
+on dis i do extract code where op=i from TBL end
+on asm x do
+  if r: extract op where code=x from TBL r
+  else unHex[x] end
+end
+
+on showMem a do
+  print[" " fuse dis @ vm.ram @ a + range 16]
+end
+on writeMem line do
+  p: "!%H %s" parse line
+  a: p[0]  toks: " " split p[1]
+  vm.ram[a + keys toks]: raze asm @ toks
+end
+
 on b4i cmd do
   if     cmd="%q" exit[0]
   elseif cmd="?d" print[fmt["ds"]]
   elseif cmd="?c" print[fmt["cs"]]
   elseif cmd="?i" print["ip: %02H" format vm.ip]
   elseif cmd="'" vm.ds: vm.ds,32
+  elseif cmd[0]="@" showMem["@%H" parse cmd]
   elseif cmd[0]="'" vm.ds: vm.ds,ord[cmd[1]]
   elseif cmd[0]="`" vm.ds: vm.ds,4*ord[cmd[1]]-64
   elseif isHex[cmd] vm.ds: vm.ds,unHex[cmd]
@@ -51,7 +105,8 @@ end
 shell["sleep 0.01"]
 on main do
   each line in "\n" split read["input.txt"]
-    b4i @ " " split line
+    if line[0]="!" writeMem[line]
+    else b4i @ " " split line end
   end
 end
 
