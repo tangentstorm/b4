@@ -5,7 +5,7 @@ FPC = fpc -gl -Fu$(XPL)/code -Fi$(XPL)/code -Mobjfpc
 main:
 	@echo 'make targets:'
 	@echo '   b4 : compile main program'
-	@echo ' test : run tests'
+	@echo 'clean : remove fpc residue'
 	@echo '  run : run b4'
 
 always:
@@ -31,3 +31,6 @@ ub4ops.pas: mkoptbl.pas ub4.pas
 
 b4a: b4 b4a.pas
 	$(FPC) -B b4a.pas
+
+clean:
+	@rm -f *.o *.ppu b4 b4.exe *~
