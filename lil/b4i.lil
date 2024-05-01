@@ -52,6 +52,10 @@ on _rinc a do r:_ri[a] _wi[a r+4] r end
 op.rx: on rx do dput[_ri[_rinc[RX]]] end
 op.ry: on ry do dput[_ri[_rinc[RY]]] end
 op.wz: on wz do _wi[_rinc[RZ] dpop[]] end
+
+op.lb: on lb do dput[vm.ram[vm.ip:vm.ip+1]] end
+op.li: on li do dput[_ri[vm.ip+1]] vm.ip: vm.ip+4 end
+
 
 on toHex n do
   if n < 0 "-%H" format -n else "%H" format n end
@@ -85,11 +89,20 @@ F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 FC FB FC FD db hl"
 TBL: " " split " " fuse "\n" split TBL
 TBL:select op:index code:value from TBL[32]: "' "
 
-on dis i do extract code where op=i from TBL end
+on dis i do first extract code where op=i from TBL end
 on asm x do
   if r: extract op where code=x from TBL r
   else unHex[x] end
 end
+
+on step do
+  o:vm.ram[vm.ip]
+  c:dis[o]
+  op[c][]
+  vm.ip: vm.ip+1
+end
+
+
 
 on showMem a do
   print[" " fuse dis @ vm.ram @ a + range 16]
@@ -106,6 +119,7 @@ on b4i line do
   elseif line = ""
   else each cmd in " " split line
     if     cmd="%q" exit[0]
+    elseif cmd="%s" step[]
     elseif cmd="?d" print[fmt["ds"]]
     elseif cmd="?c" print[fmt["cs"]]
     elseif cmd="?i" print["ip: %02H" format vm.ip]
