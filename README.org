@@ -4,10 +4,16 @@
 
 *b4* is a tiny virtual machine, with a forth-like flavor.
 
-It currently has two (slightly out of sync) implementations:
+There are currently five implementations:
 
-- [[b4.ijs]] is an implementation in [[https://code.jsoftware.com/wiki/Main_Page][J]].
-- [[pas/]] contains an implementation in [[https://www.freepascal.org/][free pascal]].
+- [[./jlang/]], implemented in [[https://code.jsoftware.com/wiki/Main_Page][J]].
+- [[./pas/]], implemented in [[https://www.freepascal.org/][free pascal]].
+- [[./lil/]], implemented in [[https://beyondloom.com/decker/lil.html][lil]].
+- [[./js/]], implemented in javascript.
+- [[https://github.com/tangentstorm/b4-gd][b4-gd]], implemented in GDScript for [[https://docs.godotengine.org/en/stable/][Godot 4]].
+
+The implementations are kept in sync
+through the tests in [[./b4-tests.org]]
 
 See [[bios/bios.b4a]] for an example of b4 assembly language.
 
