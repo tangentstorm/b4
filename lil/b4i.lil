@@ -67,10 +67,8 @@ op.hp: on hp do _hop[] end
 on toHex n do
   if n < 0 "-%H" format -n else "%H" format n end
 end
-on isHex s do
-  min each c in s c in "0123456789ABCDEF" end
-end
-on unHex s do "%H" parse s end
+on isHex s do "%*.1o-%*.16r0123456789ABCDEF%z" parse s end
+on unHex s do  p: "%.1o-%H" parse s  if p[0] 0-p[1] else p[1] end end
 on fmt xs do
   "%s: [%s]" format xs,(" " fuse toHex @ vm[xs])
 end
