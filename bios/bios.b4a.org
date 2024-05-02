@@ -1,10 +1,8 @@
-# note: bios.b4a is generated from bios.b4a.org
-# I'm keeping it in version control until I have
-# a decent command-line build step for tangling
-# the org file, because the pascal code requires it.
+#+title: bios
 
-jm >(start)                        # jump over bios
-#--- begin bios -------------------\
+* the whole thing
+#+name: b4-bios
+#+begin_src b3a
 # names for some important registers
 :here^ 00 00 00 00 04 'h'e'r'e
 :here  lb 12 rt
@@ -265,11 +263,34 @@ jm >(start)                        # jump over bios
 
 # this should never execute, so trigger debugger if we get here:
 db
-#--- end of bios ------------------/
-'- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
-:(start)
+#+end_src
+
+* main code
+
+This is the part that actually executes:
+
+#+name: main
+#+begin_src b3a
 # -- main --
 init
 # show the word list:
 lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
 repl
+#+end_src
+
+* output
+#+begin_src b3a :tangle bios.b4a :noweb yes
+
+# note: bios.b4a is generated from bios.b4a.org
+# I'm keeping it in version control until I have
+# a decent command-line build step for tangling
+# the org file, because the pascal code requires it.
+
+jm >(start)                        # jump over bios
+#--- begin bios -------------------\
+<<b4-bios>>
+#--- end of bios ------------------/
+'- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
+:(start)
+<<main>>
+#+end_src
