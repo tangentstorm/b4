@@ -5,18 +5,15 @@
 
 jm >(start)                        # jump over bios
 #--- begin bios -------------------\
-
 :here^ 00 00 00 00 04 'h'e'r'e
-:here  lb 12 rt
+  :here  lb 12 rt
 :last^ $here^ 04 'l'a's't
-:last  lb 16 rt
-# arithmetic
+  :last  lb 16 rt
 :inc^ $last^ 03 'i'n'c
-:inc  lb 01 ad rt
-
+  :inc  lb 01 ad rt
 :dec^ $inc^ 03 'd'e'c
-:dec  lb 01 sb rt
-
+  :dec  lb 01 sb rt
+  
 :dvm  # n d
   ov ov md      # (xy-xy|m)
   dc dv cd rt   # (xy|m-dm|)
@@ -28,25 +25,25 @@ jm >(start)                        # jump over bios
 :n1 lb 00 nt rt                    # TODO: better way to write "-1"
 
 :,^ $dec^ 01 ',
-:, here ri du dc wb
+  :, here ri du dc wb
     cd inc here wi rt              # ',' is same as 'a+' but for heap
-:sp lb 32 tw rt                    # emit space
+  :sp lb 32 tw rt                    # emit space
 :nl lb 10 tw lb 13 tw rt           # emit CRLF
-:bye^ $,^ 03 'b'y'e
+  :bye^ $,^ 03 'b'y'e
 :exit nl lb 01 ta                  # red
   lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
   nl hl
-:b4>
+  :b4>
   nl lb 02 ta                      # green on black
   lb 'b tw lb '4 tw lb '> tw       # echo 'b4>'
   lb 32 tw lb 07 ta                # gray on black for user input.
   rt
-:puts^ $bye^ 04 'p'u't's
+  :puts^ $bye^ 04 'p'u't's
 :puts                              # given address of counted string, write the string
   du rb dc inc                     # push str start to d, len to r (loop counter)
   .f du rb tw inc .n
   zp rt
-# dictionary words
+  # dictionary words
 
 :e-nm^ $puts^ 04 'e'-'n'm
 :e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
@@ -62,7 +59,7 @@ jm >(start)                        # jump over bios
     puts sp                        # emit str
     ri .o                          # move to next entry
   zp rt
-# TODO: push to control stack instead
+  # TODO: push to control stack instead
 :dyn-call cl :dyn-adr 00 00 00 00 rt
 :exec^ $words^ 04 'e'x'e'c
 :exec
@@ -70,8 +67,8 @@ jm >(start)                        # jump over bios
   li $dyn-adr wi
   dyn-call
   rt
-# string compare
 :s-eq^ $exec^ 04 's'-'e'q
+  # string compare
 :s-eq?                             # (st-?) are strings s and t the same?
   .i ov ov eq .t eq rt .z          # a. if the addresses are the same, return 1
   .i ov rb du dc ov rb eq nt .t    # b. (st-st?|n) if the lengths are different,
@@ -81,7 +78,7 @@ jm >(start)                        # jump over bios
         cd zp eq rt .z .n          #   drop counter and return 0 (same as in b. before)
   zp zp lb 1 rt                    # everything matched, so return 1
 :word?^ $s-eq^ 05 'w'o'r'd'?
-:word?                             # (s-e)   attempt to find word in dictionary
+  :word?                             # (s-e)   attempt to find word in dictionary
   dc                               # s - |ts  push s to return stack
   last ri                          # ..-e|ts  fetch last entry
   .w du lb 0 eq nt .d              # while e!=0 do:
@@ -90,14 +87,14 @@ jm >(start)                        # jump over bios
     .i s-eq? .t cd zp rt .z        # return e if strings match
     ri .o                          # otherwise, visit next string
   cd zp rt                         # (e|ts - e)
-:unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
+  :unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
 :unknown
  lb 08 ta sp li $unkno-s puts nl rt
-# reading/writing numbers
+  # reading/writing numbers
 
 :base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
 :putn^ $word?^ 04 'p'u't'n
-:putn # (n - )
+  :putn # (n - )
   .i du lb 00 eq .t lb '0 tw rt
   .e lb 00 sw                      # ( n-kn) k:digit count=0
      .w du lb 00 eq nt .d          # while n!=0 do
@@ -108,7 +105,7 @@ jm >(start)                        # jump over bios
       .f cd cd tw dc .n .z         # loop through the characters
   rt
 
-:digit?                            # (c-d1) or (c-0)
+  :digit?                            # (c-d1) or (c-0)
  .i du lb '0 lb '9 between? .t
     zp lb '0 sb n1
  .e zp lb 0 .z
@@ -126,7 +123,7 @@ jm >(start)                        # jump over bios
   .n
   sw zp rt                         # (pr-r)
 
-# memory management
+  # memory management
 
 # this is meant to be a separate area from the main forth heap.
 # the forth heap is basically unmanaged, contiguous memory.
@@ -172,7 +169,7 @@ jm >(start)                        # jump over bios
   @mp rt                              # (-a) address of block
 
 :mm-alloc^ $putn^ 08 'm'm'-'a'l'l'o'c
-:mm-alloc                             # (n-a) allocate block of n bytes
+  :mm-alloc                             # (n-a) allocate block of n bytes
   du !mu                              # (n-) store needed buffer size in mu(sed)
   mm-align !ms                        # (n-) round up to word and store in ms(ize)
   m0 !mp                              #  p = pointer (set to start block)
@@ -184,12 +181,12 @@ jm >(start)                        # jump over bios
        .i du @mp lb 0 eq .t rt        # if next=null return null
        .e !mp .z .z                   # else update p
   jm $mm-loop
-
 :mm-free^ $mm-alloc^ 07 'm'm'-'f'r'e'e
-:mm-free                              # (a-) deallocate block
+  :mm-free                              # (a-) deallocate block
   lb 0 wi sw                          # (a-0a)
   lb 0 mm-data sb mm-used ri ad       # (0a-b) b=(a-DATA)+USED
   wi rt                               # mem[b]:0
+
 # repl
 
 # shell

@@ -91,12 +91,15 @@ repl
   zp rt
 #+end_src
 
-#+name: putn
+#+name: putn/base
 #+begin_src b4a
 # reading/writing numbers
 
 :base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
-:putn^ $word?^ 04 'p'u't'n
+#+end_src
+
+#+name: putn
+#+begin_src b4a
 :putn # (n - )
   .i du lb 00 eq .t lb '0 tw rt
   .e lb 00 sw                      # ( n-kn) k:digit count=0
@@ -220,14 +223,20 @@ repl
 
 * math library
 
+** public words
+#+name: inc
+#+begin_src b4a
+:inc  lb 01 ad rt
+#+end_src
+
+#+name: dec
+#+begin_src b4a
+:dec  lb 01 sb rt
+#+end_src
+
+** private words
 #+name: b4-math
 #+begin_src b4a
-# arithmetic
-:inc^ $last^ 03 'i'n'c
-:inc  lb 01 ad rt
-
-:dec^ $inc^ 03 'd'e'c
-:dec  lb 01 sb rt
 
 :dvm  # n d
   ov ov md      # (xy-xy|m)
@@ -245,7 +254,6 @@ repl
 #+name: s-eq?
 #+begin_src b4a
 # string compare
-:s-eq^ $exec^ 04 's'-'e'q
 :s-eq?                             # (st-?) are strings s and t the same?
   .i ov ov eq .t eq rt .z          # a. if the addresses are the same, return 1
   .i ov rb du dc ov rb eq nt .t    # b. (st-st?|n) if the lengths are different,
@@ -270,6 +278,7 @@ repl
 
 * the memory manager
 
+** private words
 #+name: b4-mm
 #+begin_src b4a
 # memory management
@@ -317,7 +326,17 @@ repl
     mm-used lb 0 wi .z                # (n-)  mem[n+USED]=0
   @mp rt                              # (-a) address of block
 
-:mm-alloc^ $putn^ 08 'm'm'-'a'l'l'o'c
+#+end_src
+
+** public words
+#+name: mm-claim
+#+begin_src b4a
+
+#+end_src
+
+
+#+name: mm-alloc
+#+begin_src b4a
 :mm-alloc                             # (n-a) allocate block of n bytes
   du !mu                              # (n-) store needed buffer size in mu(sed)
   mm-align !ms                        # (n-) round up to word and store in ms(ize)
@@ -330,8 +349,11 @@ repl
        .i du @mp lb 0 eq .t rt        # if next=null return null
        .e !mp .z .z                   # else update p
   jm $mm-loop
+#+end_src
 
-:mm-free^ $mm-alloc^ 07 'm'm'-'f'r'e'e
+
+#+name: mm-free
+#+begin_src b4a
 :mm-free                              # (a-) deallocate block
   lb 0 wi sw                          # (a-0a)
   lb 0 mm-data sb mm-used ri ad       # (0a-b) b=(a-DATA)+USED
@@ -340,28 +362,39 @@ repl
 
 * initial dictionary
 #+name: b4-bios
-#+begin_src b4a :tangle :noweb yes
-
+#+begin_src b4a :noweb yes :noweb-prefix no
 :here^ 00 00 00 00 04 'h'e'r'e
-<<here>>
+  <<here>>
 :last^ $here^ 04 'l'a's't
-<<last>>
-<<b4-math>>
+  <<last>>
+:inc^ $last^ 03 'i'n'c
+  <<inc>>
+:dec^ $inc^ 03 'd'e'c
+  <<dec>>
+  <<b4-math>>
 :,^ $dec^ 01 ',
-<<comma>>
-<<b4-io-words>>
-<<bye/exit>>
-<<b4-prompt>>
-<<puts>>
-<<dict-words>>
-<<exec>>
-<<s-eq?>>
+  <<comma>>
+  <<b4-io-words>>
+  <<bye/exit>>
+  <<b4-prompt>>
+  <<puts>>
+  <<dict-words>>
+  <<exec>>
+:s-eq^ $exec^ 04 's'-'e'q
+  <<s-eq?>>
 :word?^ $s-eq^ 05 'w'o'r'd'?
-<<word?>>
-<<unknown>>
-<<putn>>
-<<try-num>>
-<<b4-mm>>
+  <<word?>>
+  <<unknown>>
+  <<putn/base>>
+:putn^ $word?^ 04 'p'u't'n
+  <<putn>>
+  <<try-num>>
+  <<b4-mm>>
+:mm-alloc^ $putn^ 08 'm'm'-'a'l'l'o'c
+  <<mm-alloc>>
+:mm-free^ $mm-alloc^ 07 'm'm'-'f'r'e'e
+  <<mm-free>>
+
 <<b4-repl>>
 <<b4-init>>
 <<b4-strings>>
