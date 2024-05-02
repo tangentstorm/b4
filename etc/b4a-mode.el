@@ -1,17 +1,7 @@
-;; b3a-mode for emacs
-;; syntax highlighting for b3 assembler
-
-;; TODO: strip out anything that isn't in b3a
-;;
-;; !! I started this when writing b3a-mode but then
-;;    extended it when working on the bios, so it
-;;    is (as of this writing) exactly the same as
-;;    b4a-mode. The intent is to include ONLY the
-;;    opes supported by b3a.
-;;
-
+; b4a-mode for emacs
+; syntax highlighting for b4 assembler
 (require 'generic-x)
-(define-generic-mode 'b3a-mode
+(define-generic-mode 'b4a-mode
   '(" #") ; comments start with # but we need to allow '#
   '("lb" "li" "sw" "du" "ov" "zp" "dr" "rd"
     "ad" "sb" "ml" "dv" "md" "ng" "sl" "sr"
@@ -28,6 +18,6 @@
     ("wb\\|zw" . 'font-lock-function-name-face)
     ("[']." . 'font-lock-string-face)
     ("[0-9A-Z][0-9A-Z]" . 'font-lock-constant-face))
-  '("\\.b3a$")             ; which files
+  '("\\.b4a$")             ; which files
   nil                      ; other functions
-  "mode for editing b3a files (b4 bootstrap assembler")
+  "mode for editing b4a files (b4 assembler")
