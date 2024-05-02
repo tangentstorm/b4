@@ -11,7 +11,10 @@
 
 jm >(start)                        # jump over bios
 #--- begin bios -------------------\
-<<b4-bios>>
+<<initial-words>>
+<<b4-repl>>
+<<initialization>>
+<<string-table>>
 #--- end of bios ------------------/
 '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
 :(start)
@@ -32,19 +35,46 @@ lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
 repl
 #+end_src
 
-* the dictionary
+* dictionary words
 
-#+name: dict-words
+** accessors
+
+Entries in the dictionary form a linked list of records.
+
+The records have several fields:
+
+| name      | size    | purpose                          |
+|-----------+---------+----------------------------------|
+| (no name) | 4 bytes | link to previous entry           |
+| e-nm      | varies  | counted string                   |
+| e-xt      | varies  | start of the data/code for entry |
+
+
+#+name: e-nm
 #+begin_src b4a
-# dictionary words
-
-:e-nm^ $puts^ 04 'e'-'n'm
 :e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
+#+end_src
 
-:e-xt^ $e-nm^ 04 'e'-'x't
+#+name: e-xt
+#+begin_src b4a
 :e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
+#+end_src
 
-:words^ $e-nm^ 05 'w'o'r'd's
+** list the words
+
+The system tracks the address of the last link in a variable called =last=.
+The label here is to a function that puts its address onto the stack.
+
+#+name: last
+#+begin_src b4a
+:last  lb 16 rt
+#+end_src
+
+The word =words= reads from =last= to find the end of the chain, then
+walks the chain backwards, printing each name.
+
+#+name: words
+#+begin_src b4a
 :words                             # list known words, starting at last entry:
   last ri
   .w du lb 0 eq nt .d              # we are looking at a non-0 pointer to entry
@@ -54,10 +84,6 @@ repl
   zp rt
 #+end_src
 
-#+name: last
-#+begin_src b4a
-:last  lb 16 rt
-#+end_src
 
 ** looking up a word
 
@@ -84,7 +110,6 @@ repl
 
 #+name: puts
 #+begin_src b4a
-:puts^ $bye^ 04 'p'u't's
 :puts                              # given address of counted string, write the string
   du rb dc inc                     # push str start to d, len to r (loop counter)
   .f du rb tw inc .n
@@ -176,7 +201,7 @@ repl
     .e sw zp exec .z               #    else execute
   .e
     .i lb 31 ov lt .t du du a+ tw  # copy non-ctrl chars to buffer and echo
-    .e .i du lb 04 eq .t exit .z   # on ^d, exit
+    .e .i du lb 04 eq .t bye .z    # on ^d, exit
     .z zp
   .z .o
 #+end_src
@@ -192,10 +217,9 @@ repl
 #+end_src
 
 ** "bye" word
-#+name: bye/exit
+#+name: bye
 #+begin_src b4a
-:bye^ $,^ 03 'b'y'e
-:exit nl lb 01 ta                  # red
+:bye nl lb 01 ta                  # red
   lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
   nl hl
 #+end_src
@@ -209,11 +233,14 @@ repl
 #+end_src
 
 ** repl: exec
-#+name: exec
+#+name: dyn-call
 #+begin_src b4a
 # TODO: push to control stack instead
 :dyn-call cl :dyn-adr 00 00 00 00 rt
-:exec^ $words^ 04 'e'x'e'c
+#+end_src
+
+#+name: exec
+#+begin_src b4a
 :exec
   e-xt
   li $dyn-adr wi
@@ -361,47 +388,60 @@ repl
 #+end_src
 
 * initial dictionary
-#+name: b4-bios
+#+name: initial-words
 #+begin_src b4a :noweb yes :noweb-prefix no
-:here^ 00 00 00 00 04 'h'e'r'e
-  <<here>>
-:last^ $here^ 04 'l'a's't
-  <<last>>
-:inc^ $last^ 03 'i'n'c
-  <<inc>>
-:dec^ $inc^ 03 'd'e'c
-  <<dec>>
-  <<b4-math>>
-:,^ $dec^ 01 ',
-  <<comma>>
-  <<b4-io-words>>
-  <<bye/exit>>
-  <<b4-prompt>>
-  <<puts>>
-  <<dict-words>>
-  <<exec>>
-:s-eq^ $exec^ 04 's'-'e'q
-  <<s-eq?>>
-:word?^ $s-eq^ 05 'w'o'r'd'?
-  <<word?>>
-  <<unknown>>
-  <<putn/base>>
-:putn^ $word?^ 04 'p'u't'n
-  <<putn>>
-  <<try-num>>
-  <<b4-mm>>
-:mm-alloc^ $putn^ 08 'm'm'-'a'l'l'o'c
-  <<mm-alloc>>
-:mm-free^ $mm-alloc^ 07 'm'm'-'f'r'e'e
-  <<mm-free>>
-
-<<b4-repl>>
-<<b4-init>>
-<<b4-strings>>
+  :here^ 00 00 00 00 04 'h'e'r'e
+    <<here>>
+  :last^ $here^ 04 'l'a's't
+    <<last>>
+  :inc^ $last^ 03 'i'n'c
+    <<inc>>
+  :dec^ $inc^ 03 'd'e'c
+    <<dec>>
+    <<b4-math>>
+  :,^ $dec^ 01 ',
+    <<comma>>
+    <<b4-io-words>>
+  :bye^ $,^ 03 'b'y'e
+    <<bye>>
+    <<b4-prompt>>
+  :puts^ $bye^ 04 'p'u't's
+    <<puts>>
+  :e-nm^ $puts^ 04 'e'-'n'm
+    <<e-nm>>
+  :e-xt^ $e-nm^ 04 'e'-'x't
+    <<e-xt>>
+    <<last>>
+  :words^ $e-xt^ 05 'w'o'r'd's
+    <<words>>
+    <<dyn-call>>
+  :exec^ $words^ 04 'e'x'e'c
+    <<exec>>
+  :s-eq^ $exec^ 04 's'-'e'q
+    <<s-eq?>>
+  :word?^ $s-eq^ 05 'w'o'r'd'?
+    <<word?>>
+    <<unknown>>
+    <<putn/base>>
+  :putn^ $word?^ 04 'p'u't'n
+    <<putn>>
+    <<try-num>>
+    <<b4-mm>>
+  :mm-alloc^ $putn^ 08 'm'm'-'a'l'l'o'c
+    <<mm-alloc>>
+  :mm-free^ $mm-alloc^ 07 'm'm'-'f'r'e'e
+    <<mm-free>>
 #+end_src
 
 * initialization
-#+name: b4-init
+
+At runtime, we need to initialize some variables:
+
+This is setting the variable =ap= to the start of the token buffer,
+and then sets the =last= pointer to the last defined word in the
+dictionary.
+
+#+name: initialization
 #+begin_src b4a
 :init
   li $tok ap wi                    # set ap = tok
@@ -410,7 +450,12 @@ repl
 #+end_src
 
 * string table
-#+name: b4-strings
+
+This just gives names to strings that appear in output.
+Since they just happen to match words already in the dictionary,
+these should probably just be inlined or turned into a macro.
+
+#+name: string-table
 #+begin_src b4a
 # string table
 :words-s li $words^ e-nm rt

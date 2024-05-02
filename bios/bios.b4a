@@ -29,8 +29,8 @@ jm >(start)                        # jump over bios
     cd inc here wi rt              # ',' is same as 'a+' but for heap
   :sp lb 32 tw rt                    # emit space
 :nl lb 10 tw lb 13 tw rt           # emit CRLF
-  :bye^ $,^ 03 'b'y'e
-:exit nl lb 01 ta                  # red
+:bye^ $,^ 03 'b'y'e
+  :bye nl lb 01 ta                  # red
   lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
   nl hl
   :b4>
@@ -38,21 +38,18 @@ jm >(start)                        # jump over bios
   lb 'b tw lb '4 tw lb '> tw       # echo 'b4>'
   lb 32 tw lb 07 ta                # gray on black for user input.
   rt
-  :puts^ $bye^ 04 'p'u't's
-:puts                              # given address of counted string, write the string
+:puts^ $bye^ 04 'p'u't's
+  :puts                              # given address of counted string, write the string
   du rb dc inc                     # push str start to d, len to r (loop counter)
   .f du rb tw inc .n
   zp rt
-  # dictionary words
-
 :e-nm^ $puts^ 04 'e'-'n'm
-:e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
-
+  :e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
 :e-xt^ $e-nm^ 04 'e'-'x't
-:e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
-
-:words^ $e-nm^ 05 'w'o'r'd's
-:words                             # list known words, starting at last entry:
+  :e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
+  :last  lb 16 rt
+:words^ $e-xt^ 05 'w'o'r'd's
+  :words                             # list known words, starting at last entry:
   last ri
   .w du lb 0 eq nt .d              # we are looking at a non-0 pointer to entry
     du e-nm
@@ -62,7 +59,7 @@ jm >(start)                        # jump over bios
   # TODO: push to control stack instead
 :dyn-call cl :dyn-adr 00 00 00 00 rt
 :exec^ $words^ 04 'e'x'e'c
-:exec
+  :exec
   e-xt
   li $dyn-adr wi
   dyn-call
@@ -186,7 +183,6 @@ jm >(start)                        # jump over bios
   lb 0 wi sw                          # (a-0a)
   lb 0 mm-data sb mm-used ri ad       # (0a-b) b=(a-DATA)+USED
   wi rt                               # mem[b]:0
-
 # repl
 
 # shell
@@ -223,7 +219,7 @@ jm >(start)                        # jump over bios
     .e sw zp exec .z               #    else execute
   .e
     .i lb 31 ov lt .t du du a+ tw  # copy non-ctrl chars to buffer and echo
-    .e .i du lb 04 eq .t exit .z   # on ^d, exit
+    .e .i du lb 04 eq .t bye .z    # on ^d, exit
     .z zp
   .z .o
 :init
