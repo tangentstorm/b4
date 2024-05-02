@@ -1,76 +1,42 @@
-#+title: bios
+#+title: the b4 bios
 
-* the whole thing
-#+name: b4-bios
+* structure
+
+#+begin_src b4a :tangle bios.b4a :noweb yes
+
+# note: bios.b4a is generated from bios.b4a.org
+# I'm keeping it in version control until I have
+# a decent command-line build step for tangling
+# the org file, because the pascal code requires it.
+
+jm >(start)                        # jump over bios
+#--- begin bios -------------------\
+<<b4-bios>>
+#--- end of bios ------------------/
+'- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
+:(start)
+<<main>>
+#+end_src
+
+* main code
+
+This is the part at the bottom of the file that actually executes:
+
+#+name: main
 #+begin_src b4a
-# names for some important registers
-:here^ 00 00 00 00 04 'h'e'r'e
-:here  lb 12 rt
+# -- main --
+init
 
-:last^ $here^ 04 'l'a's't
-:last  lb 16 rt
+# show the word list:
+lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
+repl
+#+end_src
 
-:ap   lb 20 rt
+* the dictionary
 
-# arithmetic
-:inc^ $last^ 03 'i'n'c
-:inc  lb 01 ad rt
-
-:dec^ $inc^ 03 'd'e'c
-:dec  lb 01 sb rt
-
-:dvm  # n d
-  ov ov md      # (xy-xy|m)
-  dc dv cd rt   # (xy|m-dm|)
-
-:between?                          # (x hi lo - x f)
-  du dc lt nt                      # (x <=hi? |lo)  (x<=y is -.(y>x))
-  ov cd sw lt nt an rt             # (x f)
-
-:n1 lb 00 nt rt                    # TODO: better way to write "-1"
-
-
-
-# write cursors
-
-:a+ ap ri du dc wb                 # a+ ( n - ) , writes a value to the
-    cd inc ap wi rt                #    address in ap and increments ap.
-
-:,^ $dec^ 01 ',
-:, here ri du dc wb
-    cd inc here wi rt              # , is exact same thing for the heap
-
-
-# shell
-:tok-len 00                        # length of the current token
-:tok                               # 64-byte token buffer
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-
-:sp lb 32 tw rt                    # emit space
-:nl lb 10 tw lb 13 tw rt           # emit CRLF
-
-:bye^ $,^ 03 'b'y'e
-:exit nl lb 01 ta                  # red
-  lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
-  nl hl
-
-:b4>
-  nl lb 02 ta                      # green on black
-  lb 'b tw lb '4 tw lb '> tw       # echo 'b4>'
-  lb 32 tw lb 07 ta                # gray on black for user input.
-  rt
-
-:puts^ $bye^ 04 'p'u't's
-:puts                              # given address of counted string, write the string
-  du rb dc inc                     # push str start to d, len to r (loop counter)
-  .f du rb tw inc .n
-  zp rt
-
-
-# dictionary
+#+name: dict-words
+#+begin_src b4a
+# dictionary words
 
 :e-nm^ $puts^ 04 'e'-'n'm
 :e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
@@ -86,27 +52,17 @@
     puts sp                        # emit str
     ri .o                          # move to next entry
   zp rt
+#+end_src
 
-:dyn-call cl :dyn-adr 00 00 00 00 rt
-:exec^ $words^ 04 'e'x'e'c
-:exec
-  e-xt
-  li $dyn-adr wi
-  dyn-call
-  rt
+#+name: last
+#+begin_src b4a
+:last  lb 16 rt
+#+end_src
 
-# string compare
-:s-eq^ $exec^ 04 's'-'e'q
-:s-eq?                             # (st-?) are strings s and t the same?
-  .i ov ov eq .t eq rt .z          # a. if the addresses are the same, return 1
-  .i ov rb du dc ov rb eq nt .t    # b. (st-st?|n) if the lengths are different,
-     cd zp eq rt .z                #   drop loop counter and return 0 (we know eq=0 from a.)
-  .f inc sw inc                    # st-TS  -> next char (doesn't matter that we swap order)
-     .i ov rb ov rb eq nt .t       # if the characters are not equal
-        cd zp eq rt .z .n          #   drop counter and return 0 (same as in b. before)
-  zp zp lb 1 rt                    # everything matched, so return 1
+** looking up a word
 
-:word?^ $s-eq^ 05 'w'o'r'd'?
+#+name: word?
+#+begin_src b4a
 :word?                             # (s-e)   attempt to find word in dictionary
   dc                               # s - |ts  push s to return stack
   last ri                          # ..-e|ts  fetch last entry
@@ -116,8 +72,27 @@
     .i s-eq? .t cd zp rt .z        # return e if strings match
     ri .o                          # otherwise, visit next string
   cd zp rt                         # (e|ts - e)
+#+end_src
 
-
+* text i/o
+
+#+name: b4-io-words
+#+begin_src b4a
+:sp lb 32 tw rt                    # emit space
+:nl lb 10 tw lb 13 tw rt           # emit CRLF
+#+end_src
+
+#+name: puts
+#+begin_src b4a
+:puts^ $bye^ 04 'p'u't's
+:puts                              # given address of counted string, write the string
+  du rb dc inc                     # push str start to d, len to r (loop counter)
+  .f du rb tw inc .n
+  zp rt
+#+end_src
+
+#+name: putn
+#+begin_src b4a
 # reading/writing numbers
 
 :base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
@@ -133,11 +108,11 @@
       .f cd cd tw dc .n .z         # loop through the characters
   rt
 
-:unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
-:unknown
- lb 08 ta sp li $unkno-s puts nl rt
+#+end_src
 
 
+#+name: try-num
+#+begin_src b4a
 :digit?                            # (c-d1) or (c-0)
  .i du lb '0 lb '9 between? .t
     zp lb '0 sb n1
@@ -156,7 +131,147 @@
   .n
   sw zp rt                         # (pr-r)
 
-
+#+end_src
+
+* the repl
+** main logic
+#+name: b4-repl
+#+begin_src b4a
+# repl
+
+# shell
+:tok-len 00                        # length of the current token
+:tok                               # 64-byte token buffer
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+# write cursors
+:ap   lb 20 rt                     # generic pointer stored in address $20
+:a+ ap ri du dc wb                 # a+ ( n - ) , writes a value to the
+    cd inc ap wi rt                #    address in ap and increments ap.
+
+:eol 01                            # end of line flag
+
+:end-token
+  lb 01 li $eol wb                 # set the eol flag
+  ap ri li $tok sb                 # calculate length: start of token buffer
+  li $tok-len sw ov wb             # save the length
+  li $tok ap wi                    # reset ap to start of buffer for next time
+  rt
+
+:repl .w lb 01 .d
+  .i li $eol rb .t                 # if end of line flag
+    lb 00 li $eol wb b4> .z        # show prompt if new line
+  tr                               # read char from terminal
+  .i du lb '` eq .t db .z          # ` = debugger
+  .i du lb 32 eq .t tw             # on space,  (echo space and add dummy char)
+    end-token
+    du word?                       #    look up the word
+    .i du lb 0 eq .t zp try-num    #    if not found, complain
+    .e sw zp exec .z               #    else execute
+  .e
+    .i lb 31 ov lt .t du du a+ tw  # copy non-ctrl chars to buffer and echo
+    .e .i du lb 04 eq .t exit .z   # on ^d, exit
+    .z zp
+  .z .o
+#+end_src
+
+** the prompt
+#+name: b4-prompt
+#+begin_src b4a
+:b4>
+  nl lb 02 ta                      # green on black
+  lb 'b tw lb '4 tw lb '> tw       # echo 'b4>'
+  lb 32 tw lb 07 ta                # gray on black for user input.
+  rt
+#+end_src
+
+** "bye" word
+#+name: bye/exit
+#+begin_src b4a
+:bye^ $,^ 03 'b'y'e
+:exit nl lb 01 ta                  # red
+  lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
+  nl hl
+#+end_src
+
+** repl: unknown word
+#+name: unknown
+#+begin_src b4a
+:unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
+:unknown
+ lb 08 ta sp li $unkno-s puts nl rt
+#+end_src
+
+** repl: exec
+#+name: exec
+#+begin_src b4a
+# TODO: push to control stack instead
+:dyn-call cl :dyn-adr 00 00 00 00 rt
+:exec^ $words^ 04 'e'x'e'c
+:exec
+  e-xt
+  li $dyn-adr wi
+  dyn-call
+  rt
+#+end_src
+
+* math library
+
+#+name: b4-math
+#+begin_src b4a
+# arithmetic
+:inc^ $last^ 03 'i'n'c
+:inc  lb 01 ad rt
+
+:dec^ $inc^ 03 'd'e'c
+:dec  lb 01 sb rt
+
+:dvm  # n d
+  ov ov md      # (xy-xy|m)
+  dc dv cd rt   # (xy|m-dm|)
+
+:between?                          # (x hi lo - x f)
+  du dc lt nt                      # (x <=hi? |lo)  (x<=y is -.(y>x))
+  ov cd sw lt nt an rt             # (x f)
+
+:n1 lb 00 nt rt                    # TODO: better way to write "-1"
+
+#+end_src
+
+* string compare
+#+name: s-eq?
+#+begin_src b4a
+# string compare
+:s-eq^ $exec^ 04 's'-'e'q
+:s-eq?                             # (st-?) are strings s and t the same?
+  .i ov ov eq .t eq rt .z          # a. if the addresses are the same, return 1
+  .i ov rb du dc ov rb eq nt .t    # b. (st-st?|n) if the lengths are different,
+     cd zp eq rt .z                #   drop loop counter and return 0 (we know eq=0 from a.)
+  .f inc sw inc                    # st-TS  -> next char (doesn't matter that we swap order)
+     .i ov rb ov rb eq nt .t       # if the characters are not equal
+        cd zp eq rt .z .n          #   drop counter and return 0 (same as in b. before)
+  zp zp lb 1 rt                    # everything matched, so return 1
+#+end_src
+
+* the compiler
+#+name: here
+#+begin_src b4a
+:here  lb 12 rt
+#+end_src
+
+#+name: comma
+#+begin_src b4a
+:, here ri du dc wb
+    cd inc here wi rt              # ',' is same as 'a+' but for heap
+#+end_src
+
+* the memory manager
+
+#+name: b4-mm
+#+begin_src b4a
 # memory management
 
 # this is meant to be a separate area from the main forth heap.
@@ -221,76 +336,50 @@
   lb 0 wi sw                          # (a-0a)
   lb 0 mm-data sb mm-used ri ad       # (0a-b) b=(a-DATA)+USED
   wi rt                               # mem[b]:0
+#+end_src
 
-
-# repl
+* initial dictionary
+#+name: b4-bios
+#+begin_src b4a :tangle :noweb yes
 
-:eol 01                            # end of line flag
+:here^ 00 00 00 00 04 'h'e'r'e
+<<here>>
+:last^ $here^ 04 'l'a's't
+<<last>>
+<<b4-math>>
+:,^ $dec^ 01 ',
+<<comma>>
+<<b4-io-words>>
+<<bye/exit>>
+<<b4-prompt>>
+<<puts>>
+<<dict-words>>
+<<exec>>
+<<s-eq?>>
+:word?^ $s-eq^ 05 'w'o'r'd'?
+<<word?>>
+<<unknown>>
+<<putn>>
+<<try-num>>
+<<b4-mm>>
+<<b4-repl>>
+<<b4-init>>
+<<b4-strings>>
+#+end_src
 
-:end-token
-  lb 01 li $eol wb                 # set the eol flag
-  ap ri li $tok sb                 # calculate length: start of token buffer
-  li $tok-len sw ov wb             # save the length
-  li $tok ap wi                    # reset ap to start of buffer for next time
-  rt
-
-:repl .w lb 01 .d
-  .i li $eol rb .t                 # if end of line flag
-    lb 00 li $eol wb b4> .z        # show prompt if new line
-  tr                               # read char from terminal
-  .i du lb '` eq .t db .z          # ` = debugger
-  .i du lb 32 eq .t tw             # on space,  (echo space and add dummy char)
-    end-token
-    du word?                       #    look up the word
-    .i du lb 0 eq .t zp try-num    #    if not found, complain
-    .e sw zp exec .z               #    else execute
-  .e
-    .i lb 31 ov lt .t du du a+ tw  # copy non-ctrl chars to buffer and echo
-    .e .i du lb 04 eq .t exit .z   # on ^d, exit
-    .z zp
-  .z .o
-
+* initialization
+#+name: b4-init
+#+begin_src b4a
 :init
   li $tok ap wi                    # set ap = tok
   li $mm-free^ last  wi
   rt
-
-
-# debug stuff
-:words-s li $words^ e-nm rt        # (-s) address of the string "words"
-:word?-s li $word? e-nm rt         # (-s) address of the string "word?"
-
-
-# this should never execute, so trigger debugger if we get here:
-db
 #+end_src
 
-* main code
-
-This is the part that actually executes:
-
-#+name: main
+* string table
+#+name: b4-strings
 #+begin_src b4a
-# -- main --
-init
-# show the word list:
-lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
-repl
-#+end_src
-
-* output
-#+begin_src b4a :tangle bios.b4a :noweb yes
-
-# note: bios.b4a is generated from bios.b4a.org
-# I'm keeping it in version control until I have
-# a decent command-line build step for tangling
-# the org file, because the pascal code requires it.
-
-jm >(start)                        # jump over bios
-#--- begin bios -------------------\
-<<b4-bios>>
-#--- end of bios ------------------/
-'- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
-:(start)
-<<main>>
+# string table
+:words-s li $words^ e-nm rt
+:word?-s li $word? e-nm rt
 #+end_src

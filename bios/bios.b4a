@@ -5,15 +5,11 @@
 
 jm >(start)                        # jump over bios
 #--- begin bios -------------------\
-# names for some important registers
+
 :here^ 00 00 00 00 04 'h'e'r'e
 :here  lb 12 rt
-
 :last^ $here^ 04 'l'a's't
 :last  lb 16 rt
-
-:ap   lb 20 rt
-
 # arithmetic
 :inc^ $last^ 03 'i'n'c
 :inc  lb 01 ad rt
@@ -31,48 +27,26 @@ jm >(start)                        # jump over bios
 
 :n1 lb 00 nt rt                    # TODO: better way to write "-1"
 
-
-
-# write cursors
-
-:a+ ap ri du dc wb                 # a+ ( n - ) , writes a value to the
-    cd inc ap wi rt                #    address in ap and increments ap.
-
 :,^ $dec^ 01 ',
 :, here ri du dc wb
-    cd inc here wi rt              # , is exact same thing for the heap
-
-
-# shell
-:tok-len 00                        # length of the current token
-:tok                               # 64-byte token buffer
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-
+    cd inc here wi rt              # ',' is same as 'a+' but for heap
 :sp lb 32 tw rt                    # emit space
 :nl lb 10 tw lb 13 tw rt           # emit CRLF
-
 :bye^ $,^ 03 'b'y'e
 :exit nl lb 01 ta                  # red
   lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
   nl hl
-
 :b4>
   nl lb 02 ta                      # green on black
   lb 'b tw lb '4 tw lb '> tw       # echo 'b4>'
   lb 32 tw lb 07 ta                # gray on black for user input.
   rt
-
 :puts^ $bye^ 04 'p'u't's
 :puts                              # given address of counted string, write the string
   du rb dc inc                     # push str start to d, len to r (loop counter)
   .f du rb tw inc .n
   zp rt
-
-
-# dictionary
+# dictionary words
 
 :e-nm^ $puts^ 04 'e'-'n'm
 :e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
@@ -88,7 +62,7 @@ jm >(start)                        # jump over bios
     puts sp                        # emit str
     ri .o                          # move to next entry
   zp rt
-
+# TODO: push to control stack instead
 :dyn-call cl :dyn-adr 00 00 00 00 rt
 :exec^ $words^ 04 'e'x'e'c
 :exec
@@ -96,7 +70,6 @@ jm >(start)                        # jump over bios
   li $dyn-adr wi
   dyn-call
   rt
-
 # string compare
 :s-eq^ $exec^ 04 's'-'e'q
 :s-eq?                             # (st-?) are strings s and t the same?
@@ -107,7 +80,6 @@ jm >(start)                        # jump over bios
      .i ov rb ov rb eq nt .t       # if the characters are not equal
         cd zp eq rt .z .n          #   drop counter and return 0 (same as in b. before)
   zp zp lb 1 rt                    # everything matched, so return 1
-
 :word?^ $s-eq^ 05 'w'o'r'd'?
 :word?                             # (s-e)   attempt to find word in dictionary
   dc                               # s - |ts  push s to return stack
@@ -118,8 +90,9 @@ jm >(start)                        # jump over bios
     .i s-eq? .t cd zp rt .z        # return e if strings match
     ri .o                          # otherwise, visit next string
   cd zp rt                         # (e|ts - e)
-
-
+:unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
+:unknown
+ lb 08 ta sp li $unkno-s puts nl rt
 # reading/writing numbers
 
 :base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
@@ -134,11 +107,6 @@ jm >(start)                        # jump over bios
       zp dc                        # (kd- |k)
       .f cd cd tw dc .n .z         # loop through the characters
   rt
-
-:unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
-:unknown
- lb 08 ta sp li $unkno-s puts nl rt
-
 
 :digit?                            # (c-d1) or (c-0)
  .i du lb '0 lb '9 between? .t
@@ -158,7 +126,6 @@ jm >(start)                        # jump over bios
   .n
   sw zp rt                         # (pr-r)
 
-
 # memory management
 
 # this is meant to be a separate area from the main forth heap.
@@ -223,9 +190,20 @@ jm >(start)                        # jump over bios
   lb 0 wi sw                          # (a-0a)
   lb 0 mm-data sb mm-used ri ad       # (0a-b) b=(a-DATA)+USED
   wi rt                               # mem[b]:0
-
-
 # repl
+
+# shell
+:tok-len 00                        # length of the current token
+:tok                               # 64-byte token buffer
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+# write cursors
+:ap   lb 20 rt                     # generic pointer stored in address $20
+:a+ ap ri du dc wb                 # a+ ( n - ) , writes a value to the
+    cd inc ap wi rt                #    address in ap and increments ap.
 
 :eol 01                            # end of line flag
 
@@ -251,25 +229,19 @@ jm >(start)                        # jump over bios
     .e .i du lb 04 eq .t exit .z   # on ^d, exit
     .z zp
   .z .o
-
 :init
   li $tok ap wi                    # set ap = tok
   li $mm-free^ last  wi
   rt
-
-
-# debug stuff
-:words-s li $words^ e-nm rt        # (-s) address of the string "words"
-:word?-s li $word? e-nm rt         # (-s) address of the string "word?"
-
-
-# this should never execute, so trigger debugger if we get here:
-db
+# string table
+:words-s li $words^ e-nm rt
+:word?-s li $word? e-nm rt
 #--- end of bios ------------------/
 '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
 :(start)
 # -- main --
 init
+
 # show the word list:
 lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
 repl
