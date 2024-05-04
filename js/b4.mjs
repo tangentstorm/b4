@@ -10,8 +10,6 @@ RX = 158, RY = 159, WZ = 160, TG = 176, TA = 177, TW = 178,
 TR = 179, TK = 180, TS = 181, TL = 182, TC = 183,
 DB = 254, HL = 255;
 
-const [RegX,RegY,RegZ] = [4*24,4*25,4*26]
-
 const op = Array(256)
 op[ 0]='..',
 op[LB]='lb', op[LI]='li', op[DU]='du', op[SW]='sw', op[OV]='ov', op[ZP]='zp',
@@ -23,21 +21,13 @@ op[RX]='rx', op[RY]='ry', op[WZ]='wz', op[TG]='tg', op[TA]='ta', op[TW]='tw',
 op[TR]='tr', op[TK]='tk', op[TS]='ts', op[TL]='tl', op[TC]='tc',
 op[DB]='db', op[HL]='hl';
 for (let i=1;i<32;i++) op[i]='^'+String.fromCharCode(64+i)
+op[0x7F]='^?'
 
+const [RegX,RegY,RegZ] = [4*24,4*25,4*26]
 
-function asm(x) {
-  if (x.match(/^-?[0-9A-F]+$/)) return parseInt(x,16)
-  let res = op.indexOf(x)
-  if (res == -1) throw new Error(`unknown token: ${x}`)
-  else return res }
-
-export function dis(x) {
-  return op[x] || x.toString(16,0).padStart(2,'0').toUpperCase() }
-
+// helper routines
 const hex=b=>b.toString(16,0).toUpperCase()
 
-function dump(xs) {
-  return `[${xs.map(hex).join(' ')}]` }
 
 export class B4VM {
   constructor() {
@@ -58,7 +48,7 @@ export class B4VM {
   cput(x) { this.cs.push(x) }
   peek(a,len) {
     let res = []
-    for (let i=0; i<len; i++) res.push(dis(this.ram[a++]))
+    for (let i=0; i<len; i++) res.push(this.dis(this.ram[a++]))
     return res.join(' ')}
 
   // arithmetic/logic ops
@@ -143,16 +133,29 @@ export class B4VM {
     default: break}
     this.ip++}
 
+  asm(x) {
+    if (x.match(/^-?[0-9A-F]+$/)) return parseInt(x,16)
+    let res = op.indexOf(x)
+    if (res == -1) throw new Error(`unknown token: ${x}`)
+    else return res }
+
+  dis(x) {
+    if (x>=32 && x<0x7F) return `'${String.fromCharCode(x)}`
+    return op[x] || x.toString(16,0).padStart(2,'0').toUpperCase() }
+
+  fmtStack(which) {
+    return `${which}: [${this[which].map(hex).join(' ')}]` }
+
   b4i(line) {
     if (line.startsWith('!')) {
       let [a0,...xs] = line.split(/\s+/)
       let a = parseInt(a0.slice(1), 16)
-      for (let x of xs) { this.ram[a++]=asm(x) }
+      for (let x of xs) { this.ram[a++]=this.asm(x) }
       return }
     else for (let tok of line.split(' ')) {
       switch (tok) {
-      case '?c': this.out(`cs: ${dump(this.cs)}`); break;
-      case '?d': this.out(`ds: ${dump(this.ds)}`); break;
+      case '?c': this.out(this.fmtStack('cs')); break;
+      case '?d': this.out(this.fmtStack('ds')); break;
       case '?i': this.out(`ip: ${hex(this.ip)}`); break;
       case '%q': process.exit(1); break;
       case '%s': this.step(); break;
