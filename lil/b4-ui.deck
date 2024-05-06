@@ -1,0 +1,586 @@
+{deck}
+version:1
+card:1
+size:[866,510]
+name:"b4-ui.deck"
+patterns:"%%IMG2AAgA5gBAAUEABwEBAAcBAQAHAQgABAEBAAcBAQAHAQEAAwEIAAIBAQAGAQEABgEBAAcBAgAFAQEAAgEBAAMBAQAEAQMABgEBAAYBAQAEAQEAEwEBAAsBAQATAQEACwEIAAEBAwABAQ0AAQEDAAEBCQABAQMAAQENAAEBAwABAQEAAQEDAAMBAQACAQEAAwEBAAQBAQABAQQAAwEEAAEBAQADAQMAAgEBAAMBAQACAQMAAQEBAAIBBQADAQEAAwEBAAQBAQABAQEABgEBAAsBAQAGAQEAAQECAAMBAQADAQEAAwEBAAMBAQADAQEAAwEBAAMBAQANAQEAAwEBAAkBAQADAQEADQEBAAMBAQAKAQMAAQEFAAEBAwABAQEAAQEDAAEBBQABAQMAAQEBAAEBAwABAQUAAQEDAAEBAQABAQMAAQEFAAEBAwABAQEAAQEBAAYBAQATAQEACAEBAAgBAQALAQEADAEBAAcBAQAGAQMABAEBAAMBAQACAQEABQECAAgBAgAIAQEAAQEBAAMBAQAFAQEAAwEBAAEBAQADAQEABQEBAAMBAQABAQEAAwEBAAUBAQADAQEAAQEBAAMBAQAFAQEAAwEBAAEBAQABAQEAAQEBAAEBAQACAQEAAQEBAAEBAQABAQIAAQEBAAEBAQABAQEAAgEBAAEBAQABAQEAAQECAAEBAQABAQEAAQEBAAIBAQABAQEAAQEBAAEBAgABAQEAAQEBAAEBAQACAQEAAQEBAAEBAQABAQIADAEBAAMBAQAKAQEACgEBAAIBAQALAQEABAEBAAQBAgAKAQIAAgEBAAMBAgABAQIAAQECAAMBAQACAQIACgECAAMBAgABAQQAAQECAAMBAQABAQEAAQEBAAEBAQAJAQEAAQEBAAEBAQABAQEACQEBAAEBAQABAQEAAQEBAAkBAQABAQEAAQEBAAEBAQAJAQgAAQEBAAEBAQABAQEAAQEJAAEBAQABAQEAAQEBAAEBCQABAQEAAQEBAAEBAQABAQkAAQEBAAEBAQABAQEAAQEJAAgBCAAIAQgACAEIAAgBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAgEBAAMBAQACAQEAAwEBAAYBAQADAQEAAgEBAAMBAQACAQEAAwEBAAIBAQADAQEABgEBAAMBAQACAQEAAwEBAAEBAgABAQMAAQECAAEBAwABAQIAAQEDAAEBBgABAQMAAQECAAEBAwABAQIAAQEDAAEBAgABAQMAAQEGAAEBAwACAQEABgEBAA4BAQAGAQEABgEBAAYBAQAGAQEABgEBAAUBAQABAQYAAQEOAAEBBgABAQYAAQEGAAEBBgABAQYAAQEFAAQBAQALAQEAAQEBAAEBAQABAQEADQEBAAsBAQADAQEACwEBAAMBBQADAQQAAQEDAAEBBAACAQIAAwEFAAMBBQAEAQMAAQEEAAMBAQACAQIAAQEBAAEBAQABAQEACQEBAAMBAQAGAQEAAQEBAAQBAQADAQEAAgEBAAUBAgADAQEACwEBAAEBAgAEAQEAAQECAAQBAQABAQIABAEBAAEBBgAIAQEAAQEHAAEBBwABAQIABP8DSQE8ASsBnQOkAWQBIgG+ASYBMwHgAW8BiwHrAYkBMQH3AeIBawGjAc4BJwFEAYkBGgEbASYBMgEvAUgBTgEAAVcBhAExAaIB8gGyAdwB7wEAAw=="
+
+{card:bytecode}
+image:"%%IMG2A2IB/iT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JOcNAST/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k1Sf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8kLyf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8kLyf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8kLyf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8kLyf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8kLyf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8kLyf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8kLyf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8kLyf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8kLyf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8kLyf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8kLyf/JzYk/yT/JC8n/yc2JP8k/yQvJ/8nNiT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8k/yT/JP8kLg=="
+script:"bytecode.0"
+{widgets}
+b00:{"type":"button","size":[22,20],"pos":[359,26],"font":"mono","text":"..","style":"rect"}
+output:{"type":"field","size":[309,147],"pos":[13,65],"scrollbar":1,"style":"code","scroll":9295,"value":"\nno: =\nzp\nzp\nzp\nzp\nzp\n> zp\n> zp\n> zp\n> zp\n> zp\n> \n> @100\n. . . . . . . . . . . . . . . .\n> 100 100 wi\n> @100\n. . . . . . . . . . . . . . . .\n> 100 \n> 100 \n> zp\n> zp\n> zp\n> zp\n> FF \n> FF 33\n> CC\n> CC  \n> \n> zp\n> zp\n> zp\n> zp\n> zp\n> zp\n> zp\n> CC AA\n> swp\nno: swp\n> sw\n> sw\n> sw\n> sw\n> sw\n> sw\n> sw\n> sw\n> ov\n> zp\n> dc\n> cd\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> zp zp BB CC\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> dc sw cd sw\n> !100 dc sw cd sw\n> @100 \nd s c s . . . . . . . . . . . .\nd s c s . . . . . . . . . . . .\n> @100\n> @100\n> @100\n> 2 2 +\n> 2 2 ad\n> @100\n> @100\n> @100\n> @100\n> @100\n> @100\n> @100\n> @100\n> @100\n.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n> @100\n.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n> !100 dc sw cd sw rt\n> @100\ndc sw cd sw rt .. .. .. .. .. .. .. .. .. .. ..\nno: ^A\nno: ^A\nno: ^A\nno: ^A\nno: ^A\nno: ^A\nno: ^A\nno: ^A\nno: ^A\n> # layout buttons in grid relative to ^@ button\neach b i in \n  extract value \n  where (value..type=\"button\")\n    & (!value..name=\"b00\")\n    & (!value..name=\"run_meta\")\n  from range card.widgets\n#\n  b.size: b00.size\n  b.name: \"b%H\" format i+1\n  b.text: \"^%a\" format i+1\nend\nno: #\nno: layout\nno: buttons\nno: in\nno: grid\nno: relative\nno: to\nno: ^@\nno: button\neach\nno: b\nno: i\nno: in\nno: \n\nno: extract\nno: value\nno: \n\nno: where\nno: (value..type=\"button\")\n\nno: &\nno: (!value..name=\"b00\")\n\nno: &\nno: (!value..name=\"run_meta\")\n\nno: from\nno: range\nno: card.widgets\n#\n\nno: b.size:\nno: b00.size\n\nno: b.name:\nno: \"b%H\"\nno: format\nno: i+1\n\nno: b.text:\nno: \"^%a\"\nno: format\nno: i+1\nend\n> # layout buttons in grid relative to ^@ button\neach b i in \n  extract value \n  where (value..type=\"button\")\n    & (!value..name=\"b00\")\n    & (!value..name=\"run_meta\")\n  from range card.widgets\n#\n  b.size: b00.size\n  b.name: \"b%H\" format i+1\n  b.text: \"^%a\" format i+65\nend\nno: #\nno: layout\nno: buttons\nno: in\nno: grid\nno: relative\nno: to\nno: ^@\nno: button\neach\nno: b\nno: i\nno: in\nno: \n\nno: extract\nno: value\nno: \n\nno: where\nno: (value..type=\"button\")\n\nno: &\nno: (!value..name=\"b00\")\n\nno: &\nno: (!value..name=\"run_meta\")\n\nno: from\nno: range\nno: card.widgets\n#\n\nno: b.size:\nno: b00.size\n\nno: b.name:\nno: \"b%H\"\nno: format\nno: i+1\n\nno: b.text:\nno: \"^%a\"\nno: format\nno: i+65\nend\n> # layout buttons in grid relative to ^@ button\neach b i in \n  extract value \n  where (value..type=\"button\")\n    & (!value..name=\"b00\")\n    & (!value..name=\"run_meta\")\n  from range card.widgets\n#\n  b.size: b00.size\n  b.name: \"b%H\" format i+1\n  b.text: \"^%a\" format i+65\nend\nno: #\nno: layout\nno: buttons\nno: in\nno: grid\nno: relative\nno: to\nno: ^@\nno: button\neach\nno: b\nno: i\nno: in\nno: \n\nno: extract\nno: value\nno: \n\nno: where\nno: (value..type=\"button\")\n\nno: &\nno: (!value..name=\"b00\")\n\nno: &\nno: (!value..name=\"run_meta\")\n\nno: from\nno: range\nno: card.widgets\n#\n\nno: b.size:\nno: b00.size\n\nno: b.name:\nno: \"b%H\"\nno: format\nno: i+1\n\nno: b.text:\nno: \"^%a\"\nno: format\nno: i+65\nend\n> # layout buttons in grid relative to ^@ button\neach b i in \n  extract value \n  where (value..type=\"button\")\n    & (!value..name=\"b00\")\n    & (!value..name=\"run_meta\")\n  from range card.widgets\n#\n  b.size: b00.size\n  b.name: \"b%H\" format i+1\n  b.text: \"^%a\" format i+65\nend\nno: #\nno: layout\nno: buttons\nno: in\nno: grid\nno: relative\nno: to\nno: ^@\nno: button\neach\nno: b\nno: i\nno: in\nno: \n\nno: extract\nno: value\nno: \n\nno: where\nno: (value..type=\"button\")\n\nno: &\nno: (!value..name=\"b00\")\n\nno: &\nno: (!value..name=\"run_meta\")\n\nno: from\nno: range\nno: card.widgets\n#\n\nno: b.size:\nno: b00.size\n\nno: b.name:\nno: \"b%H\"\nno: format\nno: i+1\n\nno: b.text:\nno: \"^%a\"\nno: format\nno: i+65\nend\n> # layout buttons in grid relative to ^@ button\neach b i in \n  extract value \n  where (value..type=\"button\")\n    & (!value..name=\"b00\")\n    & (!value..name=\"run_meta\")\n  from range card.widgets\n#\n  b.size: b00.size\n  b.name: \"b%H\" format i+1\n  b.text: \"^%a\" format i+65\nend\nno: #\nno: layout\nno: buttons\nno: in\nno: grid\nno: relative\nno: to\nno: ^@\nno: button\neach\nno: b\nno: i\nno: in\nno: \n\nno: extract\nno: value\nno: \n\nno: where\nno: (value..type=\"button\")\n\nno: &\nno: (!value..name=\"b00\")\n\nno: &\nno: (!value..name=\"run_meta\")\n\nno: from\nno: range\nno: card.widgets\n#\n\nno: b.size:\nno: b00.size\n\nno: b.name:\nno: \"b%H\"\nno: format\nno: i+1\n\nno: b.text:\nno: \"^%a\"\nno: format\nno: i+65\nend\nno: ^@\nno: ^@\n> # layout buttons in grid relative to ^@ button\neach b i in \n  extract value \n  where (value..type=\"button\")\n    & (!value..name=\"b00\")\n    & (!value..name=\"run_meta\")\n  from range card.widgets\n#\n  s: b.size: b00.size\n  b.name: \"b%H\" format i+1\n  b.text: \"^%a\" format i+65\n  p: b00.pos  b.pos: (p[0]+s[0]*i+1),p[1]\nend\nno: #\nno: layout\nno: buttons\nno: in\nno: grid\nno: relative\nno: to\nno: ^@\nno: button\neach\nno: b\nno: i\nno: in\nno: \n\nno: extract\nno: value\nno: \n\nno: where\nno: (value..type=\"button\")\n\nno: &\nno: (!value..name=\"b00\")\n\nno: &\nno: (!value..name=\"run_meta\")\n\nno: from\nno: range\nno: card.widgets\n#\n\nno: s:\nno: b.size:\nno: b00.size\n\nno: b.name:\nno: \"b%H\"\nno: format\nno: i+1\n\nno: b.text:\nno: \"^%a\"\nno: format\nno: i+65\n\nno: p:\nno: b00.pos\nno: b.pos:\nno: (p[0]+s[0]*i+1),p[1]\nend\n> # layout buttons in grid relative to ^@ button\neach b i in \n  extract value \n  where (value..type=\"button\")\n    & (!value..name=\"b00\")\n    & (!value..name=\"run_meta\")\n  from range card.widgets\n#\n  s: b.size: b00.size\n  b.name: \"b%H\" format i+1\n  b.text: \"^%a\" format i+65\n  p: b00.pos\n  b.pos: p + s * (16%i+1),floor 16/i+1\nend\nno: #\nno: layout\nno: buttons\nno: in\nno: grid\nno: relative\nno: to\nno: ^@\nno: button\neach\nno: b\nno: i\nno: in\nno: \n\nno: extract\nno: value\nno: \n\nno: where\nno: (value..type=\"button\")\n\nno: &\nno: (!value..name=\"b00\")\n\nno: &\nno: (!value..name=\"run_meta\")\n\nno: from\nno: range\nno: card.widgets\n#\n\nno: s:\nno: b.size:\nno: b00.size\n\nno: b.name:\nno: \"b%H\"\nno: format\nno: i+1\n\nno: b.text:\nno: \"^%a\"\nno: format\nno: i+65\n\nno: p:\nno: b00.pos\n\nno: b.pos:\nno: p\nno: +\nno: s\nno: *\nno: (16%i+1),floor\nno: 16/i+1\nend\n> # layout buttons in grid relative to ^@ button\neach b i in \n  extract value \n  where (value..type=\"button\")\n    & (!value..name=\"b00\")\n    & (!value..name=\"run_meta\")\n  from range card.widgets\n#\n  s: b.size: b00.size\n  b.name: \"b%H\" format i+1\n  b.text: \"^%a\" format i+65\n  p: b00.pos\n  b.pos: p + s * (16%i+1),floor(i+1)/16\nend\nno: #\nno: layout\nno: buttons\nno: in\nno: grid\nno: relative\nno: to\nno: ^@\nno: button\neach\nno: b\nno: i\nno: in\nno: \n\nno: extract\nno: value\nno: \n\nno: where\nno: (value..type=\"button\")\n\nno: &\nno: (!value..name=\"b00\")\n\nno: &\nno: (!value..name=\"run_meta\")\n\nno: from\nno: range\nno: card.widgets\n#\n\nno: s:\nno: b.size:\nno: b00.size\n\nno: b.name:\nno: \"b%H\"\nno: format\nno: i+1\n\nno: b.text:\nno: \"^%a\"\nno: format\nno: i+65\n\nno: p:\nno: b00.pos\n\nno: b.pos:\nno: p\nno: +\nno: s\nno: *\nno: (16%i+1),floor(i+1)/16\nend\n> # layout buttons in grid relative to ^@ button\neach b i in \n  extract value \n  where (value..type=\"button\")\n    & (!value..name=\"b00\")\n    & (!value..name=\"run_meta\")\n  from range card.widgets\n#\n  b.style:\"rect\"\n  b.name: \"b%H\" format i+1\n  b.text:  mb4.dis[i+65]\n  p: b00.pos s: b.size: b00.size\n  b.pos: p + s * (16%i+1),floor(i+1)/16\nend\nno: #\nno: layout\nno: buttons\nno: in\nno: grid\nno: relative\nno: to\nno: ^@\nno: button\neach\nno: b\nno: i\nno: in\nno: \n\nno: extract\nno: value\nno: \n\nno: where\nno: (value..type=\"button\")\n\nno: &\nno: (!value..name=\"b00\")\n\nno: &\nno: (!value..name=\"run_meta\")\n\nno: from\nno: range\nno: card.widgets\n#\n\nno: b.style:\"rect\"\n\nno: b.name:\nno: \"b%H\"\nno: format\nno: i+1\n\nno: b.text:\nno: mb4.dis[i+65]\n\nno: p:\nno: b00.pos\nno: s:\nno: b.size:\nno: b00.size\n\nno: b.pos:\nno: p\nno: +\nno: s\nno: *\nno: (16%i+1),floor(i+1)/16\nend\nno: ..\nno: ..\nno: ..\nno: ..\nno: ..\nno: ..\nno: ..\nno: ..\nno: ..\nno: ..\nno: hl\nno: ..\nno: ..\nno: db\nno: hl\nno: hl\nno: hl\nno: hl\nno: hl\nno: hl\nno: ..\nno: ..\nno: db\nno: hl\nno: hl\nno: hl\nno: hl\nno: hl\nno: hl\nno: hl\nno: hl\nno: hl\nno: hl\nno: ..\nno: ..\nno: ..\nno: ..\nno: hl\nno: ..\n> # layout buttons in grid relative to ^@ button\neach b i0 in \n  extract value where value..name like \"op*\"\n  orderby index asc\n  from card.widgets\n#\n  i:i0+1 b.style:b00.style\n  b.name: \"op%H\" format i\n  b.text:  mb4.dis[i]\n  p: b00.pos s: -2 + b.size: b00.size\n  b.pos: p + s * (16%i),floor i/16\nend\nc:button_colors \nc.clear[0,0 c.size] c.pattern:42 c.fill[0,0]\nno: #\nno: layout\nno: buttons\nno: in\nno: grid\nno: relative\nno: to\nno: ^@\nno: button\neach\nno: b\nno: i0\nno: in\nno: \n\nno: extract\nno: value\nno: where\nno: value..name\nno: like\nno: \"op*\"\n\nno: orderby\nno: index\nno: asc\n\nno: from\nno: card.widgets\n#\n\nno: i:i0+1\nno: b.style:b00.style\n\nno: b.name:\nno: \"op%H\"\nno: format\nno: i\n\nno: b.text:\nno: mb4.dis[i]\n\nno: p:\nno: b00.pos\nno: s:\nno: +\nno: b.size:\nno: b00.size\n\nno: b.pos:\nno: p\nno: +\nno: s\nno: *\nno: (16%i),floor\nno: i/16\nend\nc:button_colors\nno: \nc.clear[0,0\nno: c.size]\nno: c.pattern:42\nno: c.fill[0,0]\nno: ..\nno: hl\n> @100\n.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\nno: ^P\nno: ^Q\nno: ^R\nno: ^S\nno: ^T\nno: ^W\nno: ^Z\nno: ^\\\nno: ^^\nno: ^_\nno: ^B\nno: ^D\nno: ^F\nno: ^Y\n> @100\n\n.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n> \n> zp\n> \n> zp\n> \n> dc\n> cd\n> cd\n> zp\n> zp\n> ED\n> ED\n> EE\n> EE\n> aoeuaoeu\nno: aoeuaoeu\n> aoeuaoeu\nno: aoeuaoeu\n> %s\n> %g\nno: %g\n> %r\nno: %r\n> %s\n> %s\n> %s\n> %s\n> %g\nno: %g\n> %r\nno: %r\n> @100"}
+input:{"type":"field","size":[309,19],"pos":[13,213],"script":"bytecode.1","border":1,"scrollbar":0,"style":"code","value":"@100"}
+status:{"type":"field","size":[309,37],"pos":[13,27],"locked":1,"script":"bytecode.1","show":"transparent","border":1,"scrollbar":0,"style":"code","value":"ds: []\ncs: []\nip: 100"}
+run_meta:{"type":"button","size":[69,24],"pos":[11,473],"script":"bytecode.2","text":"run_meta","style":"rect"}
+op1:{"type":"button","size":[22,20],"pos":[379,26],"font":"mono","text":"^A","style":"rect"}
+op2:{"type":"button","size":[22,20],"pos":[399,26],"font":"mono","text":"^B","style":"rect"}
+op3:{"type":"button","size":[22,20],"pos":[419,26],"font":"mono","text":"^C","style":"rect"}
+op4:{"type":"button","size":[22,20],"pos":[439,26],"font":"mono","text":"^D","style":"rect"}
+op5:{"type":"button","size":[22,20],"pos":[459,26],"font":"mono","text":"^E","style":"rect"}
+op6:{"type":"button","size":[22,20],"pos":[479,26],"font":"mono","text":"^F","style":"rect"}
+op7:{"type":"button","size":[22,20],"pos":[499,26],"font":"mono","text":"^G","style":"rect"}
+op8:{"type":"button","size":[22,20],"pos":[519,26],"font":"mono","text":"^H","style":"rect"}
+op9:{"type":"button","size":[22,20],"pos":[539,26],"font":"mono","text":"^I","style":"rect"}
+opA:{"type":"button","size":[22,20],"pos":[559,26],"font":"mono","text":"^J","style":"rect"}
+opB:{"type":"button","size":[22,20],"pos":[579,26],"font":"mono","text":"^K","style":"rect"}
+opC:{"type":"button","size":[22,20],"pos":[599,26],"font":"mono","text":"^L","style":"rect"}
+opD:{"type":"button","size":[22,20],"pos":[619,26],"font":"mono","text":"^M","style":"rect"}
+opE:{"type":"button","size":[22,20],"pos":[639,26],"font":"mono","text":"^N","style":"rect"}
+opF:{"type":"button","size":[22,20],"pos":[659,26],"font":"mono","text":"^O","style":"rect"}
+op10:{"type":"button","size":[22,20],"pos":[359,44],"font":"mono","text":"^P","style":"rect"}
+op11:{"type":"button","size":[22,20],"pos":[379,44],"font":"mono","text":"^Q","style":"rect"}
+op12:{"type":"button","size":[22,20],"pos":[399,44],"font":"mono","text":"^R","style":"rect"}
+op13:{"type":"button","size":[22,20],"pos":[419,44],"font":"mono","text":"^S","style":"rect"}
+op14:{"type":"button","size":[22,20],"pos":[439,44],"font":"mono","text":"^T","style":"rect"}
+op15:{"type":"button","size":[22,20],"pos":[459,44],"font":"mono","text":"^U","style":"rect"}
+op16:{"type":"button","size":[22,20],"pos":[479,44],"font":"mono","text":"^V","style":"rect"}
+op17:{"type":"button","size":[22,20],"pos":[499,44],"font":"mono","text":"^W","style":"rect"}
+op18:{"type":"button","size":[22,20],"pos":[519,44],"font":"mono","text":"^X","style":"rect"}
+op19:{"type":"button","size":[22,20],"pos":[539,44],"font":"mono","text":"^Y","style":"rect"}
+op1A:{"type":"button","size":[22,20],"pos":[559,44],"font":"mono","text":"^Z","style":"rect"}
+op1B:{"type":"button","size":[22,20],"pos":[579,44],"font":"mono","text":"^[","style":"rect"}
+op1C:{"type":"button","size":[22,20],"pos":[599,44],"font":"mono","text":"^\\","style":"rect"}
+op1D:{"type":"button","size":[22,20],"pos":[619,44],"font":"mono","text":"^]","style":"rect"}
+op1E:{"type":"button","size":[22,20],"pos":[639,44],"font":"mono","text":"^^","style":"rect"}
+op1F:{"type":"button","size":[22,20],"pos":[659,44],"font":"mono","text":"^_","style":"rect"}
+op20:{"type":"button","size":[22,20],"pos":[359,62],"font":"mono","text":"' ","style":"rect"}
+op21:{"type":"button","size":[22,20],"pos":[379,62],"font":"mono","text":"'!","style":"rect"}
+op22:{"type":"button","size":[22,20],"pos":[399,62],"font":"mono","text":"'\"","style":"rect"}
+op23:{"type":"button","size":[22,20],"pos":[419,62],"font":"mono","text":"'#","style":"rect"}
+op24:{"type":"button","size":[22,20],"pos":[439,62],"font":"mono","text":"'$","style":"rect"}
+op25:{"type":"button","size":[22,20],"pos":[459,62],"font":"mono","text":"'%","style":"rect"}
+op26:{"type":"button","size":[22,20],"pos":[479,62],"font":"mono","text":"'&","style":"rect"}
+op27:{"type":"button","size":[22,20],"pos":[499,62],"font":"mono","text":"''","style":"rect"}
+op28:{"type":"button","size":[22,20],"pos":[519,62],"font":"mono","text":"'(","style":"rect"}
+op29:{"type":"button","size":[22,20],"pos":[539,62],"font":"mono","text":"')","style":"rect"}
+op2A:{"type":"button","size":[22,20],"pos":[559,62],"font":"mono","text":"'*","style":"rect"}
+op2B:{"type":"button","size":[22,20],"pos":[579,62],"font":"mono","text":"'+","style":"rect"}
+op2C:{"type":"button","size":[22,20],"pos":[599,62],"font":"mono","text":"',","style":"rect"}
+op2D:{"type":"button","size":[22,20],"pos":[619,62],"font":"mono","text":"'-","style":"rect"}
+op2E:{"type":"button","size":[22,20],"pos":[639,62],"font":"mono","text":"'.","style":"rect"}
+op2F:{"type":"button","size":[22,20],"pos":[659,62],"font":"mono","text":"'/","style":"rect"}
+op30:{"type":"button","size":[22,20],"pos":[359,80],"font":"mono","text":"'0","style":"rect"}
+op31:{"type":"button","size":[22,20],"pos":[379,80],"font":"mono","text":"'1","style":"rect"}
+op32:{"type":"button","size":[22,20],"pos":[399,80],"font":"mono","text":"'2","style":"rect"}
+op33:{"type":"button","size":[22,20],"pos":[419,80],"font":"mono","text":"'3","style":"rect"}
+op34:{"type":"button","size":[22,20],"pos":[439,80],"font":"mono","text":"'4","style":"rect"}
+op35:{"type":"button","size":[22,20],"pos":[459,80],"font":"mono","text":"'5","style":"rect"}
+op36:{"type":"button","size":[22,20],"pos":[479,80],"font":"mono","text":"'6","style":"rect"}
+op37:{"type":"button","size":[22,20],"pos":[499,80],"font":"mono","text":"'7","style":"rect"}
+op38:{"type":"button","size":[22,20],"pos":[519,80],"font":"mono","text":"'8","style":"rect"}
+op39:{"type":"button","size":[22,20],"pos":[539,80],"font":"mono","text":"'9","style":"rect"}
+op3A:{"type":"button","size":[22,20],"pos":[559,80],"font":"mono","text":"':","style":"rect"}
+op3B:{"type":"button","size":[22,20],"pos":[579,80],"font":"mono","text":"';","style":"rect"}
+op3C:{"type":"button","size":[22,20],"pos":[599,80],"font":"mono","text":"'<","style":"rect"}
+op3D:{"type":"button","size":[22,20],"pos":[619,80],"font":"mono","text":"'=","style":"rect"}
+op3E:{"type":"button","size":[22,20],"pos":[639,80],"font":"mono","text":"'>","style":"rect"}
+op3F:{"type":"button","size":[22,20],"pos":[659,80],"font":"mono","text":"'?","style":"rect"}
+op40:{"type":"button","size":[22,20],"pos":[359,98],"font":"mono","text":"'@","style":"rect"}
+op41:{"type":"button","size":[22,20],"pos":[379,98],"font":"mono","text":"'A","style":"rect"}
+op42:{"type":"button","size":[22,20],"pos":[399,98],"font":"mono","text":"'B","style":"rect"}
+op43:{"type":"button","size":[22,20],"pos":[419,98],"font":"mono","text":"'C","style":"rect"}
+op44:{"type":"button","size":[22,20],"pos":[439,98],"font":"mono","text":"'D","style":"rect"}
+op45:{"type":"button","size":[22,20],"pos":[459,98],"font":"mono","text":"'E","style":"rect"}
+op46:{"type":"button","size":[22,20],"pos":[479,98],"font":"mono","text":"'F","style":"rect"}
+op47:{"type":"button","size":[22,20],"pos":[499,98],"font":"mono","text":"'G","style":"rect"}
+op48:{"type":"button","size":[22,20],"pos":[519,98],"font":"mono","text":"'H","style":"rect"}
+op49:{"type":"button","size":[22,20],"pos":[539,98],"font":"mono","text":"'I","style":"rect"}
+op4A:{"type":"button","size":[22,20],"pos":[559,98],"font":"mono","text":"'J","style":"rect"}
+op4B:{"type":"button","size":[22,20],"pos":[579,98],"font":"mono","text":"'K","style":"rect"}
+op4C:{"type":"button","size":[22,20],"pos":[599,98],"font":"mono","text":"'L","style":"rect"}
+op4D:{"type":"button","size":[22,20],"pos":[619,98],"font":"mono","text":"'M","style":"rect"}
+op4E:{"type":"button","size":[22,20],"pos":[639,98],"font":"mono","text":"'N","style":"rect"}
+op4F:{"type":"button","size":[22,20],"pos":[659,98],"font":"mono","text":"'O","style":"rect"}
+op50:{"type":"button","size":[22,20],"pos":[359,116],"font":"mono","text":"'P","style":"rect"}
+op51:{"type":"button","size":[22,20],"pos":[379,116],"font":"mono","text":"'Q","style":"rect"}
+op52:{"type":"button","size":[22,20],"pos":[399,116],"font":"mono","text":"'R","style":"rect"}
+op53:{"type":"button","size":[22,20],"pos":[419,116],"font":"mono","text":"'S","style":"rect"}
+op54:{"type":"button","size":[22,20],"pos":[439,116],"font":"mono","text":"'T","style":"rect"}
+op55:{"type":"button","size":[22,20],"pos":[459,116],"font":"mono","text":"'U","style":"rect"}
+op56:{"type":"button","size":[22,20],"pos":[479,116],"font":"mono","text":"'V","style":"rect"}
+op57:{"type":"button","size":[22,20],"pos":[499,116],"font":"mono","text":"'W","style":"rect"}
+op58:{"type":"button","size":[22,20],"pos":[519,116],"font":"mono","text":"'X","style":"rect"}
+op59:{"type":"button","size":[22,20],"pos":[539,116],"font":"mono","text":"'Y","style":"rect"}
+op5A:{"type":"button","size":[22,20],"pos":[559,116],"font":"mono","text":"'Z","style":"rect"}
+op5B:{"type":"button","size":[22,20],"pos":[579,116],"font":"mono","text":"'[","style":"rect"}
+op5C:{"type":"button","size":[22,20],"pos":[599,116],"font":"mono","text":"'\\","style":"rect"}
+op5D:{"type":"button","size":[22,20],"pos":[619,116],"font":"mono","text":"']","style":"rect"}
+op5E:{"type":"button","size":[22,20],"pos":[639,116],"font":"mono","text":"'^","style":"rect"}
+op5F:{"type":"button","size":[22,20],"pos":[659,116],"font":"mono","text":"'_","style":"rect"}
+op60:{"type":"button","size":[22,20],"pos":[359,134],"font":"mono","text":"'`","style":"rect"}
+op61:{"type":"button","size":[22,20],"pos":[379,134],"font":"mono","text":"'a","style":"rect"}
+op62:{"type":"button","size":[22,20],"pos":[399,134],"font":"mono","text":"'b","style":"rect"}
+op63:{"type":"button","size":[22,20],"pos":[419,134],"font":"mono","text":"'c","style":"rect"}
+op64:{"type":"button","size":[22,20],"pos":[439,134],"font":"mono","text":"'d","style":"rect"}
+op65:{"type":"button","size":[22,20],"pos":[459,134],"font":"mono","text":"'e","style":"rect"}
+op66:{"type":"button","size":[22,20],"pos":[479,134],"font":"mono","text":"'f","style":"rect"}
+op67:{"type":"button","size":[22,20],"pos":[499,134],"font":"mono","text":"'g","style":"rect"}
+op68:{"type":"button","size":[22,20],"pos":[519,134],"font":"mono","text":"'h","style":"rect"}
+op69:{"type":"button","size":[22,20],"pos":[539,134],"font":"mono","text":"'i","style":"rect"}
+op6A:{"type":"button","size":[22,20],"pos":[559,134],"font":"mono","text":"'j","style":"rect"}
+op6B:{"type":"button","size":[22,20],"pos":[579,134],"font":"mono","text":"'k","style":"rect"}
+op6C:{"type":"button","size":[22,20],"pos":[599,134],"font":"mono","text":"'l","style":"rect"}
+op6D:{"type":"button","size":[22,20],"pos":[619,134],"font":"mono","text":"'m","style":"rect"}
+op6E:{"type":"button","size":[22,20],"pos":[639,134],"font":"mono","text":"'n","style":"rect"}
+op6F:{"type":"button","size":[22,20],"pos":[659,134],"font":"mono","text":"'o","style":"rect"}
+op70:{"type":"button","size":[22,20],"pos":[359,152],"font":"mono","text":"'p","style":"rect"}
+op71:{"type":"button","size":[22,20],"pos":[379,152],"font":"mono","text":"'q","style":"rect"}
+op72:{"type":"button","size":[22,20],"pos":[399,152],"font":"mono","text":"'r","style":"rect"}
+op73:{"type":"button","size":[22,20],"pos":[419,152],"font":"mono","text":"'s","style":"rect"}
+op74:{"type":"button","size":[22,20],"pos":[439,152],"font":"mono","text":"'t","style":"rect"}
+op75:{"type":"button","size":[22,20],"pos":[459,152],"font":"mono","text":"'u","style":"rect"}
+op76:{"type":"button","size":[22,20],"pos":[479,152],"font":"mono","text":"'v","style":"rect"}
+op77:{"type":"button","size":[22,20],"pos":[499,152],"font":"mono","text":"'w","style":"rect"}
+op78:{"type":"button","size":[22,20],"pos":[519,152],"font":"mono","text":"'x","style":"rect"}
+op79:{"type":"button","size":[22,20],"pos":[539,152],"font":"mono","text":"'y","style":"rect"}
+op7A:{"type":"button","size":[22,20],"pos":[559,152],"font":"mono","text":"'z","style":"rect"}
+meta:{"type":"field","size":[335,161],"pos":[11,311],"scrollbar":1,"style":"code","value":"# layout buttons in grid relative to ^@ button\ncmds: \"%s\",\"%g\",\"%r\" # step / go / run\neach b i0 in \n  extract value where value..name like \"op*\"\n  orderby index asc\n  from card.widgets\n#\n  i:i0+1 b.style:b00.style\n  b.name: \"op%H\" format i\n  b.text:  if i<256 mb4.dis[i] else cmds[i-256] end\n  p: b00.pos s: -2 + b.size: b00.size\n  b.pos: p + s * (16%i),floor i/16\nend\n"}
+op7B:{"type":"button","size":[22,20],"pos":[579,152],"font":"mono","text":"'{","style":"rect"}
+op7C:{"type":"button","size":[22,20],"pos":[599,152],"font":"mono","text":"'|","style":"rect"}
+op7D:{"type":"button","size":[22,20],"pos":[619,152],"font":"mono","text":"'}","style":"rect"}
+op7E:{"type":"button","size":[22,20],"pos":[639,152],"font":"mono","text":"'~","style":"rect"}
+op7F:{"type":"button","size":[22,20],"pos":[659,152],"font":"mono","text":"^?","style":"rect"}
+op80:{"type":"button","size":[22,20],"pos":[359,170],"font":"mono","text":"lb","style":"rect"}
+op81:{"type":"button","size":[22,20],"pos":[379,170],"font":"mono","text":"li","style":"rect"}
+op82:{"type":"button","size":[22,20],"pos":[399,170],"font":"mono","text":"du","style":"rect"}
+op83:{"type":"button","size":[22,20],"pos":[419,170],"font":"mono","text":"sw","style":"rect"}
+op84:{"type":"button","size":[22,20],"pos":[439,170],"font":"mono","text":"ov","style":"rect"}
+op85:{"type":"button","size":[22,20],"pos":[459,170],"font":"mono","text":"zp","style":"rect"}
+op86:{"type":"button","size":[22,20],"pos":[479,170],"font":"mono","text":"dc","style":"rect"}
+op87:{"type":"button","size":[22,20],"pos":[499,170],"font":"mono","text":"cd","style":"rect"}
+op88:{"type":"button","size":[22,20],"pos":[519,170],"font":"mono","text":"ad","style":"rect"}
+op89:{"type":"button","size":[22,20],"pos":[539,170],"font":"mono","text":"sb","style":"rect"}
+op8A:{"type":"button","size":[22,20],"pos":[559,170],"font":"mono","text":"ml","style":"rect"}
+op8B:{"type":"button","size":[22,20],"pos":[579,170],"font":"mono","text":"dv","style":"rect"}
+op8C:{"type":"button","size":[22,20],"pos":[599,170],"font":"mono","text":"md","style":"rect"}
+op8D:{"type":"button","size":[22,20],"pos":[619,170],"font":"mono","text":"sh","style":"rect"}
+op8E:{"type":"button","size":[22,20],"pos":[639,170],"font":"mono","text":"an","style":"rect"}
+op8F:{"type":"button","size":[22,20],"pos":[659,170],"font":"mono","text":"or","style":"rect"}
+op90:{"type":"button","size":[22,20],"pos":[359,188],"font":"mono","text":"xr","style":"rect"}
+op91:{"type":"button","size":[22,20],"pos":[379,188],"font":"mono","text":"nt","style":"rect"}
+op92:{"type":"button","size":[22,20],"pos":[399,188],"font":"mono","text":"eq","style":"rect"}
+op93:{"type":"button","size":[22,20],"pos":[419,188],"font":"mono","text":"lt","style":"rect"}
+op94:{"type":"button","size":[22,20],"pos":[439,188],"font":"mono","text":"jm","style":"rect"}
+op95:{"type":"button","size":[22,20],"pos":[459,188],"font":"mono","text":"hp","style":"rect"}
+op96:{"type":"button","size":[22,20],"pos":[479,188],"font":"mono","text":"h0","style":"rect"}
+op97:{"type":"button","size":[22,20],"pos":[499,188],"font":"mono","text":"cl","style":"rect"}
+op98:{"type":"button","size":[22,20],"pos":[519,188],"font":"mono","text":"rt","style":"rect"}
+op99:{"type":"button","size":[22,20],"pos":[539,188],"font":"mono","text":"nx","style":"rect"}
+op9A:{"type":"button","size":[22,20],"pos":[559,188],"font":"mono","text":"rb","style":"rect"}
+op9B:{"type":"button","size":[22,20],"pos":[579,188],"font":"mono","text":"wb","style":"rect"}
+op9C:{"type":"button","size":[22,20],"pos":[599,188],"font":"mono","text":"ri","style":"rect"}
+op9D:{"type":"button","size":[22,20],"pos":[619,188],"font":"mono","text":"wi","style":"rect"}
+op9E:{"type":"button","size":[22,20],"pos":[639,188],"font":"mono","text":"rx","style":"rect"}
+op9F:{"type":"button","size":[22,20],"pos":[659,188],"font":"mono","text":"ry","style":"rect"}
+opA0:{"type":"button","size":[22,20],"pos":[359,206],"font":"mono","text":"wz","style":"rect"}
+opA1:{"type":"button","size":[22,20],"pos":[379,206],"font":"mono","text":"A1","style":"rect"}
+opA2:{"type":"button","size":[22,20],"pos":[399,206],"font":"mono","text":"A2","style":"rect"}
+opA3:{"type":"button","size":[22,20],"pos":[419,206],"font":"mono","text":"A3","style":"rect"}
+opA4:{"type":"button","size":[22,20],"pos":[439,206],"font":"mono","text":"A4","style":"rect"}
+opA5:{"type":"button","size":[22,20],"pos":[459,206],"font":"mono","text":"A5","style":"rect"}
+opA6:{"type":"button","size":[22,20],"pos":[479,206],"font":"mono","text":"A6","style":"rect"}
+opA7:{"type":"button","size":[22,20],"pos":[499,206],"font":"mono","text":"A7","style":"rect"}
+opA8:{"type":"button","size":[22,20],"pos":[519,206],"font":"mono","text":"A8","style":"rect"}
+opA9:{"type":"button","size":[22,20],"pos":[539,206],"font":"mono","text":"A9","style":"rect"}
+opAA:{"type":"button","size":[22,20],"pos":[559,206],"font":"mono","text":"AA","style":"rect"}
+opAB:{"type":"button","size":[22,20],"pos":[579,206],"font":"mono","text":"AB","style":"rect"}
+opAC:{"type":"button","size":[22,20],"pos":[599,206],"font":"mono","text":"AC","style":"rect"}
+opAD:{"type":"button","size":[22,20],"pos":[619,206],"font":"mono","text":"AD","style":"rect"}
+opAE:{"type":"button","size":[22,20],"pos":[639,206],"font":"mono","text":"AE","style":"rect"}
+opAF:{"type":"button","size":[22,20],"pos":[659,206],"font":"mono","text":"AF","style":"rect"}
+opB0:{"type":"button","size":[22,20],"pos":[359,224],"font":"mono","text":"tg","style":"rect"}
+opB1:{"type":"button","size":[22,20],"pos":[379,224],"font":"mono","text":"ta","style":"rect"}
+opB2:{"type":"button","size":[22,20],"pos":[399,224],"font":"mono","text":"tw","style":"rect"}
+opB3:{"type":"button","size":[22,20],"pos":[419,224],"font":"mono","text":"tr","style":"rect"}
+opB4:{"type":"button","size":[22,20],"pos":[439,224],"font":"mono","text":"tk","style":"rect"}
+opB5:{"type":"button","size":[22,20],"pos":[459,224],"font":"mono","text":"ts","style":"rect"}
+opB6:{"type":"button","size":[22,20],"pos":[479,224],"font":"mono","text":"tl","style":"rect"}
+opB7:{"type":"button","size":[22,20],"pos":[499,224],"font":"mono","text":"tc","style":"rect"}
+opB8:{"type":"button","size":[22,20],"pos":[519,224],"font":"mono","text":"B8","style":"rect"}
+opB9:{"type":"button","size":[22,20],"pos":[539,224],"font":"mono","text":"B9","style":"rect"}
+opBA:{"type":"button","size":[22,20],"pos":[559,224],"font":"mono","text":"BA","style":"rect"}
+opBB:{"type":"button","size":[22,20],"pos":[579,224],"font":"mono","text":"BB","style":"rect"}
+opBC:{"type":"button","size":[22,20],"pos":[599,224],"font":"mono","text":"BC","style":"rect"}
+opBD:{"type":"button","size":[22,20],"pos":[619,224],"font":"mono","text":"BD","style":"rect"}
+opBE:{"type":"button","size":[22,20],"pos":[639,224],"font":"mono","text":"BE","style":"rect"}
+opBF:{"type":"button","size":[22,20],"pos":[659,224],"font":"mono","text":"BF","style":"rect"}
+opC0:{"type":"button","size":[22,20],"pos":[359,242],"font":"mono","text":"C0","style":"rect"}
+opC1:{"type":"button","size":[22,20],"pos":[379,242],"font":"mono","text":"C1","style":"rect"}
+opC2:{"type":"button","size":[22,20],"pos":[399,242],"font":"mono","text":"C2","style":"rect"}
+opC3:{"type":"button","size":[22,20],"pos":[419,242],"font":"mono","text":"C3","style":"rect"}
+opC4:{"type":"button","size":[22,20],"pos":[439,242],"font":"mono","text":"C4","style":"rect"}
+opC5:{"type":"button","size":[22,20],"pos":[459,242],"font":"mono","text":"C5","style":"rect"}
+opC6:{"type":"button","size":[22,20],"pos":[479,242],"font":"mono","text":"C6","style":"rect"}
+opC7:{"type":"button","size":[22,20],"pos":[499,242],"font":"mono","text":"C7","style":"rect"}
+opC8:{"type":"button","size":[22,20],"pos":[519,242],"font":"mono","text":"C8","style":"rect"}
+opC9:{"type":"button","size":[22,20],"pos":[539,242],"font":"mono","text":"C9","style":"rect"}
+opCA:{"type":"button","size":[22,20],"pos":[559,242],"font":"mono","text":"CA","style":"rect"}
+opCB:{"type":"button","size":[22,20],"pos":[579,242],"font":"mono","text":"CB","style":"rect"}
+opCC:{"type":"button","size":[22,20],"pos":[599,242],"font":"mono","text":"CC","style":"rect"}
+opCD:{"type":"button","size":[22,20],"pos":[619,242],"font":"mono","text":"CD","style":"rect"}
+opCE:{"type":"button","size":[22,20],"pos":[639,242],"font":"mono","text":"CE","style":"rect"}
+opCF:{"type":"button","size":[22,20],"pos":[659,242],"font":"mono","text":"CF","style":"rect"}
+opD0:{"type":"button","size":[22,20],"pos":[359,260],"font":"mono","text":"D0","style":"rect"}
+opD1:{"type":"button","size":[22,20],"pos":[379,260],"font":"mono","text":"D1","style":"rect"}
+opD2:{"type":"button","size":[22,20],"pos":[399,260],"font":"mono","text":"D2","style":"rect"}
+opD3:{"type":"button","size":[22,20],"pos":[419,260],"font":"mono","text":"D3","style":"rect"}
+opD4:{"type":"button","size":[22,20],"pos":[439,260],"font":"mono","text":"D4","style":"rect"}
+opD5:{"type":"button","size":[22,20],"pos":[459,260],"font":"mono","text":"D5","style":"rect"}
+opD6:{"type":"button","size":[22,20],"pos":[479,260],"font":"mono","text":"D6","style":"rect"}
+opD7:{"type":"button","size":[22,20],"pos":[499,260],"font":"mono","text":"D7","style":"rect"}
+opD8:{"type":"button","size":[22,20],"pos":[519,260],"font":"mono","text":"D8","style":"rect"}
+opD9:{"type":"button","size":[22,20],"pos":[539,260],"font":"mono","text":"D9","style":"rect"}
+opDA:{"type":"button","size":[22,20],"pos":[559,260],"font":"mono","text":"DB","style":"rect"}
+opDB:{"type":"button","size":[22,20],"pos":[579,260],"font":"mono","text":"DB","style":"rect"}
+opDC:{"type":"button","size":[22,20],"pos":[599,260],"font":"mono","text":"DC","style":"rect"}
+opDD:{"type":"button","size":[22,20],"pos":[619,260],"font":"mono","text":"DD","style":"rect"}
+opDE:{"type":"button","size":[22,20],"pos":[639,260],"font":"mono","text":"DE","style":"rect"}
+opDF:{"type":"button","size":[22,20],"pos":[659,260],"font":"mono","text":"DF","style":"rect"}
+opE0:{"type":"button","size":[22,20],"pos":[359,278],"font":"mono","text":"E0","style":"rect"}
+opE1:{"type":"button","size":[22,20],"pos":[379,278],"font":"mono","text":"E1","style":"rect"}
+opE2:{"type":"button","size":[22,20],"pos":[399,278],"font":"mono","text":"E2","style":"rect"}
+opE3:{"type":"button","size":[22,20],"pos":[419,278],"font":"mono","text":"E3","style":"rect"}
+opE4:{"type":"button","size":[22,20],"pos":[439,278],"font":"mono","text":"E4","style":"rect"}
+opE5:{"type":"button","size":[22,20],"pos":[459,278],"font":"mono","text":"E5","style":"rect"}
+opE6:{"type":"button","size":[22,20],"pos":[479,278],"font":"mono","text":"E6","style":"rect"}
+opE7:{"type":"button","size":[22,20],"pos":[499,278],"font":"mono","text":"E7","style":"rect"}
+opE8:{"type":"button","size":[22,20],"pos":[519,278],"font":"mono","text":"E8","style":"rect"}
+opE9:{"type":"button","size":[22,20],"pos":[539,278],"font":"mono","text":"E9","style":"rect"}
+opEA:{"type":"button","size":[22,20],"pos":[559,278],"font":"mono","text":"EC","style":"rect"}
+opEB:{"type":"button","size":[22,20],"pos":[579,278],"font":"mono","text":"EB","style":"rect"}
+opEC:{"type":"button","size":[22,20],"pos":[599,278],"font":"mono","text":"EC","style":"rect"}
+opED:{"type":"button","size":[22,20],"pos":[619,278],"font":"mono","text":"ED","style":"rect"}
+opEE:{"type":"button","size":[22,20],"pos":[639,278],"font":"mono","text":"EE","style":"rect"}
+opEF:{"type":"button","size":[22,20],"pos":[659,278],"font":"mono","text":"EF","style":"rect"}
+opF0:{"type":"button","size":[22,20],"pos":[359,296],"font":"mono","text":"F0","style":"rect"}
+opF1:{"type":"button","size":[22,20],"pos":[379,296],"font":"mono","text":"F1","style":"rect"}
+opF2:{"type":"button","size":[22,20],"pos":[399,296],"font":"mono","text":"F2","style":"rect"}
+opF3:{"type":"button","size":[22,20],"pos":[419,296],"font":"mono","text":"F3","style":"rect"}
+opF4:{"type":"button","size":[22,20],"pos":[439,296],"font":"mono","text":"F4","style":"rect"}
+opF5:{"type":"button","size":[22,20],"pos":[459,296],"font":"mono","text":"F5","style":"rect"}
+opF6:{"type":"button","size":[22,20],"pos":[479,296],"font":"mono","text":"F6","style":"rect"}
+opF7:{"type":"button","size":[22,20],"pos":[499,296],"font":"mono","text":"F7","style":"rect"}
+opF8:{"type":"button","size":[22,20],"pos":[519,296],"font":"mono","text":"F8","style":"rect"}
+opF9:{"type":"button","size":[22,20],"pos":[539,296],"font":"mono","text":"F9","style":"rect"}
+opFA:{"type":"button","size":[22,20],"pos":[559,296],"font":"mono","text":"FC","style":"rect"}
+opFB:{"type":"button","size":[22,20],"pos":[579,296],"font":"mono","text":"FB","style":"rect"}
+opFC:{"type":"button","size":[22,20],"pos":[599,296],"font":"mono","text":"FC","style":"rect"}
+opFD:{"type":"button","size":[22,20],"pos":[619,296],"font":"mono","text":"FD","style":"rect"}
+opFE:{"type":"button","size":[22,20],"pos":[639,296],"font":"mono","text":"db","style":"rect"}
+opFF:{"type":"button","size":[22,20],"pos":[659,296],"font":"mono","text":"hl","style":"rect"}
+cmd_s:{"type":"button","size":[22,20],"pos":[13,238],"font":"mono","text":"%s","style":"rect","shortcut":"s"}
+cmd_g:{"type":"button","size":[22,20],"pos":[33,238],"font":"mono","text":"%g","style":"rect","shortcut":"g"}
+cmd_r:{"type":"button","size":[22,20],"pos":[53,238],"font":"mono","text":"%r","style":"rect","shortcut":"r"}
+
+{script:bytecode.0}
+mb4.set_echo[on echo line do
+  output.text: output.text,"\n",line 
+  output.scroll: 999999
+end]
+
+on view do
+  status.text
+    : mb4.showStack["ds"], "\n"
+    , mb4.showStack["cs"], "\n"
+    , mb4.showIp[]
+end
+
+
+on run line do
+ echo["> ",line]
+ mb4.b4i[line]
+ view[]
+end
+
+on click do
+  run[me.text]
+end
+{end}
+
+{script:bytecode.1}
+on change val do
+ 
+end
+{end}
+
+{script:bytecode.2}
+on click do
+  eval[meta.text 0 1]
+end
+{end}
+
+{card:b4i}
+image:"%%IMG2A2IB/iv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K74n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/Ky8n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/Ky8n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/Ky8n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/Ky8n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/Ky8n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/Ky8n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/Ky8n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/Ky8n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/Ky8n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/Ky8n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/Ky8n/yc2K/8r/ysvJ/8nNiv/K/8rLyf/JzYr/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/K/8r/yv/Ky4="
+script:"b4i.0"
+{widgets}
+output:{"type":"field","size":[309,147],"pos":[13,65],"scrollbar":1,"style":"code","value":"> %c %r\n> 100 `E wi\n> !100 io 'e rt\n> @100\nio 'e rt .. .. .. .. .. .. .. .. .. .. .. .. ..\n> 'o 'l 'l 'e 'h\n> ^E ^E ^E ^E ^E\nhello"}
+input:{"type":"field","size":[309,19],"pos":[13,213],"script":"bytecode.1","border":1,"scrollbar":0,"style":"code","value":"zp"}
+status:{"type":"field","size":[309,37],"pos":[13,27],"locked":1,"script":"bytecode.1","show":"transparent","border":1,"scrollbar":0,"style":"code","value":"ds: []\ncs: []\nip: 100"}
+run_lil:{"type":"button","size":[69,24],"pos":[345,466],"script":"b4i.1","font":"mono","show":"invert","text":"run (lil)"}
+src_lil:{"type":"field","size":[335,187],"pos":[345,276],"script":"b4i.2","scrollbar":1,"style":"code","value":"# start on debugger. draw some ram, highlight ip\nip:mb4.get_vm[].ip\na0: 256 gw:16 mw:31 cs: 18,18  ofs:3,4  \non gxy i do (gw%i),floor i/gw end\nixy: (ofs+(mw,0)-(3,3))+cs*gxy[ip-a0]\nc: card.widgets.canvas1\nc.pattern: 44 c.rect[0,0 c.size]        # bg\nc.pattern: 42 c.rect[0,0 mw,c.size[1]]  # hex\nc.pattern: 1  c.rect[ixy cs+0,1]        # ip\nc.pattern: 0 c.font: \"mono\"\neach i in range 8\n  a: a0+16*i\n  t: \"%04H %s\" format a,mb4.showMem[a]\n  c.text[t (0,cs[1]*i)+ofs]\nend"}
+cmd_s:{"type":"button","size":[22,20],"pos":[13,238],"font":"mono","text":"%s","style":"rect","shortcut":"s"}
+cmd_g:{"type":"button","size":[22,20],"pos":[33,238],"font":"mono","text":"%g","style":"rect","shortcut":"g"}
+cmd_r:{"type":"button","size":[22,20],"pos":[53,238],"font":"mono","text":"%r","style":"rect","shortcut":"r"}
+button1:{"type":"button","size":[38,24],"pos":[284,234],"script":"b4i.3","font":"body","show":"invert","text":"clear"}
+canvas1:{"type":"canvas","size":[318,149],"pos":[345,27],"script":"b4i.4","font":"mono","image":"%%IMG2AT4AlSofLP8sICofARIs/ywOKh8BEiz/LA4qHwESLP8sDiofARIs/ywOKh8BEiwEAAEs/ywJKgQAAyoEAAEqBAADKgMAAyoGAQQAAQENLAQAASwXAAEs8CoDAAEqAwABKgIAAioDAAEqAwABKgEAASoDAAEqBQESLAQAASwXAAEs8CoDAAEqAgACKgMAASoDAAEqAgACKgEAASoCAAIqBQEEAAEBBAADAQYsCQADLAgAASwBAAIsAwAELO4qAwABKgEAASoBAAEqAwABKgMAASoBAAEqAQABKgEAASoBAAEqAQABKgUBBAABAQMAAQEDAAEBBSwIAAEsAwABLAcAAiwCAAEsAwABLPAqAwACKgIAASoDAAEqAwACKgIAASoBAAIqAgABKgUBBAABAQMAAQEDAAEBBSwIAAUsBwABLAcAASzwKgMAASoDAAEqAwABKgMAASoDAAEqAQABKgMAASoFAQQAAQEDAAEBAwABAQUsCAABLAsAASwHAAEsCwACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwFKgQAAyoEAAEqBAADKgMAAyoGAQQAAQEEAAMBBiwJAAQsBwABLAgAAiwJAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAUqHwESLP8sDiofARIs/ywOKh8BEiz/LA4qHwESLP8sDiofARIs/ywOKh8BEiz/LA4qHwESLP8sDiofLP8sICofLP8sICofLP8sICofLP8sICoEAAMqBAABKgUAASoEAAMqBiz/LCAqAwABKgMAASoCAAIqBAACKgMAASoDAAEqBSz/LCAqAwABKgIAAioDAAEqBQABKgMAASoCAAIqBSz/LCAqAwABKgEAASoBAAEqAwABKgUAASoDAAEqAQABKgEAASoFLP8sICoDAAIqAgABKgMAASoFAAEqAwACKgIAASoFLP8sICoDAAEqAwABKgMAASoFAAEqAwABKgMAASoFLAQAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsBSoEAAMqBAABKgUAASoEAAMqBiwEAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAUqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqBAADKgQAASoEAAMqAwADKgYs/ywgKgMAASoDAAEqAgACKgMAASoDAAEqAQABKgMAASoFLP8sICoDAAEqAgACKgMAASoHAAEqAQABKgIAAioFLP8sICoDAAEqAQABKgEAASoDAAEqBgABKgIAASoBAAEqAQABKgUs/ywgKgMAAioCAAEqAwABKgUAASoDAAIqAgABKgUs/ywgKgMAASoDAAEqAwABKgQAASoEAAEqAwABKgUsBAACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwFKgQAAyoEAAEqAwAFKgIAAyoGLAQAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsBSofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICoEAAMqBAABKgQAAyoDAAMqBiz/LCAqAwABKgMAASoCAAIqAwABKgMAASoBAAEqAwABKgUs/ywgKgMAASoCAAIqAwABKgcAASoBAAEqAgACKgUs/ywgKgMAASoBAAEqAQABKgMAASoFAAIqAgABKgEAASoBAAEqBSz/LCAqAwACKgIAASoDAAEqBwABKgEAAioCAAEqBSz/LCAqAwABKgMAASoDAAEqAwABKgMAASoBAAEqAwABKgUsBAACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwFKgQAAyoEAAEqBAADKgMAAyoGLAQAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsBSofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICoEAAMqBAABKgYAASoDAAMqBiz/LCAqAwABKgMAASoCAAIqBQACKgIAASoDAAEqBSz/LCAqAwABKgIAAioDAAEqBAABKgEAASoCAAEqAgACKgUs/ywgKgMAASoBAAEqAQABKgMAASoDAAEqAgABKgIAASoBAAEqAQABKgUs/ywgKgMAAioCAAEqAwABKgMABSoBAAIqAgABKgUs/ywgKgMAASoDAAEqAwABKgYAASoCAAEqAwABKgUsBAACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwFKgQAAyoEAAEqBgABKgMAAyoGLAQAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsBSofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICoEAAMqBAABKgMABSoCAAMqBiz/LCAqAwABKgMAASoCAAIqAwABKgUAASoDAAEqBSz/LCAqAwABKgIAAioDAAEqAwAEKgIAASoCAAIqBSz/LCAqAwABKgEAASoBAAEqAwABKgcAASoBAAEqAQABKgEAASoFLP8sICoDAAIqAgABKgMAASoHAAEqAQACKgIAASoFLP8sICoDAAEqAwABKgMAASoDAAEqAwABKgEAASoDAAEqBSwEAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAUqBAADKgQAASoEAAMqAwADKgYsBAACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwFKh8s/ywgKh8s/ywgKh8s/ywgKh8s/ywgKh8s/ywgKh8s/ywgKh8s/ywgKh8s/ywgKh8s/ywgKh8s/ywgKh8s/ywgKgQAAyoEAAEqBAADKgMAAyoGLP8sICoDAAEqAwABKgIAAioDAAEqBQABKgMAASoFLP8sICoDAAEqAgACKgMAASoDAAQqAgABKgIAAioFLP8sICoDAAEqAQABKgEAASoDAAEqAwABKgMAASoBAAEqAQABKgEAASoFLP8sICoDAAIqAgABKgMAASoDAAEqAwABKgEAAioCAAEqBSz/LCAqAwABKgMAASoDAAEqAwABKgMAASoBAAEqAwABKgUsBAACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwFKgQAAyoEAAEqBAADKgMAAyoGLAQAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsBSofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICofLP8sICoEAAMqBAABKgMABSoCAAMqBiz/LCAqAwABKgMAASoCAAIqBwABKgEAASoDAAEqBSz/LCAqAwABKgIAAioDAAEqBwABKgEAASoCAAIqBSz/LCAqAwABKgEAASoBAAEqAwABKgYAASoCAAEqAQABKgEAASoFLP8sICoDAAIqAgABKgMAASoFAAEqAwACKgIAASoFLP8sICoDAAEqAwABKgMAASoFAAEqAwABKgMAASoFLAQAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsBSoEAAMqBAABKgUAASoEAAMqBiwEAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAoAAiwEAAIsCgACLAQAAiwKAAIsBAACLAUqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCAqHyz/LCA=","pattern":0,"scale":1}
+button2:{"type":"button","size":[69,24],"pos":[13,466],"script":"b4i.5","font":"mono","show":"invert","text":"run (b4i)"}
+src_b4i:{"type":"field","size":[309,189],"pos":[13,274],"script":"b4i.2","scrollbar":1,"style":"code","value":"# b4i interprets b4a assembly instructions\n# in \"calculator mode\".\n# clear ram and reset stack\n%c %r\n# store (hex address) 100 in register \"E\"\n100 `E wi\n# assemble program E (\"emit\") at 100 \n# it will exec io cmd e (emit[dpop]) and return \n!100 io 'e rt\n@100\n# now we can push some characters to the stack\n'o 'l 'l 'e 'h\n# and invoke the program (once per character)\n^E ^E ^E ^E ^E\n# in this way, the registers act like a\n# forth dictionary with \"words\" of 1 character"}
+
+{script:b4i.0}
+mb4.set_echo[on echo line do
+  t:output.text
+  output.text: if t t,"\n",line else line end
+  output.scroll: 999999
+end]
+
+on view do
+  status.text
+    : mb4.showStack["ds"], "\n"
+    , mb4.showStack["cs"], "\n"
+    , mb4.showIp[]
+end
+
+
+on run line do
+ echo["> ",line]
+ mb4.b4i[line]
+ view[]
+end
+
+on click do
+  run[me.text]
+end
+{end}
+
+{script:b4i.1}
+on click do
+  eval[src_lil.text 0 1]
+end
+{end}
+
+{script:b4i.2}
+on run do
+  # ignore (just so this doesn't trigger input)
+end
+{end}
+
+{script:b4i.3}
+on click do
+  output.text:""
+end
+{end}
+
+{script:b4i.4}
+on click pos do
+ 
+end
+
+on drag pos do
+ 
+end
+
+on release pos do
+ 
+end
+{end}
+
+{script:b4i.5}
+on click do
+  output.text:""
+  each line in "\n" split src_b4i.text
+    if !line[0]="#" run[line] end
+  end
+end
+{end}
+
+{card:arne}
+image:"%%IMG2A2IB/gH/ASAA/wD/AEUB/wEhAP8A/wBEAf8BIgD/AP8AQwH/ASMA/wD/AEIB/wEkAP8A/wBBAf8BJQD/AP8AQAH/ASYA/wD/AD8B/wEnAP8A/wA+Af8BKAD/AP8APQH/ASkA/wD/ADwB/wEqAP8A/wA7Af8BKwD/AP8AOgH/ASwA/wD/ADkB/wEtAAIiAwD/AP8AMwH/AS4iBQD/AP8AMgH/AS0iBwD/AP8AMQH/AS0iCAD/AP8AMAH/AS0iCQD/AP8ALwH/AS4iCQD/AP8ALgH/AS8iCQD/AP8ALQH/ATAiCQD/AP8ALAH/ATEiCQD/AP8AKwH/ATIiCQD/AP8AKgH/ATMiCQD/AP8AKQH/ATQiCQD/AP8AKAH/ATUiCQD/AP8AJwH/ATYiCQD/AP8AJgH/ATciCQD/AP8AJQH/ATgiCQD/AP8AJAH/ATkiCQD/AP8AIwH/AToiCQD/AP8AIgH/ATsiCQD/AP8AIQH/ATwiCQD/AP8AIAH/AT0iCQD/AP8AHwH/AT4iCQD/AP8AHgH/AT8iCQD/AP8AHQH/AUAiCQD/AP8AHAH/AUEiCQD/AP8AGwH/AUIiCQD/AP8AGgH/AUMiCQD/AP8AGQH/AUQiCQD/AP8AGAH/AUUiCQD/AP8AFwH/AUYiCQD/AP8AFgH/AUciCQD/AP8AFQH/AUgiCQD/AP8AFAH/AUkiCQD/AP8AEwH/AUoiCQD/AP8AEgH/AUsiCQD/AP8AEQH/AUwiCQCMDVEA/wAyAf8BTSIJAIsNAQEPDQEhDw0BJA8NASkPDQEqDw0BAP8AMgH/AU4iCQCKDQEBDw0BIQ8NASQPDQEpDw0BKg8NAQD/ADIB/wFPIgkAiQ0BAQ8NASEPDQEkDw0BKQ8NASoPDQEA/wAyAf8BUCIJAIgNAQEPDQEhDw0BJA8NASkPDQEqDw0BAP8AMgH/AVEiCQCHDQEBDw0BIQ8NASQPDQEpDw0BKg8NAQD/ADIB/wFSIgkAhg0BAQ8NASEPDQEkDw0BKQ8NASoPDQEA/wAyAf8BUyIJAIUNAQEPDQEhDw0BJA8NASkPDQEqDw0BAP8AMgH/AVQiCQCEDQEBDw0BIQ8NASQPDQEpDw0BKg8NAQD/ADIB/wFVIgkAgw0BAQ8NASEPDQEkDw0BKQ8NASoPDQEA/wAyAf8BViIJAIINAQEPDQEhDw0BJA8NASkPDQEqDw0BAP8AMgH/AVciCQCBDQEBDw0BIQ8NASQPDQEpDw0BKg8NAQD/ADIB/wFYIgkAgA0BAQ8NASEPDQEkDw0BKQ8NASoPDQEA/wAyAf8BWSIJAH8NAQEPDQEhDw0BJA8NASkPDQEqDw0BAP8AMgH/AVoiCQB+DQEBDw0BIQ8NASQPDQEpDw0BKg8NAQD/ADIB/wFbIgkAfQ0BAQ8NASEPDQEkDw0BKQ8NASoPDQEA/wAyAf8BXCIJAHwNUQD/ADIB/wFdIgkAew0BIg8NASMPDQElDw0BKA8NASsPDQEA/wAyAf8BXiIJAHoNASIPDQEjDw0BJQ8NASgPDQErDw0BAP8AMgH/AV8iCQB5DQEiDw0BIw8NASUPDQEoDw0BKw8NAQD/ADIB/wFgIgkAeA0BIg8NASMPDQElDw0BKA8NASsPDQEA/wAyAf8BYSIJAHcNASIPDQEjDw0BJQ8NASgPDQErDw0BAP8AMgH/AWIiCQB2DQEiDw0BIw8NASUPDQEoDw0BKw8NAQD/ADIB/wFjIgkAdQ0BIg8NASMPDQElDw0BKA8NASsPDQEA/wAyAf8BZCIJAHQNASIPDQEjDw0BJQ8NASgPDQErDw0BAP8AMgH/AWUiCQBzDQEiDw0BIw8NASUPDQEoDw0BKw8NAQD/ADIB/wFmIgkAcg0BIg8NASMPDQElDw0BKA8NASsPDQEA/wAyAf8BZyIJAHENASIPDQEjDw0BJQ8NASgPDQErDw0BAP8AMgH/AWgiCQBwDQEiDw0BIw8NASUPDQEoDw0BKw8NAQD/ADIB/wFpIgkAbw0BIg8NASMPDQElDw0BKA8NASsPDQEA/wAyAf8BaiIJAG4NASIPDQEjDw0BJQ8NASgPDQErDw0BAP8AMgH/AWsiCQBtDQEiDw0BIw8NASUPDQEoDw0BKw8NAQD/ADIB/wFsIgkAbA1RAP8AMgH/AW0iCQBrDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AW4iCQBqDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AW8iCQBpDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXAiCQBoDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXEiCQBnDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXIiCQBmDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXMiCQBlDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXQiCQBkDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXUiCQBjDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXYiCQBiDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXciCQBhDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXgiCQBgDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXkiCQBfDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXoiCQBeDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXsiCQBdDQEADw0BJg8NAQAfDQEsDw0BAP8AMgH/AXwiCQBcDSEAHw0RAP8AMgH/AX0iCQBrDQEnDw0BAB8NAS0PDQEA/wAyAf8BfiIJAGoNAScPDQEAHw0BLQ8NAQD/ADIB/wF/IgkAaQ0BJw8NAQAfDQEtDw0BAP8AMgH/AYAiCQBoDQEnDw0BAB8NAS0PDQEA/wAyAf8BgSIJAGcNAScPDQEAHw0BLQ8NAQD/ADIB/wGCIgkAZg0BJw8NAQAfDQEtDw0BAP8AMgH/AYMiCQBlDQEnDw0BAB8NAS0PDQEA/wAyAf8BhCIJAGQNAScPDQEAHw0BLQ8NAQD/ADIB/wGFIgkAYw0BJw8NAQAfDQEtDw0BAP8AMgH/AYYiCQBiDQEnDw0BAB8NAS0PDQEA/wAyAf8BhyIJAGENAScPDQEAHw0BLQ8NAQD/ADIB/wGIIgkAYA0BJw8NAQAfDQEtDw0BAP8AMgH/AYkiCQBfDQEnDw0BAB8NAS0PDQEA/wAyAf8BiiIJAF4NAScPDQEAHw0BLQ8NAQD/ADIB/wGLIgkAXQ0BJw8NAQAfDQEtDw0BAP8AMgH/AYwiCQBcDREAHw0RAP8AMgH/AY0iCQCLDQEuDw0BAP8AMgH/AY4iCQCKDQEuDw0BAP8AMgH/AY8iCQCJDQEuDw0BAP8AMgH/AZAiCQCIDQEuDw0BAP8AMgH/AZEiCQCHDQEuDw0BAP8AMgH/AZIiCQCGDQEuDw0BAP8AMgH/AZMiCQCFDQEuDw0BAP8AMgH/AZQiCQCEDQEuDw0BAP8AMgH/AZUiCQCDDQEuDw0BAP8AMgH/AZYiCQCCDQEuDw0BAP8AMgH/AZciCQCBDQEuDw0BAP8AMgH/AZgiCQCADQEuDw0BAP8AMgH/AZkiCQB/DQEuDw0BAP8AMgH/AZoiCQB+DQEuDw0BAP8AMgH/AZsiCQB9DQEuDw0BAP8AMgH/AZwiCQB8DREA/wAyAf8BnSIJAP8AvgH/AZ4iCQD/AL0B/wGfIgkA/wC8Af8BoCIJAP8AuwH/AaEiCQD/ALoB/wGiIgkA/wC5Af8BoyIJAP8AuAH/AaQiCQD/ALcB/wGlIgkA/wC2Af8BpiIJAP8AtQH/AaciCQD/ALQB/wGoIgkA/wCzAf8BqSIJAP8AsgH/AaoiCQD/ALEB/wGrIgkA/wCwAf8BrCIJAP8ArwH/Aa0iCQD/AK4B/wGuIgkA/wCtAf8BryIJAP8ArAH/AbAiCQD/AKsB/wGxIgkA/wCqAf8BsiIJAP8AqQH/AbMiCQD/AKgB/wG0IgkA/wCnAf8BtSIJAP8ApgH/AbYiCQD/AKUB/wG3IgkA/wCkAf8BuCIJAP8AowH/AbkiCQD/AKIB/wG6IgkA/wChAf8BuyIJAP8AoAH/AbwiCQD/AJ8B/wG9IgkA/wCeAf8BviIJAP8AnQH/Ab8iCQD/AJwB/wHAIgkA/wCbAf8BwSIJAP8AmgH/AcIiCQD/AJkB/wHDIgkA/wCYAf8BxCIJAP8AlwH/AcUiCQD/AJYB/wHGIgkA/wCVAf8BxyIJAP8AlAH/AcgiCQD/AJMB/wHJIgkA/wCSAf8ByiIJAP8AkQH/AcsiCQD/AJAB/wHMIgkA/wCPAf8BzSIJAP8AjgH/Ac4iCQD/AI0B/wHPIgkA/wCMAf8B0CIJAP8AiwH/AdEiCQD/AIoB/wHSIgkA/wCJAf8B0yIJAP8AiAH/AdQiCQD/AIcB/wHVIgkA/wCGAf8B1iIJAP8AhQH/AdciCQD/AIQB/wHYIgkA/wCDAf8B2SIJAP8AggH/AdoiCQD/AIEB/wHbIgkA/wCAAf8B3CIJAP8AfwH/Ad0iCQD/AH4B/wHeIgkA/wB9Af8B3yIJAP8AfAH/AeAiCQD/AHsB/wHhIgkA/wB6Af8B4iIJAP8AeQH/AeMiCQD/AHgB/wHkIgkA/wB3Af8B5SIJAP8AdgH/AeYiCQD/AHUB/wHnIgkA/wB0Af8B6CIJAP8AcwH/AekiCQD/AHIB/wHqIgkA/wBxAf8B6yIJAP8AcAH/AewiCQD/AG8B/wHtIgkA/wBuAf8B7iIJAP8A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YyIJAOYB/wEBDQEuDw0BAf8BZCIJAOUB/wEBDQEuDw0BAf8BZSIJAOQB/wEBDQEuDw0BAf8BZiIJAOMB/wEBDQEuDw0BAf8BZyIJAOIB/wEBDQEuDw0BAf8BaCIJAOEB/wEBDQEuDw0BAf8BaSIJAOAB/wEBDREB/wFqIgkA3wH/Af8BfSIJAN4B/wH/AX4iCQDdAf8B/wF/IgkA3AH/Af8BgCIJANsB/wH/AYEiCQDaAf8B/wGCIgkA2QH/Af8BgyIJANgB/wH/AYQiCQDXAf8B/wGFIgkA1gH/Af8BhiIJANUB/wH/AYciCQDUAf8B/wGIIgkA0wH/Af8BiSIJANIB/wH/AYoiCQDRAf8B/wGLIgkA0AH/Af8BjCIJAM8B/wH/AY0iCQDOAf8B/wGOIgkAzQH/Af8BjyIJAMwB/wH/AZAiCQDLAf8B/wGRIgkAygH/Af8BkiIJAMkB/wH/AZMiCQDIAf8B/wGUIgkAxwH/Af8BlSIJAMYB/wH/AZYiCQDFAf8B/wGXIgkAxAH/Af8BmCIJAMMB/wH/AZkiCQDCAf8B/wGaIgkAwQH/Af8BmyIJAMAB/wH/AZwiCQC/Af8B/wGdIgkAvgH/Af8BniIJAL0B/wH/AZ8iCQC8Af8B/wGgIgkAuwH/Af8BoSIJALoB/wH/AaIiCQC5Af8B/wGjIgkAuAH/Af8BpCIJALcB/wH/AaUiCQC2Af8B/wGmIgkAtQH/Af8BpyIJALQB/wH/AagiCQCzAf8B/wGpIgkAsgH/Af8BqiIJALEB/wH/AasiCQCwAf8B/wGsIgkArwH/Af8BrSIJAK4B/wH/Aa4iCQCtAf8B/wGvIgkArAH/Af8BsCIJAKsB/wH/AbEiCQCqAf8B/wGyIgkAqQH/Af8BsyIJAKgB/wH/AbQiCQCnAf8B/wG1IgkApgH/Af8BtiIJAKUB/wH/AbciCQCkAf8B/wG4IgkAowH/Af8BuSIJAKIB/wH/AboiCQChAf8B/wG7IgkAoAH/Af8BvCIJAJ8B/wH/Ab0iCQCeAf8B/wG+IgkAnQH/Af8BvyIJAJwB/wH/AcAiCQCbAf8B/wHBIgkAmgH/Af8BwiIJAJkB/wH/AcMiCQCYAf8B/wHEIgkAlwH/Af8BxSIJAJYB/wH/AcYiCQCVAf8B/wHHIgkAlAH/Af8ByCIJAJMB/wH/AckiCQCSAf8B/wHKIgkAkQH/Af8ByyIJAJAB/wH/AcwiCQCPAf8B/wHNIgkAjgH/Af8BziIJAI0B/wH/Ac8iCQCMAf8B/wHQIgkAiwH/Af8B0SIJAIoB/wH/AdIiCQCJAf8B/wHTIgkAiAH/Af8B1CIJAIcB/wH/AdUiCQCGAf8B/wHWIgkAhQH/Af8B1yIJAIQB/wH/AdgiCQCDAf8B/wHZIgkAggH/Af8B2iIJAIEB/wH/AdsiCQCAAf8B/wHcIgkAfwH/Af8B3SIJAH4B/wH/Ad4iCQB9Af8B/wHfIgkAfAH/Af8B4CIJAHsB/wH/AeEiCQB6Af8B/wHiIgkAeQH/Af8B4yIJAHgB/wH/AeQiCQB3Af8B/wHlIgkAdgH/Af8B5iIJAHUB/wH/AeciCQB0Af8B/wHoIgkAcwH/Af8B6SIJAHIB/wH/AeoiCQBxAf8B/wHrIgkAcAH/Af8B7CIJAG8B/wH/Ae0iCQBuAf8B/wHuIgkAbQH/Af8B7yIJAGwB/wH/AfAiCQBrAf8B/wHxIgkAagH/Af8B8iIJAGkB/wH/AfMiCQBoAf8B/wH0IgkAZwH/Af8B9SIJAGYB/wH/AfYiCQBlAf8B/wH3IgkAZAH/Af8B+CIJAGMB/wH/AfkiCQBiAf8B/wH6IgkAYQH/Af8B+yIJAGAB/wH/AfwiCQBfAf8B/wH9IgkAXgH/Af8B/iIJAF0B/wH/Af8iCQBcAf8B/wH/AQEiCQBbAf8B/wH/AQIiCQBaAf8B/wH/AQMiCQBZAf8B/wH/AQQiCQBYAf8B/wH/AQUiCQBXAf8B/wH/AQYiCQBWAf8B/wH/AQciCQBVAf8B/wH/AQgiCQBUAf8B/wH/AQkiCQBTAf8B/wH/AQoiCQBSAf8B/wH/AQsiCQBRAf8B/wH/AQwiCQBQAf8B/wH/AQ0iCQBPAf8B/wH/AQ4iCQBOAf8B/wH/AQ8iCQBNAf8B/wH/ARAiCQBMAf8B/wH/AREiCQBLAf8B/wH/ARIiCQBKAf8B/wH/ARMiCQBJAf8B/wH/ARQiCQBIAf8B/wH/ARUiCQBHAf8B/wH/ARYiCQBGAf8B/wH/ARciCQBFAf8B/wH/ARgiCQBEAf8B/wH/ARkiCQBDAf8B/wH/ARoiCQBC"
+{widgets}
+field1:{"type":"field","size":[279,143],"pos":[27,38],"value":"# arne color palette (copy and paste to listener (^L))\n\n# https://lospec.com/palette-list/arne-16\narne: (list \"%h\") parse \" \" split \"ffffff 493c2b 9d9d9d a46422 be2633 e06f8b eb8931 f7e26b a3ce27 44891a 1b2632 2f484e 005784 31a2f2 b2dcef 000000\"\neach i in range 16 patterns[i+32]:arne[i] end"}
+
+{module:mb4}
+description:"the b4 virtual machine"
+{script}
+
+vm.ip: 256
+vm.ds: ()
+vm.cs: ()
+vm.ob: ()
+vm.ram: array[1024 "u8"]
+mod.reset: on reset do
+  vm.ip: 256
+  vm.ds: ()
+  vm.cs: ()
+  vm.ob: ()
+end
+mod.clear: on clear do
+  vm.ram: array[1024 "u8"]
+end
+
+on dtos do last vm.ds end
+on dpop do r: last vm.ds vm.ds:-1 drop vm.ds r end
+on dput x do vm.ds: vm.ds,x end
+on cpop do r: last vm.cs vm.cs:-1 drop vm.cs r end
+on cput x do vm.cs: vm.cs,x end
+
+
+op.ad: on ad do dput[dpop[] + dpop[]] end
+op.ml: on ml do dput[dpop[] * dpop[]] end
+op.sb: on sb do y:dpop[] dput[dpop[]-y] end
+op.dv: on dv do y:dpop[] dput[floor dpop[]/y] end
+op.md: on md do dput[dpop[] % dpop[]] end # !!
+op.sh: on sh do y:2^dpop[] dput[dpop[]*y] end
+op.an: on an do dput[bits.and[dpop[] dpop[]]] end
+op.or: on or do dput[bits.or[dpop[] dpop[]]] end
+op.xr: on xr do dput[bits.xor[dpop[] dpop[]]] end
+op.nt: on nt do dput[-1-dpop[]] end
+op.zp: on zp do dpop[] end
+op.eq: on eq do dput[-(dpop[] = dpop[])] end
+op.lt: on lt do y:dpop[] dput[-(dpop[]<y)] end
+op.du: on du do dput[dtos[]] end
+op.sw: on sw do y:dpop[] x:dpop[] dput[y] dput[x]end
+op.ov: on ov do dput[last -1 drop vm.ds] end
+op.dc: on dc do cput[dpop[]] end
+op.cd: on cd do dput[cpop[]] end
+
+
+op.wb: on wb do vm.ram[dpop[]]: dpop[] end
+op.rb: on rb do dput[vm.ram[dpop[]]] end
+on _ri a do sum(256^range 4)*vm.ram[a,4] end
+op.ri: on ri do dput[_ri[dpop[]]] end
+on _bytes n do
+  each _ in range 4 r:bits.and[255,n] n:floor n/256 r end
+end
+on _wi a v do vm.ram[a,4]:_bytes[v] end
+op.wi: on wi do a:dpop[] v:dpop[] _wi[a v] end
+
+on ord c do "%a" parse c end
+on reg uc do 4*ord[uc]-64 end
+RX: reg["X"] RY: reg["Y"] RZ: reg["Z"]
+on _rinc a do r:_ri[a] _wi[a r+4] r end
+op.rx: on rx do dput[_ri[_rinc[RX]]] end
+op.ry: on ry do dput[_ri[_rinc[RY]]] end
+op.wz: on wz do _wi[_rinc[RZ] dpop[]] end
+
+op.lb: on lb do dput[vm.ram[vm.ip:vm.ip+1]] end
+op.li: on li do dput[_ri[vm.ip+1]] vm.ip: vm.ip+4 end
+
+on _goto a do vm.ip:(max 256,a)-1 end
+on _hop do
+  vm.ram.cast:"i8"
+  _goto[vm.ip+vm.ram[vm.ip+1]]
+  vm.ram.cast:"u8"
+end
+op.hp: on hp do _hop[] end
+op.h0: on h0 do if dpop[] vm.ip:vm.ip+1 else _hop[] end end
+op.jm: on jm do _goto[_ri[vm.ip+1]] end
+op.cl: on cl do cput[vm.ip+4] _goto[_ri[vm.ip+1]] end
+op.rt: on rt do _goto[cpop[]] end
+op.nx: on rt do
+  i:cpop[]-1 if i>0 cput[i] end
+  if i>0 _hop[] else vm.ip:vm.ip+1 end
+end
+
+# immediately invoke a "dictionary" register
+op.im: on im r do cput[vm.ip] _goto[_ri[4*r]] end
+op.io: on io do
+  cmd: vm.ram[vm.ip:vm.ip+1]
+  if cmd=ord["e"] c:dpop[] vm.ob:vm.ob,("%a" format c) end
+end
+
+on toHex n do
+  if n < 0 "-%H" format -n else "%H" format n end
+end
+on isHex s do "%*.1o-%*.16r0123456789ABCDEF%z" parse s end
+on unHex s do  p: "%.1o-%H" parse s  if p[0] 0-p[1] else p[1] end end
+
+mod.showStack: on showStack xs do
+  "%s: [%s]" format xs,(" " fuse toHex @ vm[xs])
+end
+
+
+TBL:
+".. ^A ^B ^C ^D ^E ^F ^G ^H ^I ^J ^K ^L ^M ^N ^O
+^P ^Q ^R ^S ^T ^U ^V ^W ^X ^Y ^Z ^[ ^\\ ^] ^^ ^_
+'* '! '\" '# '$ '% '& '' '( ') '* '+ ', '- '. '/
+'0 '1 '2 '3 '4 '5 '6 '7 '8 '9 ': '; '< '= '> '?
+'@ 'A 'B 'C 'D 'E 'F 'G 'H 'I 'J 'K 'L 'M 'N 'O
+'P 'Q 'R 'S 'T 'U 'V 'W 'X 'Y 'Z '[ '\\ '] '^ '_
+'` 'a 'b 'c 'd 'e 'f 'g 'h 'i 'j 'k 'l 'm 'n 'o
+'p 'q 'r 's 't 'u 'v 'w 'x 'y 'z '{l} '| '{r} '~ ^?
+lb li du sw ov zp dc cd ad sb ml dv md sh an or
+xr nt eq lt jm hp h0 cl rt nx rb wb ri wi rx ry
+wz A1 A2 A3 A4 A5 A6 A7 A8 A9 AA AB AC AD AE AF
+tg ta tw tr tk ts tl tc B8 B9 BA BB BC BD BE BF
+C0 C1 C2 C3 C4 C5 C6 C7 C8 C9 CA CB CC CD CE CF
+D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 DB DB DC DD DE DF
+E0 E1 E2 E3 E4 E5 E6 E7 E8 E9 EC EB EC ED EE EF
+F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 FC FB FC io db hl"
+TBL: " " split " " fuse "\n" split TBL
+TBL:select op:index code:value from TBL[32]: "' "
+
+
+on imOp x do first extract op where (op>1)&(op<32)&(code=x) from TBL end
+
+mod.dis: on dis i do first extract code where op=i from TBL end
+mod.asm: on asm x do
+  if r: extract op where code=x from TBL r
+  else unHex[x] end
+end
+
+mod.step: on step do
+  c:dis[o:vm.ram[vm.ip]]
+  if c in op op[c][]
+  elseif c=".." # ok
+  elseif c[0]="^" op.im[o]
+  else  echo["step->",c,"(ignored)"] end
+  vm.ip: vm.ip+1
+end
+
+RT: first extract op where code="rt" from TBL
+mod.runToEnd: on runToEnd di do
+  while !vm.ram[vm.ip]=RT step[] end step[]
+  vm.ip: vm.ip+di # so imOp can not inc ip
+end
+
+mod.showMem: on showMem a do " " fuse dis @ vm.ram @ a + range 16 end
+mod.showIp: on showIp do "ip: %02H" format vm.ip end
+on writeMem line do
+  p: "!%H %s" parse line
+  a: p[0]  toks: " " split p[1]
+  vm.ram[a,count toks]: raze asm @ toks
+end
+
+mod.b4i: on b4i line do
+  if line[0]="!" writeMem[line]
+  elseif line = ""
+  else each cmd in " " split line
+    if     cmd="%q" if deck reset[] else exit[0] end
+    elseif cmd="%s" step[]
+    elseif cmd="%r" reset[]
+    elseif cmd="%c" clear[]
+    elseif cmd="%e" runToEnd[]
+    elseif cmd="?d" echo[showStack["ds"]]
+    elseif cmd="?c" echo[showStack["cs"]]
+    elseif cmd="?i" echo[showIp[]]
+    elseif cmd="'" vm.ds: vm.ds,32
+    elseif cmd[0]="@" echo[showMem["@%H" parse cmd]]
+    elseif cmd[0]=":" _wi[reg[cmd[1]] dpop[]]
+    elseif cmd[0]="'" vm.ds: vm.ds,ord[cmd[1]]
+    elseif cmd[0]="`" vm.ds: vm.ds,reg[cmd[1]]
+    elseif isHex[cmd] vm.ds: vm.ds,unHex[cmd]
+    elseif cmd in op op[cmd][]
+    elseif o:imOp[cmd] op.im[o] runToEnd[]
+    else echo["no: %s" format cmd] end
+  end end
+  if vm.ob echo[vm.ob] vm.ob:() end
+end
+
+on echo line do mod.echo[line] end
+mod.set_echo: on set_echo fn do mod.echo: fn end
+mod.TBL: TBL
+mod.get_vm:on get_vm do vm end
+{end}
+
