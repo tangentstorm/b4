@@ -27,6 +27,7 @@ end
 
 on dtos do last vm.ds end
 on dpop do r: last vm.ds vm.ds:-1 drop vm.ds r end
+on dpop2 do r:dpop[] dpop[],r end
 on dput x do vm.ds: vm.ds,x end
 on cpop do r: last vm.cs vm.cs:-1 drop vm.cs r end
 on cput x do vm.cs: vm.cs,x end
@@ -92,9 +93,36 @@ end
 # immediately invoke a "dictionary" register
 op.im: on im r do cput[vm.ip] _goto[_ri[4*r]] end
 op.io: on io do
-  cmd: vm.ram[vm.ip:vm.ip+1]
-  if cmd=ord["e"] c:dpop[] vm.ob:vm.ob,("%a" format c) end
+  m: "%a" parse vm.ram[vm.ip:vm.ip+1]
+  if m="e" x:dpop[] vm.ob:vm.ob,("%a" format x)
+  elseif m="R"
+  else echo["no: io '",m] end
 end
+
+
+#--- canvas stuff
+
+cvi.b: on cvib cv do wh:dpop2[] xy:dpop2[] cv.box[xy wh] end   # box (hollow)
+cvi.c: on cvic cv do dput[180] cvi.n[cv] end                   # circle (xyr-)
+cvi.d: on cvid cv do s:cv.size dput[s[0]] dput[s[1]] end       # query dimensions
+cvi.f: on cvif cv do cv.pattern: x:dpop[] end                  # fill
+cvi.l: on cvil cv do p1:dpop2[] cv.line[dpop[], p1] end        # line(p0p1-)
+cvi.n: on cvin cv do  n:dpop[] r:dpop[] xy:dpop2[]             # n-gon (xyrn-)
+  a: 2*pi * (range n)/n  a:a,1 take a
+  cv.poly[flip floor 0.5+xy+r*(list cos a),list sin a]
+end
+cvi.r: on cvir cv do wh:dpop2[] xy:dpop2[] cv.rect[xy wh] end  # rect (filled)
+cvi.s: on cvis cv do cv.brush: x:dpop[] end                    # stroke
+op.cv: on cv do
+  if mod.cv m:"%a" format dpop[]
+    if m in cvi cvi[m][mod.cv]
+    else echo["cv.no: '",m] end
+  else echo["no cv!"] end
+end
+
+
+# ---------------------
+
 
 on toHex n do
   if n < 0 "-%H" format -n else "%H" format n end
@@ -105,6 +133,8 @@ on unHex s do  p: "%.1o-%H" parse s  if p[0] 0-p[1] else p[1] end end
 mod.showStack: on showStack xs do
   "%s: [%s]" format xs,(" " fuse toHex @ vm[xs])
 end
+
+
 
 
 TBL:
@@ -123,7 +153,7 @@ tg ta tw tr tk ts tl tc B8 B9 BA BB BC BD BE BF
 C0 C1 C2 C3 C4 C5 C6 C7 C8 C9 CA CB CC CD CE CF
 D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 DB DB DC DD DE DF
 E0 E1 E2 E3 E4 E5 E6 E7 E8 E9 EC EB EC ED EE EF
-F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 FC FB FC io db hl"
+F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 FC FB cv io db hl"
 TBL: " " split " " fuse "\n" split TBL
 TBL:select op:index code:value from TBL[32]: "' "
 
@@ -184,7 +214,8 @@ mod.b4i: on b4i line do
   if vm.ob echo[vm.ob] vm.ob:() end
 end
 
-on echo line do mod.echo[line] end
+mod.echo: on echo line do mod.echo[line] end
+mod.set_cv: on set_cv cv do mod.cv: cv end
 mod.set_echo: on set_echo fn do mod.echo: fn end
 mod.TBL: TBL
 mod.get_vm:on get_vm do vm end
