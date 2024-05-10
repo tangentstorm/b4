@@ -49,6 +49,7 @@ on dput x do vm.ds: vm.ds,x end
 on cpop do r: last vm.cs vm.cs:-1 drop vm.cs r end
 on cput x do vm.cs: vm.cs,x end
 on here x do if x _wi[HERE x] else _ri[HERE] end end
+on there x do if x _wi[THERE x] else _ri[THERE] end end
 
 op.ad: on ad do dput[dpop[] + dpop[]] end
 op.ml: on ml do dput[dpop[] * dpop[]] end
@@ -221,15 +222,14 @@ mod.b4i: on b4i line do
         else echo["?.no: ",tok] end
       end
     elseif t=":"
+      state:ASM hp:HERE c:tok[1]
       if 2=count tok
-        state:ASM hp:HERE c:tok[1]
         if regop[tok] h:here[] _sr[c h]
         elseif c=":" ok
-        elseif (hex: "?%[a]H%[m]z" parse tok).m _wi[hp:THERE hex.a]
         else echo[".no: ",tok] end
       else
         if tok=":" echo["no: :"]
-        elseif isHex[a:1 drop tok] there[unHex[a]] hp:THERE state:ASM
+        elseif (hex: ":%[a]H%[m]z" parse tok).m _wi[hp:THERE hex.a]
         else state:CMT echo["nyi: '%s'" format tok] end end
     elseif t="'"
       v: if tok="'" 32 else ord[tok[1]] end
@@ -240,11 +240,12 @@ mod.b4i: on b4i line do
       elseif t="`" vm.ds: vm.ds,r
       elseif t="!" v:dpop[] _wi[r v]
       elseif t="@" dput[_ri[r]] end  # @X -> li `X ri
-    elseif tok in op op[tok][]
-    elseif o:imOp[tok] op.im[o] runToEnd[]
+    elseif tok in op
+      if state=ASM asm_via[hp tok] else op[tok][] end
+    elseif o:imOp[tok]
+      if state=ASM asm_via[hp tok] else op.im[o] runToEnd[] end
     elseif isHex[tok]
-      if state=IMM vm.ds: vm.ds,unHex[tok]
-      else asm_via[hp tok] end
+      if state=ASM asm_via[hp tok] else vm.ds: vm.ds,unHex[tok] end
     else echo["no: %s" format cmd] end
   end
   if vm.ob echo[vm.ob] vm.ob:() end
