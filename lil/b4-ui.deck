@@ -33,10 +33,10 @@ cmd_r:{"type":"button","size":[22,20],"pos":[53,238],"font":"mono","text":"%R","
 button1:{"type":"button","size":[38,24],"pos":[284,234],"script":"cv-demo.2","font":"body","show":"transparent","text":"clear","style":"rect"}
 canvas1:{"type":"canvas","size":[318,149],"pos":[345,27],"script":"cv-demo.3","font":"mono","image":"%%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","brush":90,"pattern":43,"scale":1}
 cmd_C:{"type":"button","size":[22,20],"pos":[73,238],"font":"mono","text":"%C","style":"rect","shortcut":"r"}
-b4i_scripts:{"type":"contraption","size":[400,220],"pos":[13,272],"def":"itemlist","widgets":{"label":{"value":"b4i scripts"},"item_text":{"size":[320,199],"value":"%C %R\n:: 01 02 03  :B 'b 'b 'b\n?100\n?B\n\n# cv op is canvas interface (at least for now)\n\n# clear canvas by drawing rectangle in color 1\n# 'f:fill color 'd: dimensions 'r rect\n01 'f cv 00 00 'd cv 'r cv\n\n# find center and draw a circle in color\n29 'f cv 'd cv sw -1 sh sw -1 sh 50 'c cv\n\n# copy and paste with other colors/radii\n# colors here include lil patterns.\n05 02 ad 'f cv 'd cv sw -1 sh sw -1 sh 40 'c cv\n2C 'f cv 'd cv sw -1 sh sw -1 sh 30 'c cv\n2B 'f cv 'd cv sw -1 sh sw -1 sh 20 'c cv\n\n# will have a real assembler soon and clean up\n"},"items":{"size":[80,199],"value":{"name":["circles"],"text":["%C %R\n:: 01 02 03  :B 'b 'b 'b\n?100\n?B\n\n# cv op is canvas interface (at least for now)\n\n# clear canvas by drawing rectangle in color 1\n# 'f:fill color 'd: dimensions 'r rect\n01 'f cv 00 00 'd cv 'r cv\n\n# find center and draw a circle in color\n29 'f cv 'd cv sw -1 sh sw -1 sh 50 'c cv\n\n# copy and paste with other colors/radii\n# colors here include lil patterns.\n05 02 ad 'f cv 'd cv sw -1 sh sw -1 sh 40 'c cv\n2C 'f cv 'd cv sw -1 sh sw -1 sh 30 'c cv\n2B 'f cv 'd cv sw -1 sh sw -1 sh 20 'c cv\n\n# will have a real assembler soon and clean up\n"]}},"bnw":{},"bgo":{},"run_event":{"value":"run_b4i"},"slider1":{},"bpr":{},"bdn":{},"brm":{}}}
-lil_scripts:{"type":"contraption","size":[400,220],"pos":[432,272],"show":"none","def":"itemlist","widgets":{"label":{"value":"lil scripts"},"item_text":{"size":[320,199],"value":"# start on debugger. draw some ram, highlight ip\nip:mb4.get_vm[].ip\na0: 256 gw:16 mw:31 cs: 18,18  ofs:3,4  \non gxy i do (gw%i),floor i/gw end\nixy: (ofs+(mw,0)-(3,3))+cs*gxy[ip-a0]\nc: card.widgets.canvas1\nc.pattern: 47 c.rect[0,0 c.size]        # bg\nc.pattern: 41 c.rect[0,0 mw,c.size[1]]  # hex\nc.pattern: 1  c.rect[ixy cs+0,1]        # ip\nc.pattern: 0 c.font: \"mono\"\neach i in range 8\n  a: a0+16*i\n  t: \"%04H %s\" format a,mb4.showMem[a]\n  c.text[t (0,cs[1]*i)+ofs]\nend\n"},"items":{"size":[80,199],"value":{"name":["show ram","hello"],"text":["# start on debugger. draw some ram, highlight ip\nip:mb4.get_vm[].ip\na0: 256 gw:16 mw:31 cs: 18,18  ofs:3,4  \non gxy i do (gw%i),floor i/gw end\nixy: (ofs+(mw,0)-(3,3))+cs*gxy[ip-a0]\nc: card.widgets.canvas1\nc.pattern: 47 c.rect[0,0 c.size]        # bg\nc.pattern: 41 c.rect[0,0 mw,c.size[1]]  # hex\nc.pattern: 1  c.rect[ixy cs+0,1]        # ip\nc.pattern: 0 c.font: \"mono\"\neach i in range 8\n  a: a0+16*i\n  t: \"%04H %s\" format a,mb4.showMem[a]\n  c.text[t (0,cs[1]*i)+ofs]\nend\n","alert[\"hello world\"]"]},"row":0},"bnw":{},"bgo":{},"run_event":{"value":"run_lil"},"slider1":{},"bpr":{},"bdn":{},"brm":{}}}
+b4i_scripts:{"type":"contraption","size":[400,220],"pos":[13,272],"def":"itemlist","widgets":{"label":{"value":"b4i scripts"},"item_text":{"size":[320,199],"value":"%C %R\n:: 01 02 03  :B 'b 'b 'b\n?100\n?B\n\n# cv op is canvas interface (at least for now)\n\n# clear canvas by drawing rectangle in color 1\n# 'f:fill color 'd: dimensions 'r rect\n01 'f cv 00 00 'd cv 'r cv\n\n# find center and draw a circle in color\n29 'f cv 'd cv sw -1 sh sw -1 sh 50 'c cv\n\n# copy and paste with other colors/radii\n# colors here include lil patterns.\n05 02 ad 'f cv 'd cv sw -1 sh sw -1 sh 40 'c cv\n2C 'f cv 'd cv sw -1 sh sw -1 sh 30 'c cv\n2B 'f cv 'd cv sw -1 sh sw -1 sh 20 'c cv\n\n# will have a real assembler soon and clean up\n"},"items":{"size":[80,199],"value":{"name":["circles"],"text":["%C %R\n:: 01 02 03  :B 'b 'b 'b\n?100\n?B\n\n# cv op is canvas interface (at least for now)\n\n# clear canvas by drawing rectangle in color 1\n# 'f:fill color 'd: dimensions 'r rect\n01 'f cv 00 00 'd cv 'r cv\n\n# find center and draw a circle in color\n29 'f cv 'd cv sw -1 sh sw -1 sh 50 'c cv\n\n# copy and paste with other colors/radii\n# colors here include lil patterns.\n05 02 ad 'f cv 'd cv sw -1 sh sw -1 sh 40 'c cv\n2C 'f cv 'd cv sw -1 sh sw -1 sh 30 'c cv\n2B 'f cv 'd cv sw -1 sh sw -1 sh 20 'c cv\n\n# will have a real assembler soon and clean up\n"]}},"bnw":{},"bgo":{},"run_event":{"value":"run_b4i"},"slider1":{},"bpr":{},"bnx":{},"brm":{},"bup":{},"dn":{}}}
+lil_scripts:{"type":"contraption","size":[400,220],"pos":[432,272],"show":"none","def":"itemlist","widgets":{"label":{"value":"lil scripts"},"item_text":{"size":[320,199],"value":"# start on debugger. draw some ram, highlight ip\nip:mb4.get_vm[].ip\na0: 256 gw:16 mw:31 cs: 18,18  ofs:3,4  \non gxy i do (gw%i),floor i/gw end\nixy: (ofs+(mw,0)-(3,3))+cs*gxy[ip-a0]\nc: card.widgets.canvas1\nc.pattern: 47 c.rect[0,0 c.size]        # bg\nc.pattern: 41 c.rect[0,0 mw,c.size[1]]  # hex\nc.pattern: 1  c.rect[ixy cs+0,1]        # ip\nc.pattern: 0 c.font: \"mono\"\neach i in range 8\n  a: a0+16*i\n  t: \"%04H %s\" format a,mb4.showMem[a]\n  c.text[t (0,cs[1]*i)+ofs]\nend\n"},"items":{"size":[80,199],"value":{"name":["show ram","hello"],"text":["# start on debugger. draw some ram, highlight ip\nip:mb4.get_vm[].ip\na0: 256 gw:16 mw:31 cs: 18,18  ofs:3,4  \non gxy i do (gw%i),floor i/gw end\nixy: (ofs+(mw,0)-(3,3))+cs*gxy[ip-a0]\nc: card.widgets.canvas1\nc.pattern: 47 c.rect[0,0 c.size]        # bg\nc.pattern: 41 c.rect[0,0 mw,c.size[1]]  # hex\nc.pattern: 1  c.rect[ixy cs+0,1]        # ip\nc.pattern: 0 c.font: \"mono\"\neach i in range 8\n  a: a0+16*i\n  t: \"%04H %s\" format a,mb4.showMem[a]\n  c.text[t (0,cs[1]*i)+ofs]\nend\n","alert[\"hello world\"]"]}},"bnw":{},"bgo":{},"run_event":{"value":"run_lil"},"slider1":{},"bpr":{},"bnx":{},"brm":{},"bup":{},"dn":{}}}
 toggle:{"type":"button","size":[60,20],"pos":[771,248],"script":"cv-demo.4","text":"tests / lil"}
-test_scripts:{"type":"contraption","size":[400,220],"pos":[432,272],"def":"itemlist","widgets":{"label":{"value":"b4vm test suite"},"item_text":{"size":[300,199],"pos":[100,20],"value":"#TODO: ?st queries the vm state\n#?st\n#st: io\n# %q should cause the vm to quit\n> @@ %q\n#?st\n"},"items":{"size":[100,199],"widths":[80,0],"value":{"name":["@@ ?st %q"],"text":["#TODO: ?st queries the vm state\n#?st\n#st: io\n# %q should cause the vm to quit\n> @@ %q\n#?st\n#st: hl\n"]},"row":0,"col":0},"bnw":{},"bgo":{},"run_event":{"value":"run_tests"},"slider1":{"value":100},"bpr":{},"bdn":{},"brm":{}}}
+test_scripts:{"type":"contraption","size":[400,220],"pos":[432,272],"def":"itemlist","widgets":{"label":{"value":"b4vm test suite"},"item_text":{"size":[300,199],"pos":[100,20],"value":"#TODO: ?st queries the vm state\n#?st\n#st: io\n# %q should cause the vm to quit\n> @@ %q\n#?st\n"},"items":{"size":[100,199],"widths":[80,0],"value":{"name":["@@ ?st %q"],"text":["#TODO: ?st queries the vm state\n#?st\n#st: io\n# %q should cause the vm to quit\n> @@ %q\n#?st\n#st: hl\n"]},"col":0},"bnw":{},"bgo":{},"run_event":{"value":"run_tests"},"slider1":{"value":100},"bpr":{},"bnx":{},"brm":{},"bup":{},"dn":{}}}
 
 {script:cv-demo.0}
 mb4.set_echo[on echo line do
@@ -727,16 +727,18 @@ image:"%%IMG2AZAAoQH/Af8B/wH/Af8B/wH/Af8B/wH/Af8B/wH/Af8B/wH/Af8B/wH/Af8B/wH/Af8
 script:"itemlist.0"
 attributes:{"name":["label","run_event","list_width"],"label":["label","run event (on \"!\")","list width"],"type":["string","string","number"]}
 {widgets}
-label:{"type":"field","size":[300,20],"pos":[0,0],"locked":1,"script":"cv-demo.1","font":"menu","show":"invert","border":0,"style":"plain","value":" label"}
-item_text:{"type":"field","size":[320,140],"pos":[80,20],"script":"itemlist.1","border":1,"scrollbar":1,"style":"code","value":"this is item 1"}
-items:{"type":"grid","size":[80,140],"pos":[0,20],"script":"itemlist.2","headers":0,"lines":0,"widths":[60,0],"format":"ss","value":{"name":["item 0","item 1"],"text":["this is item 0","this is item 1"]},"row":1}
+label:{"type":"field","size":[260,20],"pos":[0,0],"locked":1,"script":"cv-demo.1","font":"menu","show":"invert","border":0,"style":"plain","value":" label"}
+item_text:{"type":"field","size":[320,140],"pos":[80,20],"script":"itemlist.1","border":1,"scrollbar":1,"style":"code","value":"this is item 0"}
+items:{"type":"grid","size":[80,140],"pos":[0,20],"script":"itemlist.2","headers":0,"lines":0,"widths":[60,0],"format":"ss","value":{"value":["item 0","item 1","item 2"],"text":["this is item 0","this is item 1","this is item 2"]},"row":0}
 bnw:{"type":"button","size":[20,20],"pos":[380,0],"script":"itemlist.3","text":"+"}
-bgo:{"type":"button","size":[20,20],"pos":[300,0],"script":"itemlist.4","font":"body","text":"!"}
+bgo:{"type":"button","size":[20,20],"pos":[260,0],"script":"itemlist.4","font":"body","text":"!"}
 run_event:{"type":"field","size":[100,20],"pos":[0,-40],"script":"cv-demo.1","show":"none","value":"run"}
 slider1:{"type":"slider","size":[100,20],"pos":[120,-40],"script":"itemlist.5","show":"none","interval":[0,400],"value":80,"step":20,"style":"compact"}
-bpr:{"type":"button","size":[20,20],"pos":[320,0],"script":"itemlist.6","text":"<"}
-bdn:{"type":"button","size":[20,20],"pos":[340,0],"script":"itemlist.7","text":">"}
+bpr:{"type":"button","size":[20,20],"pos":[320,0],"script":"itemlist.6","font":"body","text":"<"}
+bnx:{"type":"button","size":[20,20],"pos":[340,0],"script":"itemlist.7","font":"body","text":">"}
 brm:{"type":"button","size":[20,20],"pos":[360,0],"script":"itemlist.8","text":"-"}
+bup:{"type":"button","size":[20,20],"pos":[280,0],"script":"itemlist.9","font":"body","text":"up"}
+dn:{"type":"button","size":[20,20],"pos":[300,0],"script":"itemlist.10","font":"body","text":"dn"}
 
 {script:itemlist.0}
 on get_label do label.text end
@@ -752,8 +754,8 @@ on goto_row x do
 end
 
 on view do
-  slider1.interval: 0,card.size[0]
-  set_list_width[slider1.value]
+ slider1.interval: 0,card.size[0]
+ set_list_width[slider1.value]
 end
 on get_list_width do slider1.value end
 on set_list_width x do
@@ -762,6 +764,26 @@ on set_list_width x do
  items.widths: (max 20,lw-20),0
  item_text.pos: lw,item_text.pos[1]
  item_text.size: (cw-lw),item_text.size[1]
+end
+
+
+on mv_up do
+ r:items.row t:items.value
+ a: select where index<r-1 from t
+ b: select where index=r-1 from t
+ c: select where index=r   from t
+ d: select where index>r   from t
+ items.value:a,c,b,d
+ goto_row[r-1]
+end
+on mv_dn do
+ r:items.row t:items.value
+ a: select where index<r   from t
+ b: select where index=r   from t
+ c: select where index=r+1 from t
+ d: select where index>r+1 from t
+ items.value:a,c,b,d
+ goto_row[r+1]
 end
 
 {end}
@@ -823,6 +845,18 @@ on click do
     items.value:select where !index=items.row from items.value
   end
   goto_row[items.row]
+end
+{end}
+
+{script:itemlist.9}
+on click do
+  mv_up[]
+end
+{end}
+
+{script:itemlist.10}
+on click do
+  mv_dn[]
 end
 {end}
 
