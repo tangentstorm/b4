@@ -147,7 +147,7 @@ export class B4VM {
     return `${which}: [${this[which].map(hex).join(' ')}]` }
 
   b4i(line) {
-    if (line.startsWith('!')) {
+    if (line.startsWith(':')) {
       let [a0,...xs] = line.split(/\s+/)
       let a = parseInt(a0.slice(1), 16)
       for (let x of xs) { this.ram[a++]=this.asm(x) }
@@ -169,7 +169,7 @@ export class B4VM {
         else if (tok[0]=="`" && tok.length==2) {
           this.ds.push(4*(tok[1].charCodeAt(0)-64))}
         else if (tok in this) { this[tok]() }
-        else if (tok[0]=="@") {
+        else if (tok[0]=="?") {
           this.out(this.peek(parseInt(tok.slice(1),16), 16))  }
         else this.out(`unknown command: ${tok}\n`)}}} }
 
