@@ -88,7 +88,7 @@ begin
   reg_ip^ := $100;
   while not (done or eof) do begin
     readln(str);
-    if str[1] = '!' then PutMem(str)
+    if str[1] = ':' then PutMem(str)
     else for tok in SplitString(str, ' ') do begin
       if tok = '' then continue;
       if ub4asm.b4op(tok, op) then runop(op)
@@ -104,7 +104,7 @@ begin
           '`'  : if length(tok)=1 then err('invalid ctrl char')
                    // TODO test this against chars out of range
                  else dput(rega(tok[2]));
-          '@'  : ShowMem(parseAddress(tok));
+          '?'  : ShowMem(parseAddress(tok));
           else if PutHex(tok) then ok
           else Writeln('what does "', tok, '" mean?');
         end
