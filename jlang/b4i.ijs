@@ -23,7 +23,7 @@ asm =: {{
   if. (#ops__vm) > ix=.(<y) i.~ ops__vm do. OPCODE + ix
   else. ihx y
   end. }}
-putmem =: {{ NB. decode str with '!addr bytes' and store in ram
+putmem =: {{ NB. decode str with ':addr bytes' and store in ram
   'addr bytes' =. ({.;}.) asm &> ' 'splitstring y
   M__vm =: (bytes{a.) (addr+i.#bytes) } M__vm }}
 dis =: {{ NB. disassemble bytes to b4 assembly language
@@ -38,7 +38,7 @@ main =: {{
   P__vm =: 16b100
   while. 1 do.
     line=:readln''
-    if. '!'=0{line do. putmem }.line
+    if. ':'=0{line do. putmem }.line
     else. for_tok. ' 'splitstring line do.
       select. tok=.>tok
       case. ''   do.
@@ -56,7 +56,7 @@ main =: {{
           if. 1=#tok do. dput 32 NB. space
           else. dput ord 1{tok end.
         case. '`' do. dput rega 1{tok
-        case. '@' do. showmem addr }.tok
+        case. '?' do. showmem addr }.tok
         case. do.
           if. puthex tok do.
           else. exit [ echo 'unrecognized token "',tok,'"'
