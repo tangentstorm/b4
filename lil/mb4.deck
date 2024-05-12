@@ -17,8 +17,8 @@ end
 on _ri a do sum(256^range 4)*vm.ram[a,4] end
 on _wi a v do vm.ram[a,4]:_bytes[v] end
 
-on ord c do "%a" parse c end
-on reg uc do 4*ord[uc]-64 end
+on ord c do first "%a" parse c end
+on reg c do 4*ord[c]-64 end
 # get/set registers
 on _sr c v do _wi[reg[c] v] end
 on _gr c v do _ri[reg[c]] end
@@ -144,9 +144,9 @@ mod.showStack: on showStack xs do
 end
 
 mod.regop: on regop x do
-  cmd: "%[cmd]1.6o`'!@:?"
-  reg: "%[reg]1.64o@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~?"
-  pat: "" fuse cmd,reg,"%[m]z" res:pat parse x   res.m
+  _c: "%[cmd]1.6o`'!@:?"
+  _r: "%[reg]1.64o@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~?"
+  _p: "" fuse _c,_r,"%[m]z" (_p parse x).m
 end
 # assert (1,1,0,0,0,1) regop@("@y","'C","`3",">>","`no","`Y")
 
@@ -210,14 +210,13 @@ mod.b4i: on b4i line do
       elseif tok="%C" clear[]
       elseif tok="%s" step[]
       elseif tok="%e" runToEnd[]
+      elseif tok="%i" echo[showIp[]]
+      elseif tok="%d" echo[showStack["ds"]]
+      elseif tok="%c" echo[showStack["cs"]]
       else echo["%.no: ",tok] end
     elseif t="?"
-      if tok="?ip" echo[showIp[]]
-      elseif tok="?ds" echo[showStack["ds"]]
-      elseif tok="?cs" echo[showStack["cs"]]
-      elseif regop[tok] echo["%06H" format _ri[reg[tok[1]]]]
-      else
-        hex: "?%[a]H%[m]z" parse tok
+      if  regop[tok] echo["%06H" format _ri[reg[tok[1]]]]
+      else hex: "?%[a]H%[m]z" parse tok
         if hex.m echo[showMem[hex.a]]
         else echo["?.no: ",tok] end
       end
@@ -241,7 +240,10 @@ mod.b4i: on b4i line do
       elseif t="!" v:dpop[] _wi[r v]
       elseif t="@" dput[_ri[r]] end  # @X -> li `X ri
     elseif tok in op
+      # '..' executes as no-op. if you want to push 0, type '00'
       if state=ASM asm_via[hp tok] else op[tok][] end
+    elseif tok=".."
+      if state=ASM asm_via[hp tok] end
     elseif o:imOp[tok]
       if state=ASM asm_via[hp tok] else op.im[o] runToEnd[] end
     elseif isHex[tok]
