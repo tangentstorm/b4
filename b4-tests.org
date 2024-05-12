@@ -26,25 +26,25 @@ See the =test-b4-*= scripts in this repository for examples.
 #+end_src
 
 ** DONE print the data stack
-#+name: io.%d
+#+name: io.?d
 #+begin_src b4i
-> %d %q
+> ?d %q
 ds: [] # should be an empty array
-= %d : query the data stack
+= ?d : query the data stack
 #+end_src
 
 ** DONE print the call stack
-#+name: io.%c
+#+name: io.?c
 #+begin_src b4i
-> %c %q
+> ?c %q
 cs: [] # should be an empty array
-= %c : query the call stack
+= ?c : query the call stack
 #+end_src
 
 ** DONE push a hex number to the stack
 #+name: io.hex
 #+begin_src b4i
-> FF CC %d %q
+> FF CC ?d %q
 ds: [FF CC]
 = hex numbers are pushed to data stack
 : it should print in hex
@@ -52,7 +52,7 @@ ds: [FF CC]
 ** DONE push an ascii character onto the stack
 #+name: io.ascii
 #+begin_src b4i
-> 'a 'A ' %d %q
+> 'a 'A ' ?d %q
 ds: [61 41 20]
 = ascii syntax
 : note lack of a second space after the '
@@ -61,7 +61,7 @@ ds: [61 41 20]
 ** DONE push control character addresses to stack
 #+name: io.ctrl
 #+begin_src b4i
-> `@ `A `B `C `X `Y `Z %d %q
+> `@ `A `B `C `X `Y `Z ?d %q
 ds: [0 4 8 C 60 64 68]
 = control characters
 : the 32 ascii control characters act as a dictionary.
@@ -75,7 +75,7 @@ ds: [0 4 8 C 60 64 68]
 
 #+name: io.ctrl2
 #+begin_src b4i
-> `[ `\ `] `^ `_ %d %q
+> `[ `\ `] `^ `_ ?d %q
 ds: [6C 70 74 78 7C]
 = non-alphabetic control characters
 : there are 5 control characters after ^Z that use punctuation.
@@ -85,7 +85,7 @@ ds: [6C 70 74 78 7C]
 ** DONE =ad= op
 #+name: op.ad
 #+begin_src b4i
-> 01 02 ad %d %q
+> 01 02 ad ?d %q
 ds: [3]
 = ad: add top two items on the stack
 : result is pushed back to stack
@@ -93,111 +93,111 @@ ds: [3]
 ** DONE =ml= op
 #+name: op.ml
 #+begin_src b4i
-> 03 03 ml %d %q
+> 03 03 ml ?d %q
 ds: [9]
 #+end_src
 ** DONE =sb= op
 #+name: io.math
 #+begin_src b4i
-> 0A 05 sb %d %q
+> 0A 05 sb ?d %q
 ds: [5]
 #+end_src
 
 ** DONE =dv= op
 #+name: math.dv
 #+begin_src b4i
-> 0A 05 dv %d %q
+> 0A 05 dv ?d %q
 ds: [2]
 #+end_src
 ** DONE =md= op
 #+name: math.md
 #+begin_src b4i
-> 0A 05 md %d
+> 0A 05 md ?d
 ds: [0]
-> zp 0A 03 md %d %q
+> zp 0A 03 md ?d %q
 ds: [1]
 #+end_src
 ** DONE =sh= op
 #+name: math.sh
 #+begin_src b4i
-> 06 01 sh %d %q
+> 06 01 sh ?d %q
 ds: [C]
 #+end_src
 
 ** DONE =an= op
 #+name: math.an
 #+begin_src b4i
-> 12 35 an %d %q
+> 12 35 an ?d %q
 ds: [10]
 #+end_src
 
 ** DONE =or= op
 #+name: math.or
 #+begin_src b4i
-> 12 35 or %d %q
+> 12 35 or ?d %q
 ds: [37]
 #+end_src
 
 ** DONE =xr= op
 #+name: math.xr
 #+begin_src b4i
-> 12 35 xr %d %q
+> 12 35 xr ?d %q
 ds: [27]
 #+end_src
 
 ** DONE =nt= op
 #+name: math.nt
 #+begin_src b4i
-> 12 nt %d %q
+> 12 nt ?d %q
 ds: [-13]
 #+end_src
 
 ** DONE =eq= op
 #+name: math.eq
 #+begin_src b4i
-> AA BB eq CC CC eq %d %q
+> AA BB eq CC CC eq ?d %q
 ds: [0 -1]
 #+end_src
 
 ** DONE =lt= op
 #+name: op.lt
 #+begin_src b4i
-> AA BB lt DD CC lt EE EE lt %d %q
+> AA BB lt DD CC lt EE EE lt ?d %q
 ds: [-1 0 0]
 #+end_src
 
 ** DONE =du= op
 #+name: op.du
 #+begin_src b4i
-> 0A du %d %q
+> 0A du ?d %q
 ds: [A A]
 #+end_src b4i
 ** DONE =zp= op
 #+name: op.zp
 #+begin_src b4i
-> 0A %d zp %d %q
+> 0A ?d zp ?d %q
 ds: [A]
 ds: []
 #+end_src
 ** DONE =sw= op
 #+name: io.sw
 #+begin_src b4i
-> 0A 0B sw %d %q
+> 0A 0B sw ?d %q
 ds: [B A]
 #+end_src
 ** DONE =ov= op
 #+name: op.ov
 #+begin_src b4i
-> 0A 0B ov %d %q
+> 0A 0B ov ?d %q
 ds: [A B A]
 #+end_src
 ** DONE =cd= and =dc= ops
 #+name: op.cd-dc
 #+begin_src b4i
-> 0A dc %d %c
+> 0A dc ?d ?c
 ds: []
 cs: [A]
-> cd %d %c %q
+> cd ?d ?c %q
 ds: [A]
 cs: []
 #+end_src
@@ -233,7 +233,7 @@ cs: []
 > :100 AA BB 00 CC
 > ?100
 AA BB .. CC .. .. .. .. .. .. .. .. .. .. .. ..
-> 0103 rb %d %q
+> 0103 rb ?d %q
 ds: [CC]
 #+end_src
 
@@ -243,7 +243,7 @@ ds: [CC]
 > :100 AA BB CC 00
 > ?100
 AA BB CC .. .. .. .. .. .. .. .. .. .. .. .. ..
-> 0100 ri %d %q
+> 0100 ri ?d %q
 ds: [CCBBAA]
 = ri : read integer
 : Note that the bytes are "backwards" from the way we write them!
@@ -252,9 +252,9 @@ ds: [CCBBAA]
 ** DONE =wi= op
 #+name: op.wi
 #+begin_src b4i
-> 12345678 `X wi %d
+> 12345678 `X wi ?d
 ds: []
-> `X ri %d %q
+> `X ri ?d %q
 ds: [12345678]
 = wi : write integer
 #+end_src
@@ -263,14 +263,14 @@ ds: [12345678]
 #+name: op.rx
 #+begin_src b4i
 > 11223344 `A wi
-> 55667788 `B wi %d
+> 55667788 `B wi ?d
 > `A `X wi
 ds: []
 # read twice, loading `A and `B
-> rx rx %d
+> rx rx ?d
 ds: [11223344 55667788]
 # now `X should be pointing at `C
-> zp zp `X ri `C eq %d %q
+> zp zp `X ri `C eq ?d %q
 ds: [-1]
 = rx : read from and increment `X
 : same as the following assembly:
@@ -285,14 +285,14 @@ ds: [-1]
 #+name: op.ry
 #+begin_src b4i
 > 11223344 `A wi
-> 55667788 `B wi %d
+> 55667788 `B wi ?d
 > `A `Y wi
 ds: []
 # read twice, loading `A and `B
-> ry ry %d
+> ry ry ?d
 ds: [11223344 55667788]
 # now `Y should be pointing at `C
-> zp zp `Y ri `C eq %d %q
+> zp zp `Y ri `C eq ?d %q
 ds: [-1]
 = ry : read from and increment `Y
 : ry is exactly the same as rx, except it uses the `Y register.
@@ -303,29 +303,29 @@ ds: [-1]
 #+begin_src b4i
 > `A `Z wi
 > ABCDEF wz
-> 123456 wz %d
+> 123456 wz ?d
 ds: []
-> `A ri `B ri %d
+> `A ri `B ri ?d
 ds: [ABCDEF 123456]
 # now `Z should be pointing at `C
-> zp zp `Z ri `C eq %d %q
+> zp zp `Z ri `C eq ?d %q
 ds: [-1]
 = wz : write to and increment `Z
 #+end_src
 
 * DONE [2/2] debugger/stepper
 ** DONE query instruction pointer
-#+name: dbg.%i
+#+name: dbg.?i
 #+begin_src b4i
-> %i %q
+> ?i %q
 ip: 100
-= %i : query instruction pointer
+= ?i : query instruction pointer
 : it should print in hex
 #+end_src
 ** DONE %s step command
 #+name: dbg.%s
 #+begin_src b4i
-> %i %s %i %q
+> ?i %s ?i %q
 ip: 100
 ip: 101
 = %s : step
@@ -338,9 +338,9 @@ ip: 101
 > :100 lb AB
 > ?100
 lb AB .. .. .. .. .. .. .. .. .. .. .. .. .. ..
-> %d
+> ?d
 ds: [] # it should not be on the stack YET
-> %s %d %i %q
+> %s ?d ?i %q
 ds: [AB]
 ip: 102
 = lb: load byte
@@ -360,7 +360,7 @@ Hop is a small relative jump. It takes a signed 8-bit int as a parameter, and ca
 #+name: op.hp.forward
 #+begin_src b4i
 > :100 hp 05
-> %i %s %i %q
+> ?i %s ?i %q
 ip: 100
 ip: 105
 #+end_src
@@ -368,7 +368,7 @@ ip: 105
 #+name: op.hp.forward-max
 #+begin_src b4i
 > :100 hp 7F
-> %s %i %q
+> %s ?i %q
 ip: 17F
 #+end_src
 *** TODO forward wrap
@@ -377,7 +377,7 @@ here we set the high bit so it's the same as negative 1.
 #+name: op.hp.forward-wrap
 #+begin_src b4i
 > :100 hp 80
-> %s %i %q
+> %s ?i %q
 ip: 100
 #+end_src
 
@@ -385,7 +385,7 @@ ip: 100
 #+name: op.hp.backward
 #+begin_src b4i
 > :100 .. .. .. hp -3
-> %s %s %s %i %s %i %q
+> %s %s %s ?i %s ?i %q
 ip: 103
 ip: 100
 #+end_src
@@ -393,7 +393,7 @@ ip: 100
 #+name: op.hp.backward-oob
 #+begin_src b4i
 > :100 hp -5
-> %s %i %q
+> %s ?i %q
 ip: 100
 #+end_src
 *** TODO zero?
@@ -401,7 +401,7 @@ This causes an infinite loop.
 #+name: op.hp.zero
 #+begin_src b4i
 > :100 hp 00
-> %s %i %q
+> %s ?i %q
 ip: 100
 #+end_src
 ** TODO =h0= hop if 0
@@ -415,7 +415,7 @@ We push 0 to the stack and then step, so we should jump to address $0123
 #+name: op.h0.when0
 #+begin_src b4i
 > :100 h0 23
-> 00 %s %i %q
+> 00 %s ?i %q
 ip: 123
 #+end_src
 *** TODO when 1
@@ -423,7 +423,7 @@ Here the hop is not taken, but we still hop over the argument.
 #+name: op.h0.when1
 #+begin_src b4i
 > :100 h0 23
-> 01 %s %i %q
+> 01 %s ?i %q
 ip: 102
 #+end_src
 
@@ -434,7 +434,7 @@ ip: 102
 #+name: op.jm
 #+begin_src b4i
 > :100 jm 78 56 34 12
-> %s %i %q
+> %s ?i %q
 ip: 12345678
 #+end_src
 
@@ -447,7 +447,7 @@ Note that the instruction pointer is incremented by 4 first, to skip over the ar
 #+name: op.cl
 #+begin_src b4i
 > :100 cl 78 56 34 12
-> %s %i %c %q
+> %s ?i ?c %q
 ip: 12345678
 cs: [104]
 #+end_src
@@ -463,7 +463,7 @@ To simplify this test, we simply push the address we want to the control stack o
 #+name: op.rt
 #+begin_src b4i
 > :100 rt
-> 1234 dc %i %c %s %i %c %q
+> 1234 dc ?i ?c %s ?i ?c %q
 ip: 100
 cs: [1234]
 ip: 1234
@@ -485,7 +485,7 @@ In general, it probably just doesn't make sense to use contrtol flow ops from th
 
 #+name: op.rt.b4i
 #+begin_src b4i
-> 1234 dc %i %c rt %i %c %q
+> 1234 dc ?i ?c rt ?i ?c %q
 ip: 100
 cs: [1234]
 ip: 1233
@@ -510,16 +510,16 @@ In this test, we loop back to the starting address twice, and then proceed.
 #+begin_src b4i
 > :100 nx 00
 > 2 dc
-> %c %i
+> ?c ?i
 cs: [2]
 ip: 100
-> %s %c %i
+> %s ?c ?i
 cs: [1]
 ip: 100
-> %s %c %i
+> %s ?c ?i
 cs: []
 ip: 102
-> %s %c %i
+> %s ?c ?i
 cs: []
 ip: 103
 > %q

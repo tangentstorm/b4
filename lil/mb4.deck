@@ -145,7 +145,7 @@ end
 
 mod.regop: on regop x do
   _c: "%[cmd]1.6o`'!@:?"
-  _r: "%[reg]1.64o@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~?"
+  _r: "%[reg]1.32o@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
   _p: "" fuse _c,_r,"%[m]z" (_p parse x).m
 end
 # assert (1,1,0,0,0,1) regop@("@y","'C","`3",">>","`no","`Y")
@@ -210,12 +210,12 @@ mod.b4i: on b4i line do
       elseif tok="%C" clear[]
       elseif tok="%s" step[]
       elseif tok="%e" runToEnd[]
-      elseif tok="%i" echo[showIp[]]
-      elseif tok="%d" echo[showStack["ds"]]
-      elseif tok="%c" echo[showStack["cs"]]
       else echo["%.no: ",tok] end
     elseif t="?"
       if  regop[tok] echo["%06H" format _ri[reg[tok[1]]]]
+      elseif tok="?i" echo[showIp[]]
+      elseif tok="?d" echo[showStack["ds"]]
+      elseif tok="?c" echo[showStack["cs"]]
       else hex: "?%[a]H%[m]z" parse tok
         if hex.m echo[showMem[hex.a]]
         else echo["?.no: ",tok] end
