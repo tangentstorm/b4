@@ -12,13 +12,10 @@ macros used in b3a.b3a.
 import re, collections
 
 OPS = [
-    'ad',  'an',  'bw',  'cd',  'cl',  'dc',  'dr',  'du',
-    'dv',  'dx',  'dy',  'dz',  'eq',  'ev',  'ge',  'go',
-    'gt',  'h0',  'h1',  'hl',  'hp',  'jm',  'le',  'li',
-    'lt',  'md',  'ml',  'ne',  'ng',  'nt',  'nx',  'or',
-    'ov',  'qp',  'r0',  'r1',  'rd',  'rm',  'rp',  'rt',
-    'sb',  'lb',  'sl',  'sr',  'sw',  'wm',  'wp',  'xd',
-    'xr',  'yd',  'yr',  'zd',  'zp',  'zw' ]
+    'ad',  'an',  'cd',  'cl',  'db',  'dc',  'du',  'dv',
+    'eq',  'h0',  'hl',  'hp',  'jm',  'lb',  'li',  'lt',
+    'md',  'nt',  'ml',  'nx',  'or',  'ov',  'rb',  'ri',
+    'rt',  'sb',  'sh',  'sw',  'wb',  'wi',  'xr',  'zp' ]
 
 SEEN = collections.Counter()
 
@@ -74,27 +71,27 @@ def backjump(res, op):
 def i(res):
     """the IF part of IF .. THEN .. ELSE .. END"""
     # <<ctl-i>>
-    # bw ^i rt go
+    # :i rt
     pass
 
 def t(res):
     """the THEN part of IF .. THEN .. ELSE .. END"""
     # <<ctl-t>>
-    # bw ^t lb h0 zw lb 00 zw zd rt go
+    # :t lb h0 zw lb 00 zw zd rt
     res.extend([bc('lb'), 0])
     ZD(res)
 
 def e(res):
     """the ELSE part of IF .. THEN .. ELSE .. END"""
     # <<ctl-e>>
-    # bw ^e .[ hp 00 .] zd sw ov ^z ev rt go
+    # :e .[ hp 00 .] zd sw ov ^z rt
     res.extend([bc('hp'), 0])
     ZD(res); SW(); OV(); z(res)
 
 def z(res):
     """the END part of IF .. THEN .. ELSE .. END"""
     # <<ctl-z>>
-    # bw ^z du zd sw sb wb rt go
+    # :z du zd sw sb wb rt
     last = STACK.pop()
     dist = (len(res) - last)
     res[last-1]=dist
@@ -104,19 +101,19 @@ def z(res):
 def w(res):
     """the WHILE part of WHILE .. DO .. OD"""
     # <<ctl-w>>
-    # bw ^w zd rt go
+    # :w zd rt
     ZD(res)
 
 def d(res):
     """the DO part of WHILE .. DO .. OD"""
     # <<ctl-d>>
-    # bw ^d ^t ev rt go
+    # :d ^t rt
     t(res)
 
 def o(res):
     """the OD part of WHILE .. DO .. OD"""
     # <<ctl-o>>
-    # bw ^o sw .[ hp .] zd sw sb zw ^z ev rt go
+    # :o sw .[ hp .] zd sw sb zw ^z rt
     backjump(res, 'hp')
     z(res) # fwd jump when condition fails
 
@@ -125,14 +122,14 @@ def o(res):
 def f(res):
     """the FOR part of FOR .. NEXT"""
     # <<ctl-f>>
-    # bw ^f zd .[ dr .] rt go
+    # :f zd .[ dr .] rt
     ZD(res)
     res.extend([bc('dr')])
 
 def n(res):
     """the NEXT part of FOR .. NEXT"""
     # <<ctl-f>>
-    # bw ^n .[ nx .] ^b ev rt go
+    # :n .[ nx .] ^b rt
     res.extend([bc('nx')])
     backjump(res, 'nx')
 
@@ -143,7 +140,7 @@ MACROS = {
 
 def quote(res, toks):
     """ quote handler: ( ) """
-    # bw ^[ .w ^k ev du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt go
+    # :[ .w ^k du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt
     for tok,ready in toks:
         if ready: res.append(tok)
         elif tok == ']': return

@@ -42,13 +42,10 @@ The b3 version provides only the opcodes necessary to run this assembler on itse
   import re, collections
 
   OPS = [
-      'ad',  'an',  'bw',  'cd',  'cl',  'dc',  'dr',  'du',
-      'dv',  'dx',  'dy',  'dz',  'eq',  'ev',  'ge',  'go',
-      'gt',  'h0',  'h1',  'hl',  'hp',  'jm',  'le',  'li',
-      'lt',  'md',  'ml',  'ne',  'ng',  'nt',  'nx',  'or',
-      'ov',  'qp',  'r0',  'r1',  'rd',  'rm',  'rp',  'rt',
-      'sb',  'lb',  'sl',  'sr',  'sw',  'wm',  'wp',  'xd',
-      'xr',  'yd',  'yr',  'zd',  'zp',  'zw' ]
+      'ad',  'an',  'cd',  'cl',  'db',  'dc',  'du',  'dv',
+      'eq',  'h0',  'hl',  'hp',  'jm',  'lb',  'li',  'lt',
+      'md',  'nt',  'ml',  'nx',  'or',  'ov',  'rb',  'ri',
+      'rt',  'sb',  'sh',  'sw',  'wb',  'wi',  'xr',  'zp' ]
 
   SEEN = collections.Counter()
 
@@ -144,10 +141,10 @@ We should have templates for doing basic things:
 #+begin_src b3a
 
 # if .. then .. else .. end
-bw ^i rt go
-bw ^t lb h0 zw lb 00 zw zd rt go
-bw ^e .[ hp 00 .] zd sw ov ^z ev rt go
-bw ^z du zd sw sb wb rt go
+:i rt
+:t lb h0 zw lb 00 zw zd rt
+:e .[ hp 00 .] zd sw ov ^z rt
+:z du zd sw sb wb rt
 #+end_src
 **** =.i= is ~[ ( - ) ]~
 "If" is pretty much a no-op and only there for human readers.
@@ -177,9 +174,9 @@ We want to jump if the condition is /false/, but at compile time, we don't know 
 #+begin_src b3a
 
 # while .. do .. od
-bw ^w zd rt go
-bw ^d ^t ev rt go
-bw ^o sw .[ hp .] ^b ev ^z ev rt go
+:w zd rt
+:d ^t rt
+:o sw .[ hp .] ^b ^z rt
 #+end_src
 **** =.w= is ~[ (  -w) zd ]~
 **** =.d= is ~[ (  -d) .t ]~
@@ -193,7 +190,7 @@ bw ^o sw .[ hp .] ^b ev ^z ev rt go
 *** DONE =.b= backwards jump helper
 #+name: <<macros-back>>
 #+begin_src b3a
-bw ^b zd sw sb zw rt go   # backwards jump
+:b zd sw sb zw rt   # backwards jump
 #+end_src
 
 *** DONE =n .f .. .n= is a for loop. (count down from n to 0)
@@ -201,16 +198,16 @@ bw ^b zd sw sb zw rt go   # backwards jump
 #+begin_src b3a
 
   # for-next loop
-  bw ^f zd .[ dr .] rt go
-  # bw ^n .[ nx .] ^b ev rt go
-  bw ^n .[
+  :f zd .[ dr .] rt
+  # :n .[ nx .] ^b rt
+  :n .[
     rd lb
     01 sb du
     h0 03
     dr hp .]
     ^b ev
     .[ zp .]
-    rt go
+    rt
 #+end_src
 
 **** =.f= is ~[ ( -a) zd .[ dr .] ]~
@@ -221,15 +218,16 @@ At runtime, it pushes the number of times to loop to the return stack.
 #+name: macros-quote
 #+begin_src b3a
 
-# quote compiler macro
-bw ^[ .w ^k ev du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt go
+  # quote compiler macro
+  :[ .w ^k du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt
+  # :] isn't executed, but just an end marker (right?)
 #+end_src
 =.[= - offset of the .[ in the source is already in y, since we're assembling.
      - no need to preserve y, since we're still reading the same source
      - no need to preserve z, since we're still emitting to the same place
-   - ~bw ^[ .w ^k ev du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt go~
+   - :[ .w ^k du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt~
 =.]= - does nothing. it's just used as an end marker.
-*** DONE =bw ^c .. =go= provides both assignment and function definition
+*** DONE =:c ..= provides both assignment and function definition
 binds a 'word'(ascii control character) to the next address
 as in forth, a word can act as a function, constant, or variable
 * IMPLEMENTATION
@@ -251,14 +249,13 @@ o: M[obuf+.tos[]]  / the assembled bytecode output
 *** DONE =^c= puts the next non-whitespace, non-comment character on the stack
 #+name: ctl-c
 #+begin_src b3a
-
-bw ^c   # ( -c) fetch next non-whitespace, non-comment character
+:c   # ( -c) fetch next non-whitespace, non-comment character
    .w lb 01 .d                       # infinite outer loop
       .w ry du lb 20 le .d zp .o     # leave first non-whitespace char on stack
       .i du lb '# eq .t              # if it's a "#" character...
          .w ry lb 0A eq nt .d .o     #   loop until we reach a linefeed
       .e rt .z                       # first char was not a "#" so return it
-   .o rt go
+   .o rt
 #+end_src
 
 *** DONE =^s= (csl-i?b) "string search") is []
@@ -266,7 +263,7 @@ find index of char =c= in string (address) =s= with length =l=. return 0 if not 
 #+name: ctl-s
 #+begin_src b3a
 
-bw ^s  # (csl-i?b) search for c in string s with len l
+:s  # (csl-i?b) search for c in string s with len l
    yd dr              # (csl-csl) copy current read pointer to return stack
    sw dy              # ( .. cl)now start reading from s
    lb 00 sw           # ( .. cil)put index on stack under s (.f...n counts i-- and we want i++)
@@ -279,7 +276,7 @@ bw ^s  # (csl-i?b) search for c in string s with len l
          lb 01 rt     #   ( .. i1)    and return the index and a found=1 flag.
       .e lb 01 ad     # ( .. ci')   else add 1 to the index
       .z .n           # ( .. ci')  .. and go on to the next iteration
-   zp zp 00 rt go     # ( .. 0) if not found, clear c,i and return 0
+   zp zp 00 rt     # ( .. 0) if not found, clear c,i and return 0
 #+end_src
 
 *** DONE =^h= parse hex number
@@ -287,37 +284,37 @@ bw ^s  # (csl-i?b) search for c in string s with len l
 #+begin_src b3a
 
 # ^h : (c-n) hex digit to 00,..15 (capitals only. 00 on fail)
-bw ^x '0 '1 '2 '3 '4 '5 '6 '7 '8 '9 'A 'B 'C 'D 'E 'F go
-bw ^h .i ^x lb 10 ^s ev nt .t lb 00 .z rt go
+:x '0 '1 '2 '3 '4 '5 '6 '7 '8 '9 'A 'B 'C 'D 'E 'F
+:h .i ^x lb 10 ^s nt .t lb 00 .z rt
 #+end_src
 
 *** TODO =^k= fetches the byte for the next 2-character token, and tags it with a type code
 #+name: ctl-k
 #+begin_src b3a
 
-bw ^p # firt chars of alphebetized mnemonics
-   'a 'a 'b 'c 'c 'd 'd 'd 'd 'd 'd 'd 'e 'e 'g 'g 'g
-   'h 'h 'h 'h 'j 'l 'l 'l 'm 'm 'n 'n 'n 'o 'o 'q 'r
-   'r 'r 'r 'r 'r 's 's 's 's 's 'w 'w 'x 'x 'y 'y 'z
-   'z 'z go
+  :p # firt chars of alphebetized mnemonics
+     'a 'a 'c 'c 'd 'd 'd 'd
+     'e 'h 'h 'h 'j 'l 'l 'l
+     'm 'n 'm 'n 'o 'o 'r 'r
+     'r 's 's 's 'w 'w 'x 'z
 
-bw ^q # second chars of alphabetized mnemonics
-   'd 'n 'w 'd 'l 'c 'r 'u 'v 'x 'y 'z 'q 'v 'e 'o 't
-   '0 '1 'l 'p 'm 'e 'i 't 'd 'l 'e 'g 't 'r 'v 'p '0
-   '1 'd 'm 'p 't 'b 'i 'l 'r 'w 'm 'p 'd 'r 'd 'r 'd
-   'p 'w go
+  :q # second chars of alphabetized mnemonics
+     'd 'n 'd 'l 'b 'c 'u 'v
+     'q '0 'l 'p 'm 'b 'i 't
+     'd 't 'l 'x 'r 'v 'b 'i
+     't 'b 'h 'w 'b 'i 'r 'p
 
-bw ^k  # ( -kt) fetch next token k, with type-tag t
-   ^c ev  # fetch first character after whitespace and comments
-   .i du lb '' eq .t ry lb 00 rt .z   # "'x" -> x 0
-   .i du lb '^ eq .t ry lb 01 rt .z   # "^x" -> x 1
-   .i du lb '. eq .t ry lb 02 rt .z   # ".x" -> x 2
-   .i du ^p ^s ev .t                  # try matiching an opcode
-      # TODO
-   .z
-   # as a last resort, parse as two (uppercase) hex digits, or 00
-   # first digit << 4   # add second digit     return with tag=_1
-   ^h ev lb 04 sl       ry ^h ev ad lb         FF rt go
+  :k  # ( -kt) fetch next token k, with type-tag t
+     ^c  # fetch first character after whitespace and comments
+     .i du lb '' eq .t ry lb 00 rt .z   # "'x" -> x 0
+     .i du lb '^ eq .t ry lb 01 rt .z   # "^x" -> x 1
+     .i du lb '. eq .t ry lb 02 rt .z   # ".x" -> x 2
+     .i du ^p ^s .t                  # try matiching an opcode
+        # TODO
+     .z
+     # as a last resort, parse as two (uppercase) hex digits, or 00
+     # first digit << 4   # add second digit     return with tag=_1
+     ^h lb 04 sl       ry ^h ad lb         FF rt
 #+end_src
 
 use ^s to find position of first character in ^x
@@ -340,7 +337,7 @@ loop through and emit 1 byte per 2-char token
 #+begin_src b3a
 
 # ^r is rotate (abc-cab)
-bw ^r sw dr sw rd rt go
+:r sw dr sw rd rt
 #+end_src
 : (abc-acb) sw
 : ( .. ac)  dr # push b to return stack
@@ -407,27 +404,27 @@ bw ^r sw dr sw rd rt go
   def i(res):
       """the IF part of IF .. THEN .. ELSE .. END"""
       # <<ctl-i>>
-      # bw ^i rt go
+      # :i rt
       pass
 
   def t(res):
       """the THEN part of IF .. THEN .. ELSE .. END"""
       # <<ctl-t>>
-      # bw ^t lb h0 zw lb 00 zw zd rt go
+      # :t lb h0 zw lb 00 zw zd rt
       res.extend([bc('lb'), 0])
       ZD(res)
 
   def e(res):
       """the ELSE part of IF .. THEN .. ELSE .. END"""
       # <<ctl-e>>
-      # bw ^e .[ hp 00 .] zd sw ov ^z ev rt go
+      # :e .[ hp 00 .] zd sw ov ^z rt
       res.extend([bc('hp'), 0])
       ZD(res); SW(); OV(); z(res)
 
   def z(res):
       """the END part of IF .. THEN .. ELSE .. END"""
       # <<ctl-z>>
-      # bw ^z du zd sw sb wb rt go
+      # :z du zd sw sb wb rt
       last = STACK.pop()
       dist = (len(res) - last)
       res[last-1]=dist
@@ -437,19 +434,19 @@ bw ^r sw dr sw rd rt go
   def w(res):
       """the WHILE part of WHILE .. DO .. OD"""
       # <<ctl-w>>
-      # bw ^w zd rt go
+      # :w zd rt
       ZD(res)
 
   def d(res):
       """the DO part of WHILE .. DO .. OD"""
       # <<ctl-d>>
-      # bw ^d ^t ev rt go
+      # :d ^t rt
       t(res)
 
   def o(res):
       """the OD part of WHILE .. DO .. OD"""
       # <<ctl-o>>
-      # bw ^o sw .[ hp .] zd sw sb zw ^z ev rt go
+      # :o sw .[ hp .] zd sw sb zw ^z rt
       backjump(res, 'hp')
       z(res) # fwd jump when condition fails
 
@@ -458,14 +455,14 @@ bw ^r sw dr sw rd rt go
   def f(res):
       """the FOR part of FOR .. NEXT"""
       # <<ctl-f>>
-      # bw ^f zd .[ dr .] rt go
+      # :f zd .[ dr .] rt
       ZD(res)
       res.extend([bc('dr')])
 
   def n(res):
       """the NEXT part of FOR .. NEXT"""
       # <<ctl-f>>
-      # bw ^n .[ nx .] ^b ev rt go
+      # :n .[ nx .] ^b rt
       res.extend([bc('nx')])
       backjump(res, 'nx')
 
@@ -476,7 +473,7 @@ bw ^r sw dr sw rd rt go
 
   def quote(res, toks):
       """ quote handler: ( ) """
-      # bw ^[ .w ^k ev du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt go
+      # :[ .w ^k du .[ FF 1C .] ad eq nt .d .[ lb .] zw .o zp rt
       for tok,ready in toks:
           if ready: res.append(tok)
           elif tok == ']': return
@@ -519,7 +516,6 @@ bw ^r sw dr sw rd rt go
 
 
 ** TODO do a topological sort on the macros to see if we can define them directly on the vm
-** TODO try simplifying macros by having an op 'zz' that sets sleepy=1
 
 * -- extra stuff --
 ** how this exercise affected b4 design
