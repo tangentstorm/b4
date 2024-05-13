@@ -1,29 +1,30 @@
 // b4 virtual machine - javascript edition
 
+// ops: select code op where !code=(list "%2H") format op where index > 127 from mb4.TBL
+//  ", " fuse (list "%u = %i") format ops
 const
-LB = 128, LI = 129, DU = 130, SW = 131, OV = 132, ZP = 133,
-DC = 134, CD = 135, AD = 136, SB = 137, ML = 138, DV = 139,
-MD = 140, SH = 141, AN = 142, OR = 143, XR = 144, NT = 145,
-EQ = 146, LT = 147, JM = 148, HP = 149, H0 = 150, CL = 151,
-RT = 152, NX = 153, RB = 154, WB = 155, RI = 156, WI = 157,
-RX = 158, RY = 159, WZ = 160, TG = 176, TA = 177, TW = 178,
-TR = 179, TK = 180, TS = 181, TL = 182, TC = 183,
-DB = 254, HL = 255;
+AD = 128, SB = 129, ML = 130, DV = 131, MD = 132, SH = 133,
+AN = 134, OR = 135, XR = 136, NT = 137, EQ = 138, LT = 139,
+DU = 140, SW = 141, OV = 142, ZP = 143, DC = 144, CD = 145,
+RV = 146, WV = 147, LB = 148, LI = 149, JM = 150, HP = 151,
+H0 = 152, CL = 153, RT = 154, NX = 155, TM = 190, CV = 191,
+VB = 192, VI = 193, IO = 253, DB = 254, HL = 255
 
+// ", " fuse (list "op[%u]='%s'") format select code code from ops
 const op = Array(256)
 op[ 0]='..',
-op[LB]='lb', op[LI]='li', op[DU]='du', op[SW]='sw', op[OV]='ov', op[ZP]='zp',
-op[DC]='dc', op[CD]='cd', op[AD]='ad', op[SB]='sb', op[ML]='ml', op[DV]='dv',
-op[MD]='md', op[SH]='sh', op[AN]='an', op[OR]='or', op[XR]='xr', op[NT]='nt',
-op[EQ]='eq', op[LT]='lt', op[JM]='jm', op[HP]='hp', op[H0]='h0', op[CL]='cl',
-op[RT]='rt', op[NX]='nx', op[RB]='rb', op[WB]='wb', op[RI]='ri', op[WI]='wi',
-op[RX]='rx', op[RY]='ry', op[WZ]='wz', op[TG]='tg', op[TA]='ta', op[TW]='tw',
-op[TR]='tr', op[TK]='tk', op[TS]='ts', op[TL]='tl', op[TC]='tc',
-op[DB]='db', op[HL]='hl';
-for (let i=1;i<32;i++) op[i]='^'+String.fromCharCode(64+i)
+op[AD]='ad', op[SB]='sb', op[ML]='ml', op[DV]='dv', op[MD]='md', op[SH]='sh',
+op[AN]='an', op[OR]='or', op[XR]='xr', op[NT]='nt', op[EQ]='eq', op[LT]='lt',
+op[DU]='du', op[SW]='sw', op[OV]='ov', op[ZP]='zp', op[DC]='dc', op[CD]='cd',
+op[RV]='rv', op[WV]='wv', op[LB]='lb', op[LI]='li', op[JM]='jm', op[HP]='hp',
+op[H0]='h0', op[CL]='cl', op[RT]='rt', op[NX]='nx', op[TM]='tm', op[CV]='cv',
+op[VB]='vb', op[VI]='vi', op[IO]='io', op[DB]='db', op[HL]='hl'
+for (let i=1;i<32;i++) {
+  let c=String.fromCharCode(64+i);
+  op[i]=`^${c}`; op[i+32]=`@${c}`; op[i+64]=`!${c}`; op[i+96]=`+${c}` }
 op[0x7F]='^?'
 
-const [RegX,RegY,RegZ] = [4*24,4*25,4*26]
+const REGS="@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 
 // helper routines
 const hex=b=>b.toString(16,0).toUpperCase()
@@ -34,9 +35,12 @@ export class B4VM {
     this.ip = 0x100
     this.cs = []
     this.ds = []
-    this.reg = new Array(32)
+    this.vw = 4
     this.ram = new Uint8Array(4096).fill(0)
     this.out = console.log }
+  reset() {
+    this.ip = 0x100; this.vw = 4;
+    this.cs=[]; this.ds=[]; this.ram = new Uint8Array(4096).fill(0) }
 
   // microcode
   dtos() { return this.ds[this.ds.length-1]}
@@ -75,22 +79,19 @@ export class B4VM {
   cd() { return this.dput(this.cpop()) }
 
   // memory ops
+  _ri(a0) { let a = a0+3, r =0
+    for (let i=0;i<4;i++) { r<<=8; r+=this.ram[a--] } return r }
+  _wi(a,n) {
+    for (let i=0;i<4;i++) { this.ram[a++]=n&0xff; n>>=8 }}
+
   wb() { this.ram[this.dpop()]=this.dpop(); return this }
   rb() { return this.dput(this.ram[this.dpop()]) }
-  _ri(a0) {
-    let a = a0+3, r =0
-    for (let i=0;i<4;i++) { r<<=8; r+=this.ram[a--] } return r }
   ri() { return this.dput(this._ri(this.dpop())) }
-  wi() {
-    let a = this.dpop(), n=this.dpop()
-    for (let i=0;i<4;i++) { this.ram[a++]=n&0xff; n>>=8 }
-    return this}
-  rx() { this.dput(RegX).ri().ri()
-         return this.dput(RegX).du().ri().dput(4).ad().sw().wi() }
-  ry() { this.dput(RegY).ri().ri()
-         return this.dput(RegY).du().ri().dput(4).ad().sw().wi() }
-  wz() { this.dput(RegZ).ri().wi()
-         return this.dput(RegZ).du().ri().dput(4).ad().sw().wi() }
+  wi() { this._wi(this.dpop(), this.dpop()); return this}
+
+  wv() { return this.wi() } rv(){ return this.ri() }
+  vb() { this.wv = this.wb; this.rv = this.rb; this.vw = 1 }
+  vi() { this.wv = this.wi; this.rv = this.ri; this.vw = 4 }
 
   // control ops
   lb() { this.dput(this.ram[this.ip+++1]); }
@@ -121,14 +122,9 @@ export class B4VM {
     case JM: this.jm(); break; case HP: this.hp(); break
     case H0: this.h0(); break; case CL: this.cl(); break
     case RT: this.rt(); break; case NX: this.nx(); break
-    case RB: this.rb(); break; case WB: this.wb(); break
-    case RI: this.ri(); break; case WI: this.wi(); break
-    case RX: this.rx(); break; case RY: this.ry(); break
-    case WZ: this.wz(); break; case TG: this.tg(); break
-    case TA: this.ta(); break; case TW: this.tw(); break
-    case TR: this.tr(); break; case TK: this.tk(); break
-    case TS: this.ts(); break; case TL: this.tl(); break
-    case TC: this.tc(); break
+    case RV: this.rv(); break; case WV: this.wv(); break
+    case VB: this.vb(); break; case VI: this.vi(); break
+    case TM: this.tm(); break // todo
     case DB: this.db(); break; case HL: this.hl(); break
     default: break}
     this.ip++}
@@ -140,12 +136,16 @@ export class B4VM {
     else return res }
 
   dis(x) {
-    if (x>=32 && x<0x7F) return `'${String.fromCharCode(x)}`
+    //if (x>=32 && x<0x7F) return `'${String.fromCharCode(x)}`
     return op[x] || x.toString(16,0).padStart(2,'0').toUpperCase() }
 
   fmtStack(which) {
     return `${which}: [${this[which].map(hex).join(' ')}]` }
 
+  reg(c) { return 4*(c.charCodeAt(0)-64) }
+  rr(r) { this.dput(this._ri(r)) }
+  wr(r) { this._wi(r, this.dpop()) }
+
   b4i(line) {
     if (line.startsWith(':')) {
       let [a0,...xs] = line.split(/\s+/)
@@ -159,6 +159,7 @@ export class B4VM {
       case '?i': this.out(`ip: ${hex(this.ip)}`); break;
       case '%q': process.exit(1); break;
       case '%s': this.step(); break;
+      case '%C': ; break;
       default:
         if (tok.match(/^[0-9A-F]+$/)){
           this.ds.push(parseInt(tok,16))}
@@ -166,8 +167,12 @@ export class B4VM {
           if (tok.length==2) this.ds.push(tok[1].charCodeAt(0))
           else if (tok.length==1) this.ds.push(32)
           else this.out(`unknown command: ${tok}\n`)}
-        else if (tok[0]=="`" && tok.length==2) {
-          this.ds.push(4*(tok[1].charCodeAt(0)-64))}
+        else if (tok.length==2 && REGS.includes(tok[1])) {
+          let r = this.reg(tok[1]); switch(tok[0]) {
+            case "`": this.dput(r); break;
+            case "@": this.rr(r); break;
+            case "!": this.wr(r); break;
+            case "+": this.rr(r); this._wi(r, this.dtos()+this.vw) }}
         else if (tok in this) { this[tok]() }
         else if (tok[0]=="?") {
           this.out(this.peek(parseInt(tok.slice(1),16), 16))  }

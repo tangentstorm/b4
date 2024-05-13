@@ -37,6 +37,7 @@ var
   ram  : array[0..maxcell*cellsize] of byte;
   disk : file of block;
   term : uhw.TB4Term;
+  vw   : byte = 4;
 
 const {-- these are all offsets into the ram array --}
 {$TYPEDADDRESS OFF}
@@ -245,50 +246,58 @@ procedure hop(); inline;
     go(reg_ip^ + int8(ram[reg_ip^+1]));
   end;
 
+procedure rb; begin dput(ram[dpop]) end;   { read byte }
+procedure wb; var t:value; begin t:= dpop; ram[t]:= byte(dpop) end;  { write byte  }
+procedure ri; begin dput(rdval(dpop)) end; { read integer }
+procedure wi; var t:value; begin t := dpop; wrval(t, dpop) end; { write integer }
+
+function oreg(op:byte):value; begin oreg := rega(chr(64+op mod 32)) end; // like rega but takes an opcode
+procedure er(a:value); inline; begin go(rdval(a)) end; { register }
+procedure rr(a:value); inline; begin dput(rdval(a)) end; { read register }
+procedure wr(a:value); inline; begin wrval(a, dpop) end; { write register }
+procedure ir(a:value); inline; begin rr(a); wrval(a,tos+vw); end; { read+inc register }
+
 
 procedure runop(op : byte);
   var t,a : value;
   begin
-    case op of
+    if op=0 then //ok
+    else if op<$20 then {^R} er(oreg(op))
+    else if op<$40 then {@R} rr(oreg(op))
+    else if op<$60 then {!R} wr(oreg(op))
+    else if op<$80 then {+R} ir(oreg(op))
+    else case op of
       { Do not reformat this function! mkoptbl.pas uses it! }
-      $80 : {lb} begin dput(bget(reg_ip^+1)); inc(reg_ip^) end;
-      $81 : {li} begin dput(rdval(reg_ip^+1)); inc(reg_ip^,3) end;
-      $82 : {du} dput(tos);
-      $83 : {sw} dswp;
-      $84 : {ov} dput(nos);
-      $85 : {zp} zap(dpop);
-      $86 : {dc} rput(dpop);
-      $87 : {cd} dput(rpop);
-      $88 : {ad} dput(dpop  + dpop);
-      $89 : {sb} dput(-dpop + dpop);
-      $8A : {ml} dput(dpop * dpop);
-      $8B : {dv} begin t:=dpop; dput(dpop div t) end;
-      $8C : {md} begin t:=dpop; dput(dpop mod t) end;
-      $8D : {sh} begin dswp; dput(dpop shl dpop) end;
-      $8E : {an} dput(dpop and dpop);
-      $8F : {or} dput(dpop or dpop);
-      $90 : {xr} dput(dpop xor dpop);
-      $91 : {nt} dput(not dpop);
-      $92 : {eq} if dpop =  dpop then dput(-1) else dput(0);
-      $93 : {lt} begin t:=dpop; if dpop <  t then dput(-1) else dput(0) end;
-      $94 : {jm} go(rdval(reg_ip^+1));
-      $95 : {hp} hop;
-      $96 : {h0} if dpop = 0 then hop else inc(reg_ip^);
-      $97 : {cl} begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
-      $98 : {rt} reg_ip^ := rpop-1;
-      $99 : {nx} begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
+      $80 : {ad} dput(dpop  + dpop);
+      $81 : {sb} dput(-dpop + dpop);
+      $82 : {ml} dput(dpop * dpop);
+      $83 : {dv} begin t:=dpop; dput(dpop div t) end;
+      $84 : {md} begin t:=dpop; dput(dpop mod t) end;
+      $85 : {sh} begin dswp; dput(dpop shl dpop) end;
+      $86 : {an} dput(dpop and dpop);
+      $87 : {or} dput(dpop or dpop);
+      $88 : {xr} dput(dpop xor dpop);
+      $89 : {nt} dput(not dpop);
+      $8A : {eq} if dpop =  dpop then dput(-1) else dput(0);
+      $8B : {lt} begin t:=dpop; if dpop <  t then dput(-1) else dput(0) end;
+      $8C : {du} dput(tos);
+      $8D : {sw} dswp;
+      $8E : {ov} dput(nos);
+      $8F : {zp} zap(dpop);
+      $90 : {dc} rput(dpop);
+      $91 : {cd} dput(rpop);
+      $92 : {rv} if vw=1 then rb else ri; // todo: dynamic dispatch through fn ptr
+      $93 : {wv} if vw=1 then wb else wi; // todo: same
+      $94 : {lb} begin dput(bget(reg_ip^+1)); inc(reg_ip^) end;
+      $95 : {li} begin dput(rdval(reg_ip^+1)); inc(reg_ip^,3) end;
+      $96 : {jm} go(rdval(reg_ip^+1));
+      $97 : {hp} hop;
+      $98 : {h0} if dpop = 0 then hop else inc(reg_ip^);
+      $99 : {cl} begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
+      $9A : {rt} reg_ip^ := rpop-1;
+      $9B : {nx} begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
                    if tor = 0 then begin zap(rpop); inc(reg_ip^) end
                    else hop end;
-      $9A : {rb} dput(ram[dpop]);    { read byte }
-      $9B : {wb} begin t:= dpop; ram[t]:= byte(dpop); end;  { write byte  }
-      $9C : {ri} dput(rdval(dpop));
-      $9D : {wi} begin t := dpop; wrval(t, dpop); end;
-      $9E : {rx} begin a := rega('X'); t := rdval(a); dput(rdval(t)); wrval(a, t+4)
-                 end;
-      $9F : {ry} begin a := rega('Y'); t := rdval(a); dput(rdval(t)); wrval(a, t+4)
-                 end;
-      $A0 : {wz} begin a := rega('Z'); t := rdval(a); wrval(t, dpop); wrval(a, t+4)
-                 end;
       $B0 : {tg} term.invoke(vtTG);
       $B1 : {ta} term.invoke(vtTA);
       $B2 : {tw} term.invoke(vtTW);
@@ -297,6 +306,8 @@ procedure runop(op : byte);
       $B5 : {ts} term.invoke(vtTS);
       $B6 : {tl} term.invoke(vtTS);
       $B7 : {tc} term.invoke(vtTS);
+      $C0 : {vb} vw := 1;
+      $C1 : {vi} vw := 4;
       $FE : {db} reg_db^ := 1;
       $FF : {hl} halt;
       { reserved: } $B9..$BF : begin end;

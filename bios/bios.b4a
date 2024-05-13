@@ -5,6 +5,7 @@
 
 jm >(start)                        # jump over bios
 #--- begin bios -------------------\
+:ri vi rv rt  :rb vb rv rt  :wb vb wv rt :wi vi wv rt  # temp hack. inline these soon (?)
 :last^ 00 00 00 00 04 'l'a's't
   :last  lb 16 rt
 :inc^ $last^ 03 'i'n'c

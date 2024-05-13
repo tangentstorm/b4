@@ -19,8 +19,14 @@ implementation
 
 procedure ok; begin end;
 
+function isRegChar(c:char; out r:byte) : boolean;
+begin
+  result := (c>='@') and (c<='_');
+  if result then r := ord(c)-ord('@')
+end;
+
 function b4op(code : opstring; out op:byte) : boolean;
-  var o : byte;
+  var o,r : byte;
   begin
     result := false;
     for o := low(optbl) to high(optbl) do
@@ -28,6 +34,16 @@ function b4op(code : opstring; out op:byte) : boolean;
         op := o; result := true; break
       end;
     if code = '..' then begin op := 0; result := true end
+    else if (length(code)=2) and isRegChar(code[2],r) then begin
+      result := true;
+      case code[1] of
+        '^': op := r;
+        '@': op := r+$20;
+        '!': op := r+$40;
+        '+': op := r+$60;
+        else result := false
+      end
+    end
   end;
 
 function b4opc(code:opstring) : byte;
@@ -143,8 +159,8 @@ procedure b4as;
                 emitv(0); insert(fw, fwds, maxint);
               end;
         adr : emitv(find_addr(tok.str));
-        get : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('ri')) end;
-        put : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wi')) end;
+        get : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('rv')) end;
+        put : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wv')) end;
         _wh : dput(here); {(- wh)}
         _th ,
         _do : hop_slot('h0');

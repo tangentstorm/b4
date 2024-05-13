@@ -394,6 +394,7 @@ walks the chain backwards, printing each name.
 * initial dictionary
 #+name: initial-words
 #+begin_src b4a :noweb yes :noweb-prefix no
+  :ri vi rv rt  :rb vb rv rt  :wb vb wv rt :wi vi wv rt  # temp hack. inline these soon (?)
   :last^ 00 00 00 00 04 'l'a's't
     <<last>>
   :inc^ $last^ 03 'i'n'c

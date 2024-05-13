@@ -79,9 +79,9 @@ n_ops=:' ad sb ml dv md sh'        NB. math ops
 b_ops=:' an or xr nt'              NB. bitwise ops
 c_ops=:' eq lt'                    NB. comparison ops
 f_ops=:' ok jm hp h0 cl rt'        NB. flow ops
-m_ops=:' rb wb ri wi'              NB. memory ops
+m_ops=:' rv wv vb vi'              NB. memory ops
 h_ops=:' io'                       NB. hardware i/o ops
-e_ops=:' rx ry wz nx'              NB. extended ops
+e_ops=:' nx'                       NB. extended ops
 
 ops =: ;: s_ops,n_ops,b_ops,c_ops,f_ops,m_ops,h_ops,e_ops
 
@@ -130,9 +130,15 @@ wi =: (dpop mset dpop)       NB. (na- ) write x to addr y
 rb =: dput@bget@dpop         NB. ( a-n) copy from addr y to stack (u8)
 wb =: (dpop bset dpop)       NB. (ba- ) write byte x to addr y
 
-rx =: {{ (t+4) mset XREG [ dput mget t=. mget XREG }}
-ry =: {{ (t+4) mset YREG [ dput mget t=. mget YREG }}
-wz =: {{ (t+4) mset ZREG [ (dpop'') mset t=. mget ZREG }}
+vw =: 4 [ +`(rv =: ri)`(wv =: wi)
+vb =: {{vw =: 1 [+`(rv=:rb)`(wv=:wb)}}
+vi =: {{vw =: 4 [+`(rv=:ri)`(wv=:wi)}}
+
+NB. register ops
+rg =: 4 * ]
+rr =: {{ dput mget r=. rg y }}
+wr =: {{ (dpop'') mset rg y }}
+ir =: {{ dput t [ r mset~ vw + t =. mget r=.rg y }}
 
 io =: [:                     NB. TODO: io
 

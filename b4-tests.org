@@ -16,7 +16,7 @@ See the =test-b4-*= scripts in this repository for examples.
 * DONE [6/6] debugger interface
 ** DONE establish a command loop and a way to exit
 #+name: io.%q
-#+begin_src b4i
+#+begin_src b4a
 > %q
 = %q : quit
 : The '%q' command instructs b4 to quit.
@@ -27,7 +27,7 @@ See the =test-b4-*= scripts in this repository for examples.
 
 ** DONE print the data stack
 #+name: io.?d
-#+begin_src b4i
+#+begin_src b4a
 > ?d %q
 ds: [] # should be an empty array
 = ?d : query the data stack
@@ -35,7 +35,7 @@ ds: [] # should be an empty array
 
 ** DONE print the call stack
 #+name: io.?c
-#+begin_src b4i
+#+begin_src b4a
 > ?c %q
 cs: [] # should be an empty array
 = ?c : query the call stack
@@ -43,7 +43,7 @@ cs: [] # should be an empty array
 
 ** DONE push a hex number to the stack
 #+name: io.hex
-#+begin_src b4i
+#+begin_src b4a
 > FF CC ?d %q
 ds: [FF CC]
 = hex numbers are pushed to data stack
@@ -51,7 +51,7 @@ ds: [FF CC]
 #+end_src
 ** DONE push an ascii character onto the stack
 #+name: io.ascii
-#+begin_src b4i
+#+begin_src b4a
 > 'a 'A ' ?d %q
 ds: [61 41 20]
 = ascii syntax
@@ -60,7 +60,7 @@ ds: [61 41 20]
 #+end_src
 ** DONE push control character addresses to stack
 #+name: io.ctrl
-#+begin_src b4i
+#+begin_src b4a
 > `@ `A `B `C `X `Y `Z ?d %q
 ds: [0 4 8 C 60 64 68]
 = control characters
@@ -74,7 +74,7 @@ ds: [0 4 8 C 60 64 68]
 #+end_src
 
 #+name: io.ctrl2
-#+begin_src b4i
+#+begin_src b4a
 > `[ `\ `] `^ `_ ?d %q
 ds: [6C 70 74 78 7C]
 = non-alphabetic control characters
@@ -84,7 +84,7 @@ ds: [6C 70 74 78 7C]
 * DONE [17/17] alu / stack operations
 ** DONE =ad= op
 #+name: op.ad
-#+begin_src b4i
+#+begin_src b4a
 > 01 02 ad ?d %q
 ds: [3]
 = ad: add top two items on the stack
@@ -92,26 +92,26 @@ ds: [3]
 #+end_src
 ** DONE =ml= op
 #+name: op.ml
-#+begin_src b4i
+#+begin_src b4a
 > 03 03 ml ?d %q
 ds: [9]
 #+end_src
 ** DONE =sb= op
 #+name: io.math
-#+begin_src b4i
+#+begin_src b4a
 > 0A 05 sb ?d %q
 ds: [5]
 #+end_src
 
 ** DONE =dv= op
 #+name: math.dv
-#+begin_src b4i
+#+begin_src b4a
 > 0A 05 dv ?d %q
 ds: [2]
 #+end_src
 ** DONE =md= op
 #+name: math.md
-#+begin_src b4i
+#+begin_src b4a
 > 0A 05 md ?d
 ds: [0]
 > zp 0A 03 md ?d %q
@@ -119,81 +119,81 @@ ds: [1]
 #+end_src
 ** DONE =sh= op
 #+name: math.sh
-#+begin_src b4i
+#+begin_src b4a
 > 06 01 sh ?d %q
 ds: [C]
 #+end_src
 
 ** DONE =an= op
 #+name: math.an
-#+begin_src b4i
+#+begin_src b4a
 > 12 35 an ?d %q
 ds: [10]
 #+end_src
 
 ** DONE =or= op
 #+name: math.or
-#+begin_src b4i
+#+begin_src b4a
 > 12 35 or ?d %q
 ds: [37]
 #+end_src
 
 ** DONE =xr= op
 #+name: math.xr
-#+begin_src b4i
+#+begin_src b4a
 > 12 35 xr ?d %q
 ds: [27]
 #+end_src
 
 ** DONE =nt= op
 #+name: math.nt
-#+begin_src b4i
+#+begin_src b4a
 > 12 nt ?d %q
 ds: [-13]
 #+end_src
 
 ** DONE =eq= op
 #+name: math.eq
-#+begin_src b4i
+#+begin_src b4a
 > AA BB eq CC CC eq ?d %q
 ds: [0 -1]
 #+end_src
 
 ** DONE =lt= op
 #+name: op.lt
-#+begin_src b4i
+#+begin_src b4a
 > AA BB lt DD CC lt EE EE lt ?d %q
 ds: [-1 0 0]
 #+end_src
 
 ** DONE =du= op
 #+name: op.du
-#+begin_src b4i
+#+begin_src b4a
 > 0A du ?d %q
 ds: [A A]
-#+end_src b4i
+#+end_src b4a
 ** DONE =zp= op
 #+name: op.zp
-#+begin_src b4i
+#+begin_src b4a
 > 0A ?d zp ?d %q
 ds: [A]
 ds: []
 #+end_src
 ** DONE =sw= op
 #+name: io.sw
-#+begin_src b4i
+#+begin_src b4a
 > 0A 0B sw ?d %q
 ds: [B A]
 #+end_src
 ** DONE =ov= op
 #+name: op.ov
-#+begin_src b4i
+#+begin_src b4a
 > 0A 0B ov ?d %q
 ds: [A B A]
 #+end_src
 ** DONE =cd= and =dc= ops
 #+name: op.cd-dc
-#+begin_src b4i
+#+begin_src b4a
 > 0A dc ?d ?c
 ds: []
 cs: [A]
@@ -204,14 +204,14 @@ cs: []
 
 * DONE [2/2] batch memory access from debugger
 ** DONE inspect ram
-#+name: io.mem-read
-#+begin_src b4i
+#+name: b4i.mem-show
+#+begin_src b4a
 > ?100 %q
 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
 ** DONE write to ram
-#+name: io.mem-write
-#+begin_src b4i
+#+name: b4i.mem-write
+#+begin_src b4a
 > ?100
 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
 > :100 00 AA BB CC
@@ -219,104 +219,116 @@ cs: []
 .. AA BB CC .. .. .. .. .. .. .. .. .. .. .. ..
 #+end_src
 
-* DONE [2/2] memory operations
-** DONE =wb= op
-#+name: io.wb
-#+begin_src b4i
-> 01 0100 wb
+* DONE [3/5] memory operations
+
+** TODO: test that %C clears memory and stacks
+
+** DONE =wv= op
+
+By default we write a 32-bit integer:
+
+#+name: io.wv
+#+begin_src b4a
+> %C
+> AABBCCDD 0100 wv
 > ?100 %q
-^A .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
-#+end_src
-** DONE =rb= op
-#+name: op.rb
-#+begin_src b4i
-> :100 AA BB 00 CC
-> ?100
-AA BB .. CC .. .. .. .. .. .. .. .. .. .. .. ..
-> 0103 rb ?d %q
-ds: [CC]
+DD CC BB AA .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
 
-** DONE =ri= op
-#+name: op.ri
-#+begin_src b4i
+Invoking =vb= changes the value width to one byte:
+
+#+name: io.wv.vi
+#+begin_src b4a
+> %C
+> AABBCCDD 0100 vb wv
+> ?100 %q
+DD .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
+#+end_src
+
+
+** TODO test the display of negative numbers
+
+which of these should it be?
+
+: ds: [CC00BBAA]
+: ds: [-33FF4456]
+
+** DONE =rv= op : read a value from address
+
+By default, we read a single byte:
+
+#+name: op.rv
+#+begin_src b4a
+> :100 AA BB 00 77
+> ?100
+AA BB .. +W .. .. .. .. .. .. .. .. .. .. .. ..
+> 0100 rv ?d %q
+ds: [7700BBAA]
+#+end_src
+
+But the =vi= op sets the value width to 4 bytes.
+
+Note that the bytes are "backwards" from the way we write them!
+B4 reads and writes integers in little-endian format.
+
+#+name: op.rv.vi
+#+begin_src b4a
 > :100 AA BB CC 00
 > ?100
 AA BB CC .. .. .. .. .. .. .. .. .. .. .. .. ..
-> 0100 ri ?d %q
+> vi 0100 rv ?d %q
 ds: [CCBBAA]
-= ri : read integer
-: Note that the bytes are "backwards" from the way we write them!
-: B4 reads and writes integers in little-endian format.
 #+end_src
-** DONE =wi= op
-#+name: op.wi
-#+begin_src b4i
-> 12345678 `X wi ?d
+
+The =vb= op sets the value width back to 1 byte.
+
+#+name: op.rv.vb
+#+begin_src b4a
+> :100 AA BB CC 00
+> ?100
+AA BB CC .. .. .. .. .. .. .. .. .. .. .. .. ..
+> vi 0100 rv vb 0100 rv ?d %q
+ds: [CCBBAA AA]
+#+end_src
+
+
+
+** TODO registers
+#+name: op.rr-wr
+#+begin_src b4a
+> 12345678 !X ?d
 ds: []
-> `X ri ?d %q
+> @X ?d %q
 ds: [12345678]
-= wi : write integer
 #+end_src
 
-** DONE =rx= op
-#+name: op.rx
-#+begin_src b4i
-> 11223344 `A wi
-> 55667788 `B wi ?d
-> `A `X wi
-ds: []
-# read twice, loading `A and `B
-> rx rx ?d
-ds: [11223344 55667788]
-# now `X should be pointing at `C
-> zp zp `X ri `C eq ?d %q
-ds: [-1]
-= rx : read from and increment `X
-: same as the following assembly:
-:
-: read from address in `X
-:   li `X ri ri
-: increment address in `X:
-:   li `X du ri 04 ad sw wi
+** DONE =+x= ops
+
+The + ops increment a register by the value width, so we can use them as iterators through an array of values.
+
+#+name: op.plus-x
+#+begin_src b4a
+> 11223344 !X
+> +X +X @X ?d %q
+ds: [11223344 11223348 1122334C]
 #+end_src
 
-** DONE =ry= op
-#+name: op.ry
-#+begin_src b4i
-> 11223344 `A wi
-> 55667788 `B wi ?d
-> `A `Y wi
-ds: []
-# read twice, loading `A and `B
-> ry ry ?d
-ds: [11223344 55667788]
-# now `Y should be pointing at `C
-> zp zp `Y ri `C eq ?d %q
-ds: [-1]
-= ry : read from and increment `Y
-: ry is exactly the same as rx, except it uses the `Y register.
+With =vb=:
+
+#+name: op.plus-x.vb
+#+begin_src b4a
+> vb 11223344 !X
+> +X +X @X ?d %q
+ds: [11223344 11223345 11223346]
 #+end_src
 
-** DONE =wz= op
-#+name: op.wz
-#+begin_src b4i
-> `A `Z wi
-> ABCDEF wz
-> 123456 wz ?d
-ds: []
-> `A ri `B ri ?d
-ds: [ABCDEF 123456]
-# now `Z should be pointing at `C
-> zp zp `Z ri `C eq ?d %q
-ds: [-1]
-= wz : write to and increment `Z
-#+end_src
+Note that @X !X and +X transfer a complete register (32 bits) regardless of the value size.
+=vb= and =vi= affect the =rv=, =wv=, and =+x= ops, but for =+x= they only change by how much the value increments.
 
 * DONE [2/2] debugger/stepper
 ** DONE query instruction pointer
 #+name: dbg.?i
-#+begin_src b4i
+#+begin_src b4a
 > ?i %q
 ip: 100
 = ?i : query instruction pointer
@@ -324,7 +336,7 @@ ip: 100
 #+end_src
 ** DONE %s step command
 #+name: dbg.%s
-#+begin_src b4i
+#+begin_src b4a
 > ?i %s ?i %q
 ip: 100
 ip: 101
@@ -334,7 +346,7 @@ ip: 101
 * TODO [1/3] sequences
 ** DONE =lb= op
 #+name: op.lb
-#+begin_src b4i
+#+begin_src b4a
 > :100 lb AB
 > ?100
 lb AB .. .. .. .. .. .. .. .. .. .. .. .. .. ..
@@ -358,7 +370,7 @@ Hop is a small relative jump. It takes a signed 8-bit int as a parameter, and ca
 
 *** TODO forward
 #+name: op.hp.forward
-#+begin_src b4i
+#+begin_src b4a
 > :100 hp 05
 > ?i %s ?i %q
 ip: 100
@@ -366,7 +378,7 @@ ip: 105
 #+end_src
 *** TODO forward max
 #+name: op.hp.forward-max
-#+begin_src b4i
+#+begin_src b4a
 > :100 hp 7F
 > %s ?i %q
 ip: 17F
@@ -375,7 +387,7 @@ ip: 17F
 here we set the high bit so it's the same as negative 1.
 (but then that puts us at address 00FF, which is too small so we clamp to 0100 and then we have an infinite loop)
 #+name: op.hp.forward-wrap
-#+begin_src b4i
+#+begin_src b4a
 > :100 hp 80
 > %s ?i %q
 ip: 100
@@ -383,7 +395,7 @@ ip: 100
 
 *** TODO backward
 #+name: op.hp.backward
-#+begin_src b4i
+#+begin_src b4a
 > :100 .. .. .. hp -3
 > %s %s %s ?i %s ?i %q
 ip: 103
@@ -391,7 +403,7 @@ ip: 100
 #+end_src
 *** TODO backward (and out of bounds)
 #+name: op.hp.backward-oob
-#+begin_src b4i
+#+begin_src b4a
 > :100 hp -5
 > %s ?i %q
 ip: 100
@@ -399,7 +411,7 @@ ip: 100
 *** TODO zero?
 This causes an infinite loop.
 #+name: op.hp.zero
-#+begin_src b4i
+#+begin_src b4a
 > :100 hp 00
 > %s ?i %q
 ip: 100
@@ -413,7 +425,7 @@ It pops a value off the data stack, and only hops if the value is 0.
 *** TODO when 0
 We push 0 to the stack and then step, so we should jump to address $0123
 #+name: op.h0.when0
-#+begin_src b4i
+#+begin_src b4a
 > :100 h0 23
 > 00 %s ?i %q
 ip: 123
@@ -421,7 +433,7 @@ ip: 123
 *** TODO when 1
 Here the hop is not taken, but we still hop over the argument.
 #+name: op.h0.when1
-#+begin_src b4i
+#+begin_src b4a
 > :100 h0 23
 > 01 %s ?i %q
 ip: 102
@@ -432,7 +444,7 @@ ip: 102
 =jm= is an unconditional jump to a 4-byte address.
 
 #+name: op.jm
-#+begin_src b4i
+#+begin_src b4a
 > :100 jm 78 56 34 12
 > %s ?i %q
 ip: 12345678
@@ -445,7 +457,7 @@ ip: 12345678
 Note that the instruction pointer is incremented by 4 first, to skip over the argument.
 
 #+name: op.cl
-#+begin_src b4i
+#+begin_src b4a
 > :100 cl 78 56 34 12
 > %s ?i ?c %q
 ip: 12345678
@@ -461,7 +473,7 @@ The actual mechanic is a jump to an address popped from the control stack.
 To simplify this test, we simply push the address we want to the control stack ourselves.
 
 #+name: op.rt
-#+begin_src b4i
+#+begin_src b4a
 > :100 rt
 > 1234 dc ?i ?c %s ?i ?c %q
 ip: 100
@@ -484,7 +496,7 @@ If we had simply invoked =rt= directly using the "calculator", no "step" has occ
 In general, it probably just doesn't make sense to use contrtol flow ops from the "calculator" outside of testing.
 
 #+name: op.rt.b4i
-#+begin_src b4i
+#+begin_src b4a
 > 1234 dc ?i ?c rt ?i ?c %q
 ip: 100
 cs: [1234]
@@ -507,7 +519,7 @@ On the step where it does reach zero, the counter is dropped.
 In this test, we loop back to the starting address twice, and then proceed.
 
 #+name: op.nx
-#+begin_src b4i
+#+begin_src b4a
 > :100 nx 00
 > 2 dc
 > ?c ?i

@@ -46,7 +46,7 @@ procedure readops;
     assign(input, ipath);
     reset(input);
     repeat readln(line) until match(line, 'procedure runop');
-    repeat readln(line) until match(line, '    case');
+    repeat readln(line) until match(line, '    else case');
     repeat
       readln(line);
       { lines we want look like: }

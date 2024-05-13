@@ -31,6 +31,9 @@ begin
     case v of
       0 : tok := '..';
       $01..$1F : tok := '^' + chr(ord('@')+v);
+      $20..$3F : tok := '@' + chr(ord('@')+v-$20);
+      $40..$5F : tok := '!' + chr(ord('@')+v-$40);
+      $60..$7F : tok := '+' + chr(ord('@')+v-$60);
       $80..$FF : begin tok := optbl[v]; if tok='' then tok:=format('%02x', [v]) end
       else tok := format('%02x', [v]);
     end;
@@ -93,6 +96,7 @@ begin
       if tok = '' then continue;
       if ub4asm.b4op(tok, op) then runop(op)
       else case tok of
+        '%C' : boot;
         '%q' : done := true;
         '%s' : ub4.step;
         '?d' : WriteStack('ds: ', ds, reg_dp^);

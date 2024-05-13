@@ -28,7 +28,10 @@ putmem =: {{ NB. decode str with ':addr bytes' and store in ram
   M__vm =: (bytes{a.) (addr+i.#bytes) } M__vm }}
 dis =: {{ NB. disassemble bytes to b4 assembly language
   if. y = 0 do. '..'
-  elseif. (<:&16b01 *. <:&16b1f) y do. '^', chr(y+ord'@')
+  elseif. (>:&16b01 *. <:&16b1f) y do. '^', chr     y+ord'@'
+  elseif. (>:&16b20 *. <:&16b3f) y do. '@', chr (y-32)+ord'@'
+  elseif. (>:&16b40 *. <:&16b5f) y do. '!', chr (y-64)+ord'@'
+  elseif. (>:&16b60 *. <:&16b7f) y do. '+', chr (y-96)+ord'@'
   elseif. (>:&OPCODE *. <:&OPLAST) y do. >(y-OPCODE){ops__vm
   else. hexstr y end. }}
 memstr =: {{ , ' ',.~ dis"0 a.i. (y+i.16) { M__vm  }}
@@ -44,6 +47,7 @@ main =: {{
       case. ''   do.
       case. '%q' do. exit''
       case. '%s' do. step''
+      case. '%C' do. create__vm'' NB. clear everything
       case. '?d' do. echo 'ds: [', (stackstr D__vm), ']'
       case. '?c' do. echo 'cs: [', (stackstr C__vm), ']'
       case. '?i' do. echo 'ip: ', hexstr P__vm
@@ -52,6 +56,9 @@ main =: {{
       case. do.
         if. isop tok do. runop tok continue. end.
         select. 0{tok
+        case. '!' do. wr__vm _64 + ord 1{tok
+        case. '@' do. rr__vm _64 + ord 1{tok
+        case. '+' do. ir__vm _64 + ord 1{tok
         case. ''''do. NB. quote ascii char to push it onto stack
           if. 1=#tok do. dput 32 NB. space
           else. dput ord 1{tok end.
