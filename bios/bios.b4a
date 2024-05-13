@@ -5,9 +5,7 @@
 
 jm >(start)                        # jump over bios
 #--- begin bios -------------------\
-:here^ 00 00 00 00 04 'h'e'r'e
-  :here  lb 12 rt
-:last^ $here^ 04 'l'a's't
+:last^ 00 00 00 00 04 'l'a's't
   :last  lb 16 rt
 :inc^ $last^ 03 'i'n'c
   :inc  lb 01 ad rt
@@ -24,12 +22,9 @@ jm >(start)                        # jump over bios
 
 :n1 lb 00 nt rt                    # TODO: better way to write "-1"
 
-:,^ $dec^ 01 ',
-  :, here ri du dc wb
-    cd inc here wi rt              # ',' is same as 'a+' but for heap
   :sp lb 32 tw rt                    # emit space
 :nl lb 10 tw lb 13 tw rt           # emit CRLF
-:bye^ $,^ 03 'b'y'e
+:bye^ $dec^ 03 'b'y'e
   :bye nl lb 01 ta                  # red
   lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
   nl hl
@@ -165,7 +160,12 @@ jm >(start)                        # jump over bios
     mm-used lb 0 wi .z                # (n-)  mem[n+USED]=0
   @mp rt                              # (-a) address of block
 
-:mm-alloc^ $putn^ 08 'm'm'-'a'l'l'o'c
+:here^ $putn^ 04 'h'e'r'e
+  :here  lb 12 rt
+:,^ $here^ 01 ',
+  :, here ri du dc wb
+    cd inc here wi rt              # ',' is same as 'a+' but for heap
+:mm-alloc^ $,^ 08 'm'm'-'a'l'l'o'c
   :mm-alloc                             # (n-a) allocate block of n bytes
   du !mu                              # (n-) store needed buffer size in mu(sed)
   mm-align !ms                        # (n-) round up to word and store in ms(ize)

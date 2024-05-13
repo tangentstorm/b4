@@ -1,5 +1,10 @@
 #+title: the b4 bios
 
+** scope of the bios
+
+- define dictionary of programs and enable running a program by name
+- provide a basic interactive shell for launching programs (when the system is running in standalone mode)
+
 * structure
 
 #+begin_src b4a :tangle bios.b4a :noweb yes
@@ -35,7 +40,16 @@ lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
 repl
 #+end_src
 
-* dictionary words
+* modules
+* word lists
+
+The system tracks the address of the last link in a variable called =last=.
+The label here is to a function that puts its address onto the stack.
+
+#+name: last
+#+begin_src b4a
+:last  lb 16 rt
+#+end_src
 
 ** accessors
 
@@ -62,14 +76,6 @@ The records have several fields:
 
 ** list the words
 
-The system tracks the address of the last link in a variable called =last=.
-The label here is to a function that puts its address onto the stack.
-
-#+name: last
-#+begin_src b4a
-:last  lb 16 rt
-#+end_src
-
 The word =words= reads from =last= to find the end of the chain, then
 walks the chain backwards, printing each name.
 
@@ -83,7 +89,6 @@ walks the chain backwards, printing each name.
     ri .o                          # move to next entry
   zp rt
 #+end_src
-
 
 ** looking up a word
 
@@ -304,7 +309,6 @@ walks the chain backwards, printing each name.
 #+end_src
 
 * the memory manager
-
 ** private words
 #+name: b4-mm
 #+begin_src b4a
@@ -390,19 +394,15 @@ walks the chain backwards, printing each name.
 * initial dictionary
 #+name: initial-words
 #+begin_src b4a :noweb yes :noweb-prefix no
-  :here^ 00 00 00 00 04 'h'e'r'e
-    <<here>>
-  :last^ $here^ 04 'l'a's't
+  :last^ 00 00 00 00 04 'l'a's't
     <<last>>
   :inc^ $last^ 03 'i'n'c
     <<inc>>
   :dec^ $inc^ 03 'd'e'c
     <<dec>>
     <<b4-math>>
-  :,^ $dec^ 01 ',
-    <<comma>>
     <<b4-io-words>>
-  :bye^ $,^ 03 'b'y'e
+  :bye^ $dec^ 03 'b'y'e
     <<bye>>
     <<b4-prompt>>
   :puts^ $bye^ 04 'p'u't's
@@ -427,7 +427,11 @@ walks the chain backwards, printing each name.
     <<putn>>
     <<try-num>>
     <<b4-mm>>
-  :mm-alloc^ $putn^ 08 'm'm'-'a'l'l'o'c
+  :here^ $putn^ 04 'h'e'r'e
+    <<here>>
+  :,^ $here^ 01 ',
+    <<comma>>
+  :mm-alloc^ $,^ 08 'm'm'-'a'l'l'o'c
     <<mm-alloc>>
   :mm-free^ $mm-alloc^ 07 'm'm'-'f'r'e'e
     <<mm-free>>
