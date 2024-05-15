@@ -28,12 +28,16 @@ THERE:reg["\\"]  # temp var when writing to specific address
 # LAST:reg["^"]    # will be used for dictionary
 
 vm.ip: 256
+vm.st: 0
+vm.db: 0
 mod.reset: on reset do
   vm.ip: 256
   vm.ds: ()
   vm.cs: ()
   vm.ob: ()
   vm.vw: 4
+  vm.st: 0
+  vm.db: 0
 end
 mod.clear: on clear do
   vm.ram: array[1024 "u8"]
@@ -110,6 +114,8 @@ op.io: on io do
   else echo["no: io '",m] end
 end
 
+op.hl: on hl do vm.st:1-vm.st end
+op.db: on db do vm.st:0 vm.db:1 end
 
 #--- canvas stuff
 
@@ -183,8 +189,13 @@ TBL:select op:index code:value from TBL
 on imOp x do first extract op where (op>1)&(op<32)&(code=x) from TBL end
 
 mod.dis: on dis i do first extract code where op=i from TBL end
+mod.disa: on disa i do
+  if (i<128)&(i>31) "'%a" format i
+  elseif i=128 "^?"
+  else first extract code where op=i from TBL end end
 mod.asm: on asm x do
   if r: extract op where code=x from TBL r
+  elseif x[0]="'" x[1]
   else unHex[x] end
 end
 
@@ -202,11 +213,13 @@ end
 
 RT: first extract op where code="rt" from TBL
 mod.runToEnd: on runToEnd di do
-  while !vm.ram[vm.ip]=RT step[] end step[]
+  vm.st: 1
+  while (vm.st=1) & (!vm.ram[vm.ip]=RT) step[] end step[]
   vm.ip: vm.ip+di # so imOp can not inc ip
 end
 
 mod.showMem: on showMem a do " " fuse dis @ vm.ram @ a + range 16 end
+mod.showMemA: on showMemA a do " " fuse disa @ vm.ram @ a + range 16 end
 mod.showIp: on showIp do "ip: %02H" format vm.ip end
 on assemble a s do n:count toks:" "split s  vm.ram[a,n]:raze asm@toks n end
 on asm_via hp s do a:_ri[hp]  n:assemble[a s] _wi[hp a+n] end
@@ -228,8 +241,8 @@ mod.b4i: on b4i line do
       elseif tok="?i" echo[showIp[]]
       elseif tok="?d" echo[showStack["ds"]]
       elseif tok="?c" echo[showStack["cs"]]
-      else hex: "?%[a]H%[m]z" parse tok
-        if hex.m echo[showMem[hex.a]]
+      else hex: "?%[q].1oa%[a]H%[m]z" parse tok
+        if hex.m echo[(if hex.q showMemA else showMem end)[hex.a]]
         else echo["?.no: ",tok] end
       end
     elseif t=":"
@@ -246,8 +259,9 @@ mod.b4i: on b4i line do
       v: if tok="'" 32 else ord[tok[1]] end
       if state=ASM asm_via[hp tok]
       else vm.ds: vm.ds,v end
+    elseif t="." macro[hp tok[1]]
     elseif regop[tok] r:reg[c:tok[1]]
-      if state=ASM echo["asm.todo: ", tok]
+      if state=ASM asm_via[hp tok]
       elseif t="`" vm.ds: vm.ds,r
       elseif t="!" op.wr[r]
       elseif t="@" op.rr[r]
@@ -261,9 +275,37 @@ mod.b4i: on b4i line do
       if state=ASM asm_via[hp tok] else op.im[o] runToEnd[] end
     elseif isHex[tok]
       if state=ASM asm_via[hp tok] else vm.ds: vm.ds,unHex[tok] end
-    else echo["no: %s" format cmd] end
+    else
+    echo["no: %s" format tok] end
   end
   if vm.ob echo[vm.ob] vm.ob:() end
+end
+
+m:on macro hp c do
+  on a s do asm_via[hp s] end
+  on to a do slot:dpop[] dist:slot-a
+    if dist <0 echo["invalid forward hop"]
+    elseif dist > 126 echo["hop too far"]
+    else vm.ram[slot]: dist+1 end
+  end
+  on hh do to[_ri[hp]] end                              # hh: "hop here"
+  on bk do dest:dpop[] dist:dest-here em[dist+1] end    # bk: "back"
+  on em x do a:_ri[hp] vm.ram[a]:x _wi[hp a+1] end      # em: "emit"
+  if     c="." a[".."]
+  elseif c="_" dput[_ri[hp]] a[".."]  # emit 0, leaving address on stack
+  # -- if/else/then:  cond .i if-body .e el-body .t
+  elseif c="i" a["h0"] m["_"]
+  elseif c="e" a["hp"] m["_"] op.sw[] hh[]
+  elseif c="t" to[_ri[hp]]
+  # -- while loops:  .w cond .d body .z
+  elseif c="w" dput[_ri[hp]]
+  elseif c="d" a["h0"] m["_"] # same as .i
+  elseif c="z" a["hp"] op.sw[] bk[] hh[]  # hop back to .w, and tell .d where to exit
+  # -- for/next:
+  elseif c="f" dput[_ri[hp]]
+  elseif c="n" a["nx"] bk[]
+  # -- otherwise:
+  else echo[".no: ",tok] end
 end
 
 mod.echo: on echo line do mod.echo[line] end
