@@ -71,7 +71,7 @@ op.du: on du do dput[dtos[]] end
 op.sw: on sw do y:dpop[] x:dpop[] dput[y] dput[x]end
 op.ov: on ov do dput[last -1 drop vm.ds] end
 op.dc: on dc do t:dpop[] cput[t] end
-op.cd: on cd do t:dpop[] dput[t] end
+op.cd: on cd do t:cpop[] dput[t] end
 
 
 on rb do dput[vm.ram[dpop[]]] end
