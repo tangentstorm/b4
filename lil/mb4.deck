@@ -46,7 +46,7 @@ end
 reset[] clear[]
 
 on dtos do last vm.ds end
-on dpop do r: last vm.ds vm.ds:-1 drop vm.ds r end
+mod.dpop: on dpop do r: last vm.ds vm.ds:-1 drop vm.ds r end
 on dpop2 do r:dpop[] dpop[],r end
 on dput x do vm.ds: vm.ds,x end
 on cpop do r: last vm.cs vm.cs:-1 drop vm.cs r end
@@ -70,8 +70,8 @@ op.lt: on lt do y:dpop[] dput[-(dpop[]<y)] end
 op.du: on du do dput[dtos[]] end
 op.sw: on sw do y:dpop[] x:dpop[] dput[y] dput[x]end
 op.ov: on ov do dput[last -1 drop vm.ds] end
-op.dc: on dc do cput[dpop[]] end
-op.cd: on cd do dput[cpop[]] end
+op.dc: on dc do t:dpop[] cput[t] end
+op.cd: on cd do t:dpop[] dput[t] end
 
 
 on rb do dput[vm.ram[dpop[]]] end
@@ -85,6 +85,8 @@ op.vi: on vi do vm.vw:4  op.rv:ri  op.wv:wi end
 op.rr: on rr r do dput[_ri[r]] end
 op.ir: on ir r do v:_ri[r] _wi[r v+vm.vw] dput[v] end
 op.wr: on wr r do v:dpop[] _wi[r v] end
+# immediately invoke a "dictionary" register
+op.im: on im r do cput[vm.ip+1] _goto[_ri[r]] end
 
 op.lb: on lb do dput[vm.ram[vm.ip:vm.ip+1]] end
 op.li: on li do dput[_ri[vm.ip+1]] vm.ip: vm.ip+4 end
@@ -99,17 +101,14 @@ op.hp: on hp do _hop[] end
 op.h0: on h0 do if dpop[] vm.ip:vm.ip+1 else _hop[] end end
 op.jm: on jm do _goto[_ri[vm.ip+1]] end
 op.cl: on cl do cput[vm.ip+4] _goto[_ri[vm.ip+1]] end
-op.rt: on rt do _goto[cpop[]] end
+op.rt: on rt do if -1=a:cpop[] vm.st:0 else _goto[a] end end
 op.nx: on rt do
-  i:cpop[]-1 if i>0 cput[i] end
-  if i>0 _hop[] else vm.ip:vm.ip+1 end
+  if 0<i:cpop[]-1  cput[i] _hop[] else vm.ip:vm.ip+1 end
 end
 
-# immediately invoke a "dictionary" register
-op.im: on im r do cput[vm.ip] _goto[_ri[4*r]] end
 op.io: on io do
-  m: "%a" parse vm.ram[vm.ip:vm.ip+1]
-  if m="e" x:dpop[] vm.ob:vm.ob,("%a" format x)
+  m: "%a" format vm.ram[vm.ip:vm.ip+1]
+  if m~"e" x:dpop[] vm.ob:vm.ob,("%a" format x)
   elseif m="R"
   else echo["no: io '",m] end
 end
@@ -152,7 +151,7 @@ mod.showStack: on showStack xs do
 end
 
 mod.regop: on regop x do
-  _c: "%[cmd]1.7o+`'!@:?"
+  _c: "%[cmd]1.7o+`^!@:?"
   _r: "%[reg]1.32o@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
   _p: "" fuse _c,_r,"%[m]z" (_p parse x).m
 end
@@ -186,8 +185,6 @@ TBL: " " split " " fuse "\n" split TBL
 TBL:select op:index code:value from TBL
 
 
-on imOp x do first extract op where (op>1)&(op<32)&(code=x) from TBL end
-
 mod.dis: on dis i do first extract code where op=i from TBL end
 mod.disa: on disa i do
   if (i<128)&(i>31) "'%a" format i
@@ -203,19 +200,22 @@ mod.step: on step do
   c:dis[o:vm.ram[vm.ip]]
   if c in op op[c][]
   elseif c=".." # ok
-  elseif c[0]="^" op.im[o]
-  elseif c[0]="@" op.rr[o]
-  elseif c[0]="!" op.wr[o]
-  elseif c[0]="+" op.ir[o]
-  else  echo["step->",c,"(ignored)"] end
+  else r:reg[c[1]]
+    if c[0]="^" op.im[r]
+    elseif c[0]="@" op.rr[r]
+    elseif c[0]="!" op.wr[r]
+    elseif c[0]="+" op.ir[r]
+    else  echo["step->",c,"(ignored)"] end
+  end
   vm.ip: vm.ip+1
 end
 
 RT: first extract op where code="rt" from TBL
+mod.run: on run do vm.st:1 while vm.st=1 step[] end end
 mod.runToEnd: on runToEnd di do
   vm.st: 1
   while (vm.st=1) & (!vm.ram[vm.ip]=RT) step[] end step[]
-  vm.ip: vm.ip+di # so imOp can not inc ip
+  vm.ip: vm.ip+di # so op.im can not inc ip
 end
 
 mod.showMem: on showMem a do " " fuse dis @ vm.ram @ a + range 16 end
@@ -229,6 +229,17 @@ mod.b4i: on b4i line do
   state:IMM:0 ASM:1 CMT:2    hp:HERE # may be THERE later
   each tok in toks  t:tok[0]
     if (state=CMT) | (t="#") state:CMT
+    elseif regop[tok] r:reg[c:tok[1]]
+      if t="?" echo["%08H" format _ri[r]]
+      elseif state=ASM
+        asm_via[hp if t="`" "lb ^%s" format c else tok end]
+      elseif t="`" vm.ds: vm.ds,r
+      elseif t="!" op.wr[r]
+      elseif t="@" op.rr[r]
+      elseif t="+" op.ir[r]
+      elseif t="^" cput[vm.ip] cput[-1] _goto[_ri[r]+1] run[] ip:cpop[] vm.ip:ip
+      elseif t=":" state:ASM _wi[r _ri[hp]]
+      else echo["regop.no: ",tok] end
     elseif t="%"
       if     tok="%q" if deck reset[] else exit[0] end
       elseif tok="%R" reset[]
@@ -237,8 +248,7 @@ mod.b4i: on b4i line do
       elseif tok="%e" runToEnd[]
       else echo["%.no: ",tok] end
     elseif t="?"
-      if  regop[tok] echo["%08H" format _ri[reg[tok[1]]]]
-      elseif tok="?i" echo[showIp[]]
+      if tok="?i" echo[showIp[]]
       elseif tok="?d" echo[showStack["ds"]]
       elseif tok="?c" echo[showStack["cs"]]
       else hex: "?%[q].1oa%[a]H%[m]z" parse tok
@@ -247,32 +257,21 @@ mod.b4i: on b4i line do
       end
     elseif t=":"
       state:ASM hp:HERE c:tok[1]
-      if 2=count tok
-        if regop[tok] h:here[] _sr[c h]
-        elseif c=":" ok
-        else echo[".no: ",tok] end
-      else
-        if tok=":" echo["no: :"]
-        elseif (hex: ":%[a]H%[m]z" parse tok).m _wi[hp:THERE hex.a]
-        else state:CMT echo["nyi: '%s'" format tok] end end
+      if tok="::" # ok
+      elseif 2=count tok echo[":.no: ", tok] # because it's 2 chars but not regop
+      elseif tok=":" echo["no: :"]
+      elseif (hex: ":%[a]H%[m]z" parse tok).m _wi[hp:THERE hex.a]
+      else state:CMT echo["nyi: '%s'" format tok] end
     elseif t="'"
       v: if tok="'" 32 else ord[tok[1]] end
       if state=ASM asm_via[hp tok]
       else vm.ds: vm.ds,v end
     elseif t="." macro[hp tok[1]]
-    elseif regop[tok] r:reg[c:tok[1]]
-      if state=ASM asm_via[hp tok]
-      elseif t="`" vm.ds: vm.ds,r
-      elseif t="!" op.wr[r]
-      elseif t="@" op.rr[r]
-      elseif t="+" op.ir[r] end
     elseif tok in op
       # '..' executes as no-op. if you want to push 0, type '00'
       if state=ASM asm_via[hp tok] else op[tok][] end
     elseif tok=".."
       if state=ASM asm_via[hp tok] end
-    elseif o:imOp[tok]
-      if state=ASM asm_via[hp tok] else op.im[o] runToEnd[] end
     elseif isHex[tok]
       if state=ASM asm_via[hp tok] else vm.ds: vm.ds,unHex[tok] end
     else
@@ -286,23 +285,24 @@ m:on macro hp c do
   on to a do slot:dpop[] dist:slot-a
     if dist <0 echo["invalid forward hop"]
     elseif dist > 126 echo["hop too far"]
-    else vm.ram[slot]: dist+1 end
+    else vm.ram[slot]: dist end
   end
-  on hh do to[_ri[hp]] end                              # hh: "hop here"
-  on bk do dest:dpop[] dist:dest-here em[dist+1] end    # bk: "back"
-  on em x do a:_ri[hp] vm.ram[a]:x _wi[hp a+1] end      # em: "emit"
+  on hr do _ri[hp] end                              # hr: "here"
+  on hh do to[hr[]] end                             # hh: "hop here"
+  on bk do dist:dpop[]-hr[] em[dist+1] end          # bk: "back"
+  on em x do a:hr[] vm.ram[a]:x _wi[hp a+1] end     # em: "emit"
   if     c="." a[".."]
-  elseif c="_" dput[_ri[hp]] a[".."]  # emit 0, leaving address on stack
+  elseif c="_" dput[hr[]] a[".."]  # emit 0, leaving address on stack
   # -- if/else/then:  cond .i if-body .e el-body .t
   elseif c="i" a["h0"] m["_"]
   elseif c="e" a["hp"] m["_"] op.sw[] hh[]
-  elseif c="t" to[_ri[hp]]
+  elseif c="t" to[hr[]]
   # -- while loops:  .w cond .d body .z
-  elseif c="w" dput[_ri[hp]]
+  elseif c="w" dput[hr[]]
   elseif c="d" a["h0"] m["_"] # same as .i
   elseif c="z" a["hp"] op.sw[] bk[] hh[]  # hop back to .w, and tell .d where to exit
   # -- for/next:
-  elseif c="f" dput[_ri[hp]]
+  elseif c="f" a["dc"] dput[hr[]]
   elseif c="n" a["nx"] bk[]
   # -- otherwise:
   else echo[".no: ",tok] end
