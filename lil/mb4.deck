@@ -187,8 +187,8 @@ TBL:select op:index code:value from TBL
 
 mod.dis: on dis i do first extract code where op=i from TBL end
 mod.disa: on disa i do
-  if (i<128)&(i>31) "'%a" format i
-  elseif i=128 "^?"
+  if (i<127)&(i>31) "'%a" format i
+  elseif i=127 "^?"
   else first extract code where op=i from TBL end end
 mod.asm: on asm x do
   if r: extract op where code=x from TBL r
@@ -280,11 +280,12 @@ mod.b4i: on b4i line do
   if vm.ob echo[vm.ob] vm.ob:() end
 end
 
-m:on macro hp c do
+on macro hp c do
+  on m c do macro[hp c] end
   on a s do asm_via[hp s] end
-  on to a do slot:dpop[] dist:slot-a
+  on to a do slot:dpop[] dist:a-slot
     if dist <0 echo["invalid forward hop"]
-    elseif dist > 126 echo["hop too far"]
+    elseif dist > 126 echo["hop too far. dist:",dist]
     else vm.ram[slot]: dist end
   end
   on hr do _ri[hp] end                              # hr: "here"
@@ -296,7 +297,7 @@ m:on macro hp c do
   # -- if/else/then:  cond .i if-body .e el-body .t
   elseif c="i" a["h0"] m["_"]
   elseif c="e" a["hp"] m["_"] op.sw[] hh[]
-  elseif c="t" to[hr[]]
+  elseif c="t" hh[]
   # -- while loops:  .w cond .d body .z
   elseif c="w" dput[hr[]]
   elseif c="d" a["h0"] m["_"] # same as .i
@@ -305,7 +306,7 @@ m:on macro hp c do
   elseif c="f" a["dc"] dput[hr[]]
   elseif c="n" a["nx"] bk[]
   # -- otherwise:
-  else echo[".no: ",tok] end
+  else echo[".no: ",c] end
 end
 
 mod.echo: on echo line do mod.echo[line] end
