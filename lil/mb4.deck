@@ -33,8 +33,8 @@ MEMSIZE: 4096*4 # in bytes
 RIP:32 # instruction pointer
 RDS:33 # data stack top entry or -1 if empty
 RCS:34 # ctrl stack height
-DMAX:1023
-CMAX:1023
+DMAX:1024
+CMAX:1024
 
 vm.mem: array[MEMSIZE "u8"]
 vm.ip: 256
@@ -47,13 +47,14 @@ mod.clear: on clear do
   vm.rg: vm.mem.slice[0,64*4] vm.rg.cast:"i32l"  # registers start at $0000
   #vm.vb: vm.mem.slice[4096,4096]    # 64x16x4 video buffer at $10000
   vm.ds: vm.mem.slice[8192,1024*4] vm.ds.cast:"i32l"  # ds at $2000
-#  vm.cs: vm.mem.slice[12288,1024 "i32l"] # cs at $3000
-  vm.rg[RDS]:-1
+  vm.cs: vm.mem.slice[12288,1024*4] vm.cs.cast:"i32l"# cs at $3000
+  vm.rg[RDS]:0
+  vm.rg[CDS]:0
   _wi[HERE 256]
 end
 mod.reset: on reset do
   vm.rg[RIP]:ip:256
-  vm.rg[RDS]:-1
+  vm.rg[RDS]:0
   vm.cs: ()
   vm.ob: ()
   vm.vw: 4
@@ -63,19 +64,17 @@ end
 clear[] reset[]
 
 on dpop do
-  if -1<i:vm.rg[RDS] r:vm.ds[i] vm.rg[RDS]:i-1 r
+  if 0<i:vm.rg[RDS] r:vm.ds[i-1] vm.rg[RDS]:i-1 r
   else panic["dpop: underflow"] end end
 on dget x do
-  if -1<i:vm.rg[RDS]-x vm.ds[i]
+  if 0<i:vm.rg[RDS]-x vm.ds[i-1]
   else panic["dget: underflow"] end end
 on dtos do dget[0] end
-on dput x do
-  if DMAX>i:vm.rg[RDS] j:i+1 vm.ds[j]:x vm.rg[RDS]:j end
-end
+on dput x do if DMAX>i:vm.rg[RDS] vm.ds[i]:x vm.rg[RDS]:i+1 end end
 
 on dpop2 do r:dpop[] dpop[],r end
 mod.showStack: on showStack xs do
-  if xs~"ds" rg:RDS h:vm.rg[rg]+1 vs:vm.ds[0,h]
+  if xs~"ds" rg:RDS h:vm.rg[rg] vs:vm.ds[0,h]
   elseif xs~"cs" vs:vm[xs]
   else panic["showstack[%s]" format xs] end
   "%s: [%s]" format xs,(" " fuse toHex @ vs)
