@@ -48,14 +48,12 @@ mod.clear: on clear do
   #vm.vb: vm.mem.slice[4096,4096]    # 64x16x4 video buffer at $10000
   vm.ds: vm.mem.slice[8192,1024*4] vm.ds.cast:"i32l"  # ds at $2000
   vm.cs: vm.mem.slice[12288,1024*4] vm.cs.cast:"i32l"# cs at $3000
-  vm.rg[RDS]:0
-  vm.rg[CDS]:0
   _wi[HERE 256]
 end
 mod.reset: on reset do
   vm.rg[RIP]:ip:256
   vm.rg[RDS]:0
-  vm.cs: ()
+  vm.rg[RCS]:0
   vm.ob: ()
   vm.vw: 4
   vm.st: 0
@@ -63,25 +61,31 @@ mod.reset: on reset do
 end
 clear[] reset[]
 
+
 on dpop do
   if 0<i:vm.rg[RDS] r:vm.ds[i-1] vm.rg[RDS]:i-1 r
   else panic["dpop: underflow"] end end
+on cpop do
+  if 0<i:vm.rg[RCS] r:vm.cs[i-1] vm.rg[RCS]:i-1 r
+  else panic["cpop: underflow"] end end
+
 on dget x do
   if 0<i:vm.rg[RDS]-x vm.ds[i-1]
   else panic["dget: underflow"] end end
 on dtos do dget[0] end
-on dput x do if DMAX>i:vm.rg[RDS] vm.ds[i]:x vm.rg[RDS]:i+1 end end
+on dput x do
+  if DMAX>i:vm.rg[RDS] vm.ds[i]:x vm.rg[RDS]:i+1
+  else panic["dput: overflow"] end end
+on cput x do
+  if CMAX>i:vm.rg[RCS] vm.cs[i]:x vm.rg[RCS]:i+1
+  else panic["cput: overflow"] end end
 
 on dpop2 do r:dpop[] dpop[],r end
 mod.showStack: on showStack xs do
-  if xs~"ds" rg:RDS h:vm.rg[rg] vs:vm.ds[0,h]
-  elseif xs~"cs" vs:vm[xs]
-  else panic["showstack[%s]" format xs] end
-  "%s: [%s]" format xs,(" " fuse toHex @ vs)
-end
+  vs: if xs~"cs" vm.cs[0,vm.rg[RCS]] else vm.ds[0,vm.rg[RDS]] end
+  "%s: [%s]" format xs,(" " fuse toHex @ vs) end
 
-on cpop do r: last vm.cs vm.cs:-1 drop vm.cs r end
-on cput x do vm.cs: vm.cs,x end
+
 on here x do if x _wi[HERE x] else _ri[HERE] end end
 on there x do if x _wi[THERE x] else _ri[THERE] end end
 
