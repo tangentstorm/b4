@@ -12,12 +12,6 @@ description:"the b4 virtual machine"
 
 echo:print
 
-on _bytes n do
-  each _ in range 4 r:bits.and[255,n] n:floor n/256 r end
-end
-on _ri a do sum(256^range 4)*vm.mem[a,4] end
-on _wi a v do vm.mem[a,4]:_bytes[v] end
-
 on ord c do first "%a" parse c end
 on reg c do 4*ord[c]-64 end
 # get/set registers
@@ -61,6 +55,8 @@ mod.reset: on reset do
 end
 clear[] reset[]
 
+on _ri a do vm.mem.here:a vm.mem.struct["i32l"] end
+on _wi a v do vm.mem.here:a vm.mem.struct["i32l" v] end
 
 on dpop do
   if 0<i:vm.rg[RDS] r:vm.ds[i-1] vm.rg[RDS]:i-1 r
