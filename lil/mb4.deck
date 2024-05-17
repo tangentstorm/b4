@@ -10,6 +10,7 @@ name:"mb4.deck"
 description:"the b4 virtual machine"
 {script}
 
+echo:print
 
 on _bytes n do
   each _ in range 4 r:bits.and[255,n] n:floor n/256 r end
@@ -27,36 +28,65 @@ HERE:reg["_"]    # continuosly append
 THERE:reg["\\"]  # temp var when writing to specific address
 # LAST:reg["^"]    # will be used for dictionary
 
+MEMSIZE: 4096*4 # in bytes
+
+RIP:32 # instruction pointer
+RDS:33 # data stack top entry or -1 if empty
+RCS:34 # ctrl stack height
+DMAX:1023
+CMAX:1023
+
+vm.mem: array[MEMSIZE "u8"]
 vm.ip: 256
 vm.st: 0
 vm.db: 0
+mod.clear: on clear do
+  vm.mem: array[MEMSIZE "u8"]
+  # !! small bug in lil 1.4.2 when slice cast is different, so we have to
+  #    set it separately and 4* the size. should be fixed in next version.
+  vm.rg: vm.mem.slice[0,64*4] vm.rg.cast:"i32l"  # registers start at $0000
+  #vm.vb: vm.mem.slice[4096,4096]    # 64x16x4 video buffer at $10000
+  vm.ds: vm.mem.slice[8192,1024*4] vm.ds.cast:"i32l"  # ds at $2000
+#  vm.cs: vm.mem.slice[12288,1024 "i32l"] # cs at $3000
+  vm.rg[RDS]:-1
+  _wi[HERE 256]
+end
 mod.reset: on reset do
-  vm.ip: 256
-  vm.ds: ()
+  vm.rg[RIP]:ip:256
+  vm.rg[RDS]:-1
   vm.cs: ()
   vm.ob: ()
   vm.vw: 4
   vm.st: 0
   vm.db: 0
 end
-mod.clear: on clear do
-  vm.mem: array[1024 "u8"]
-  _wi[HERE 256]
-end
-reset[] clear[]
+clear[] reset[]
 
-on dtos do last vm.ds end
-on dpop do r: last vm.ds vm.ds:-1 drop vm.ds r end
-on dget x do if x=1 last -1 drop vm.ds else panic["todo: dget"] end end
+on dpop do
+  if -1<i:vm.rg[RDS] r:vm.ds[i] vm.rg[RDS]:i-1 r
+  else panic["dpop: underflow"] end end
+on dget x do
+  if -1<i:vm.rg[RDS]-x vm.ds[i]
+  else panic["dget: underflow"] end end
+on dtos do dget[0] end
+on dput x do
+  if DMAX>i:vm.rg[RDS] j:i+1 vm.ds[j]:x vm.rg[RDS]:j end
+end
+
 on dpop2 do r:dpop[] dpop[],r end
-on dput x do vm.ds: vm.ds,x end
+mod.showStack: on showStack xs do
+  if xs~"ds" rg:RDS h:vm.rg[rg]+1 vs:vm.ds[0,h]
+  elseif xs~"cs" vs:vm[xs]
+  else panic["showstack[%s]" format xs] end
+  "%s: [%s]" format xs,(" " fuse toHex @ vs)
+end
 
 on cpop do r: last vm.cs vm.cs:-1 drop vm.cs r end
 on cput x do vm.cs: vm.cs,x end
 on here x do if x _wi[HERE x] else _ri[HERE] end end
 on there x do if x _wi[THERE x] else _ri[THERE] end end
 
-op.ad: on ad do dput[dpop[] + dpop[]] end
+op.ad: on ad do dput[sum dpop2[]] end
 op.ml: on ml do dput[dpop[] * dpop[]] end
 op.sb: on sb do y:dpop[] dput[dpop[]-y] end
 op.dv: on dv do y:dpop[] dput[floor dpop[]/y] end
@@ -90,7 +120,7 @@ op.wr: on wr r do v:dpop[] _wi[r v] end
 # immediately invoke a "dictionary" register
 op.im: on im r do cput[vm.ip+1] _goto[_ri[r]] end
 
-op.lb: on lb do dput[vm.mem[vm.ip:vm.ip+1]] end
+op.lb: on lb do vm.ip:vm.ip+1 dput[vm.mem[vm.ip]] end
 op.li: on li do dput[_ri[vm.ip+1]] vm.ip: vm.ip+4 end
 
 on _goto a do vm.ip:(max 256,a)-1 end
@@ -141,16 +171,10 @@ end
 
 # ---------------------
 
-
-on toHex n do
-  if n < 0 "-%H" format -n else "%H" format n end
-end
+on toHex n do  if n < 0 "-%H" format -n else "%H" format n end end
 on isHex s do "%*.1o-%*.16r0123456789ABCDEF%z" parse s end
 on unHex s do  p: "%.1o-%H" parse s  if p[0] 0-p[1] else p[1] end end
 
-mod.showStack: on showStack xs do
-  "%s: [%s]" format xs,(" " fuse toHex @ vm[xs])
-end
 
 mod.regop: on regop x do
   _c: "%[cmd]1.7o+`^!@:?"
