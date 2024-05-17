@@ -14,8 +14,8 @@ description:"the b4 virtual machine"
 on _bytes n do
   each _ in range 4 r:bits.and[255,n] n:floor n/256 r end
 end
-on _ri a do sum(256^range 4)*vm.ram[a,4] end
-on _wi a v do vm.ram[a,4]:_bytes[v] end
+on _ri a do sum(256^range 4)*vm.mem[a,4] end
+on _wi a v do vm.mem[a,4]:_bytes[v] end
 
 on ord c do first "%a" parse c end
 on reg c do 4*ord[c]-64 end
@@ -40,7 +40,7 @@ mod.reset: on reset do
   vm.db: 0
 end
 mod.clear: on clear do
-  vm.ram: array[1024 "u8"]
+  vm.mem: array[1024 "u8"]
   _wi[HERE 256]
 end
 reset[] clear[]
@@ -74,9 +74,9 @@ op.dc: on dc do t:dpop[] cput[t] end
 op.cd: on cd do t:cpop[] dput[t] end
 
 
-on rb do dput[vm.ram[dpop[]]] end
+on rb do dput[vm.mem[dpop[]]] end
 on ri do dput[_ri[dpop[]]] end
-on wb do vm.ram[dpop[]]: dpop[] end
+on wb do vm.mem[dpop[]]: dpop[] end
 on wi do a:dpop[] v:dpop[] _wi[a v] end
 op.rv: ri
 op.wv: wi
@@ -88,14 +88,14 @@ op.wr: on wr r do v:dpop[] _wi[r v] end
 # immediately invoke a "dictionary" register
 op.im: on im r do cput[vm.ip+1] _goto[_ri[r]] end
 
-op.lb: on lb do dput[vm.ram[vm.ip:vm.ip+1]] end
+op.lb: on lb do dput[vm.mem[vm.ip:vm.ip+1]] end
 op.li: on li do dput[_ri[vm.ip+1]] vm.ip: vm.ip+4 end
 
 on _goto a do vm.ip:(max 256,a)-1 end
 on _hop do
-  vm.ram.cast:"i8"
-  _goto[vm.ip+vm.ram[vm.ip+1]]
-  vm.ram.cast:"u8"
+  vm.mem.cast:"i8"
+  _goto[vm.ip+vm.mem[vm.ip+1]]
+  vm.mem.cast:"u8"
 end
 op.hp: on hp do _hop[] end
 op.h0: on h0 do if dpop[] vm.ip:vm.ip+1 else _hop[] end end
@@ -107,7 +107,7 @@ op.nx: on rt do
 end
 
 op.io: on io do
-  m: "%a" format vm.ram[vm.ip:vm.ip+1]
+  m: "%a" format vm.mem[vm.ip:vm.ip+1]
   if m~"e" x:dpop[] vm.ob:vm.ob,("%a" format x)
   elseif m="R"
   else echo["no: io '",m] end
@@ -197,7 +197,7 @@ mod.asm: on asm x do
 end
 
 mod.step: on step do
-  c:dis[o:vm.ram[vm.ip]]
+  c:dis[o:vm.mem[vm.ip]]
   if c in op op[c][]
   elseif c=".." # ok
   else r:reg[c[1]]
@@ -214,14 +214,14 @@ RT: first extract op where code="rt" from TBL
 mod.run: on run do vm.st:1 while vm.st=1 step[] end end
 mod.runToEnd: on runToEnd di do
   vm.st: 1
-  while (vm.st=1) & (!vm.ram[vm.ip]=RT) step[] end step[]
+  while (vm.st=1) & (!vm.mem[vm.ip]=RT) step[] end step[]
   vm.ip: vm.ip+di # so op.im can not inc ip
 end
 
-mod.showMem: on showMem a do " " fuse dis @ vm.ram @ a + range 16 end
-mod.showMemA: on showMemA a do " " fuse disa @ vm.ram @ a + range 16 end
+mod.showMem: on showMem a do " " fuse dis @ vm.mem @ a + range 16 end
+mod.showMemA: on showMemA a do " " fuse disa @ vm.mem @ a + range 16 end
 mod.showIp: on showIp do "ip: %02H" format vm.ip end
-on assemble a s do n:count toks:" "split s  vm.ram[a,n]:raze asm@toks n end
+on assemble a s do n:count toks:" "split s  vm.mem[a,n]:raze asm@toks n end
 on asm_via hp s do a:_ri[hp]  n:assemble[a s] _wi[hp a+n] end
 
 mod.b4i: on b4i line do
@@ -286,12 +286,12 @@ on macro hp c do
   on to a do slot:dpop[] dist:a-slot
     if dist <0 echo["invalid forward hop"]
     elseif dist > 126 echo["hop too far. dist:",dist]
-    else vm.ram[slot]: dist end
+    else vm.mem[slot]: dist end
   end
   on hr do _ri[hp] end                              # hr: "here"
   on hh do to[hr[]] end                             # hh: "hop here"
   on bk do dist:dpop[]-hr[] em[dist+1] end          # bk: "back"
-  on em x do a:hr[] vm.ram[a]:x _wi[hp a+1] end     # em: "emit"
+  on em x do a:hr[] vm.mem[a]:x _wi[hp a+1] end     # em: "emit"
   if     c="." a[".."]
   elseif c="_" dput[hr[]] a[".."]  # emit 0, leaving address on stack
   # -- if/else/then:  cond .i if-body .e el-body .t
