@@ -56,7 +56,7 @@ on new cfg do
   r.rg:rg
   # !! small bug in lil 1.4.2 when slice cast is different, so we have to
   #    set it separately and 4* the size. should be fixed in next version.
-  # r.vb:mem.slice[4096,4096]    # 64x16x4 video buffer at $10000
+  r.vb:mem.slice[4096,4096]    # 64x16x4 video buffer at $10000
   r.ds:mem.slice[r.rg[RDA],r.rg[RDZ]*4] r.ds.cast:"i32l"
   r.cs:mem.slice[r.rg[RCA],r.rg[RCZ]*4] r.cs.cast:"i32l"
   r
@@ -165,7 +165,7 @@ op.nx: on rt do
 end
 
 op.io: on io do
-  m: "%a" format vm.mem[vm.rg[RIP]:vm.rg[RIP]+1]
+  m: "%a" format dpop[] # vm.mem[vm.rg[RIP]:vm.rg[RIP]+1]
   if m~"e" x:dpop[] vm.ob:vm.ob,("%a" format x)
   elseif m="R"
   else echo["no: io '",m] end
