@@ -24,29 +24,52 @@ THERE:reg["\\"]  # temp var when writing to specific address
 
 MEMSIZE: 4096*4 # in bytes
 
-RIP:32 # instruction pointer
-RDS:33 # data stack top entry or -1 if empty
-RCS:34 # ctrl stack height
-RST:35 # state flag
-RDB:36 # debug flag
-RVW:37 # value width
-DMAX:1024
-CMAX:1024
+# private registers
+p:32 on pr do p:p+1 end
+RMZ:pr[] # memory size
+RIP:pr[] # instruction pointer
+RDA:pr[] # ds address
+RDS:pr[] # ds height
+RDZ:pr[] # ds size (max height)
+RCA:pr[] # cs address
+RCS:pr[] # cs height
+RCZ:pr[] # cs size (max height)
+RST:pr[] # state flag
+RDB:pr[] # debug flag
+RVW:pr[] # value width (1=byte 4=int)
+if p>64 panic["too many registers!"] end
+
+PAGE:4096
+on mk_rg mem do rg: mem.slice[0,64*4] rg.cast:"i32l" rg end
+on new cfg do
+  mem:array[mz:if t:cfg.mz t else PAGE*4 end "u8"]
+  rg:mk_rg[mem]
+  rg[RMZ]:mz
+  rg[RIP]:if t:cfg.ip t else    256 end
+  rg[RDA]:if t:cfg.da t else PAGE*2 end # default ds at $2000
+  rg[RDZ]:if t:cfg.dz t else   1024 end
+  rg[RDS]:0
+  rg[RCA]:if t:cfg.ca t else PAGE*3 end # default cs at $3000
+  rg[RCZ]:if t:cfg.cz t else   1024 end
+  rg[RCS]:0
+  r.mem:mem
+  r.rg:rg
+  # !! small bug in lil 1.4.2 when slice cast is different, so we have to
+  #    set it separately and 4* the size. should be fixed in next version.
+  # r.vb:mem.slice[4096,4096]    # 64x16x4 video buffer at $10000
+  r.ds:mem.slice[r.rg[RDA],r.rg[RDZ]*4] r.ds.cast:"i32l"
+  r.cs:mem.slice[r.rg[RCA],r.rg[RCZ]*4] r.cs.cast:"i32l"
+  r
+end
 
 # all functions close over global variable vm.
 # the entire state of a CPU is stored in vm.mem
 # this way, we can swap out different vms easily
 # just by replacing vm.mem.
-vm.mem: array[MEMSIZE "u8"]
+vm:new[]
 
 mod.clear: on clear do
-  vm.mem: array[MEMSIZE "u8"]
-  # !! small bug in lil 1.4.2 when slice cast is different, so we have to
-  #    set it separately and 4* the size. should be fixed in next version.
-  vm.rg: vm.mem.slice[0,64*4] vm.rg.cast:"i32l"  # registers start at $0000
-  #vm.vb: vm.mem.slice[4096,4096]    # 64x16x4 video buffer at $10000
-  vm.ds: vm.mem.slice[8192,1024*4] vm.ds.cast:"i32l"  # ds at $2000
-  vm.cs: vm.mem.slice[12288,1024*4] vm.cs.cast:"i32l"# cs at $3000
+  vm:new[]
   _wi[HERE 256]
 end
 mod.reset: on reset do
@@ -74,10 +97,10 @@ on dget x do
   else panic["dget: underflow"] end end
 on dtos do dget[0] end
 on dput x do
-  if DMAX>i:vm.rg[RDS] vm.ds[i]:x vm.rg[RDS]:i+1
+  if vm.rg[RDZ]>i:vm.rg[RDS] vm.ds[i]:x vm.rg[RDS]:i+1
   else panic["dput: overflow"] end end
 on cput x do
-  if CMAX>i:vm.rg[RCS] vm.cs[i]:x vm.rg[RCS]:i+1
+  if vm.rg[RCZ]>i:vm.rg[RCS] vm.cs[i]:x vm.rg[RCS]:i+1
   else panic["cput: overflow"] end end
 
 on dpop2 do r:dpop[] dpop[],r end
