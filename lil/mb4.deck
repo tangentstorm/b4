@@ -18,7 +18,7 @@ on reg c do 4*ord[c]-64 end
 on _sr c v do _wi[reg[c] v] end
 on _gr c v do _ri[reg[c]] end
 
-HERE:reg["_"]    # continuosly append
+HERE:reg["_"]    # where the assembler will write data next
 THERE:reg["\\"]  # temp var when writing to specific address
 # LAST:reg["^"]    # will be used for dictionary
 
@@ -27,13 +27,18 @@ MEMSIZE: 4096*4 # in bytes
 RIP:32 # instruction pointer
 RDS:33 # data stack top entry or -1 if empty
 RCS:34 # ctrl stack height
+RST:35 # state flag
+RDB:36 # debug flag
+RVW:37 # value width
 DMAX:1024
 CMAX:1024
 
+# all functions close over global variable vm.
+# the entire state of a CPU is stored in vm.mem
+# this way, we can swap out different vms easily
+# just by replacing vm.mem.
 vm.mem: array[MEMSIZE "u8"]
-vm.ip: 256
-vm.st: 0
-vm.db: 0
+
 mod.clear: on clear do
   vm.mem: array[MEMSIZE "u8"]
   # !! small bug in lil 1.4.2 when slice cast is different, so we have to
@@ -45,13 +50,12 @@ mod.clear: on clear do
   _wi[HERE 256]
 end
 mod.reset: on reset do
-  vm.rg[RIP]:ip:256
+  vm.rg[RIP]:256
   vm.rg[RDS]:0
   vm.rg[RCS]:0
+  vm.rg[RVW]:4
+  vm.rg[RST]:0
   vm.ob: ()
-  vm.vw: 4
-  vm.st: 0
-  vm.db: 0
 end
 clear[] reset[]
 
@@ -111,41 +115,41 @@ on wb do vm.mem[dpop[]]: dpop[] end
 on wi do a:dpop[] v:dpop[] _wi[a v] end
 op.rv: ri
 op.wv: wi
-op.vb: on vb do vm.vw:1  op.rv:rb  op.wv:wb end
-op.vi: on vi do vm.vw:4  op.rv:ri  op.wv:wi end
+op.vb: on vb do vm.rg[RVW]:1  op.rv:rb  op.wv:wb end
+op.vi: on vi do vm.rg[RVW]:4  op.rv:ri  op.wv:wi end
 op.rr: on rr r do dput[_ri[r]] end
-op.ir: on ir r do v:_ri[r] _wi[r v+vm.vw] dput[v] end
+op.ir: on ir r do v:_ri[r] _wi[r v+vm.rg[RVW]] dput[v] end
 op.wr: on wr r do v:dpop[] _wi[r v] end
 # immediately invoke a "dictionary" register
-op.im: on im r do cput[vm.ip+1] _goto[_ri[r]] end
+op.im: on im r do cput[vm.rg[RIP]+1] _goto[_ri[r]] end
 
-op.lb: on lb do vm.ip:vm.ip+1 dput[vm.mem[vm.ip]] end
-op.li: on li do dput[_ri[vm.ip+1]] vm.ip: vm.ip+4 end
+op.lb: on lb do vm.rg[RIP]:vm.rg[RIP]+1 dput[vm.mem[vm.rg[RIP]]] end
+op.li: on li do dput[_ri[vm.rg[RIP]+1]] vm.rg[RIP]: vm.rg[RIP]+4 end
 
-on _goto a do vm.ip:(max 256,a)-1 end
+on _goto a do vm.rg[RIP]:(max 256,a)-1 end
 on _hop do
   vm.mem.cast:"i8"
-  _goto[vm.ip+vm.mem[vm.ip+1]]
+  _goto[vm.rg[RIP]+vm.mem[vm.rg[RIP]+1]]
   vm.mem.cast:"u8"
 end
 op.hp: on hp do _hop[] end
-op.h0: on h0 do if dpop[] vm.ip:vm.ip+1 else _hop[] end end
-op.jm: on jm do _goto[_ri[vm.ip+1]] end
-op.cl: on cl do cput[vm.ip+4] _goto[_ri[vm.ip+1]] end
-op.rt: on rt do if -1=a:cpop[] vm.st:0 else _goto[a] end end
+op.h0: on h0 do if dpop[] vm.rg[RIP]:vm.rg[RIP]+1 else _hop[] end end
+op.jm: on jm do _goto[_ri[vm.rg[RIP]+1]] end
+op.cl: on cl do cput[vm.rg[RIP]+4] _goto[_ri[vm.rg[RIP]+1]] end
+op.rt: on rt do if -1=a:cpop[] vm.rg[RST]:0 else _goto[a] end end
 op.nx: on rt do
-  if 0<i:cpop[]-1  cput[i] _hop[] else vm.ip:vm.ip+1 end
+  if 0<i:cpop[]-1  cput[i] _hop[] else vm.rg[RIP]:vm.rg[RIP]+1 end
 end
 
 op.io: on io do
-  m: "%a" format vm.mem[vm.ip:vm.ip+1]
+  m: "%a" format vm.mem[vm.rg[RIP]:vm.rg[RIP]+1]
   if m~"e" x:dpop[] vm.ob:vm.ob,("%a" format x)
   elseif m="R"
   else echo["no: io '",m] end
 end
 
-op.hl: on hl do vm.st:1-vm.st end
-op.db: on db do vm.st:0 vm.db:1 end
+op.hl: on hl do vm.rg[RST]:1-vm.rg[RST] end
+op.db: on db do vm.rg[RST]:0 vm.rg[RDB]:1 end
 
 #--- canvas stuff
 
@@ -154,7 +158,7 @@ cvi.c: on cvic cv do dput[180] cvi.n[cv] end                   # circle (xyr-)
 cvi.d: on cvid cv do s:cv.size dput[s[0]] dput[s[1]] end       # query dimensions
 cvi.f: on cvif cv do cv.pattern: x:dpop[] end                  # fill
 cvi.l: on cvil cv do p1:dpop2[] cv.line[dpop[], p1] end        # line(p0p1-)
-cvi.n: on cvin cv do  n:dpop[] r:dpop[] xy:dpop2[]             # n-gon (xyrn-)
+cvi.n: on cvin cv do n:dpop[] r:dpop[] xy:dpop2[]              # n-gon (xyrn-)
   a: 2*pi * (range n)/n  a:a,1 take a
   cv.poly[flip floor 0.5+xy+r*(list cos a),list sin a]
 end
@@ -222,7 +226,7 @@ mod.asm: on asm x do
 end
 
 mod.step: on step do
-  c:dis[o:vm.mem[vm.ip]]
+  c:dis[o:vm.mem[vm.rg[RIP]]]
   if c in op op[c][]
   elseif c=".." # ok
   else r:reg[c[1]]
@@ -232,20 +236,20 @@ mod.step: on step do
     elseif c[0]="+" op.ir[r]
     else  echo["step->",c,"(ignored)"] end
   end
-  vm.ip: vm.ip+1
+  vm.rg[RIP]: vm.rg[RIP]+1
 end
 
 RT: first extract op where code="rt" from TBL
-mod.run: on run do vm.st:1 while vm.st=1 step[] end end
+mod.run: on run do vm.rg[RST]:1 while vm.rg[RST]=1 step[] end end
 mod.runToEnd: on runToEnd di do
-  vm.st: 1
-  while (vm.st=1) & (!vm.mem[vm.ip]=RT) step[] end step[]
-  vm.ip: vm.ip+di # so op.im can not inc ip
+  vm.rg[RST]: 1
+  while (vm.rg[RST]=1) & (!vm.mem[vm.rg[RIP]]=RT) step[] end step[]
+  vm.rg[RIP]: vm.rg[RIP]+di # so op.im can not inc ip
 end
 
 mod.showMem: on showMem a do " " fuse dis @ vm.mem @ a + range 16 end
 mod.showMemA: on showMemA a do " " fuse disa @ vm.mem @ a + range 16 end
-mod.showIp: on showIp do "ip: %02H" format vm.ip end
+mod.showIp: on showIp do "ip: %02H" format vm.rg[RIP] end
 on assemble a s do n:count toks:" "split s  vm.mem[a,n]:raze asm@toks n end
 on asm_via hp s do a:_ri[hp]  n:assemble[a s] _wi[hp a+n] end
 
@@ -262,7 +266,7 @@ mod.b4i: on b4i line do
       elseif t="!" op.wr[r]
       elseif t="@" op.rr[r]
       elseif t="+" op.ir[r]
-      elseif t="^" cput[vm.ip] cput[-1] _goto[_ri[r]+1] run[] ip:cpop[] vm.ip:ip
+      elseif t="^" cput[vm.rg[RIP]] cput[-1] _goto[_ri[r]+1] run[] ip:cpop[] vm.rg[RIP]:ip
       elseif t=":" state:ASM _wi[r _ri[hp]]
       else echo["regop.no: ",tok] end
     elseif t="%"
