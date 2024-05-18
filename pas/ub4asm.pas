@@ -172,7 +172,7 @@ procedure b4as;
         _if : ; { 'if' does nothing. just syntactic sugar. }
         _el : begin hop_slot('hp'); dswp; hop_here end;
         _fi : {(do-)} hop_here; { jump to 'end' when 'if' test fails }
-        _fr : dput(here);
+        _fr : begin emit(b4opc('dc')); dput(here) end;
         _nx : begin emit(b4opc('nx')); hop_back end;
       end end;
   begin

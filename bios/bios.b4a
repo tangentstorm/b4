@@ -37,7 +37,7 @@ jm >(start)                        # jump over bios
 :puts^ $bye^ 04 'p'u't's
   :puts                              # given address of counted string, write the string
   du rb dc inc                     # push str start to d, len to r (loop counter)
-  .f du rb tw inc .n
+  cd .f du rb tw inc .n
   zp rt
 :e-nm^ $puts^ 04 'e'-'n'm
   :e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
@@ -66,7 +66,7 @@ jm >(start)                        # jump over bios
   .i ov ov eq .t eq rt .z          # a. if the addresses are the same, return 1
   .i ov rb du dc ov rb eq nt .t    # b. (st-st?|n) if the lengths are different,
      cd zp eq rt .z                #   drop loop counter and return 0 (we know eq=0 from a.)
-  .f inc sw inc                    # st-TS  -> next char (doesn't matter that we swap order)
+  cd .f inc sw inc                 # st-TS  -> next char (doesn't matter that we swap order)
      .i ov rb ov rb eq nt .t       # if the characters are not equal
         cd zp eq rt .z .n          #   drop counter and return 0 (same as in b. before)
   zp zp lb 1 rt                    # everything matched, so return 1
@@ -94,7 +94,7 @@ jm >(start)                        # jump over bios
         li $base rb dvm            # (kn-kdm) divmod
         li $digit ad rb dc         # (kdm-kd|c) push char to retn stack
         sw inc sw .o               # k++, d is new n
-      zp dc                        # (kd- |k)
+      zp                           # (kd-k)
       .f cd cd tw dc .n .z         # loop through the characters
   rt
 
@@ -107,7 +107,7 @@ jm >(start)                        # jump over bios
 :try-num                           # (s-n) try to parse string as number
   du rb dc                         # (s    - s|i) a=addr of string
   lb 0                             # (s|i  - sr|i) r=0
-  .f dc inc du rb                  # (ar|i - ac|ri) a=addr of char, c=char
+  cd .f dc inc du rb               # (ar|i - ac|ri) a=addr of char, c=char
      .i digit? .t
         cd lb 10 ml ad dc          #  r= r*10+d
      .e unknown
