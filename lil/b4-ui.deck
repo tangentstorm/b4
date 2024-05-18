@@ -1,6 +1,6 @@
 {deck}
 version:1
-card:4
+card:10
 size:[866,510]
 name:"b4-ui.deck"
 patterns:"%%IMG2AAgA5gBAAUEABwEBAAcBAQAHAQgABAEBAAcBAQAHAQEAAwEIAAIBAQAGAQEABgEBAAcBAgAFAQEAAgEBAAMBAQAEAQMABgEBAAYBAQAEAQEAEwEBAAsBAQATAQEACwEIAAEBAwABAQ0AAQEDAAEBCQABAQMAAQENAAEBAwABAQEAAQEDAAMBAQACAQEAAwEBAAQBAQABAQQAAwEEAAEBAQADAQMAAgEBAAMBAQACAQMAAQEBAAIBBQADAQEAAwEBAAQBAQABAQEABgEBAAsBAQAGAQEAAQECAAMBAQADAQEAAwEBAAMBAQADAQEAAwEBAAMBAQANAQEAAwEBAAkBAQADAQEADQEBAAMBAQAKAQMAAQEFAAEBAwABAQEAAQEDAAEBBQABAQMAAQEBAAEBAwABAQUAAQEDAAEBAQABAQMAAQEFAAEBAwABAQEAAQEBAAYBAQATAQEACAEBAAgBAQALAQEADAEBAAcBAQAGAQMABAEBAAMBAQACAQEABQECAAgBAgAIAQEAAQEBAAMBAQAFAQEAAwEBAAEBAQADAQEABQEBAAMBAQABAQEAAwEBAAUBAQADAQEAAQEBAAMBAQAFAQEAAwEBAAEBAQABAQEAAQEBAAEBAQACAQEAAQEBAAEBAQABAQIAAQEBAAEBAQABAQEAAgEBAAEBAQABAQEAAQECAAEBAQABAQEAAQEBAAIBAQABAQEAAQEBAAEBAgABAQEAAQEBAAEBAQACAQEAAQEBAAEBAQABAQIADAEBAAMBAQAKAQEACgEBAAIBAQALAQEABAEBAAQBAgAKAQIAAgEBAAMBAgABAQIAAQECAAMBAQACAQIACgECAAMBAgABAQQAAQECAAMBAQABAQEAAQEBAAEBAQAJAQEAAQEBAAEBAQABAQEACQEBAAEBAQABAQEAAQEBAAkBAQABAQEAAQEBAAEBAQAJAQgAAQEBAAEBAQABAQEAAQEJAAEBAQABAQEAAQEBAAEBCQABAQEAAQEBAAEBAQABAQkAAQEBAAEBAQABAQEAAQEJAAgBCAAIAQgACAEIAAgBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAQEBAAEBAQABAQEAAgEBAAMBAQACAQEAAwEBAAYBAQADAQEAAgEBAAMBAQACAQEAAwEBAAIBAQADAQEABgEBAAMBAQACAQEAAwEBAAEBAgABAQMAAQECAAEBAwABAQIAAQEDAAEBBgABAQMAAQECAAEBAwABAQIAAQEDAAEBAgABAQMAAQEGAAEBAwACAQEABgEBAA4BAQAGAQEABgEBAAYBAQAGAQEABgEBAAUBAQABAQYAAQEOAAEBBgABAQYAAQEGAAEBBgABAQYAAQEFAAQBAQALAQEAAQEBAAEBAQABAQEADQEBAAsBAQADAQEACwEBAAMBBQADAQQAAQEDAAEBBAACAQIAAwEFAAMBBQAEAQMAAQEEAAMBAQACAQIAAQEBAAEBAQABAQEACQEBAAMBAQAGAQEAAQEBAAQBAQADAQEAAgEBAAUBAgADAQEACwEBAAEBAgAEAQEAAQECAAQBAQABAQIABAEBAAEBBgAIAQEAAQEHAAEBBwABAQIABPwDYwOcA5MBOQLJAWMCwwGTATwB+QHPAZwBbwHGAWkBHAFpARwBAAFsAZMBYwGfAcABBgE/AcYBMAFgAfMByQGcAfMBkwFjAckBDAM="
@@ -193,88 +193,22 @@ on click do
 end
 {end}
 
-{card:card5}
-image:"%%IMG2A2IB/iH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/"
-
 {card:cv-demo}
-image:"%%IMG2A2IB/iH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/Ib4m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/IS8m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/IS8m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/IS8m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/IS8m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/IS8m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/IS8m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/IS8m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/IS8m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/IS8m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/IS8m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/IS8m/yY2If8h/yEvJv8mNiH/If8hLyb/JjYh/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yEzKAIh/yH/If8h/yH/If8hxigCIQQoAiH/If8h/yFgKAIh/yH/If8hXygCIf8h/yH/IWYoAiECKAIh/yH/If8h/yH/If8hwygCIQIoAiH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h6ygBIf8h/yH/IWQoASH/If8h/yFiKAEhASgBIQMoASH/If8h/yFeKAEhASgCIQIoASH/If8h/yFdKAIhASgCIQIoASH/If8h/yFdKAIhASgCIQIoASH/If8h/yFdKAIhASgCIQIoASH/If8h/yFdKAUhASgCIf8h/yH/IV0oBSEBKAIh/yH/If8hXSgFIQEoAiH/If8h/yFdKAUhASgCIf8h/yH/IV0oBSEBKAIh/yH/If8hXSgFIQEoAiH/If8h/yFdKAUhASgCIf8h/yH/IV0oASEBKAMhASgCIf8h/yH/IV0oASEBKAIhAigCIf8h/yH/IV8oAiECKAIh/yH/If8hXygBIQMoASH/If8h/yFgKAEhAygBIf8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/IVEmJCH/If8h/yFBJiQh/yH/If8hQSYkIf8h/yH/IUEmJCH/If8h/yFBJiQh/yH/If8hQSYkIf8h/yH/IUEmJCH/If8h/yFBJiQh/yH/If8hQSYkIf8h/yH/IUEmJCH/If8h/yFBJiQh/yH/IVwoASHjJiQh/yH/If8hQSYkIf8h/yFaKAEhBSgBId8mJCH/If8hXSgBIeImJCH/If8hWSgBIeYmJCH/If8hXCgBIQMoASHfJiQh/yH/If8hQSYkIf8h/yFbKAEhAygBIeAmJCH/If8h/yFBJiQhbyKyIf8h/yEfJiQhbyKyIf8h/yEfJiQhbyKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yE6KAEh/yF3IrIh/yFgKAEh/yFRIrIh/yE4KAEhBSgBIf8hQwEDIS0isiH/ITsoASEiKAEhBSgBIf8hHAEFISwisiH/ITcoASEpKAEh/yEeAQchKyKyIf8hOigBIQMoASEeKAEh/yEiAQch/yH/IT4oASEDKAEh/yEbAQch/yH/IRcoASEDKAEh/yFDAQUh/yH/IT4oASEDKAEh/yEeAQMh/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8hXigBIf8h/yH/If8h/yH/IccoASEFKAEh/yH/If8hYSgBIf8h/yH/IWAoASH/If8h/yFnKAEhAygBIf8h/yH/If8h/yH/IcQoASEDKAEh/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h5Q=="
+image:"%%IMG2A2IB/iH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yFMIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGyIrIh/yH/IbIisiH/If8hsiKyIf8h/yGCAQMhLSKyIf8h/yGBAQUhLCKyIf8h/yGAAQchKyKyIf8h/yGAAQch/yH/If8hXgEHIf8h/yH/IV8BBSH/If8h/yFhAQMh/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yEO"
 script:"cv-demo.0"
 {widgets}
-output:{"type":"field","size":[309,147],"pos":[13,65],"scrollbar":1,"style":"code","scroll":55,"value":"> %C %R\n> :: 01 02 03  :B 'b 'b 'b\n> ?100\n^A ^B ^C .. +B +B +B .. .. .. .. .. .. .. .. ..\n> ?B\n00000000\n> \n> \n> 01 'f cv 00 00 'd cv 'r cv\n> \n> 29 'f cv 'd cv sw -1 sh sw -1 sh 50 'c cv\n> \n> 05 02 ad 'f cv 'd cv sw -1 sh sw -1 sh 40 'c cv\n> 2C 'f cv 'd cv sw -1 sh sw -1 sh 30 'c cv\n> 2B 'f cv 'd cv sw -1 sh sw -1 sh 20 'c cv\n> \n> "}
-input:{"type":"field","size":[309,19],"pos":[13,213],"script":"cv-demo.1","border":1,"scrollbar":0,"style":"code"}
-status:{"type":"field","size":[309,37],"pos":[13,27],"locked":1,"script":"cv-demo.1","show":"transparent","border":1,"scrollbar":0,"style":"code","value":"ds: []\ncs: []\nip: 100"}
-cmd_s:{"type":"button","size":[22,20],"pos":[13,238],"font":"mono","text":"%s","style":"rect","shortcut":"s"}
-cmd_e:{"type":"button","size":[22,20],"pos":[33,238],"font":"mono","text":"%e","style":"rect","shortcut":"g"}
-cmd_r:{"type":"button","size":[22,20],"pos":[53,238],"font":"mono","text":"%R","style":"rect","shortcut":"r"}
-button1:{"type":"button","size":[38,24],"pos":[284,234],"script":"cv-demo.2","font":"body","show":"transparent","text":"clear","style":"rect"}
-canvas1:{"type":"canvas","size":[320,200],"pos":[437,32],"script":"card2.2","font":"mono","image":"%%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","brush":90,"pattern":43,"scale":1}
-cmd_C:{"type":"button","size":[22,20],"pos":[73,238],"font":"mono","text":"%C","style":"rect","shortcut":"r"}
-b4i_scripts:{"type":"contraption","size":[400,220],"pos":[13,272],"def":"itemlist","widgets":{"label":{"value":"b4i scripts"},"item_text":{"size":[320,199],"value":"%C %R\n:: 01 02 03  :B 'b 'b 'b\n?100\n?B\n\n# cv op is canvas interface (at least for now)\n\n# clear canvas by drawing rectangle in color 1\n# 'f:fill color 'd: dimensions 'r rect\n01 'f cv 00 00 'd cv 'r cv\n\n# find center and draw a circle in color\n29 'f cv 'd cv sw -1 sh sw -1 sh 50 'c cv\n\n# copy and paste with other colors/radii\n# colors here include lil patterns.\n05 02 ad 'f cv 'd cv sw -1 sh sw -1 sh 40 'c cv\n2C 'f cv 'd cv sw -1 sh sw -1 sh 30 'c cv\n2B 'f cv 'd cv sw -1 sh sw -1 sh 20 'c cv\n\n# will have a real assembler soon and clean up\n"},"items":{"size":[80,199],"value":{"name":["circles","hello ^E","hello ^W","hex digit"],"text":["%C %R\n:: 01 02 03  :B 'b 'b 'b\n?100\n?B\n\n# cv op is canvas interface (at least for now)\n\n# clear canvas by drawing rectangle in color 1\n# 'f:fill color 'd: dimensions 'r rect\n01 'f cv 00 00 'd cv 'r cv\n\n# find center and draw a circle in color\n29 'f cv 'd cv sw -1 sh sw -1 sh 50 'c cv\n\n# copy and paste with other colors/radii\n# colors here include lil patterns.\n05 02 ad 'f cv 'd cv sw -1 sh sw -1 sh 40 'c cv\n2C 'f cv 'd cv sw -1 sh sw -1 sh 30 'c cv\n2B 'f cv 'd cv sw -1 sh sw -1 sh 20 'c cv\n\n# will have a real assembler soon and clean up\n","%C %R\n# point register E to this definition.\n# by default we are already pointing at :100\n:E io 'e rt\n\n# print that slice of ram so we can see it\n?100\n# now we can push some characters to the stack\n'o 'l 'l 'e 'h\n# and invoke the program (once per character)\n^E ^E ^E ^E ^E\n","%C %R # --- program to write a string ---\n\n# @S stores address of the string\n:S 05 'h 'e 'l 'l 'o\n# some extra bytes to show if things go wrong:\n:: '| 'o 'v 'e 'r 'f 'l 'o 'w\n\n# ^E (c-) emit 1 char\n:E io 'e rt\n\n# ^W (a-) is \"write\"\n# !R = read ptr, +R loads len, then each char\n# .f moves the len to the ctrl stack for .n\n# vb tells rv to read bytes and +R to inc by 1\n:W !R vb +R rv .f +R rv ^E .n rt\n\n@S ^W      ## ^W(rite) the @S(tring)","%R %C\n\n# ^D (n-) ascii digit for hex char(0..F)\n:D lb 0F an du lb 0A lt .i lb '0 .e lb '1 .t ad rt\n\n09\n\n# E\n:E io 'e rt\n\n\n'0 09 ad ^E  # emits '9\n'A 0A sb ^E  # emits '7\n'7 0A ad ^E  # emits 'A\n\n\n# ^H (n-) print hex numbers\n:H du lb 00 eq .i lb '0 \n:: .e .t ^E rt\n\n# CF ^H"]}},"bnw":{},"bgo":{},"run_event":{"value":"run_b4i"},"slider1":{},"bpr":{},"bnx":{},"brm":{},"bup":{},"dn":{}}}
+canvas1:{"type":"canvas","size":[320,200],"pos":[432,32],"script":"card2.2","font":"mono","image":"%%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","brush":90,"pattern":43,"scale":1}
+b4i_scripts:{"type":"contraption","size":[400,220],"pos":[13,272],"def":"itemlist","widgets":{"label":{"value":"b4i scripts"},"item_text":{"size":[320,199],"value":"%C %R\n:: 01 02 03  :B 'b 'b 'b\n?100\n?B\n\n# cv op is canvas interface (at least for now)\n\n# clear canvas by drawing rectangle in color 1\n# 'f:fill color 'd: dimensions 'r rect\n01 'f cv 00 00 'd cv 'r cv\n\n# find center and draw a circle in color\n29 'f cv 'd cv sw -1 sh sw -1 sh 50 'c cv\n\n# copy and paste with other colors/radii\n# colors here include lil patterns.\n05 02 ad 'f cv 'd cv sw -1 sh sw -1 sh 40 'c cv\n2C 'f cv 'd cv sw -1 sh sw -1 sh 30 'c cv\n2B 'f cv 'd cv sw -1 sh sw -1 sh 20 'c cv\n\n# will have a real assembler soon and clean up\n"},"items":{"size":[80,199],"value":{"name":["circles","hello ^E","hello ^W","hex digit"],"text":["%C %R\n:: 01 02 03  :B 'b 'b 'b\n?100\n?B\n\n# cv op is canvas interface (at least for now)\n\n# clear canvas by drawing rectangle in color 1\n# 'f:fill color 'd: dimensions 'r rect\n01 'f cv 00 00 'd cv 'r cv\n\n# find center and draw a circle in color\n29 'f cv 'd cv sw -1 sh sw -1 sh 50 'c cv\n\n# copy and paste with other colors/radii\n# colors here include lil patterns.\n05 02 ad 'f cv 'd cv sw -1 sh sw -1 sh 40 'c cv\n2C 'f cv 'd cv sw -1 sh sw -1 sh 30 'c cv\n2B 'f cv 'd cv sw -1 sh sw -1 sh 20 'c cv\n\n# will have a real assembler soon and clean up\n","%C %R\n# point register E to this definition.\n# by default we are already pointing at :100\n:E lb 'e io rt\n\n# print that slice of ram so we can see it\n?100\n# now we can push some characters to the stack\n'o 'l 'l 'e 'h\n# and invoke the program (once per character)\n^E ^E ^E ^E ^E\n","%C %R # --- program to write a string ---\n\n# @S stores address of the string\n:S 05 'h 'e 'l 'l 'o\n# some extra bytes to show if things go wrong:\n:: '| 'o 'v 'e 'r 'f 'l 'o 'w\n\n# ^E (c-) emit 1 char\n:E lb 'e io rt\n\n# ^W (a-) is \"write\"\n# !R = read ptr, +R loads len, then each char\n# .f moves the len to the ctrl stack for .n\n# vb tells rv to read bytes and +R to inc by 1\n:W !R vb +R rv .f +R rv ^E .n rt\n\n@S ^W      ## ^W(rite) the @S(tring)","%R %C\n\n# ^D (n-) ascii digit for hex char(0..F)\n:D lb 0F an du lb 0A lt .i lb '0 .e lb '1 .t ad rt\n\n09\n\n# E\n:E lb 'e io rt\n\n\n'0 09 ad ^E  # emits '9\n'A 0A sb ^E  # emits '7\n'7 0A ad ^E  # emits 'A\n\n\n# ^H (n-) print hex numbers\n:H du lb 00 eq .i lb '0 \n:: .e .t ^E rt\n\n# CF ^H"]}},"bnw":{},"bgo":{},"run_event":{"value":"run_b4i"},"slider1":{},"bpr":{},"bnx":{},"brm":{},"bup":{},"dn":{}}}
 lil_scripts:{"type":"contraption","size":[400,220],"pos":[432,272],"show":"none","def":"itemlist","widgets":{"label":{"value":"lil scripts"},"item_text":{"size":[320,199],"value":"# start on debugger. draw some ram, highlight ip\nip:mb4.get_vm[].ip\na0: 256 gw:16 mw:31 cs: 18,18  ofs:3,4  \non gxy i do (gw%i),floor i/gw end\nixy: (ofs+(mw,0)-(3,3))+cs*gxy[ip-a0]+0,1\nc: card.widgets.canvas1\nc.pattern: 47 c.rect[0,0 c.size]        # bg\nc.pattern: 35  c.rect[ixy cs+0,1]       # ip\nc.pattern: 41 c.rect[0,0 mw,c.size[1]]  # hex\nc.rect[0,0 c.size[0],cs[1]+ofs]\nc.pattern: 0 c.font: \"mono\"\nc.text[(list \" +%H\") format range 16 ofs+25,2]\nc.pattern: 0 c.font: \"mono\"\neach i in range 10\n  a: a0+16*i\n  t: \"%04H %s\" format a,mb4.showMemA[a]\n  c.text[t (0,cs[1]*i+1)+ofs]\nend\n"},"items":{"size":[80,199],"value":{"name":["show ram","hello"],"text":["# start on debugger. draw some ram, highlight ip\nip:mb4.get_vm[].ip\na0: 256 gw:16 mw:31 cs: 18,18  ofs:3,4  \non gxy i do (gw%i),floor i/gw end\nixy: (ofs+(mw,0)-(3,3))+cs*gxy[ip-a0]+0,1\nc: card.widgets.canvas1\nc.pattern: 47 c.rect[0,0 c.size]        # bg\nc.pattern: 35  c.rect[ixy cs+0,1]       # ip\nc.pattern: 41 c.rect[0,0 mw,c.size[1]]  # hex\nc.rect[0,0 c.size[0],cs[1]+ofs]\nc.pattern: 0 c.font: \"mono\"\nc.text[(list \" +%H\") format range 16 ofs+25,2]\nc.pattern: 0 c.font: \"mono\"\neach i in range 10\n  a: a0+16*i\n  t: \"%04H %s\" format a,mb4.showMemA[a]\n  c.text[t (0,cs[1]*i+1)+ofs]\nend\n","alert[\"hello world\"]"]}},"bnw":{},"bgo":{},"run_event":{"value":"run_lil"},"slider1":{},"bpr":{},"bnx":{},"brm":{},"bup":{},"dn":{}}}
-lil_tab:{"type":"button","size":[60,20],"pos":[552,253],"script":"cv-demo.3","show":"transparent","text":"lil","style":"rect"}
+lil_tab:{"type":"button","size":[60,20],"pos":[552,253],"script":"cv-demo.1","show":"transparent","text":"lil","style":"rect"}
 test_scripts:{"type":"contraption","size":[400,220],"pos":[432,272],"show":"none","def":"itemlist","widgets":{"label":{"value":"b3i test suite"},"item_text":{"size":[300,199],"pos":[100,20],"value":"> %R 00 ?d # stack on vm0\nds: [0]\n> @@ %R ?d 01 ds # stack on vm1\nds: []\nds: [1]\n> ?d # back to vm0 after newline\nds:[1]\n"},"items":{"size":[100,199],"widths":[80,0],"value":{"name":["@@ %R?ds","@@ ?st %q"],"text":["> %R 00 ?d # stack on vm0\nds: [0]\n> @@ %R ?d 01 ds # stack on vm1\nds: []\nds: [1]\n> ?d # back to vm0 after newline\nds:[1]\n","#TODO: ?st queries the vm state\n#?st\n#st: io\n# %q should cause the vm to quit\n> @@ %q\n#?st\n#st: hl\n"]}},"bnw":{},"bgo":{},"run_event":{"value":"run_tests"},"slider1":{"value":100},"bpr":{},"bnx":{},"brm":{},"bup":{},"dn":{}}}
-tests_tab:{"type":"button","size":[60,20],"pos":[492,253],"script":"cv-demo.4","show":"transparent","text":"tests","style":"rect"}
-debug_tab:{"type":"button","size":[60,20],"pos":[432,253],"script":"cv-demo.5","text":"debug","style":"rect"}
+tests_tab:{"type":"button","size":[60,20],"pos":[492,253],"script":"cv-demo.2","show":"transparent","text":"tests","style":"rect"}
+debug_tab:{"type":"button","size":[60,20],"pos":[432,253],"script":"cv-demo.3","text":"debug","style":"rect"}
 debugger:{"type":"canvas","size":[320,200],"pos":[432,272],"script":"card2.2","font":"mono","image":"%%IMG2AUAAyCn/Kf8p/yn/Kf8p/yn/Kf8p/yn/KTMAAykQAAEpEAADKQ8AAykRAAEpDgAFKQ4AAykOAAUpDgADKQ8AAykPAAMpDgAEKQ8AAykOAAQpDgAFKQ0ABSkpAAEpAwABKQMAASkJAAEpBAACKQsAASkDAAEpAwABKQkAASkDAAEpAwABKQkAASkFAAIpCgABKQMAASkNAAEpAwABKQ0AASkHAAEpCQABKQMAASkDAAEpCQABKQMAASkDAAEpCQABKQMAASkDAAEpCQABKQMAASkDAAEpCQABKQMAASkDAAEpCQABKQMAASkDAAEpCQABKQMAASkNAAEpAwABKS0AASkDAAEpAgACKQkAASkFAAEpCwABKQcAASkJAAEpBwABKQkAASkEAAEpAQABKQoAASkDAAQpCgABKQMABCkKAAEpBwABKQkAASkDAAEpAwABKQkAASkDAAEpAwABKQkAASkDAAEpAwABKQkAASkDAAEpAwABKQkAASkDAAEpDQABKQMAASkDAAEpCQABKQMAASkNAAEpAwABKSsABSkBAAEpAQABKQEAASkHAAUpAwABKQkABSkEAAEpCAAFKQMAAikIAAUpAQABKQIAASkIAAUpBQABKQcABSkBAAEpAwABKQcABSkEAAEpCAAFKQIAAykIAAUpAQABKQMAASkHAAUpAQAFKQcABSkBAAQpCAAFKQEAASkLAAUpAQABKQMAASkHAAUpAQAEKQgABSkBAAQpKgABKQMAAikCAAEpCQABKQUAASkLAAEpBQABKQsAASkHAAEpCQABKQMABSkJAAEpBwABKQkAASkDAAEpAwABKQkAASkFAAEpCwABKQMAASkDAAEpCQABKQQABCkJAAEpAwABKQMAASkJAAEpAwABKQMAASkJAAEpAwABKQ0AASkDAAEpAwABKQkAASkDAAEpDQABKQMAASktAAEpAwABKQMAASkJAAEpBQABKQsAASkEAAEpDAABKQMAASkDAAEpCQABKQYAASkKAAEpAwABKQMAASkJAAEpAwABKQMAASkJAAEpBQABKQsAASkDAAEpAwABKQkAASkHAAEpCQABKQMAASkDAAEpCQABKQMAASkDAAEpCQABKQMAASkDAAEpCQABKQMAASkDAAEpCQABKQMAASkNAAEpAwABKTIAAykQAAEpDwAFKQ4AAykRAAEpDwADKQ8AAykQAAEpEAADKQ8AAykOAAEpAwABKQ0ABCkPAAMpDgAEKQ4ABSkNAAEp/yn/Kf8p/yn/Kf8p/ymvIxIv/y8QKR8jEi//LxApHyMEAAEjDS8EAAEvEQABLyMAAS8RAAEvEQABL7ApBAADKQQAASkEAAMpAwADKQYjAwABIwEAASMDAAMjBi8DAAEvAQABLwIABC8JAAEvAQABLwMAAy8cAAEvAwABLw0AAS8DAAEvDQABLwMAAS+sKQMAASkDAAEpAgACKQMAASkDAAEpAQABKQMAASkFIwIAASMDAAEjAQABIwMAASMFLwIAAS8DAAEvAQABLwMAAS8HAAEvAwABLwEAAS8DAAEvGwABLwMAAS8NAAEvAwABLw0AAS8DAAEvrCkDAAEpAgACKQMAASkDAAEpAgACKQEAASkCAAIpBSMIAAEjAwABIwUvCAABLwMAAS8NAAEvIwAELw4ABC8OAAQvqSkDAAEpAQABKQEAASkDAAEpAwABKQEAASkBAAEpAQABKQEAASkBAAEpBSMIAAUjBS8IAAQvDgABLyMAAS8DAAEvDQABLwMAAS8NAAEvAwABL6gpAwACKQIAASkDAAEpAwACKQIAASkBAAIpAgABKQUjCAABIwMAASMFLwgAAS8DAAEvDQABLyMAAS8DAAEvDQABLwMAAS8NAAEvAwABL6gpAwABKQMAASkDAAEpAwABKQMAASkBAAEpAwABKQUjCAABIwMAASMFLwgAAS8DAAEvDQABLwMAAS8JAAIvBAACLw4AAS8DAAEvDQABLwMAAS8NAAEvAwABLwkAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwcpBAADKQQAASkEAAMpAwADKQYjCAABIwMAASMFLwgABC8PAAMvCgACLwQAAi8OAAQvDgAELw4ABC8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8HKR8jEi//LxApHyMSL/8vECkfIxIv/y8QKR8jEi//LxApHyMSL/8vECkfIxIv/y8QKR8jEi//LxApHy//LyIpHy//LyIpHy//LyIpHy//LyIpBAADKQQAASkFAAEpBAADKQYv/y8iKQMAASkDAAEpAgACKQQAAikDAAEpAwABKQUv/y8iKQMAASkCAAIpAwABKQUAASkDAAEpAgACKQUv/y8iKQMAASkBAAEpAQABKQMAASkFAAEpAwABKQEAASkBAAEpBS//LyIpAwACKQIAASkDAAEpBQABKQMAAikCAAEpBS//LyIpAwABKQMAASkDAAEpBQABKQMAASkDAAEpBS8EAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwcpBAADKQQAASkFAAEpBAADKQYvBAACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8HKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKQQAAykEAAEpBAADKQMAAykGL/8vIikDAAEpAwABKQIAAikDAAEpAwABKQEAASkDAAEpBS//LyIpAwABKQIAAikDAAEpBwABKQEAASkCAAIpBS//LyIpAwABKQEAASkBAAEpAwABKQYAASkCAAEpAQABKQEAASkFL/8vIikDAAIpAgABKQMAASkFAAEpAwACKQIAASkFL/8vIikDAAEpAwABKQMAASkEAAEpBAABKQMAASkFLwQAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvBykEAAMpBAABKQMABSkCAAMpBi8EAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwcpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpBAADKQQAASkEAAMpAwADKQYv/y8iKQMAASkDAAEpAgACKQMAASkDAAEpAQABKQMAASkFL/8vIikDAAEpAgACKQMAASkHAAEpAQABKQIAAikFL/8vIikDAAEpAQABKQEAASkDAAEpBQACKQIAASkBAAEpAQABKQUv/y8iKQMAAikCAAEpAwABKQcAASkBAAIpAgABKQUv/y8iKQMAASkDAAEpAwABKQMAASkDAAEpAQABKQMAASkFLwQAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvBykEAAMpBAABKQQAAykDAAMpBi8EAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwcpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpBAADKQQAASkGAAEpAwADKQYv/y8iKQMAASkDAAEpAgACKQUAAikCAAEpAwABKQUv/y8iKQMAASkCAAIpAwABKQQAASkBAAEpAgABKQIAAikFL/8vIikDAAEpAQABKQEAASkDAAEpAwABKQIAASkCAAEpAQABKQEAASkFL/8vIikDAAIpAgABKQMAASkDAAUpAQACKQIAASkFL/8vIikDAAEpAwABKQMAASkGAAEpAgABKQMAASkFLwQAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvBykEAAMpBAABKQYAASkDAAMpBi8EAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwcpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpBAADKQQAASkDAAUpAgADKQYv/y8iKQMAASkDAAEpAgACKQMAASkFAAEpAwABKQUv/y8iKQMAASkCAAIpAwABKQMABCkCAAEpAgACKQUv/y8iKQMAASkBAAEpAQABKQMAASkHAAEpAQABKQEAASkBAAEpBS//LyIpAwACKQIAASkDAAEpBwABKQEAAikCAAEpBS//LyIpAwABKQMAASkDAAEpAwABKQMAASkBAAEpAwABKQUvBAACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8HKQQAAykEAAEpBAADKQMAAykGLwQAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvBykfL/8vIikfL/8vIikfL/8vIikfL/8vIikfL/8vIikfL/8vIikfL/8vIikfL/8vIikfL/8vIikfL/8vIikfL/8vIikEAAMpBAABKQQAAykDAAMpBi//LyIpAwABKQMAASkCAAIpAwABKQUAASkDAAEpBS//LyIpAwABKQIAAikDAAEpAwAEKQIAASkCAAIpBS//LyIpAwABKQEAASkBAAEpAwABKQMAASkDAAEpAQABKQEAASkBAAEpBS//LyIpAwACKQIAASkDAAEpAwABKQMAASkBAAIpAgABKQUv/y8iKQMAASkDAAEpAwABKQMAASkDAAEpAQABKQMAASkFLwQAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvBykEAAMpBAABKQQAAykDAAMpBi8EAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwcpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpBAADKQQAASkDAAUpAgADKQYv/y8iKQMAASkDAAEpAgACKQcAASkBAAEpAwABKQUv/y8iKQMAASkCAAIpAwABKQcAASkBAAEpAgACKQUv/y8iKQMAASkBAAEpAQABKQMAASkGAAEpAgABKQEAASkBAAEpBS//LyIpAwACKQIAASkDAAEpBQABKQMAAikCAAEpBS//LyIpAwABKQMAASkDAAEpBQABKQMAASkDAAEpBS8EAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwcpBAADKQQAASkFAAEpBAADKQYvBAACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8HKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKQQAAykEAAEpBAADKQMAAykGL/8vIikDAAEpAwABKQIAAikDAAEpAwABKQEAASkDAAEpBS//LyIpAwABKQIAAikDAAEpAwABKQMAASkBAAEpAgACKQUv/y8iKQMAASkBAAEpAQABKQMAASkEAAMpAgABKQEAASkBAAEpBS//LyIpAwACKQIAASkDAAEpAwABKQMAASkBAAIpAgABKQUv/y8iKQMAASkDAAEpAwABKQMAASkDAAEpAQABKQMAASkFLwQAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvBykEAAMpBAABKQQAAykDAAMpBi8EAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwcpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpHy//LyIpBAADKQQAASkEAAMpAwADKQYv/y8iKQMAASkDAAEpAgACKQMAASkDAAEpAQABKQMAASkFL/8vIikDAAEpAgACKQMAASkDAAEpAwABKQEAASkCAAIpBS//LyIpAwABKQEAASkBAAEpAwABKQMAASkDAAEpAQABKQEAASkBAAEpBS//LyIpAwACKQIAASkDAAEpBAAEKQEAAikCAAEpBS//LyIpAwABKQMAASkDAAEpBwABKQEAASkDAAEpBS8EAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwcpBAADKQQAASkEAAMpAwADKQYvBAACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8KAAIvBAACLwoAAi8EAAIvCgACLwQAAi8HKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8iKR8v/y8i","brush":90,"pattern":0,"scale":1}
+b4con:{"type":"contraption","size":[310,234],"pos":[12,32],"show":"transparent","def":"b4console","widgets":{"output":{"scroll":66,"value":"> %C %R\n> :: 01 02 03  :B 'b 'b 'b\n> ?100\n^A ^B ^C .. +B +B +B .. .. .. .. .. .. .. .. ..\n> ?B\n00000000\n> \n> \n> 01 'f cv 00 00 'd cv 'r cv\n> \n> 29 'f cv 'd cv sw -1 sh sw -1 sh 50 'c cv\n> \n> 05 02 ad 'f cv 'd cv sw -1 sh sw -1 sh 40 'c cv\n> 2C 'f cv 'd cv sw -1 sh sw -1 sh 30 'c cv\n> 2B 'f cv 'd cv sw -1 sh sw -1 sh 20 'c cv\n> \n> \n> %s"},"input":{},"status":{"value":"ds: []\ncs: [101]\nip: 100"},"cmd_s":{},"cmd_e":{},"cmd_r":{},"button1":{},"cmd_C":{}}}
 
 {script:cv-demo.0}
-mb4.set_echo[on echo line do
-  t:output.text
-  output.text: if t t,"\n",line else line end
-  output.scroll: 999999
-end]
 mb4.set_cv[canvas1]
-on view do
-  status.text
-    : mb4.showStack["ds"], "\n"
-    , mb4.showStack["cs"], "\n"
-    , mb4.showIp[]
-end
-
-
-on run line do
- echo["> ",line]
- mb4.b4i[line]
- view[]
-end
-
-on click do
-  run[me.text]
-  show_ram[]
-end
-
-on run_b4i text do 
-  output.text:""
-  each line in "\n" split text
-    if !line[0]="#" run[line] end
-  end
-  show_ram[]
-end
-
-on run_lil text do
-  eval[text 0 1]
-end
-
-on show_ram do
- # start on debugger. draw some ram, highlight ip
- ip:mb4.get_vm[].ip
- a0: 256 gw:16 mw:31 cs: 18,18  ofs:3,4  
- on gxy i do (gw%i),floor i/gw end
- ixy: (ofs+(mw,0)-(3,3))+cs*gxy[ip-a0]+0,1
- c: card.widgets.debugger
- c.pattern: 47 c.rect[0,0 c.size]        # bg
- c.pattern: 35  c.rect[ixy cs+0,1]       # ip
- c.pattern: 41 c.rect[0,0 mw,c.size[1]]  # hex
- c.rect[0,0 c.size[0],cs[1]+ofs]
- c.pattern: 0 c.font: "mono"
- c.text[(list " +%H") format range 16 ofs+25,2]
- c.pattern: 0 c.font: "mono"
- each i in range 10
-   a: a0+16*i
-   t: "%04H %s" format a,mb4.showMemA[a]
-   c.text[t (0,cs[1]*i+1)+ofs]
- end
-end
  
 on switch_tab name do 
  each t in extract value where value..name like "*_tab" from card.widgets
@@ -286,36 +220,35 @@ on switch_tab name do
  end
  card.widgets[name].show:"solid"
 end
+
+on run_b4i text do 
+ b4con.clear[]
+ each line in "\n" split text
+  if !line[0]="#" b4con.run[line] end
+ end
+end
+
+on run_lil text do
+  eval[text 0 1]
+end
+
 {end}
 
 {script:cv-demo.1}
-on change val do
- 
-end
-{end}
-
-{script:cv-demo.2}
-on click do
-  output.text:input.text:""
-  show_ram[]
-end
-{end}
-
-{script:cv-demo.3}
 on click do
  switch_tab["lil_scripts"]
 end
 
 {end}
 
-{script:cv-demo.4}
+{script:cv-demo.2}
 on click do
  switch_tab["test_scripts"]
 end
 
 {end}
 
-{script:cv-demo.5}
+{script:cv-demo.3}
 on click do
  switch_tab["debugger"]
 end
@@ -757,11 +690,11 @@ op_rv:{"type":"button","size":[28,28],"pos":[252,168],"font":"mono","show":"tran
 op_wv:{"type":"button","size":[28,28],"pos":[280,168],"font":"mono","show":"transparent","text":"wv","style":"rect"}
 op_st:{"type":"button","size":[28,28],"pos":[322,168],"font":"mono","show":"transparent","text":"st","style":"rect"}
 
-{card:console}
+{card:console demo}
 image:"%%IMG2A2IB/iH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/If8h/yH/"
-script:"console.0"
+script:"console demo.0"
 {widgets}
-key_a:{"type":"button","size":[16,16],"pos":[16,432],"script":"console.1","font":"body","text":"a","value":1,"shortcut":"a"}
+key_a:{"type":"button","size":[16,16],"pos":[16,432],"script":"console demo.1","font":"body","text":"a","value":1,"shortcut":"a"}
 key_b:{"type":"button","size":[16,16],"pos":[32,432],"font":"body","text":"b","shortcut":"b"}
 key_c:{"type":"button","size":[16,16],"pos":[48,432],"font":"body","text":"c","shortcut":"c"}
 key_d:{"type":"button","size":[16,16],"pos":[64,432],"font":"body","text":"d","shortcut":"d"}
@@ -780,7 +713,7 @@ key_p:{"type":"button","size":[16,16],"pos":[128,448],"font":"body","text":"p","
 key_q:{"type":"button","size":[16,16],"pos":[16,464],"font":"body","text":"q","shortcut":"q"}
 key_r:{"type":"button","size":[16,16],"pos":[32,464],"font":"body","text":"r","shortcut":"r"}
 key_s:{"type":"button","size":[16,16],"pos":[48,464],"font":"body","text":"s","shortcut":"s"}
-key_t:{"type":"button","size":[16,16],"pos":[64,464],"script":"console.2","font":"body","text":"t","shortcut":"t"}
+key_t:{"type":"button","size":[16,16],"pos":[64,464],"script":"console demo.2","font":"body","text":"t","shortcut":"t"}
 key_u:{"type":"button","size":[16,16],"pos":[80,464],"font":"body","text":"u","shortcut":"u"}
 key_v:{"type":"button","size":[16,16],"pos":[96,464],"font":"body","text":"v","shortcut":"v"}
 key_w:{"type":"button","size":[16,16],"pos":[112,464],"font":"body","text":"w","shortcut":"w"}
@@ -788,51 +721,36 @@ key_x:{"type":"button","size":[16,16],"pos":[128,464],"font":"body","text":"x","
 key_y:{"type":"button","size":[16,16],"pos":[16,480],"font":"body","text":"y","shortcut":"y"}
 key_z:{"type":"button","size":[16,16],"pos":[128,480],"font":"body","text":"z","shortcut":"z"}
 key_ :{"type":"button","size":[96,16],"pos":[32,480],"font":"body","text":" ","shortcut":" "}
-key_0:{"type":"button","size":[16,16],"pos":[160,432],"font":"body","text":"0","shortcut":"0"}
-key_1:{"type":"button","size":[16,16],"pos":[176,432],"font":"body","text":"1","shortcut":"1"}
-key_2:{"type":"button","size":[16,16],"pos":[192,432],"font":"body","text":"2","shortcut":"2"}
-key_3:{"type":"button","size":[16,16],"pos":[208,432],"font":"body","text":"3","shortcut":"3"}
-key_4:{"type":"button","size":[16,16],"pos":[224,432],"font":"body","text":"4","shortcut":"4"}
-scripts:{"type":"contraption","size":[400,161],"pos":[384,288],"def":"itemlist","widgets":{"label":{"value":"scripts"},"item_text":{"value":"bs:extract value where value..type=\"button\"\n   from card.widgets\nchars: \"abcdefghijklmnopqrstuvwxyz 0123456789\"\neach b i in bs\n  b.text: b.shortcut: chars[i]\n  b.name: \"key_%s\" format b.text\nend\n\n\"01234567890\"\n\"',.pyfgcrl/=\"\n\"aoeuidhtns-\"\n\";qjkxbmwvz\""},"items":{"value":{"value":["item 0",0],"text":["bs:extract value where value..type=\"button\"\n   from card.widgets\nchars: \"abcdefghijklmnopqrstuvwxyz 0123456789\"\neach b i in bs\n  b.text: b.shortcut: chars[i]\n  b.name: \"key_%s\" format b.text\nend\n\n\"01234567890\"\n\"',.pyfgcrl/=\"\n\"aoeuidhtns-\"\n\";qjkxbmwvz\"",""]}},"bnw":{},"bgo":{},"run_event":{},"slider1":{},"bpr":{},"bnx":{},"brm":{},"bup":{},"dn":{}}}
-key_5:{"type":"button","size":[16,16],"pos":[160,448],"font":"body","text":"5","shortcut":"5"}
-key_6:{"type":"button","size":[16,16],"pos":[176,448],"font":"body","text":"6","shortcut":"6"}
-key_7:{"type":"button","size":[16,16],"pos":[192,448],"font":"body","text":"7","shortcut":"7"}
-key_8:{"type":"button","size":[16,16],"pos":[208,448],"font":"body","text":"8","shortcut":"8"}
-key_9:{"type":"button","size":[16,16],"pos":[224,448],"font":"body","text":"9","shortcut":"9"}
-field1:{"type":"field","size":[224,32],"pos":[127,79],"animated":1,"script":"console.3","value":"a"}
+key_0:{"type":"button","size":[16,16],"pos":[160,480],"font":"body","text":"0","shortcut":"0"}
+key_1:{"type":"button","size":[16,16],"pos":[160,432],"font":"body","text":"1","shortcut":"1"}
+key_2:{"type":"button","size":[16,16],"pos":[176,432],"font":"body","text":"2","shortcut":"2"}
+key_3:{"type":"button","size":[16,16],"pos":[192,432],"font":"body","text":"3","shortcut":"3"}
+key_4:{"type":"button","size":[16,16],"pos":[160,448],"font":"body","text":"4","shortcut":"4"}
+scripts:{"type":"contraption","size":[400,96],"pos":[448,400],"def":"itemlist","widgets":{"label":{"value":"scripts"},"item_text":{"size":[320,75],"value":"bs:extract value where value..type=\"button\"\n   from card.widgets\nchars: \"abcdefghijklmnopqrstuvwxyz 0123456789\"\neach b i in bs\n  b.text: b.shortcut: chars[i]\n  b.name: \"key_%s\" format b.text\nend\n\n\"01234567890\"\n\"',.pyfgcrl/=\"\n\"aoeuidhtns-\"\n\";qjkxbmwvz\""},"items":{"size":[80,75],"value":{"value":["item 0",0],"text":["bs:extract value where value..type=\"button\"\n   from card.widgets\nchars: \"abcdefghijklmnopqrstuvwxyz 0123456789\"\neach b i in bs\n  b.text: b.shortcut: chars[i]\n  b.name: \"key_%s\" format b.text\nend\n\n\"01234567890\"\n\"',.pyfgcrl/=\"\n\"aoeuidhtns-\"\n\";qjkxbmwvz\"",""]}},"bnw":{},"bgo":{},"run_event":{},"slider1":{},"bpr":{},"bnx":{},"brm":{},"bup":{},"dn":{}}}
+key_5:{"type":"button","size":[16,16],"pos":[176,448],"font":"body","text":"5","shortcut":"5"}
+key_6:{"type":"button","size":[16,16],"pos":[192,448],"font":"body","text":"6","shortcut":"6"}
+key_7:{"type":"button","size":[16,16],"pos":[160,464],"font":"body","text":"7","shortcut":"7"}
+key_8:{"type":"button","size":[16,16],"pos":[176,464],"font":"body","text":"8","shortcut":"8"}
+key_9:{"type":"button","size":[16,16],"pos":[192,464],"font":"body","text":"9","shortcut":"9"}
+terminal1:{"type":"contraption","size":[512,336],"pos":[336,32],"def":"terminal","widgets":{"font":{},"chart":{},"term":{},"fg":{},"bg":{}}}
+b4console1:{"type":"contraption","size":[310,234],"pos":[16,32],"show":"transparent","def":"b4console","widgets":{"output":{},"input":{},"status":{"value":"ds: []\ncs: [101]\nip: 100"},"cmd_s":{},"cmd_e":{},"cmd_r":{},"button1":{},"cmd_C":{}}}
 
-{script:console.0}
+{script:console demo.0}
 
 on run x do
   eval[x 0 1]
 end
 {end}
 
-{script:console.1}
+{script:console demo.1}
 on click do
  field1.pos: field1.pos-1
 end
 {end}
 
-{script:console.2}
+{script:console demo.2}
 on click do
  field1.pos:field1.pos+1
-end
-{end}
-
-{script:console.3}
-on change val do
- 
-end
-
-on view do
- bs:extract value where value..type="button"
-   from card.widgets
- ks:()
- each b in bs
-   if b.value ks:ks,b.text end
- end
- me.text:ks
 end
 {end}
 
@@ -840,12 +758,7 @@ end
 description:"the b4 virtual machine"
 {script}
 
-
-on _bytes n do
-  each _ in range 4 r:bits.and[255,n] n:floor n/256 r end
-end
-on _ri a do sum(256^range 4)*vm.ram[a,4] end
-on _wi a v do vm.ram[a,4]:_bytes[v] end
+echo:print
 
 on ord c do first "%a" parse c end
 on reg c do 4*ord[c]-64 end
@@ -853,38 +766,101 @@ on reg c do 4*ord[c]-64 end
 on _sr c v do _wi[reg[c] v] end
 on _gr c v do _ri[reg[c]] end
 
-HERE:reg["_"]    # continuosly append
+HERE:reg["_"]    # where the assembler will write data next
 THERE:reg["\\"]  # temp var when writing to specific address
 # LAST:reg["^"]    # will be used for dictionary
 
-vm.ip: 256
-vm.st: 0
-vm.db: 0
-mod.reset: on reset do
-  vm.ip: 256
-  vm.ds: ()
-  vm.cs: ()
-  vm.ob: ()
-  vm.vw: 4
-  vm.st: 0
-  vm.db: 0
+MEMSIZE: 4096*4 # in bytes
+
+# private registers
+p:32 on pr do p:p+1 end
+RMZ:pr[] # memory size
+RIP:pr[] # instruction pointer
+RDA:pr[] # ds address
+RDS:pr[] # ds height
+RDZ:pr[] # ds size (max height)
+RCA:pr[] # cs address
+RCS:pr[] # cs height
+RCZ:pr[] # cs size (max height)
+RST:pr[] # state flag
+RDB:pr[] # debug flag
+RVW:pr[] # value width (1=byte 4=int)
+if p>64 panic["too many registers!"] end
+
+PAGE:4096
+on mk_rg mem do rg: mem.slice[0,64*4] rg.cast:"i32l" rg end
+on new cfg do
+  mem:array[mz:if t:cfg.mz t else PAGE*4 end "u8"]
+  rg:mk_rg[mem]
+  rg[RMZ]:mz
+  rg[RIP]:if t:cfg.ip t else    256 end
+  rg[RDA]:if t:cfg.da t else PAGE*2 end # default ds at $2000
+  rg[RDZ]:if t:cfg.dz t else   1024 end
+  rg[RDS]:0
+  rg[RCA]:if t:cfg.ca t else PAGE*3 end # default cs at $3000
+  rg[RCZ]:if t:cfg.cz t else   1024 end
+  rg[RCS]:0
+  r.mem:mem
+  r.rg:rg
+  # !! small bug in lil 1.4.2 when slice cast is different, so we have to
+  #    set it separately and 4* the size. should be fixed in next version.
+  r.vb:mem.slice[4096,4096]    # 64x16x4 video buffer at $10000
+  r.ds:mem.slice[r.rg[RDA],r.rg[RDZ]*4] r.ds.cast:"i32l"
+  r.cs:mem.slice[r.rg[RCA],r.rg[RCZ]*4] r.cs.cast:"i32l"
+  r
 end
+
+# all functions close over global variable vm.
+# the entire state of a CPU is stored in vm.mem
+# this way, we can swap out different vms easily
+# just by replacing vm.mem.
+vm:new[]
+
 mod.clear: on clear do
-  vm.ram: array[1024 "u8"]
+  vm:new[]
   _wi[HERE 256]
 end
-reset[] clear[]
+mod.reset: on reset do
+  vm.rg[RIP]:256
+  vm.rg[RDS]:0
+  vm.rg[RCS]:0
+  vm.rg[RVW]:4
+  vm.rg[RST]:0
+  vm.ob: ()
+end
+clear[] reset[]
 
-on dtos do last vm.ds end
-mod.dpop: on dpop do r: last vm.ds vm.ds:-1 drop vm.ds r end
+on _ri a do vm.mem.here:a vm.mem.struct["i32l"] end
+on _wi a v do vm.mem.here:a vm.mem.struct["i32l" v] end
+
+on dpop do
+  if 0<i:vm.rg[RDS] r:vm.ds[i-1] vm.rg[RDS]:i-1 r
+  else panic["dpop: underflow"] end end
+on cpop do
+  if 0<i:vm.rg[RCS] r:vm.cs[i-1] vm.rg[RCS]:i-1 r
+  else panic["cpop: underflow"] end end
+
+on dget x do
+  if 0<i:vm.rg[RDS]-x vm.ds[i-1]
+  else panic["dget: underflow"] end end
+on dtos do dget[0] end
+on dput x do
+  if vm.rg[RDZ]>i:vm.rg[RDS] vm.ds[i]:x vm.rg[RDS]:i+1
+  else panic["dput: overflow"] end end
+on cput x do
+  if vm.rg[RCZ]>i:vm.rg[RCS] vm.cs[i]:x vm.rg[RCS]:i+1
+  else panic["cput: overflow"] end end
+
 on dpop2 do r:dpop[] dpop[],r end
-on dput x do vm.ds: vm.ds,x end
-on cpop do r: last vm.cs vm.cs:-1 drop vm.cs r end
-on cput x do vm.cs: vm.cs,x end
+mod.showStack: on showStack xs do
+  vs: if xs~"cs" vm.cs[0,vm.rg[RCS]] else vm.ds[0,vm.rg[RDS]] end
+  "%s: [%s]" format xs,(" " fuse toHex @ vs) end
+
+
 on here x do if x _wi[HERE x] else _ri[HERE] end end
 on there x do if x _wi[THERE x] else _ri[THERE] end end
 
-op.ad: on ad do dput[dpop[] + dpop[]] end
+op.ad: on ad do dput[sum dpop2[]] end
 op.ml: on ml do dput[dpop[] * dpop[]] end
 op.sb: on sb do y:dpop[] dput[dpop[]-y] end
 op.dv: on dv do y:dpop[] dput[floor dpop[]/y] end
@@ -899,52 +875,52 @@ op.eq: on eq do dput[-(dpop[] = dpop[])] end
 op.lt: on lt do y:dpop[] dput[-(dpop[]<y)] end
 op.du: on du do dput[dtos[]] end
 op.sw: on sw do y:dpop[] x:dpop[] dput[y] dput[x]end
-op.ov: on ov do dput[last -1 drop vm.ds] end
+op.ov: on ov do dput[dget[1]] end
 op.dc: on dc do t:dpop[] cput[t] end
 op.cd: on cd do t:cpop[] dput[t] end
 
 
-on rb do dput[vm.ram[dpop[]]] end
+on rb do dput[vm.mem[dpop[]]] end
 on ri do dput[_ri[dpop[]]] end
-on wb do vm.ram[dpop[]]: dpop[] end
+on wb do vm.mem[dpop[]]: dpop[] end
 on wi do a:dpop[] v:dpop[] _wi[a v] end
 op.rv: ri
 op.wv: wi
-op.vb: on vb do vm.vw:1  op.rv:rb  op.wv:wb end
-op.vi: on vi do vm.vw:4  op.rv:ri  op.wv:wi end
+op.vb: on vb do vm.rg[RVW]:1  op.rv:rb  op.wv:wb end
+op.vi: on vi do vm.rg[RVW]:4  op.rv:ri  op.wv:wi end
 op.rr: on rr r do dput[_ri[r]] end
-op.ir: on ir r do v:_ri[r] _wi[r v+vm.vw] dput[v] end
+op.ir: on ir r do v:_ri[r] _wi[r v+vm.rg[RVW]] dput[v] end
 op.wr: on wr r do v:dpop[] _wi[r v] end
 # immediately invoke a "dictionary" register
-op.im: on im r do cput[vm.ip+1] _goto[_ri[r]] end
+op.im: on im r do cput[vm.rg[RIP]+1] _goto[_ri[r]] end
 
-op.lb: on lb do dput[vm.ram[vm.ip:vm.ip+1]] end
-op.li: on li do dput[_ri[vm.ip+1]] vm.ip: vm.ip+4 end
+op.lb: on lb do vm.rg[RIP]:vm.rg[RIP]+1 dput[vm.mem[vm.rg[RIP]]] end
+op.li: on li do dput[_ri[vm.rg[RIP]+1]] vm.rg[RIP]: vm.rg[RIP]+4 end
 
-on _goto a do vm.ip:(max 256,a)-1 end
+on _goto a do vm.rg[RIP]:(max 256,a)-1 end
 on _hop do
-  vm.ram.cast:"i8"
-  _goto[vm.ip+vm.ram[vm.ip+1]]
-  vm.ram.cast:"u8"
+  vm.mem.cast:"i8"
+  _goto[vm.rg[RIP]+vm.mem[vm.rg[RIP]+1]]
+  vm.mem.cast:"u8"
 end
 op.hp: on hp do _hop[] end
-op.h0: on h0 do if dpop[] vm.ip:vm.ip+1 else _hop[] end end
-op.jm: on jm do _goto[_ri[vm.ip+1]] end
-op.cl: on cl do cput[vm.ip+4] _goto[_ri[vm.ip+1]] end
-op.rt: on rt do if -1=a:cpop[] vm.st:0 else _goto[a] end end
+op.h0: on h0 do if dpop[] vm.rg[RIP]:vm.rg[RIP]+1 else _hop[] end end
+op.jm: on jm do _goto[_ri[vm.rg[RIP]+1]] end
+op.cl: on cl do cput[vm.rg[RIP]+4] _goto[_ri[vm.rg[RIP]+1]] end
+op.rt: on rt do if -1=a:cpop[] vm.rg[RST]:0 else _goto[a] end end
 op.nx: on rt do
-  if 0<i:cpop[]-1  cput[i] _hop[] else vm.ip:vm.ip+1 end
+  if 0<i:cpop[]-1  cput[i] _hop[] else vm.rg[RIP]:vm.rg[RIP]+1 end
 end
 
 op.io: on io do
-  m: "%a" format vm.ram[vm.ip:vm.ip+1]
+  m: "%a" format dpop[] # vm.mem[vm.rg[RIP]:vm.rg[RIP]+1]
   if m~"e" x:dpop[] vm.ob:vm.ob,("%a" format x)
   elseif m="R"
   else echo["no: io '",m] end
 end
 
-op.hl: on hl do vm.st:1-vm.st end
-op.db: on db do vm.st:0 vm.db:1 end
+op.hl: on hl do vm.rg[RST]:1-vm.rg[RST] end
+op.db: on db do vm.rg[RST]:0 vm.rg[RDB]:1 end
 
 #--- canvas stuff
 
@@ -953,7 +929,7 @@ cvi.c: on cvic cv do dput[180] cvi.n[cv] end                   # circle (xyr-)
 cvi.d: on cvid cv do s:cv.size dput[s[0]] dput[s[1]] end       # query dimensions
 cvi.f: on cvif cv do cv.pattern: x:dpop[] end                  # fill
 cvi.l: on cvil cv do p1:dpop2[] cv.line[dpop[], p1] end        # line(p0p1-)
-cvi.n: on cvin cv do  n:dpop[] r:dpop[] xy:dpop2[]             # n-gon (xyrn-)
+cvi.n: on cvin cv do n:dpop[] r:dpop[] xy:dpop2[]              # n-gon (xyrn-)
   a: 2*pi * (range n)/n  a:a,1 take a
   cv.poly[flip floor 0.5+xy+r*(list cos a),list sin a]
 end
@@ -969,16 +945,10 @@ end
 
 # ---------------------
 
-
-on toHex n do
-  if n < 0 "-%H" format -n else "%H" format n end
-end
+on toHex n do  if n < 0 "-%H" format -n else "%H" format n end end
 on isHex s do "%*.1o-%*.16r0123456789ABCDEF%z" parse s end
 on unHex s do  p: "%.1o-%H" parse s  if p[0] 0-p[1] else p[1] end end
 
-mod.showStack: on showStack xs do
-  "%s: [%s]" format xs,(" " fuse toHex @ vm[xs])
-end
 
 mod.regop: on regop x do
   _c: "%[cmd]1.7o+`^!@:?"
@@ -1027,7 +997,7 @@ mod.asm: on asm x do
 end
 
 mod.step: on step do
-  c:dis[o:vm.ram[vm.ip]]
+  c:dis[o:vm.mem[vm.rg[RIP]]]
   if c in op op[c][]
   elseif c=".." # ok
   else r:reg[c[1]]
@@ -1037,21 +1007,21 @@ mod.step: on step do
     elseif c[0]="+" op.ir[r]
     else  echo["step->",c,"(ignored)"] end
   end
-  vm.ip: vm.ip+1
+  vm.rg[RIP]: vm.rg[RIP]+1
 end
 
 RT: first extract op where code="rt" from TBL
-mod.run: on run do vm.st:1 while vm.st=1 step[] end end
+mod.run: on run do vm.rg[RST]:1 while vm.rg[RST]=1 step[] end end
 mod.runToEnd: on runToEnd di do
-  vm.st: 1
-  while (vm.st=1) & (!vm.ram[vm.ip]=RT) step[] end step[]
-  vm.ip: vm.ip+di # so op.im can not inc ip
+  vm.rg[RST]: 1
+  while (vm.rg[RST]=1) & (!vm.mem[vm.rg[RIP]]=RT) step[] end step[]
+  vm.rg[RIP]: vm.rg[RIP]+di # so op.im can not inc ip
 end
 
-mod.showMem: on showMem a do " " fuse dis @ vm.ram @ a + range 16 end
-mod.showMemA: on showMemA a do " " fuse disa @ vm.ram @ a + range 16 end
-mod.showIp: on showIp do "ip: %02H" format vm.ip end
-on assemble a s do n:count toks:" "split s  vm.ram[a,n]:raze asm@toks n end
+mod.showMem: on showMem a do " " fuse dis @ vm.mem @ a + range 16 end
+mod.showMemA: on showMemA a do " " fuse disa @ vm.mem @ a + range 16 end
+mod.showIp: on showIp do "ip: %02H" format vm.rg[RIP] end
+on assemble a s do n:count toks:" "split s  vm.mem[a,n]:raze asm@toks n end
 on asm_via hp s do a:_ri[hp]  n:assemble[a s] _wi[hp a+n] end
 
 mod.b4i: on b4i line do
@@ -1063,11 +1033,11 @@ mod.b4i: on b4i line do
       if t="?" echo["%08H" format _ri[r]]
       elseif state=ASM
         asm_via[hp if t="`" "lb ^%s" format c else tok end]
-      elseif t="`" vm.ds: vm.ds,r
+      elseif t="`" dput[r]
       elseif t="!" op.wr[r]
       elseif t="@" op.rr[r]
       elseif t="+" op.ir[r]
-      elseif t="^" cput[vm.ip] cput[-1] _goto[_ri[r]+1] run[] ip:cpop[] vm.ip:ip
+      elseif t="^" cput[vm.rg[RIP]] cput[-1] _goto[_ri[r]+1] run[] ip:cpop[] vm.rg[RIP]:ip
       elseif t=":" state:ASM _wi[r _ri[hp]]
       else echo["regop.no: ",tok] end
     elseif t="%"
@@ -1095,7 +1065,7 @@ mod.b4i: on b4i line do
     elseif t="'"
       v: if tok="'" 32 else ord[tok[1]] end
       if state=ASM asm_via[hp tok]
-      else vm.ds: vm.ds,v end
+      else dput[v] end
     elseif t="." macro[hp tok[1]]
     elseif tok in op
       # '..' executes as no-op. if you want to push 0, type '00'
@@ -1103,7 +1073,7 @@ mod.b4i: on b4i line do
     elseif tok=".."
       if state=ASM asm_via[hp tok] end
     elseif isHex[tok]
-      if state=ASM asm_via[hp tok] else vm.ds: vm.ds,unHex[tok] end
+      if state=ASM asm_via[hp tok] else dput[unHex[tok]] end
     else
     echo["no: %s" format tok] end
   end
@@ -1116,12 +1086,12 @@ on macro hp c do
   on to a do slot:dpop[] dist:a-slot
     if dist <0 echo["invalid forward hop"]
     elseif dist > 126 echo["hop too far. dist:",dist]
-    else vm.ram[slot]: dist end
+    else vm.mem[slot]: dist end
   end
   on hr do _ri[hp] end                              # hr: "here"
   on hh do to[hr[]] end                             # hh: "hop here"
   on bk do dist:dpop[]-hr[] em[dist+1] end          # bk: "back"
-  on em x do a:hr[] vm.ram[a]:x _wi[hp a+1] end     # em: "emit"
+  on em x do a:hr[] vm.mem[a]:x _wi[hp a+1] end     # em: "emit"
   if     c="." a[".."]
   elseif c="_" dput[hr[]] a[".."]  # emit 0, leaving address on stack
   # -- if/else/then:  cond .i if-body .e el-body .t
@@ -1155,18 +1125,18 @@ image:"%%IMG2AZAAoQH/Af8B/wH/Af8B/wH/Af8B/wH/Af8B/wH/Af8B/wH/Af8B/wH/Af8B/wH/Af8
 script:"itemlist.0"
 attributes:{"name":["label","run_event","list_width"],"label":["label","run event (on \"!\")","list width"],"type":["string","string","number"]}
 {widgets}
-label:{"type":"field","size":[260,20],"pos":[0,0],"locked":1,"script":"cv-demo.1","font":"menu","show":"invert","border":0,"style":"plain","value":" label"}
-item_text:{"type":"field","size":[320,140],"pos":[80,20],"script":"itemlist.1","border":1,"scrollbar":1,"style":"code","value":"this is item 0"}
-items:{"type":"grid","size":[80,140],"pos":[0,20],"script":"itemlist.2","headers":0,"lines":0,"widths":[60,0],"format":"ss","value":{"value":["item 0","item 1","item 2"],"text":["this is item 0","this is item 1","this is item 2"]},"row":0}
-bnw:{"type":"button","size":[20,20],"pos":[380,0],"script":"itemlist.3","text":"+"}
-bgo:{"type":"button","size":[20,20],"pos":[260,0],"script":"itemlist.4","font":"body","text":"!"}
-run_event:{"type":"field","size":[100,20],"pos":[0,-40],"script":"cv-demo.1","show":"none","value":"run"}
-slider1:{"type":"slider","size":[100,20],"pos":[120,-40],"script":"itemlist.5","show":"none","interval":[0,400],"value":80,"step":20,"style":"compact"}
-bpr:{"type":"button","size":[20,20],"pos":[320,0],"script":"itemlist.6","font":"body","text":"<"}
-bnx:{"type":"button","size":[20,20],"pos":[340,0],"script":"itemlist.7","font":"body","text":">"}
-brm:{"type":"button","size":[20,20],"pos":[360,0],"script":"itemlist.8","text":"-"}
-bup:{"type":"button","size":[20,20],"pos":[280,0],"script":"itemlist.9","font":"body","text":"up"}
-dn:{"type":"button","size":[20,20],"pos":[300,0],"script":"itemlist.10","font":"body","text":"dn"}
+label:{"type":"field","size":[260,20],"pos":[0,0],"locked":1,"script":"itemlist.1","font":"menu","show":"invert","border":0,"style":"plain","value":" label"}
+item_text:{"type":"field","size":[320,140],"pos":[80,20],"script":"itemlist.2","border":1,"scrollbar":1,"style":"code","value":"this is item 0"}
+items:{"type":"grid","size":[80,140],"pos":[0,20],"script":"itemlist.3","headers":0,"lines":0,"widths":[60,0],"format":"ss","value":{"value":["item 0","item 1","item 2"],"text":["this is item 0","this is item 1","this is item 2"]},"row":0}
+bnw:{"type":"button","size":[20,20],"pos":[380,0],"script":"itemlist.4","text":"+"}
+bgo:{"type":"button","size":[20,20],"pos":[260,0],"script":"itemlist.5","font":"body","text":"!"}
+run_event:{"type":"field","size":[100,20],"pos":[0,-40],"script":"itemlist.1","show":"none","value":"run"}
+slider1:{"type":"slider","size":[100,20],"pos":[120,-40],"script":"itemlist.6","show":"none","interval":[0,400],"value":80,"step":20,"style":"compact"}
+bpr:{"type":"button","size":[20,20],"pos":[320,0],"script":"itemlist.7","font":"body","text":"<"}
+bnx:{"type":"button","size":[20,20],"pos":[340,0],"script":"itemlist.8","font":"body","text":">"}
+brm:{"type":"button","size":[20,20],"pos":[360,0],"script":"itemlist.9","text":"-"}
+bup:{"type":"button","size":[20,20],"pos":[280,0],"script":"itemlist.10","font":"body","text":"up"}
+dn:{"type":"button","size":[20,20],"pos":[300,0],"script":"itemlist.11","font":"body","text":"dn"}
 
 {script:itemlist.0}
 on get_label do label.text end
@@ -1223,12 +1193,18 @@ on get_current do on current do items.value[items.row] end end
 
 {script:itemlist.1}
 on change val do
+ 
+end
+{end}
+
+{script:itemlist.2}
+on change val do
  t:items.value t.text[items.row]: val
  items.value:t
 end
 {end}
 
-{script:itemlist.2}
+{script:itemlist.3}
 on click row do
  goto_row[row]
 end
@@ -1238,7 +1214,7 @@ on changecell v do
 end
 {end}
 
-{script:itemlist.3}
+{script:itemlist.4}
 on click do
   k: keys items.value
   row: table k dict count k take ()
@@ -1247,32 +1223,32 @@ on click do
 end
 {end}
 
-{script:itemlist.4}
+{script:itemlist.5}
 on click do
   run[item_text.text]
 end
 
 {end}
 
-{script:itemlist.5}
+{script:itemlist.6}
 on change val do
  set_list_width[me.value]
 end
 {end}
 
-{script:itemlist.6}
+{script:itemlist.7}
 on click do
   goto_row[items.row-1]
 end
 {end}
 
-{script:itemlist.7}
+{script:itemlist.8}
 on click do
   goto_row[items.row+1]
 end
 {end}
 
-{script:itemlist.8}
+{script:itemlist.9}
 on click do
   if alert["really delete this item?" "bool"]
     items.value:select where !index=items.row from items.value
@@ -1281,13 +1257,13 @@ on click do
 end
 {end}
 
-{script:itemlist.9}
+{script:itemlist.10}
 on click do
   mv_up[]
 end
 {end}
 
-{script:itemlist.10}
+{script:itemlist.11}
 on click do
   mv_dn[]
 end
@@ -1319,7 +1295,7 @@ end
 
 {contraption:terminal}
 size:[512,336]
-margin:[0,0,0,0]
+margin:[4,4,4,4]
 script:"terminal.0"
 {widgets}
 font:{"type":"field","size":[264,112],"pos":[528,0],"show":"none","value":"%%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AAAAAAB4zMzM2MzGxsbMAAAAAAAA/sbGwMDAwMDAwAAAAAAAAAAA/mxsbGxsbGwAAAAAAAAA/sZgMBgwYMb+AAAAAAAAAAAAftjY2NjYcAAAAAAAAAAAZmZmZmZ8YGDAAAAAAAAAAHbcGBgYGBgYAAAAAAAAAH4YPGZmZjwYfgAAAAAAAAA4bMbG/sbGbDgAAAAAAAA4bMbGxmxsbGzuAAAAAAAAHjAYDD5mZmZmPAAAAAAAAAAAAH7b29t+AAAAAAAAAAAAAwZ+29vzfmDAAAAAAAAAHDBgYHxgYGAwHAAAAAAAAAB8xsbGxsbGxsYAAAAAAAAAAP4AAP4AAP4AAAAAAAAAAAAYGH4YGAAA/wAAAAAAAAAwGAwGDBgwAH4AAAAAAAAADBgwYDAYDAB+AAAAAAAADhsbGxgYGBgYGBgYGBgYGBgYGBgYGNjY2HAAAAAAAAAAABgYAH4AGBgAAAAAAAAAAAAAdtwAdtwAAAAAAAAAOGxsOAAAAAAAAAAAAAAAAAAAAAAAABgYAAAAAAAAAAAAAAAAAAAAGAAAAAAAAAAADwwMDAwM7GxsPBwAAAAAANhsbGxsbAAAAAAAAAAAAABw2DBgyPgAAAAAAAAAAAAAAAAAfHx8fHx8fAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="}
@@ -1330,20 +1306,100 @@ bg:{"type":"slider","size":[48,16],"pos":[528,128],"show":"none","interval":[0,1
 
 {script:terminal.0}
 cs: 8,16
+# ansi color -> b4 palette
+# ( extract i orderby vga asc from b4.value ) from palette card
+ansi: 32 + 15,3,8,5,11,14,9,2,1,4,7,6,12,13,10,0
 
-on blit cv ch fg bg xy do
+on blit ch fg bg xy do
  im:chart.copy[cxy[ch] cs].map[(0,1) dict bg,fg]
- cv.paste[im xy]
+ term.paste[im xy * cs]
 end
 
-on putc c xy do
-  blit[term ch fg.value bg.value xy*cs]
-end
-
-on clr_scr do
- term.pattern: 32+bg.value
+on clr_scr bg do
+ term.pattern: ansi[bg]
  term.rect[0,0 term.size]
 end
 
+{end}
+
+{contraption:b4console}
+size:[310,234]
+margin:[0,0,0,0]
+image:"%%IMG2ATYA6gD/ADgm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AAEm/yY2AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/ACsmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/ABMmJAD/AP8A/wCm"
+script:"b4console.0"
+{widgets}
+output:{"type":"field","size":[309,147],"pos":[1,39],"scrollbar":1,"style":"code"}
+input:{"type":"field","size":[309,19],"pos":[1,187],"script":"itemlist.1","border":1,"scrollbar":0,"style":"code"}
+status:{"type":"field","size":[309,37],"pos":[1,1],"locked":1,"script":"itemlist.1","show":"transparent","border":1,"scrollbar":0,"style":"code","value":"ds: []\ncs: []\nip: 100"}
+cmd_s:{"type":"button","size":[22,20],"pos":[1,212],"font":"mono","text":"%s","style":"rect","shortcut":"s"}
+cmd_e:{"type":"button","size":[22,20],"pos":[21,212],"font":"mono","text":"%e","style":"rect","shortcut":"g"}
+cmd_r:{"type":"button","size":[22,20],"pos":[41,212],"font":"mono","text":"%R","style":"rect","shortcut":"r"}
+button1:{"type":"button","size":[38,24],"pos":[272,208],"script":"b4console.1","font":"body","show":"transparent","text":"clear","style":"rect"}
+cmd_C:{"type":"button","size":[22,20],"pos":[61,212],"font":"mono","text":"%C","style":"rect","shortcut":"r"}
+
+{script:b4console.0}
+mb4:deck.modules.mb4.value
+
+mb4.set_echo[on echo line do
+  t:output.text
+  output.text: if t t,"\n",line else line end
+  output.scroll: 999999
+end]
+
+on view do
+  status.text
+    : mb4.showStack["ds"], "\n"
+    , mb4.showStack["cs"], "\n"
+    , mb4.showIp[]
+end
+
+on run line do
+ echo["> ",line]
+ mb4.b4i[line]
+ view[]
+ show_ram[]
+end
+
+on click do
+  run[me.text]
+  show_ram[]
+end
+
+# expose these methods
+on get_run do run end
+on get_clear do clear end
+
+on clear do
+  output.text:""
+end
+
+on show_ram do
+ # start on debugger. draw some ram, highlight ip
+ ip:mb4.get_vm[].ip
+ a0: 256 gw:16 mw:31 cs: 18,18  ofs:3,4  
+ on gxy i do (gw%i),floor i/gw end
+ ixy: (ofs+(mw,0)-(3,3))+cs*gxy[ip-a0]+0,1
+ c: card.widgets.debugger
+ c.pattern: 47 c.rect[0,0 c.size]        # bg
+ c.pattern: 35  c.rect[ixy cs+0,1]       # ip
+ c.pattern: 41 c.rect[0,0 mw,c.size[1]]  # hex
+ c.rect[0,0 c.size[0],cs[1]+ofs]
+ c.pattern: 0 c.font: "mono"
+ c.text[(list " +%H") format range 16 ofs+25,2]
+ c.pattern: 0 c.font: "mono"
+ each i in range 10
+   a: a0+16*i
+   t: "%04H %s" format a,mb4.showMemA[a]
+   c.text[t (0,cs[1]*i+1)+ofs]
+ end
+end
+
+{end}
+
+{script:b4console.1}
+on click do
+  output.text:input.text:""
+  show_ram[]
+end
 {end}
 
