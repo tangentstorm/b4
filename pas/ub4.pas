@@ -46,9 +46,7 @@ const {-- these are all offsets into the ram array --}
   reg_ip : ^value = @ram[$20*4]; { instruction pointer }
   reg_dp : ^value = @ram[$24*4]; { data stack pointer }
   reg_rp : ^value = @ram[$28]; { retn stack pointer }
-  reg_hp : ^value = @ram[$2C]; { heap pointer }
-  reg_lp : ^value = @ram[$30]; { last dictionary entry }
-  reg_ap : ^value = @ram[$34]; { the 'a' register }
+  reg_hp : ^value = @ram[4*ord('_')]; { heap pointer }
   reg_ep : ^value = @ram[$38]; { the editor pointer }
   reg_db : ^value = @ram[$3C]; { debug flag }
   reg_bp : ^value = @ram[$40]; { breakpoint }
@@ -86,7 +84,6 @@ procedure boot;
     reg_ip^ := minheap;
     reg_hp^ := minheap;
     reg_ep^ := minheap;
-    reg_ap^ := minheap;
     reg_bp^ := maxcell;
   end;
 
