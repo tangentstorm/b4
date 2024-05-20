@@ -5,8 +5,8 @@ interface
 uses uhw, kvm, kbd;
 
 type
-  TB4KVMTerm = class (TB4Term)
-    procedure invoke(op : TTermOp); override;
+  TB4KVMTerm = class (TB4Device)
+    procedure invoke(op : char); override;
   end;
 
 implementation
@@ -35,17 +35,17 @@ procedure getc;
     if tos = 0 then begin zap(dpop); dput(value(kbd.readkey) shl 8) end
   end;
 
-procedure TB4KVMTerm.invoke(op : TTermOp);
+procedure TB4KVMTerm.invoke(op : char);
 begin
   case op of
-    vtTG : begin dswp; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
-    vtTA : kvm.textattr := dpop;
-    vtTW : if tos in [$00..$ff] then write(chr(dpop)) else write('[',dpop,']');
-    vtTR : getc;
-    vtTK : if keypressed then dput(-1) else dput(0);
-    vtTS : kvm.clrscr;
-    vtTL : kvm.clreol;
-    vtTC : begin dput(kvm.wherex); dput(kvm.wherey) end;
+    'g' : begin dswp; kvm.gotoxy(dpop mod (xMax+1), dpop mod (yMax+1)) end;
+    'a' : kvm.textattr := dpop;
+    'e' : if tos in [$00..$ff] then write(chr(dpop)) else write('[',dpop,']');
+    'r' : getc;
+    'k' : if keypressed then dput(-1) else dput(0);
+    's' : kvm.clrscr;
+    'l' : kvm.clreol;
+    'c' : begin dput(kvm.wherex); dput(kvm.wherey) end;
   end
 end;
 

@@ -37,7 +37,7 @@ type
 var
   ram  : array[0..maxcell*cellsize] of byte;
   disk : file of block;
-  term : uhw.TB4Term;
+  term : uhw.TB4Device;
   vw   : byte = 4;
 
 const {-- these are all offsets into the ram array --}
@@ -301,19 +301,11 @@ procedure runop(op : byte);
       $9B : {nx} begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
                    if tor = 0 then begin zap(rpop); inc(reg_ip^) end
                    else hop end;
-      $B0 : {tg} term.invoke(vtTG);
-      $B1 : {ta} term.invoke(vtTA);
-      $B2 : {tw} term.invoke(vtTW);
-      $B3 : {tr} term.invoke(vtTR);
-      $B4 : {tk} term.invoke(vtTK);
-      $B5 : {ts} term.invoke(vtTS);
-      $B6 : {tl} term.invoke(vtTS);
-      $B7 : {tc} term.invoke(vtTS);
+      $BE : {tm} term.invoke(chr(dpop));
       $C0 : {vb} vw := 1;
       $C1 : {vi} vw := 4;
       $FE : {db} reg_db^ := 1;
       $FF : {hl} halt;
-      { reserved: } $B9..$BF : begin end;
       else { no-op };
     end
   end;
@@ -327,5 +319,5 @@ function step : value;
   end;
 
 begin
-  term := TB4Term.create;
+  term := TB4Device.create;
 end.

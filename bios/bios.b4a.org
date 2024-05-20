@@ -9,21 +9,40 @@
 
 #+begin_src b4a :tangle bios.b4a :noweb yes
 
-# note: bios.b4a is generated from bios.b4a.org
-# I'm keeping it in version control until I have
-# a decent command-line build step for tangling
-# the org file, because the pascal code requires it.
+  # note: bios.b4a is generated from bios.b4a.org
+  # I'm keeping it in version control until I have
+  # a decent command-line build step for tangling
+  # the org file, because the pascal code requires it.
 
-#--- begin bios -------------------\
-<<initial-words>>
-<<b4-repl>>
-<<initialization>>
-<<string-table>>
-#--- end of bios ------------------/
-'- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
-:\
-<<main>>
+  #--- begin bios -------------------\
+  <<term-ops>>
+  <<initial-words>>
+  <<b4-repl>>
+  <<initialization>>
+  <<string-table>>
+  #--- end of bios ------------------/
+  '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
+  :\
+  <<main>>
 #+end_src
+
+
+* terminal io
+
+These were previously opcodes in the pascal version, now consolidating into an individual "op":
+
+#+name: term-ops
+#+begin_src b4a
+  :tg lb 'g tm rt # (xy-) goto xy
+  :ta lb 'a tm rt # (a-) set terminal attribute ((fg << 4) + bg))
+  :tw lb 'e tm rt # write (emit) char
+  :tr lb 'r tm rt # readkey
+  :tk lb 'k tm rt # keypressed?
+  :ts lb 's tm rt # clear screen
+  :tl lb 'l tm rt # clear line
+  :tc lb 'p tm rt # (-xy) fetch cursor position
+#+end_src
+
 
 * main code
 

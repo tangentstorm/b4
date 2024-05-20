@@ -4,6 +4,14 @@
 # the org file, because the pascal code requires it.
 
 #--- begin bios -------------------\
+:tg lb 'g tm rt # (xy-) goto xy
+:ta lb 'a tm rt # (a-) set terminal attribute ((fg << 4) + bg))
+:tw lb 'e tm rt # write (emit) char
+:tr lb 'r tm rt # readkey
+:tk lb 'k tm rt # keypressed?
+:ts lb 's tm rt # clear screen
+:tl lb 'l tm rt # clear line
+:tc lb 'p tm rt # (-xy) fetch cursor position
 :ri vi rv rt  :rb vb rv rt  :wb vb wv rt :wi vi wv rt  # temp hack. inline these soon (?)
 .^ 04 'l'a's't
   :last  @^ rt
