@@ -50,8 +50,8 @@ var ifn, ofn : string; fmt: tfmt;
 begin
   parseParams(ifn, ofn, fmt);
 
-  assign(input, ifn);
-  reset(input); ub4asm.b4as;
+  assign(input, ifn); reset(input);
+  boot; ub4asm.b4as;
   close(input);
 
   if fmt = b4x then emit_b4x(ofn)
