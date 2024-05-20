@@ -6,11 +6,11 @@
 jm >(start)                        # jump over bios
 #--- begin bios -------------------\
 :ri vi rv rt  :rb vb rv rt  :wb vb wv rt :wi vi wv rt  # temp hack. inline these soon (?)
-:last^ 00 00 00 00 04 'l'a's't
-  :last  lb 16 rt
-:inc^ $last^ 03 'i'n'c
+.^ 04 'l'a's't
+  :last  @^ rt
+.^ 03 'i'n'c
   :inc  lb 01 ad rt
-:dec^ $inc^ 03 'd'e'c
+.^ 03 'd'e'c
   :dec  lb 01 sb rt
   
 :dvm  # n d
@@ -25,7 +25,7 @@ jm >(start)                        # jump over bios
 
   :sp lb 32 tw rt                    # emit space
 :nl lb 10 tw lb 13 tw rt           # emit CRLF
-:bye^ $dec^ 03 'b'y'e
+.^ 03 'b'y'e
   :bye nl lb 01 ta                  # red
   lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
   nl hl
@@ -34,19 +34,19 @@ jm >(start)                        # jump over bios
   lb 'b tw lb '4 tw lb '> tw       # echo 'b4>'
   lb 32 tw lb 07 ta                # gray on black for user input.
   rt
-:puts^ $bye^ 04 'p'u't's
+.^ 04 'p'u't's
   :puts                              # given address of counted string, write the string
   du rb dc inc                     # push str start to d, len to r (loop counter)
   cd .f du rb tw inc .n
   zp rt
-:e-nm^ $puts^ 04 'e'-'n'm
+.^ 04 'e'-'n'm
   :e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
-:e-xt^ $e-nm^ 04 'e'-'x't
+.^ 04 'e'-'x't
   :e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
-  :last  lb 16 rt
-:words^ $e-xt^ 05 'w'o'r'd's
+  :last  @^ rt
+:words^ .^ 05 'w'o'r'd's
   :words                             # list known words, starting at last entry:
-  last ri
+  last
   .w du lb 0 eq nt .d              # we are looking at a non-0 pointer to entry
     du e-nm
     puts sp                        # emit str
@@ -54,13 +54,13 @@ jm >(start)                        # jump over bios
   zp rt
   # TODO: push to control stack instead
 :dyn-call cl :dyn-adr 00 00 00 00 rt
-:exec^ $words^ 04 'e'x'e'c
+.^ 04 'e'x'e'c
   :exec
   e-xt
   li $dyn-adr wi
   dyn-call
   rt
-:s-eq^ $exec^ 04 's'-'e'q
+.^ 04 's'-'e'q
   # string compare
 :s-eq?                             # (st-?) are strings s and t the same?
   .i ov ov eq .t eq rt .z          # a. if the addresses are the same, return 1
@@ -70,10 +70,10 @@ jm >(start)                        # jump over bios
      .i ov rb ov rb eq nt .t       # if the characters are not equal
         cd zp eq rt .z .n          #   drop counter and return 0 (same as in b. before)
   zp zp lb 1 rt                    # everything matched, so return 1
-:word?^ $s-eq^ 05 'w'o'r'd'?
+:word?^ .^ 05 'w'o'r'd'?
   :word?                             # (s-e)   attempt to find word in dictionary
   dc                               # s - |ts  push s to return stack
-  last ri                          # ..-e|ts  fetch last entry
+  last                             # ..-e|ts  fetch last entry
   .w du lb 0 eq nt .d              # while e!=0 do:
     du e-nm                        #  ..- et|ts     fetch the entry's name (t)
     cd du dc                       #  ..- ets|ts
@@ -86,7 +86,7 @@ jm >(start)                        # jump over bios
   # reading/writing numbers
 
 :base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
-:putn^ $word?^ 04 'p'u't'n
+.^ 04 'p'u't'n
   :putn # (n - )
   .i du lb 00 eq .t lb '0 tw rt
   .e lb 00 sw                      # ( n-kn) k:digit count=0
@@ -161,12 +161,12 @@ jm >(start)                        # jump over bios
     mm-used lb 0 wi .z                # (n-)  mem[n+USED]=0
   @mp rt                              # (-a) address of block
 
-:here^ $putn^ 04 'h'e'r'e
+.^ 04 'h'e'r'e
   :here  lb 12 rt
-:,^ $here^ 01 ',
+.^ 01 ',
   :, here ri du dc wb
     cd inc here wi rt              # ',' is same as 'a+' but for heap
-:mm-alloc^ $,^ 08 'm'm'-'a'l'l'o'c
+.^ 08 'm'm'-'a'l'l'o'c
   :mm-alloc                             # (n-a) allocate block of n bytes
   du !mu                              # (n-) store needed buffer size in mu(sed)
   mm-align !ms                        # (n-) round up to word and store in ms(ize)
@@ -179,7 +179,7 @@ jm >(start)                        # jump over bios
        .i du @mp lb 0 eq .t rt        # if next=null return null
        .e !mp .z .z                   # else update p
   jm $mm-loop
-:mm-free^ $mm-alloc^ 07 'm'm'-'f'r'e'e
+.^ 07 'm'm'-'f'r'e'e
   :mm-free                              # (a-) deallocate block
   lb 0 wi sw                          # (a-0a)
   lb 0 mm-data sb mm-used ri ad       # (0a-b) b=(a-DATA)+USED
@@ -225,11 +225,10 @@ jm >(start)                        # jump over bios
   .z .o
 :init
   li $tok ap wi                    # set ap = tok
-  li $mm-free^ last  wi
   rt
 # string table
 :words-s li $words^ e-nm rt
-:word?-s li $word? e-nm rt
+:word?-s li $word?^ e-nm rt
 #--- end of bios ------------------/
 '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
 :(start)

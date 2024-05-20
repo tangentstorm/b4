@@ -53,7 +53,7 @@ function b4opc(code:opstring) : byte;
 
 type
   tokentag = ( wsp, cmt, raw, chr, def, ref, adr, get, put, fwd,
-              _if, _th, _el, _fi, _wh, _do, _od, _fr, _nx );
+              _if, _th, _el, _fi, _wh, _do, _od, _fr, _nx, _lp );
   token = record tag : tokentag; str : string; end;
 
 function readnext( var ch : char ) : char;
@@ -97,6 +97,7 @@ function next( var tok : token; var ch : char ) : boolean;
       '.' :
         begin
           case nextchar(ch) of
+            '^': tok.tag := _lp;
             'i': tok.tag := _if;
             't': tok.tag := _th;
             'e': tok.tag := _el;
@@ -120,12 +121,15 @@ procedure b4as;
   procedure emitv(v:value); begin wrval(here, v); inc(here,4) end;
   procedure emit_call(v:value); begin emit(b4opc('cl')); emitv(v) end;
   procedure unknown(s:string); begin writeln('unknown word:', s); halt end;
+  function isreg(s:string):boolean; begin
+    result:=(length(s)=1) and (s[1]>='@') and (s[1]<='_') end;
   function find_addr(s:string): value; { return address of label }
     var op:byte = 0; found: boolean=false;
     begin while (op < ents) and not found do begin
       if dict[op].id = s then begin find_addr := dict[op].adr; found:=true end;
       inc(op) end;
-      if not found then unknown(s) end;
+      if not found then
+        if isreg(s) then result := rega(s[1]) else unknown(s) end;
   procedure hop_slot(op:string); begin emit(b4opc(op)); dput(here); emit(0); end;
   procedure hop_here(); var slot,dist:value;
     begin slot := dpop; dist := here-slot;
@@ -159,7 +163,9 @@ procedure b4as;
                 emitv(0); insert(fw, fwds, maxint);
               end;
         adr : emitv(find_addr(tok.str));
-        get : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('rv')) end;
+        get : if isreg(tok.str) then emit(b4opc('@'+tok.str[1]))
+              else begin
+                emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('rv')) end;
         put : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wv')) end;
         _wh : dput(here); {(- wh)}
         _th ,
@@ -174,6 +180,7 @@ procedure b4as;
         _fi : {(do-)} hop_here; { jump to 'end' when 'if' test fails }
         _fr : begin emit(b4opc('dc')); dput(here) end;
         _nx : begin emit(b4opc('nx')); hop_back end;
+        _lp : begin emitv(rg[RLP]); rg[RLP]:=here-4 end;
       end end;
   begin
     SetLength(fwds, 0);

@@ -31,6 +31,7 @@ type
   address = 0..maxcell;
   opcodes = $80..$BF;
   stack = array[0..stacksize-1] of value;
+  regs = array[0..63] of value;
 
 
 var
@@ -41,8 +42,9 @@ var
 
 const {-- these are all offsets into the ram array --}
 {$TYPEDADDRESS OFF}
-  reg_ip : ^value = @ram[$20]; { instruction pointer }
-  reg_dp : ^value = @ram[$24]; { data stack pointer }
+  rg: ^regs = @ram[0];
+  reg_ip : ^value = @ram[$20*4]; { instruction pointer }
+  reg_dp : ^value = @ram[$24*4]; { data stack pointer }
   reg_rp : ^value = @ram[$28]; { retn stack pointer }
   reg_hp : ^value = @ram[$2C]; { heap pointer }
   reg_lp : ^value = @ram[$30]; { last dictionary entry }
@@ -53,6 +55,8 @@ const {-- these are all offsets into the ram array --}
   ds : ^stack = @ram[mindata];
   rs : ^stack = @ram[minretn];
 {$TYPEDADDRESS ON}
+  RGO = $1B; { ^\ "go" pointer }
+  RLP = $1E; { ^^ list pointer }
 
   procedure open( path : string );
   procedure boot;

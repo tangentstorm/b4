@@ -48,7 +48,7 @@ The label here is to a function that puts its address onto the stack.
 
 #+name: last
 #+begin_src b4a
-:last  lb 16 rt
+:last  @^ rt
 #+end_src
 
 ** accessors
@@ -82,7 +82,7 @@ walks the chain backwards, printing each name.
 #+name: words
 #+begin_src b4a
 :words                             # list known words, starting at last entry:
-  last ri
+  last
   .w du lb 0 eq nt .d              # we are looking at a non-0 pointer to entry
     du e-nm
     puts sp                        # emit str
@@ -96,7 +96,7 @@ walks the chain backwards, printing each name.
 #+begin_src b4a
 :word?                             # (s-e)   attempt to find word in dictionary
   dc                               # s - |ts  push s to return stack
-  last ri                          # ..-e|ts  fetch last entry
+  last                             # ..-e|ts  fetch last entry
   .w du lb 0 eq nt .d              # while e!=0 do:
     du e-nm                        #  ..- et|ts     fetch the entry's name (t)
     cd du dc                       #  ..- ets|ts
@@ -395,46 +395,46 @@ walks the chain backwards, printing each name.
 #+name: initial-words
 #+begin_src b4a :noweb yes :noweb-prefix no
   :ri vi rv rt  :rb vb rv rt  :wb vb wv rt :wi vi wv rt  # temp hack. inline these soon (?)
-  :last^ 00 00 00 00 04 'l'a's't
+  .^ 04 'l'a's't
     <<last>>
-  :inc^ $last^ 03 'i'n'c
+  .^ 03 'i'n'c
     <<inc>>
-  :dec^ $inc^ 03 'd'e'c
+  .^ 03 'd'e'c
     <<dec>>
     <<b4-math>>
     <<b4-io-words>>
-  :bye^ $dec^ 03 'b'y'e
+  .^ 03 'b'y'e
     <<bye>>
     <<b4-prompt>>
-  :puts^ $bye^ 04 'p'u't's
+  .^ 04 'p'u't's
     <<puts>>
-  :e-nm^ $puts^ 04 'e'-'n'm
+  .^ 04 'e'-'n'm
     <<e-nm>>
-  :e-xt^ $e-nm^ 04 'e'-'x't
+  .^ 04 'e'-'x't
     <<e-xt>>
     <<last>>
-  :words^ $e-xt^ 05 'w'o'r'd's
+  :words^ .^ 05 'w'o'r'd's
     <<words>>
     <<dyn-call>>
-  :exec^ $words^ 04 'e'x'e'c
+  .^ 04 'e'x'e'c
     <<exec>>
-  :s-eq^ $exec^ 04 's'-'e'q
+  .^ 04 's'-'e'q
     <<s-eq?>>
-  :word?^ $s-eq^ 05 'w'o'r'd'?
+  :word?^ .^ 05 'w'o'r'd'?
     <<word?>>
     <<unknown>>
     <<putn/base>>
-  :putn^ $word?^ 04 'p'u't'n
+  .^ 04 'p'u't'n
     <<putn>>
     <<try-num>>
     <<b4-mm>>
-  :here^ $putn^ 04 'h'e'r'e
+  .^ 04 'h'e'r'e
     <<here>>
-  :,^ $here^ 01 ',
+  .^ 01 ',
     <<comma>>
-  :mm-alloc^ $,^ 08 'm'm'-'a'l'l'o'c
+  .^ 08 'm'm'-'a'l'l'o'c
     <<mm-alloc>>
-  :mm-free^ $mm-alloc^ 07 'm'm'-'f'r'e'e
+  .^ 07 'm'm'-'f'r'e'e
     <<mm-free>>
 #+end_src
 
@@ -450,7 +450,6 @@ dictionary.
 #+begin_src b4a
 :init
   li $tok ap wi                    # set ap = tok
-  li $mm-free^ last  wi
   rt
 #+end_src
 
@@ -464,5 +463,5 @@ these should probably just be inlined or turned into a macro.
 #+begin_src b4a
 # string table
 :words-s li $words^ e-nm rt
-:word?-s li $word? e-nm rt
+:word?-s li $word?^ e-nm rt
 #+end_src
