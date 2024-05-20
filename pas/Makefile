@@ -32,5 +32,8 @@ ub4ops.pas: mkoptbl.pas ub4.pas
 b4a: b4 b4a.pas
 	$(FPC) -B b4a.pas
 
+b4d: b4 b4d.pas
+	$(FPC) -B b4d.pas
+
 clean:
 	@rm -f *.o *.ppu b4 b4.exe *~
