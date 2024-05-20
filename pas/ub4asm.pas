@@ -154,9 +154,9 @@ procedure b4as;
                 if err=0 then emit(v) else unknown(tok.str) end;
         chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
               else emit(ord(tok.str[1]));
-        def : if ents = high(dict) then begin writeln('too many definitions'); halt end
-              else begin
-                dict[ents].id := tok.str; dict[ents].adr := here; inc(ents) end;
+        def : if isreg(tok.str) then rg[regn(tok.str[1])]:=here
+              else if ents=high(dict) then begin writeln('too many :defs'); halt end
+              else begin dict[ents].id:=tok.str; dict[ents].adr:=here; inc(ents) end;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
         fwd : begin
                 fw.key := tok.str; fw.at := here;

@@ -3,7 +3,6 @@
 # a decent command-line build step for tangling
 # the org file, because the pascal code requires it.
 
-jm >(start)                        # jump over bios
 #--- begin bios -------------------\
 :ri vi rv rt  :rb vb rv rt  :wb vb wv rt :wi vi wv rt  # temp hack. inline these soon (?)
 .^ 04 'l'a's't
@@ -231,7 +230,7 @@ jm >(start)                        # jump over bios
 :word?-s li $word?^ e-nm rt
 #--- end of bios ------------------/
 '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
-:(start)
+:\
 # -- main --
 init
 

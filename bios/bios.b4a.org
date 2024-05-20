@@ -14,7 +14,6 @@
 # a decent command-line build step for tangling
 # the org file, because the pascal code requires it.
 
-jm >(start)                        # jump over bios
 #--- begin bios -------------------\
 <<initial-words>>
 <<b4-repl>>
@@ -22,7 +21,7 @@ jm >(start)                        # jump over bios
 <<string-table>>
 #--- end of bios ------------------/
 '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
-:(start)
+:\
 <<main>>
 #+end_src
 

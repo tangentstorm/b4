@@ -128,6 +128,7 @@ begin
   open('disk.b4'); boot; clrscr;
   assign(input, '../bios/bios.b4a');
   reset(input); b4as;
+  if rg[RGO]<>0 then reg_ip^ := rg[RGO]; { jump to address in @\ (or default=$100) }
   if paramstr(1)='-d' then reg_db^ := 1;
   while reg_ip^ <= maxheap do begin
     if reg_ip^ = reg_bp^ then begin reg_db^:=1; reg_bp^ := high(ub4.address) end;

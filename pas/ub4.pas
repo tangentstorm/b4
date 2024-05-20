@@ -55,7 +55,7 @@ const {-- these are all offsets into the ram array --}
   ds : ^stack = @ram[mindata];
   rs : ^stack = @ram[minretn];
 {$TYPEDADDRESS ON}
-  RGO = $1B; { ^\ "go" pointer }
+  RGO = $1C; { ^\ "go" pointer }
   RLP = $1E; { ^^ list pointer }
 
   procedure open( path : string );
@@ -71,6 +71,7 @@ const {-- these are all offsets into the ram array --}
   procedure dswp;
   procedure zap(v :value);
   procedure runop(op : byte);
+  function regn(ch : char):byte;
   function rega(ch : char):value;
 
 
@@ -235,10 +236,8 @@ procedure save;
     write(disk, tmp);
   end;
 
-function rega(ch : char):value;
-  begin
-    result := 4 * (ord(upcase(ch)) - ord('@'))
-  end;
+function regn(ch:char):byte; begin result := ord(upcase(ch)) - ord('@') end;
+function rega(ch : char):value; begin result := 4 * regn(ch) end;
 
 procedure go(addr :integer); inline;
   begin
