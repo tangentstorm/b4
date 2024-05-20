@@ -194,6 +194,14 @@ op.cv: on cv do
   else echo["no cv!"] end
 end
 
+#--- terminal
+
+mod.tm:0
+op.tm: on tm do
+  if mod.tm mod.tm.op["%a" format dpop[]][]
+  else panic["tm: no terminal device!"] end
+end
+
 
 # ---------------------
 
@@ -361,8 +369,13 @@ on macro hp c do
   else echo[".no: ",c] end
 end
 
+# put/pop used by terminal device
+mod.dput: dput
+mod.dpop: dpop
+
 mod.echo: on echo line do mod.echo[line] end
 mod.set_cv: on set_cv cv do mod.cv: cv end
+mod.set_tm: on set_tm tm do mod.tm: tm end
 mod.set_echo: on set_echo fn do mod.echo: fn end
 mod.TBL: TBL
 mod.get_vm:on get_vm do vm end
