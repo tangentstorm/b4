@@ -1,4 +1,5 @@
 { b4 debugger/interpreter }
+{$mode objfpc}{$i xpc}
 program b4i(input, output);
   uses sysutils, strutils, ub4, ub4asm, ub4ops;
 
@@ -78,17 +79,17 @@ begin
       // TODO: handle integers instead of just bytes
       if not ub4asm.b4op(tok, v) then
         if tok = '..' then v := 0
+        else if tok[1]='-' then v := byte(-unhex(tok[2]))
         else v := unhex(tok);
-      ram[a+i] := v
+      ram[a+i] := byte(v)
     end;
     inc(i);
   end
 end;
 
-
 var str, tok : string; done: boolean = false; op:byte;
 begin
-  rg[RIP] := $100;
+  rg^[RIP] := $100;
   while not (done or eof) do begin
     readln(str);
     if str[1] = ':' then PutMem(str)
@@ -99,9 +100,9 @@ begin
         '%C' : boot;
         '%q' : done := true;
         '%s' : ub4.step;
-        '?d' : WriteStack('ds: ', ds, reg_dp^);
-        '?c' : WriteStack('cs: ', rs, reg_rp^);
-        '?i' : WriteLn('ip: ', b4mat(rg[RIP]));
+        '?d' : WriteStack('ds: ', ds, rg^[RDS]);
+        '?c' : WriteStack('cs: ', rs, rg^[RCS]);
+        '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
         else case tok[1] of
           '''' : if length(tok)=1 then dput(32) // space
                  else dput(ord(tok[2])); // char literals

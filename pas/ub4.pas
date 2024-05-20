@@ -64,8 +64,6 @@ const {-- these are all offsets into the ram array --}
   RBP = $32; {internal breakpoint}
 {$TYPEDADDRESS OFF}
   rg: ^regs = @ram[0];
-  reg_dp : ^value = @ram[4*RDS]; { data stack pointer }
-  reg_rp : ^value = @ram[4*RCS]; { retn stack pointer }
   ds : ^stack = @ram[mindata];
   rs : ^stack = @ram[minretn];
 {$TYPEDADDRESS ON}
@@ -94,8 +92,8 @@ uses math;
 procedure boot;
   begin
     fillchar(ram, (maxcell + 1) * cellsize, 0);
-    reg_dp^ := -1;
-    reg_rp^ := -1;
+    rg[RDS] := -1;
+    rg[RCS] := -1;
     rg[RIP] := minheap;
     rg[RHP] := minheap;
     rg[RED] := minheap;
@@ -150,26 +148,26 @@ procedure mset(a:address; v:value);
 
 procedure dput( val : value );
   begin
-    inc(reg_dp^);
-    if reg_dp^ = datasize then reg_dp^ := 0;
-    ds[reg_dp^] := val;
+    inc(rg[RDS]);
+    if rg[RDS] = datasize then rg[RDS] := 0;
+    ds[rg[RDS]] := val;
   end;
 
 function dpop : value;
   begin
-    if reg_dp^ = -1 then fail('underflow(data)');
-    dpop := ds[reg_dp^]; dec(reg_dp^);
+    if rg[RDS] = -1 then fail('underflow(data)');
+    dpop := ds[rg[RDS]]; dec(rg[RDS]);
   end;
 
 function tos : value;
-  begin tos := ds[reg_dp^]
+  begin tos := ds[rg[RDS]]
   end;
 
 function nos : value;
   begin
-    if reg_dp^ = 0
+    if rg[RDS] = 0
       then nos := ds[datasize-1]
-      else nos := ds[reg_dp^-1]
+      else nos := ds[rg[RDS]-1]
   end;
 
 procedure dswp;
@@ -186,19 +184,19 @@ function dpon:value; { pop the nos }
 
 procedure rput( val : value );
   begin
-    inc(reg_rp^);
-    if reg_rp^ = retnsize then reg_rp^ := 0;
-    rs[reg_rp^] := val;
+    inc(rg[RCS]);
+    if rg[RCS] = retnsize then rg[RCS] := 0;
+    rs[rg[RCS]] := val;
   end;
 
 function rpop : value;
   begin
-    if reg_rp^ = -1 then fail('underflow(retn)');
-    rpop := rs[reg_rp^]; dec(reg_rp^);
+    if rg[RCS] = -1 then fail('underflow(retn)');
+    rpop := rs[rg[RCS]]; dec(rg[RCS]);
   end;
 
 function tor : value;
-  begin tor := rs[reg_rp^]
+  begin tor := rs[rg[RCS]]
   end;
 
 
