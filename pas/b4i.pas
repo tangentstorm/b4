@@ -88,7 +88,7 @@ end;
 
 var str, tok : string; done: boolean = false; op:byte;
 begin
-  reg_ip^ := $100;
+  rg[RIP] := $100;
   while not (done or eof) do begin
     readln(str);
     if str[1] = ':' then PutMem(str)
@@ -101,7 +101,7 @@ begin
         '%s' : ub4.step;
         '?d' : WriteStack('ds: ', ds, reg_dp^);
         '?c' : WriteStack('cs: ', rs, reg_rp^);
-        '?i' : WriteLn('ip: ', b4mat(reg_ip^));
+        '?i' : WriteLn('ip: ', b4mat(rg[RIP]));
         else case tok[1] of
           '''' : if length(tok)=1 then dput(32) // space
                  else dput(ord(tok[2])); // char literals

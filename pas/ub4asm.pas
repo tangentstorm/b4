@@ -184,9 +184,9 @@ procedure b4as;
       end end;
   begin
     SetLength(fwds, 0);
-    clear_dict; err := 0; ents := 0; here := reg_hp^; read(ch);
+    clear_dict; err := 0; ents := 0; here := rg[RHP]; read(ch);
     while (err = 0) and not eof do if next(tok, ch) then compile;
-    if err <> 0 then dput(err) else reg_hp^ := here;
+    if err <> 0 then dput(err) else rg[RHP] := here;
     for fw in fwds do wrval(fw.at, find_addr(fw.key));
   end;
 

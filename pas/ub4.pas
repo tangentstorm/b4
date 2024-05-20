@@ -40,21 +40,36 @@ var
   term : uhw.TB4Device;
   vw   : byte = 4;
 
+
 const {-- these are all offsets into the ram array --}
+{$MACRO ON}
+  {$define creg:=-ord('@')}
+  { internal names for non-letter character registers }
+  RGO = ord('\') creg; { ^\ is address of 'main' at start }
+  RLP = ord('^') creg; { ^^ list pointer }
+  RHP = ord('_') creg; { ^_ heap/'here' pointer }
+  { potential private registers go from $20 (32) to $3F (63) }
+  RMZ = $20; {memory size}
+  RIP = $21; {instruction pointer}
+  RDA = $22; {ds address}
+  RDS = $23; {ds height}
+  RDZ = $24; {ds size (max height)}
+  RCA = $25; {cs address}
+  RCS = $26; {cs height}
+  RCZ = $27; {cs size (max height)}
+  RST = $28; {state flag}
+  RDB = $29; {debug flag}
+  RVW = $30; {value width (1=byte 4=int)}
+  RED = $31; {used by the debugger's editor}
+  RBP = $32; {internal breakpoint}
 {$TYPEDADDRESS OFF}
   rg: ^regs = @ram[0];
-  reg_ip : ^value = @ram[$20*4]; { instruction pointer }
-  reg_dp : ^value = @ram[$24*4]; { data stack pointer }
-  reg_rp : ^value = @ram[$28]; { retn stack pointer }
-  reg_hp : ^value = @ram[4*ord('_')]; { heap pointer }
-  reg_ep : ^value = @ram[$38]; { the editor pointer }
-  reg_db : ^value = @ram[$3C]; { debug flag }
-  reg_bp : ^value = @ram[$40]; { breakpoint }
+  reg_dp : ^value = @ram[4*RDS]; { data stack pointer }
+  reg_rp : ^value = @ram[4*RCS]; { retn stack pointer }
   ds : ^stack = @ram[mindata];
   rs : ^stack = @ram[minretn];
 {$TYPEDADDRESS ON}
-  RGO = $1C; { ^\ "go" pointer }
-  RLP = $1E; { ^^ list pointer }
+{$MACRO OFF}
 
   procedure open( path : string );
   procedure boot;
@@ -69,8 +84,8 @@ const {-- these are all offsets into the ram array --}
   procedure dswp;
   procedure zap(v :value);
   procedure runop(op : byte);
-  function regn(ch : char):byte;
   function rega(ch : char):value;
+  function regn(ch : char):byte;
 
 
 implementation
@@ -81,10 +96,10 @@ procedure boot;
     fillchar(ram, (maxcell + 1) * cellsize, 0);
     reg_dp^ := -1;
     reg_rp^ := -1;
-    reg_ip^ := minheap;
-    reg_hp^ := minheap;
-    reg_ep^ := minheap;
-    reg_bp^ := maxcell;
+    rg[RIP] := minheap;
+    rg[RHP] := minheap;
+    rg[RED] := minheap;
+    rg[RBP] := maxcell;
   end;
 
 { helpers }
@@ -238,12 +253,12 @@ function rega(ch : char):value; begin result := 4 * regn(ch) end;
 
 procedure go(addr :integer); inline;
   begin
-    reg_ip^ := math.max(addr,$100)-1;
+    rg[RIP] := math.max(addr,$100)-1;
   end;
 
 procedure hop(); inline;
   begin
-    go(reg_ip^ + int8(ram[reg_ip^+1]));
+    go(rg[RIP] + int8(ram[rg[RIP]+1]));
   end;
 
 procedure rb; begin dput(ram[dpop]) end;   { read byte }
@@ -288,20 +303,20 @@ procedure runop(op : byte);
       $91 : {cd} dput(rpop);
       $92 : {rv} if vw=1 then rb else ri; // todo: dynamic dispatch through fn ptr
       $93 : {wv} if vw=1 then wb else wi; // todo: same
-      $94 : {lb} begin dput(bget(reg_ip^+1)); inc(reg_ip^) end;
-      $95 : {li} begin dput(rdval(reg_ip^+1)); inc(reg_ip^,3) end;
-      $96 : {jm} go(rdval(reg_ip^+1));
+      $94 : {lb} begin dput(bget(rg[RIP]+1)); inc(rg[RIP]) end;
+      $95 : {li} begin dput(rdval(rg[RIP]+1)); inc(rg[RIP],3) end;
+      $96 : {jm} go(rdval(rg[RIP]+1));
       $97 : {hp} hop;
-      $98 : {h0} if dpop = 0 then hop else inc(reg_ip^);
-      $99 : {cl} begin rput(reg_ip^+4); reg_ip^:=rdval(reg_ip^+1)-1 end; { call }
-      $9A : {rt} reg_ip^ := rpop-1;
+      $98 : {h0} if dpop = 0 then hop else inc(rg[RIP]);
+      $99 : {cl} begin rput(rg[RIP]+4); rg[RIP]:=rdval(rg[RIP]+1)-1 end; { call }
+      $9A : {rt} rg[RIP] := rpop-1;
       $9B : {nx} begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
-                   if tor = 0 then begin zap(rpop); inc(reg_ip^) end
+                   if tor = 0 then begin zap(rpop); inc(rg[RIP]) end
                    else hop end;
       $BE : {tm} term.invoke(chr(dpop));
       $C0 : {vb} vw := 1;
       $C1 : {vi} vw := 4;
-      $FE : {db} reg_db^ := 1;
+      $FE : {db} rg[RDB] := 1;
       $FF : {hl} halt;
       else { no-op };
     end
@@ -310,9 +325,9 @@ procedure runop(op : byte);
 function step : value;
   { execute next instruction, then increment and return the IP }
   begin
-    runop(ram[reg_ip^]);
-    inc(reg_ip^);
-    step := reg_ip^;
+    runop(ram[rg[RIP]]);
+    inc(rg[RIP]);
+    step := rg[RIP];
   end;
 
 begin

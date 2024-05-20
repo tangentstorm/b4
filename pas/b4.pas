@@ -50,10 +50,10 @@ procedure dump;
 
     { draw some important registers }
     gotoxy(0, 15); bg('K'); clreol;
-    wv('ip', reg_ip^); wv('hp', reg_hp^); wv('ep',reg_ep^);
+    wv('ip', rg[RIP]); wv('@_', rg[RHP]); wv('ep',rg[RED]);
 
     { draw ram }
-    gotoxy(0,16); pg := pgsz * (reg_ep^ div pgsz);
+    gotoxy(0,16); pg := pgsz * (rg[RED] div pgsz);
     literal := false; target := false; { next cell is literal or jump target }
     for i := pg to pg + pgsz-1 do begin
       if (i mod 8 = 0) then begin
@@ -61,15 +61,15 @@ procedure dump;
         fg('m'); write(hex(i,4));
       end;
       { color cell based on ip / editor cursor positions }
-      if (i=reg_ip^) and (i=reg_ep^) then bg('m')
-      else if i=reg_ip^ then bg('c')
-      else if i=reg_ep^ then bg('r')
+      if (i=rg[RIP]) and (i=rg[RED]) then bg('m')
+      else if i=rg[RIP] then bg('c')
+      else if i=rg[RED] then bg('r')
       else bg('k');
       { literal numbers (after si/li) }
       if skip>0 then begin dec(skip); target := false; literal := false end
       else if literal or (i < 32) then begin fg('y'); write(hex(ram[i],2):4); literal := false end
       else if target then { target adress for jump/etc }
-          begin if i = reg_ep^ then fg('k') else fg('r');
+          begin if i = rg[RED] then fg('k') else fg('r');
                 write(hex(ram[i],2):4); target := false
           end
       { past end of memory }
@@ -111,11 +111,11 @@ function step_over: boolean;
     result = true if stepping over a call }
   var skip : byte = 0;
   begin
-    result := ram[reg_ep^] = opcl;
-    if ram[reg_ep^] in [opcl,opjm,opli,opnx] then skip := 4
-    else if ram[reg_ep^] in [oplb,ophp,oph0] then skip := 1;
-    inc(reg_ep^);
-    inc(reg_ep^, skip);
+    result := ram[rg[RED]] = opcl;
+    if ram[rg[RED]] in [opcl,opjm,opli,opnx] then skip := 4
+    else if ram[rg[RED]] in [oplb,ophp,oph0] then skip := 1;
+    inc(rg[RED]);
+    inc(rg[RED], skip);
   end;
 
 var ch: ansichar; pause: boolean = false;
@@ -128,36 +128,36 @@ begin
   open('disk.b4'); boot; clrscr;
   assign(input, '../bios/bios.b4a');
   reset(input); b4as;
-  if rg[RGO]<>0 then reg_ip^ := rg[RGO]; { jump to address in @\ (or default=$100) }
-  if paramstr(1)='-d' then reg_db^ := 1;
-  while reg_ip^ <= maxheap do begin
-    if reg_ip^ = reg_bp^ then begin reg_db^:=1; reg_bp^ := high(ub4.address) end;
-    if reg_db^=1 then begin
-      if not pause then reg_ep^ := reg_ip^;
+  if rg[RGO]<>0 then rg[RIP] := rg[RGO]; { jump to address in @\ (or default=$100) }
+  if paramstr(1)='-d' then rg[RDB] := 1;
+  while rg[RIP] <= maxheap do begin
+    if rg[RIP] = rg[RBP] then begin rg[RDB]:=1; rg[RBP] := high(ub4.address) end;
+    if rg[RDB]=1 then begin
+      if not pause then rg[RED] := rg[RIP];
       pause := true;
       dump;
       ch := readkey;
       case upcase(ch) of
-        ^N : inc(reg_ep^,8);
-        ^P : if reg_ep^ >= 8 then dec(reg_ep^,8);
-        ^F : inc(reg_ep^);
-        ^B : dec(reg_ep^);
-        ^V : inc(reg_ep^, pgsz);
-        'I': reg_ep^ := reg_ip^;
+        ^N : inc(rg[RED],8);
+        ^P : if rg[RED] >= 8 then dec(rg[RED],8);
+        ^F : inc(rg[RED]);
+        ^B : dec(rg[RED]);
+        ^V : inc(rg[RED], pgsz);
+        'I': rg[RED] := rg[RIP];
         'S': pause := false;
-        'C': begin pause := false; reg_bp^ := reg_ep^ end;
+        'C': begin pause := false; rg[RBP] := rg[RED] end;
         'O': begin pause := false;
-               if step_over then begin reg_db^:=0; reg_bp^ := reg_ep^ end
+               if step_over then begin rg[RDB]:=0; rg[RBP] := rg[RED] end
              end;
-        'R': reg_db^ := 0;
+        'R': rg[RDB] := 0;
         'Q': halt;
-        '0': reg_ep^ := 0;
+        '0': rg[RED] := 0;
         'D': dump_dict;
       end;
-      if reg_ep^ < 0 then reg_ep^ := maxcell;
-      if reg_ep^ > maxcell then reg_ep^ := 0;
+      if rg[RED] < 0 then rg[RED] := maxcell;
+      if rg[RED] > maxcell then rg[RED] := 0;
     end; { if ram[debug] }
-    if not (pause and (reg_db^=1)) then step;
+    if not (pause and (rg[RDB]=1)) then step;
   end; { while }
   close(disk);
   {$IFDEF pauseafter} { for turbo pascal }
