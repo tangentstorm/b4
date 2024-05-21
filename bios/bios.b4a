@@ -13,7 +13,7 @@
 :tl lb 'l tm rt # clear line
 :tc lb 'p tm rt # (-xy) fetch cursor position
 
-:X dc rt rt       # (f-?) execute f by pushing it to ctrl stack and "returning"
+:X dc rt             # (f-?) execute f by pushing to ctrl stack and "returning"
 
 :ri vi rv rt  :rb vb rv rt
 :wi vi wv rt  :wb vb wv rt
@@ -28,9 +28,19 @@
   :inc  lb 01 ad rt
 .^ 03 'd'e'c
   :dec  lb 01 sb rt
+.^ 04 'f'i'n'd
+  :find                              # (s-0|e) find word in dictionary
+  dc                               # s - |ts  push s to return stack
+  @^                               # ..-e|ts  fetch last entry
+  .w du nz? .d                     # while e!=0 do:
+     du e-nm                       #  ..- et|ts     fetch the entry's name (t)
+     cd du dc                      #  ..- ets|ts
+     ^Q .i cd zp rt .t             # return e if strings match (or ^Query -> 1)
+     ri .o                         # otherwise, visit next string
+  cd zp rt                         # (e|ts - e)
 .^ 04 's'-'e'q
   # string compare
-:s-eq? :Q                          # (st-?) are strings s and t the same?
+:Q :s-eq?                          # (st-?) are strings s and t the same?
   ov ov eq .i eq rt .t             # a. if the addresses are the same, return 1
   ov rb du dc ov rb eq nt .i       # b. (st-st?|n) if the lengths are different,
      cd zp eq rt .t                #   drop loop counter and return 0 (we know eq=0 from a.)
@@ -38,16 +48,6 @@
      ov rb ov rb eq nt .i          # if the characters are not equal
      cd zp eq rt .t .n             #   drop counter & return 0 (same as b. before)
   zp zp lb 1 rt                    # everything matched, so return 1
-.^ 05 'f'i'n'd
-  :find                              # (s-0|e) find word in dictionary
-  dc                               # s - |ts  push s to return stack
-  @^                               # ..-e|ts  fetch last entry
-  .w du nz? .d                     # while e!=0 do:
-     du e-nm                       #  ..- et|ts     fetch the entry's name (t)
-     cd du dc                      #  ..- ets|ts
-     s-eq? .i cd zp rt .t          # return e if strings match (or ^Query -> 1)
-     ri .o                         # otherwise, visit next string
-  cd zp rt                         # (e|ts - e)
 
   
 :dvm  # n d

@@ -35,7 +35,7 @@ So we call that ^X for execute.
 
 #+name: ^X
 #+begin_src b4a
-:X dc rt rt       # (f-?) execute f by pushing it to ctrl stack and "returning"
+:X dc rt             # (f-?) execute f by pushing to ctrl stack and "returning"
 #+end_src
 
 * word lists
@@ -83,7 +83,7 @@ Entries in the dictionary are records with several fields:
   .w du nz? .d                     # while e!=0 do:
      du e-nm                       #  ..- et|ts     fetch the entry's name (t)
      cd du dc                      #  ..- ets|ts
-     s-eq? .i cd zp rt .t          # return e if strings match (or ^Query -> 1)
+     ^Q .i cd zp rt .t             # return e if strings match (or ^Query -> 1)
      ri .o                         # otherwise, visit next string
   cd zp rt                         # (e|ts - e)
 #+end_src
@@ -92,7 +92,7 @@ Entries in the dictionary are records with several fields:
 #+name: s-eq?
 #+begin_src b4a
 # string compare
-:s-eq? :Q                          # (st-?) are strings s and t the same?
+:Q :s-eq?                          # (st-?) are strings s and t the same?
   ov ov eq .i eq rt .t             # a. if the addresses are the same, return 1
   ov rb du dc ov rb eq nt .i       # b. (st-st?|n) if the lengths are different,
      cd zp eq rt .t                #   drop loop counter and return 0 (we know eq=0 from a.)
@@ -444,10 +444,10 @@ At runtime, we need to initialize some variables:
     <<inc>>
   .^ 03 'd'e'c
     <<dec>>
+  .^ 04 'f'i'n'd
+    <<find>>
   .^ 04 's'-'e'q
     <<s-eq?>>
-  .^ 05 'f'i'n'd
-    <<find>>
 
     <<b4-math>>
     <<b4-io-words>>
