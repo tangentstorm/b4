@@ -230,18 +230,14 @@
     .e .i du lb 04 eq .t bye .z    # on ^d, exit
     .z zp
   .z .o
-:init
-  li `tok ap wi                    # set ap = tok
-  rt
+
 # string table
 :words-s li `words^ e-nm rt
 :word?-s li `word?^ e-nm rt
 #--- end of bios ------------------/
 '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
-:\
-# -- main --
-init
-
-# show the word list:
+:\ # start of execution.
+li `tok ap wi # initialize string pointer
+# show word list and enter repl.
 lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
 repl

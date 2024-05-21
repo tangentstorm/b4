@@ -22,7 +22,6 @@
   <<string-table>>
   #--- end of bios ------------------/
   '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
-  :\
   <<main>>
 #+end_src
 
@@ -46,16 +45,24 @@ These were previously opcodes in the pascal version, now consolidating into an i
 
 * main code
 
-This is the part at the bottom of the file that actually executes:
+This is the part at the bottom of the file that actually executes.
+
+The ~:\~ assigns the ~^\~ register to this address, indicating where the
+emulator should set the initial instruction pointer.
+
+At runtime, we need to initialize some variables:
+
+This is setting the variable =ap= to the start of the token buffer,
+and then sets the =last= pointer to the last defined word in the
+dictionary.
 
 #+name: main
 #+begin_src b4a
-# -- main --
-init
-
-# show the word list:
-lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
-repl
+  :\ # start of execution.
+  li `tok ap wi # initialize string pointer
+  # show word list and enter repl.
+  lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
+  repl
 #+end_src
 
 * modules
@@ -454,21 +461,6 @@ walks the chain backwards, printing each name.
     <<mm-alloc>>
   .^ 07 'm'm'-'f'r'e'e
     <<mm-free>>
-#+end_src
-
-* initialization
-
-At runtime, we need to initialize some variables:
-
-This is setting the variable =ap= to the start of the token buffer,
-and then sets the =last= pointer to the last defined word in the
-dictionary.
-
-#+name: initialization
-#+begin_src b4a
-:init
-  li `tok ap wi                    # set ap = tok
-  rt
 #+end_src
 
 * string table
