@@ -53,7 +53,7 @@ function b4opc(code:opstring) : byte;
 
 type
   tokentag = ( wsp, cmt, raw, chr, def, ref, adr, get, put, fwd,
-              _if, _th, _el, _fi, _wh, _do, _od, _fr, _nx, _lp );
+              _if, _th, _el, _wh, _do, _od, _fr, _nx, _lp );
   token = record tag : tokentag; str : string; end;
 
 function readnext( var ch : char ) : char;
@@ -100,7 +100,7 @@ function next( var tok : token; var ch : char ) : boolean;
             '^': tok.tag := _lp;
             'i': tok.tag := _if;
             'e': tok.tag := _el;
-            'z': tok.tag := _fi;
+            't': tok.tag := _th;
             'w': tok.tag := _wh;
             'd': tok.tag := _do;
             'o': tok.tag := _od;
@@ -175,7 +175,7 @@ procedure b4as;
                 { now go back to the guard and compile the forward jump }
                 hop_here end;
         _el : begin hop_slot('hp'); dswp; hop_here end;
-        _fi : {(do-)} hop_here; { jump to 'end' when 'if' test fails }
+        _th : {(do-)} hop_here; { jump to 'end' when 'if' test fails }
         _fr : begin emit(b4opc('dc')); dput(here) end;
         _nx : begin emit(b4opc('nx')); hop_back end;
         _lp : begin emitv(rg[RLP]); rg[RLP]:=here-4 end;
