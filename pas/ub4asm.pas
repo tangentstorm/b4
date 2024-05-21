@@ -52,7 +52,7 @@ function b4opc(code:opstring) : byte;
     else begin writeln('invalid op: ', code); halt end end;
 
 type
-  tokentag = ( wsp, cmt, raw, chr, def, ref, adr, get, put, ink, fwd,
+  tokentag = ( wsp, cmt, raw, chr, def, ref, ivk, adr, get, put, ink, fwd,
               _if, _th, _el, _wh, _do, _od, _fr, _nx, _lp );
   token = record tag : tokentag; str : string; end;
 
@@ -89,6 +89,7 @@ function next( var tok : token; var ch : char ) : boolean;
         while nextchar(ch) in ['0'..'9'] do keep end;
       '''' : begin tok.tag := chr; tok.str := nextchar(ch); nextchar(ch); end;
       ':' : rest(def);
+      '^' : rest(ivk);
       '`' : rest(adr);
       '@' : rest(get);
       '!' : rest(put);
@@ -159,6 +160,8 @@ procedure b4as;
               else if ents=high(dict) then begin writeln('too many :defs'); halt end
               else begin dict[ents].id:=tok.str; dict[ents].adr:=here; inc(ents) end;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
+        ivk : if isreg(tok.str) then emit(b4opc('^'+tok.str[1]))
+              else begin writeln('bad word: ^',tok.str); halt end;
         fwd : begin
                 fw.key := tok.str; fw.at := here;
                 emitv(0); insert(fw, fwds, maxint);
