@@ -201,8 +201,8 @@
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
 # string cursors
-:s+ @S du dc wb                    # s+ ( n - ) , writes a value to the
-    cd inc !S rt                   #    address in ^S and increments ^S
+# !! TODO if i rename s+ this to sw+ all words are unknown. what?! why?
+:s+ vb +S wv rt                    # s+ ( n - ) mem[reg_s++]:n
 
 :eol 01                            # end of line flag
 
