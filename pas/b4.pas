@@ -46,7 +46,7 @@ procedure dump;
     id := 'call';
     { draw the data and return stacks }
     draw_stack(0, 13, 'd', ds^, rg[RDS]);
-    draw_stack(0, 14, 'c', rs^, rg[RCS]);
+    draw_stack(0, 14, 'c', cs^, rg[RCS]);
 
     { draw some important registers }
     gotoxy(0, 15); bg('K'); clreol;

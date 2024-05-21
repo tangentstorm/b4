@@ -65,7 +65,7 @@ const {-- these are all offsets into the ram array --}
 {$TYPEDADDRESS OFF}
   rg: ^regs = @ram[0];
   ds : ^stack = @ram[mindata];
-  rs : ^stack = @ram[minretn];
+  cs : ^stack = @ram[minretn];
 {$TYPEDADDRESS ON}
 {$MACRO OFF}
 
@@ -155,7 +155,7 @@ procedure dput( val : value );
 
 function dpop : value;
   begin
-    if rg[RDS] = -1 then fail('underflow(data)');
+    if rg[RDS] = -1 then fail('underflow(ds)');
     dpop := ds[rg[RDS]]; dec(rg[RDS]);
   end;
 
@@ -182,21 +182,21 @@ function dpon:value; { pop the nos }
 
 { return stack }
 
-procedure rput( val : value );
+procedure cput( val : value );
   begin
     inc(rg[RCS]);
     if rg[RCS] = retnsize then rg[RCS] := 0;
-    rs[rg[RCS]] := val;
+    cs[rg[RCS]] := val;
   end;
 
 function rpop : value;
   begin
-    if rg[RCS] = -1 then fail('underflow(retn)');
-    rpop := rs[rg[RCS]]; dec(rg[RCS]);
+    if rg[RCS] = -1 then fail('underflow(cs)');
+    rpop := cs[rg[RCS]]; dec(rg[RCS]);
   end;
 
 function tor : value;
-  begin tor := rs[rg[RCS]]
+  begin tor := cs[rg[RCS]]
   end;
 
 
@@ -265,7 +265,7 @@ procedure ri; begin dput(rdval(dpop)) end; { read integer }
 procedure wi; var t:value; begin t := dpop; wrval(t, dpop) end; { write integer }
 
 function oreg(op:byte):value; begin oreg := rega(chr(64+op mod 32)) end; // like rega but takes an opcode
-procedure er(a:value); inline; begin go(rdval(a)) end; { register }
+procedure er(a:value); inline; begin cput(rg[RIP]+1); go(rdval(a)) end; { register }
 procedure rr(a:value); inline; begin dput(rdval(a)) end; { read register }
 procedure wr(a:value); inline; begin wrval(a, dpop) end; { write register }
 procedure ir(a:value); inline; begin rr(a); wrval(a,tos+vw); end; { read+inc register }
@@ -297,7 +297,7 @@ procedure runop(op : byte);
       $8D : {sw} dswp;
       $8E : {ov} dput(nos);
       $8F : {zp} zap(dpop);
-      $90 : {dc} rput(dpop);
+      $90 : {dc} cput(dpop);
       $91 : {cd} dput(rpop);
       $92 : {rv} if vw=1 then rb else ri; // todo: dynamic dispatch through fn ptr
       $93 : {wv} if vw=1 then wb else wi; // todo: same
@@ -306,9 +306,9 @@ procedure runop(op : byte);
       $96 : {jm} go(rdval(rg[RIP]+1));
       $97 : {hp} hop;
       $98 : {h0} if dpop = 0 then hop else inc(rg[RIP]);
-      $99 : {cl} begin rput(rg[RIP]+4); rg[RIP]:=rdval(rg[RIP]+1)-1 end; { call }
+      $99 : {cl} begin cput(rg[RIP]+4); rg[RIP]:=rdval(rg[RIP]+1)-1 end; { call }
       $9A : {rt} rg[RIP] := rpop-1;
-      $9B : {nx} begin if tor > 0 then begin t:=rpop; dec(t); rput(t) end;
+      $9B : {nx} begin if tor > 0 then begin t:=rpop; dec(t); cput(t) end;
                    if tor = 0 then begin zap(rpop); inc(rg[RIP]) end
                    else hop end;
       $BE : {tm} term.invoke(chr(dpop));
