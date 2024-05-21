@@ -1,0 +1,76 @@
+#+title: discarded ideas in b4
+
+for posterity:
+
+* jumping over definitions to get to "main"
+the problem is you don't know where main is until you encounter it.
+so you can't compile the forward jump.
+
+- in j version, i used "bw .. go" (used to define words and turn off execution until end of definition)
+
+- in the bios, i originally used explicit forward reference with > symbol
+
+- considered starting in calculator mode (no ip at all until someone kicks it off)
+
+- settled on using ^\ register to mark start of execution.
+
+* streaming read/write ops
+i'd want it for arrays (full registers) and ascii strings (bytes)
+
+- originally wrote this in the bios
+- had explicit ops for reading from x and y regs, writing to z with increment
+- ops were very complicated
+- finally settled on just increment ops followed by rv/wv
+- also use vb/vi to set value width so we don't need ri/wi and +R can add vw instead of needing a +4R and +1R
+
+Part of this change was the realization that io and vm bytecodes are different.
+That freed up all the visible ascii characters to use as opcodes, and there were exactly enough to do @R !R and +R for all registers.
+
+* minimizing the instruction set
+- I cut out a bunch of comparison ops, leaving only =eq= and =lt=. all others can be generated with those and =nt= just by rearranging arranging the arguments.
+
+* keeping the stacks and state registers in main memory
+This is actually not part of the spec, but if we go with the idea of a virtual address space, then each cpu gets one or more pages of memory all to itself, and unless the pages are super super tiny, there's plenty of room for storing private state.
+
+John Earnest pointed out that in Mako, everything is stored in main memory and that makes serializing the entire state of the system trivial.
+
+I had actually already been doing this in the pascal version, and decided to do the same in Lil mostly as a cleanup and so I could eventually store an entire VM as one array in a grid widget in the deck.
+
+But the main motivation was probably moving the debugger onboard. If the stacks are not in memory, then how can you inspect the stack from inside the VM? At the very least you'd need to add ops to get the stack heights and ideally peek at the nth item. If I was going to have to add a bunch of introspection "ops" to the VM anyway, it seemed sensible to just move everything onboard. (And the private register concept allowed a place to do that).
+
+
+* dictionary registers
+I think this idea emerged gradually...?
+Forth needs a dictionary, and this was a simple way to make a dictionary.
+
+Part of the rationale for having 4 ops per register (execute, read, write, read+inc) came from the notion of public(io)/private(vm) ops, which freed up space.
+
+I was also looking to make the assembler easier to bootstrap from b4i, and this seemed like a good way to do it.
+
+* the 2-character assembly mnemonics
+CRC did this with Muri for retroforth.
+I like that in 2 chars you could store an opcode or a hex byte.
+It seemed like it would make it somewhat easier to bootstrap the assembler.
+
+I originally planned to use the 2-character macros to invoke specific registers.
+For example .f would invoke ^F immediately at assembly time. I think using a lookup table works just as well and is more flexible, but it's still an option.
+
+(At time of this writing, I still haven't completely bootstrapped the assembler)
+
+
+* the utf-8 thing
+I'm pretty sure this was there from the start. I knew I only needed a few ops, and I'd seen the utf-8 encoding table on wikipedia and saw there was more than enough room to store the instruction set in the continuation bytes.
+
+I implemented the utf-8 decoder almost immediately in the J version, but so far have not actually needed it.
+
+
+* dynamic dispatch
+
+I originally had this in the bios:
+
+#+begin_example b4a
+:dyn-call cl :dyn-adr 00 00 00 00 rt
+:exec e-xt li `dyn-adr wi dyn-call rt
+#+end_example
+
+But very quickly that changed to a TODO to execute by pushing to the ctrl stack and invoking 'rt' (which I eventually did).
