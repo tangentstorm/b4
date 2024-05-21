@@ -14,8 +14,6 @@
 :tl lb 'l tm rt # clear line
 :tc lb 'p tm rt # (-xy) fetch cursor position
 :ri vi rv rt  :rb vb rv rt  :wb vb wv rt :wi vi wv rt  # temp hack. inline these soon (?)
-.^ 04 'l'a's't
-  :last  @^ rt
 .^ 03 'i'n'c
   :inc  lb 01 ad rt
 .^ 03 'd'e'c
@@ -43,7 +41,7 @@
   lb 32 tw lb 07 ta                # gray on black for user input.
   rt
 .^ 04 'p'u't's
-  :puts                              # given address of counted string, write the string
+  :puts                              # given address of counted string s, write s
   du rb dc inc                     # push str start to d, len to r (loop counter)
   cd .f du rb tw inc .n
   zp rt
@@ -52,13 +50,11 @@
 .^ 04 'e'-'x't
   :e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
 :words^ .^ 05 'w'o'r'd's
-  :words                             # list known words, starting at last entry:
-  last
-  .w du lb 0 eq nt .d              # we are looking at a non-0 pointer to entry
-    du e-nm
-    puts sp                        # emit str
-    ri .o                          # move to next entry
-  zp rt
+  :words @^                          # list known words, starting at last entry.
+  .w du lb 0 eq nt .d              # while address != 0
+     du e-nm puts sp               # print the word followed by a space
+     ri .o                         # move to next entry
+  zp rt                            # drop the final null pointer
 .^ 04 'e'x'e'c
   :exec e-xt ^X rt  # call ^X given a dictionary entry
 .^ 04 's'-'e'q
@@ -71,11 +67,12 @@
      ov rb ov rb eq nt .i          # if the characters are not equal
      cd zp eq rt .t .n             #   drop counter & return 0 (same as b. before)
   zp zp lb 1 rt                    # everything matched, so return 1
+  :nz? lb 0 eq nt rt                  # (x-0|1) was x non-zero?
 :word?^ .^ 05 'w'o'r'd'?
-  :word?                             # (s-e)   attempt to find word in dictionary
+  :word?                             # (s-0|e) find word in dictionary
   dc                               # s - |ts  push s to return stack
-  last                             # ..-e|ts  fetch last entry
-  .w du lb 0 eq nt .d              # while e!=0 do:
+  @^                               # ..-e|ts  fetch last entry
+  .w du nz? .d                     # while e!=0 do:
     du e-nm                        #  ..- et|ts     fetch the entry's name (t)
     cd du dc                       #  ..- ets|ts
     s-eq? .i cd zp rt .t           # return e if strings match

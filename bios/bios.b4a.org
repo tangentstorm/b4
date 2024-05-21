@@ -25,7 +25,6 @@
   <<main>>
 #+end_src
 
-
 * =^X= : eXecute
 
 The very first thing we want is an op to let us call a function dynamically.
@@ -39,7 +38,6 @@ So we call that ^X for execute.
 #+begin_src b4a
 :X dc rt rt       # (f-?) execute f by pushing it to ctrl stack and "returning"
 #+end_src
-
 
 * terminal io
 
@@ -78,23 +76,21 @@ At runtime, we need to initialize some variables:
 
 * word lists
 
-The system tracks the address of the last link in a variable called =last=.
-The label here is to a function that puts its address onto the stack.
+** =@^= holds the dictionary
 
-#+name: last
-#+begin_src b4a
-:last  @^ rt
-#+end_src
+Here the dictionary is a linked list. The pointer to the last entry is traditionally called "last" in forth. In b4, we still pronource it "last"
+but it's actually stored in the =^^= ("carat") register, and we can just fetch its value directly with =@^=.
+
+There is a corresponding assembler macro called =.^= which can assemble
+a linked list for us as we go along.
 
 ** accessors
 
-Entries in the dictionary form a linked list of records.
-
-The records have several fields:
+Entries in the dictionary are records with several fields:
 
 | name      | size    | purpose                          |
 |-----------+---------+----------------------------------|
-| (no name) | 4 bytes | link to previous entry           |
+| (no name) | 4 bytes | address previous entry           |
 | e-nm      | varies  | counted string                   |
 | e-xt      | varies  | start of the data/code for entry |
 
@@ -116,23 +112,26 @@ walks the chain backwards, printing each name.
 
 #+name: words
 #+begin_src b4a
-:words                             # list known words, starting at last entry:
-  last
-  .w du lb 0 eq nt .d              # we are looking at a non-0 pointer to entry
-    du e-nm
-    puts sp                        # emit str
-    ri .o                          # move to next entry
-  zp rt
+:words @^                          # list known words, starting at last entry.
+  .w du lb 0 eq nt .d              # while address != 0
+     du e-nm puts sp               # print the word followed by a space
+     ri .o                         # move to next entry
+  zp rt                            # drop the final null pointer
 #+end_src
 
 ** looking up a word
 
+#+name: nz?
+#+begin_src b4a
+:nz? lb 0 eq nt rt                  # (x-0|1) was x non-zero?
+#+end_src
+
 #+name: word?
 #+begin_src b4a
-:word?                             # (s-e)   attempt to find word in dictionary
+:word?                             # (s-0|e) find word in dictionary
   dc                               # s - |ts  push s to return stack
-  last                             # ..-e|ts  fetch last entry
-  .w du lb 0 eq nt .d              # while e!=0 do:
+  @^                               # ..-e|ts  fetch last entry
+  .w du nz? .d                     # while e!=0 do:
     du e-nm                        #  ..- et|ts     fetch the entry's name (t)
     cd du dc                       #  ..- ets|ts
     s-eq? .i cd zp rt .t           # return e if strings match
@@ -150,8 +149,6 @@ need to fetch its xt field and then call ^X.
 :exec e-xt ^X rt  # call ^X given a dictionary entry
 #+end_src
 
-
-
 * text i/o
 
 #+name: b4-io-words
@@ -162,7 +159,7 @@ need to fetch its xt field and then call ^X.
 
 #+name: puts
 #+begin_src b4a
-:puts                              # given address of counted string, write the string
+:puts                              # given address of counted string s, write s
   du rb dc inc                     # push str start to d, len to r (loop counter)
   cd .f du rb tw inc .n
   zp rt
@@ -424,8 +421,6 @@ need to fetch its xt field and then call ^X.
 #+name: initial-words
 #+begin_src b4a :noweb yes :noweb-prefix no
   :ri vi rv rt  :rb vb rv rt  :wb vb wv rt :wi vi wv rt  # temp hack. inline these soon (?)
-  .^ 04 'l'a's't
-    <<last>>
   .^ 03 'i'n'c
     <<inc>>
   .^ 03 'd'e'c
@@ -447,6 +442,7 @@ need to fetch its xt field and then call ^X.
     <<exec>>
   .^ 04 's'-'e'q
     <<s-eq?>>
+    <<nz?>>
   :word?^ .^ 05 'w'o'r'd'?
     <<word?>>
     <<unknown>>
