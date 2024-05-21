@@ -107,7 +107,7 @@ function next( var tok : token; var ch : char ) : boolean;
             'o': tok.tag := _od;
             'f': tok.tag := _fr;
             'n': tok.tag := _nx;
-            otherwise begin writeln('unknown macro: !',ch); halt end;
+            otherwise begin writeln('unknown macro: .',ch); halt end;
           end;
           ch:=nextchar(ch);
         end
