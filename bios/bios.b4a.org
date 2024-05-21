@@ -39,43 +39,7 @@ So we call that ^X for execute.
 :X dc rt rt       # (f-?) execute f by pushing it to ctrl stack and "returning"
 #+end_src
 
-* terminal io
-
-These were previously opcodes in the pascal version, now consolidating into an individual "op":
-
-#+name: term-ops
-#+begin_src b4a
-  :tg lb 'g tm rt # (xy-) goto xy
-  :ta lb 'a tm rt # (a-) set terminal attribute ((fg << 4) + bg))
-  :tw lb 'e tm rt # write (emit) char
-  :tr lb 'r tm rt # readkey
-  :tk lb 'k tm rt # keypressed?
-  :ts lb 's tm rt # clear screen
-  :tl lb 'l tm rt # clear line
-  :tc lb 'p tm rt # (-xy) fetch cursor position
-#+end_src
-
-
-* main code
-
-This is the part at the bottom of the file that actually executes.
-
-The ~:\~ assigns the ~^\~ register to this address, indicating where the
-emulator should set the initial instruction pointer.
-
-At runtime, we need to initialize some variables:
-
-#+name: main
-#+begin_src b4a
-  :\ # start of execution.
-  li `tok !S # initialize string pointer
-  # show word list and enter repl.
-  lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
-  repl
-#+end_src
-
 * word lists
-
 ** =@^= holds the dictionary
 
 Here the dictionary is a linked list. The pointer to the last entry is traditionally called "last" in forth. In b4, we still pronource it "last"
@@ -105,20 +69,6 @@ Entries in the dictionary are records with several fields:
 :e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
 #+end_src
 
-** list the words
-
-The word =words= reads from =last= to find the end of the chain, then
-walks the chain backwards, printing each name.
-
-#+name: words
-#+begin_src b4a
-:words @^                          # list known words, starting at last entry.
-  .w du lb 0 eq nt .d              # while address != 0
-     du e-nm puts sp               # print the word followed by a space
-     ri .o                         # move to next entry
-  zp rt                            # drop the final null pointer
-#+end_src
-
 ** looking up a word
 
 #+name: nz?
@@ -132,11 +82,25 @@ walks the chain backwards, printing each name.
   dc                               # s - |ts  push s to return stack
   @^                               # ..-e|ts  fetch last entry
   .w du nz? .d                     # while e!=0 do:
-    du e-nm                        #  ..- et|ts     fetch the entry's name (t)
-    cd du dc                       #  ..- ets|ts
-    s-eq? .i cd zp rt .t           # return e if strings match
-    ri .o                          # otherwise, visit next string
+     du e-nm                       #  ..- et|ts     fetch the entry's name (t)
+     cd du dc                      #  ..- ets|ts
+     s-eq? .i cd zp rt .t          # return e if strings match
+     ri .o                         # otherwise, visit next string
   cd zp rt                         # (e|ts - e)
+#+end_src
+
+** string compare
+#+name: s-eq?
+#+begin_src b4a
+# string compare
+:s-eq?                             # (st-?) are strings s and t the same?
+  ov ov eq .i eq rt .t             # a. if the addresses are the same, return 1
+  ov rb du dc ov rb eq nt .i       # b. (st-st?|n) if the lengths are different,
+     cd zp eq rt .t                #   drop loop counter and return 0 (we know eq=0 from a.)
+  cd .f inc sw inc                 # st-TS  -> next char (doesn't matter that we swap order)
+     ov rb ov rb eq nt .i          # if the characters are not equal
+     cd zp eq rt .t .n             #   drop counter & return 0 (same as b. before)
+  zp zp lb 1 rt                    # everything matched, so return 1
 #+end_src
 
 ** dynamic execution
@@ -147,6 +111,64 @@ need to fetch its xt field and then call ^X.
 #+name: exec
 #+begin_src b4a
 :exec e-xt ^X rt  # call ^X given a dictionary entry
+#+end_src
+
+
+
+* TODO =^@= to build tokens
+
+#+begin_src b4a
+
+#+end_src
+
+
+* TODO ^Y: yield (so we can do different things with the word list)
+* list the words
+
+The word =words= reads from =last= to find the end of the chain, then
+walks the chain backwards, printing each name.
+
+#+name: words
+#+begin_src b4a
+:words @^                          # list known words, starting at last entry.
+  .w du nz? .d                     # while address != 0
+     du e-nm puts sp               # print the word followed by a space
+     ri .o                         # move to next entry
+  zp rt                            # drop the final null pointer
+#+end_src
+
+* terminal device
+
+These were previously opcodes in the pascal version, now consolidating into an individual "op":
+
+#+name: term-ops
+#+begin_src b4a
+  :tg lb 'g tm rt # (xy-) goto xy
+  :ta lb 'a tm rt # (a-) set terminal attribute ((fg << 4) + bg))
+  :tw lb 'e tm rt # write (emit) char
+  :tr lb 'r tm rt # readkey
+  :tk lb 'k tm rt # keypressed?
+  :ts lb 's tm rt # clear screen
+  :tl lb 'l tm rt # clear line
+  :tc lb 'p tm rt # (-xy) fetch cursor position
+#+end_src
+
+* main code
+
+This is the part at the bottom of the file that actually executes.
+
+The ~:\~ assigns the ~^\~ register to this address, indicating where the
+emulator should set the initial instruction pointer.
+
+At runtime, we need to initialize some variables:
+
+#+name: main
+#+begin_src b4a
+  :\ # start of execution.
+  li `tok !S # initialize string pointer
+  # show word list and enter repl.
+  lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
+  repl
 #+end_src
 
 * text i/o
@@ -306,20 +328,6 @@ need to fetch its xt field and then call ^X.
 
 :n1 lb 00 nt rt                    # TODO: better way to write "-1"
 
-#+end_src
-
-* string compare
-#+name: s-eq?
-#+begin_src b4a
-# string compare
-:s-eq?                             # (st-?) are strings s and t the same?
-  ov ov eq .i eq rt .t             # a. if the addresses are the same, return 1
-  ov rb du dc ov rb eq nt .i       # b. (st-st?|n) if the lengths are different,
-     cd zp eq rt .t                #   drop loop counter and return 0 (we know eq=0 from a.)
-  cd .f inc sw inc                 # st-TS  -> next char (doesn't matter that we swap order)
-     ov rb ov rb eq nt .i          # if the characters are not equal
-     cd zp eq rt .t .n             #   drop counter & return 0 (same as b. before)
-  zp zp lb 1 rt                    # everything matched, so return 1
 #+end_src
 
 * the compiler

@@ -51,7 +51,7 @@
   :e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
 :words^ .^ 05 'w'o'r'd's
   :words @^                          # list known words, starting at last entry.
-  .w du lb 0 eq nt .d              # while address != 0
+  .w du nz? .d                     # while address != 0
      du e-nm puts sp               # print the word followed by a space
      ri .o                         # move to next entry
   zp rt                            # drop the final null pointer
@@ -73,10 +73,10 @@
   dc                               # s - |ts  push s to return stack
   @^                               # ..-e|ts  fetch last entry
   .w du nz? .d                     # while e!=0 do:
-    du e-nm                        #  ..- et|ts     fetch the entry's name (t)
-    cd du dc                       #  ..- ets|ts
-    s-eq? .i cd zp rt .t           # return e if strings match
-    ri .o                          # otherwise, visit next string
+     du e-nm                       #  ..- et|ts     fetch the entry's name (t)
+     cd du dc                      #  ..- ets|ts
+     s-eq? .i cd zp rt .t          # return e if strings match
+     ri .o                         # otherwise, visit next string
   cd zp rt                         # (e|ts - e)
   :unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
 :unknown
