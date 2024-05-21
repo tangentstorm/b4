@@ -89,7 +89,7 @@ function next( var tok : token; var ch : char ) : boolean;
         while nextchar(ch) in ['0'..'9'] do keep end;
       '''' : begin tok.tag := chr; tok.str := nextchar(ch); nextchar(ch); end;
       ':' : rest(def);
-      '$' : rest(adr);
+      '`' : rest(adr);
       '@' : rest(get);
       '!' : rest(put);
       '>' : rest(fwd);

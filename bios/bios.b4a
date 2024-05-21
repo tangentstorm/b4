@@ -64,7 +64,7 @@
 .^ 04 'e'x'e'c
   :exec
   e-xt
-  li $dyn-adr wi
+  li `dyn-adr wi
   dyn-call
   rt
 .^ 04 's'-'e'q
@@ -89,7 +89,7 @@
   cd zp rt                         # (e|ts - e)
   :unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
 :unknown
- lb 08 ta sp li $unkno-s puts nl rt
+ lb 08 ta sp li `unkno-s puts nl rt
   # reading/writing numbers
 
 :base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
@@ -98,8 +98,8 @@
   .i du lb 00 eq .t lb '0 tw rt
   .e lb 00 sw                      # ( n-kn) k:digit count=0
      .w du lb 00 eq nt .d          # while n!=0 do
-        li $base rb dvm            # (kn-kdm) divmod
-        li $digit ad rb dc         # (kdm-kd|c) push char to retn stack
+        li `base rb dvm            # (kn-kdm) divmod
+        li `digit ad rb dc         # (kdm-kd|c) push char to retn stack
         sw inc sw .o               # k++, d is new n
       zp                           # (kd-k)
       .f cd cd tw dc .n .z         # loop through the characters
@@ -185,7 +185,7 @@
     .e @mp mm-next ri                 # consider p^.next
        .i du @mp lb 0 eq .t rt        # if next=null return null
        .e !mp .z .z                   # else update p
-  jm $mm-loop
+  jm `mm-loop
 .^ 07 'm'm'-'f'r'e'e
   :mm-free                              # (a-) deallocate block
   lb 0 wi sw                          # (a-0a)
@@ -209,15 +209,15 @@
 :eol 01                            # end of line flag
 
 :end-token
-  lb 01 li $eol wb                 # set the eol flag
-  ap ri li $tok sb                 # calculate length: start of token buffer
-  li $tok-len sw ov wb             # save the length
-  li $tok ap wi                    # reset ap to start of buffer for next time
+  lb 01 li `eol wb                 # set the eol flag
+  ap ri li `tok sb                 # calculate length: start of token buffer
+  li `tok-len sw ov wb             # save the length
+  li `tok ap wi                    # reset ap to start of buffer for next time
   rt
 
 :repl .w lb 01 .d
-  .i li $eol rb .t                 # if end of line flag
-    lb 00 li $eol wb b4> .z        # show prompt if new line
+  .i li `eol rb .t                 # if end of line flag
+    lb 00 li `eol wb b4> .z        # show prompt if new line
   tr                               # read char from terminal
   .i du lb '` eq .t db .z          # ` = debugger
   .i du lb 32 eq .t tw             # on space,  (echo space and add dummy char)
@@ -231,11 +231,11 @@
     .z zp
   .z .o
 :init
-  li $tok ap wi                    # set ap = tok
+  li `tok ap wi                    # set ap = tok
   rt
 # string table
-:words-s li $words^ e-nm rt
-:word?-s li $word?^ e-nm rt
+:words-s li `words^ e-nm rt
+:word?-s li `word?^ e-nm rt
 #--- end of bios ------------------/
 '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
 :\
