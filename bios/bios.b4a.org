@@ -14,7 +14,6 @@
   # a decent command-line build step for tangling
   # the org file, because the pascal code requires it.
 
-  <<^X>>
   #--- begin bios -------------------\
   <<term-ops>>
   <<initial-words>>
@@ -69,22 +68,22 @@ Entries in the dictionary are records with several fields:
 :e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
 #+end_src
 
-** looking up a word
+** looking up a word with "find"
 
 #+name: nz?
 #+begin_src b4a
 :nz? lb 0 eq nt rt                  # (x-0|1) was x non-zero?
 #+end_src
 
-#+name: word?
+#+name: find
 #+begin_src b4a
-:word?                             # (s-0|e) find word in dictionary
+:find                              # (s-0|e) find word in dictionary
   dc                               # s - |ts  push s to return stack
   @^                               # ..-e|ts  fetch last entry
   .w du nz? .d                     # while e!=0 do:
      du e-nm                       #  ..- et|ts     fetch the entry's name (t)
      cd du dc                      #  ..- ets|ts
-     s-eq? .i cd zp rt .t          # return e if strings match
+     s-eq? .i cd zp rt .t          # return e if strings match (or ^Query -> 1)
      ri .o                         # otherwise, visit next string
   cd zp rt                         # (e|ts - e)
 #+end_src
@@ -93,7 +92,7 @@ Entries in the dictionary are records with several fields:
 #+name: s-eq?
 #+begin_src b4a
 # string compare
-:s-eq?                             # (st-?) are strings s and t the same?
+:s-eq? :Q                          # (st-?) are strings s and t the same?
   ov ov eq .i eq rt .t             # a. if the addresses are the same, return 1
   ov rb du dc ov rb eq nt .i       # b. (st-st?|n) if the lengths are different,
      cd zp eq rt .t                #   drop loop counter and return 0 (we know eq=0 from a.)
@@ -164,11 +163,12 @@ At runtime, we need to initialize some variables:
 
 #+name: main
 #+begin_src b4a
-  :\ # start of execution.
-  li `tok !S # initialize string pointer
-  # show word list and enter repl.
-  lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
-  repl
+    :\ # start of execution.
+    li `tok !S # initialize string pointer
+    # show word list and enter repl.
+    lb 14 ta
+    li `words$ e-nm puts lb ': tw sp lb 07 ta words nl
+    repl
 #+end_src
 
 * text i/o
@@ -265,7 +265,7 @@ At runtime, we need to initialize some variables:
     du lb '` eq .i db .t             # ` = debugger
     du lb 32 eq .i tw                # on space,  (echo space and add dummy char)
       end-token
-      du word?                       #    look up the word
+      du find                        #    look up the word
       du lb 0 eq .i zp try-num       #    if not found, complain
       .e sw zp exec .t               #    else execute
     .e
@@ -428,11 +428,27 @@ At runtime, we need to initialize some variables:
 * initial dictionary
 #+name: initial-words
 #+begin_src b4a :noweb yes :noweb-prefix no
-  :ri vi rv rt  :rb vb rv rt  :wb vb wv rt :wi vi wv rt  # temp hack. inline these soon (?)
+
+  <<^X>>
+
+  :ri vi rv rt  :rb vb rv rt
+  :wi vi wv rt  :wb vb wv rt
+  <<nz?>>
+
+  .^ 04 'e'-'n'm
+    <<e-nm>>
+  .^ 04 'e'-'x't
+    <<e-xt>>
+
   .^ 03 'i'n'c
     <<inc>>
   .^ 03 'd'e'c
     <<dec>>
+  .^ 04 's'-'e'q
+    <<s-eq?>>
+  .^ 05 'f'i'n'd
+    <<find>>
+
     <<b4-math>>
     <<b4-io-words>>
   .^ 03 'b'y'e
@@ -440,19 +456,10 @@ At runtime, we need to initialize some variables:
     <<b4-prompt>>
   .^ 04 'p'u't's
     <<puts>>
-  .^ 04 'e'-'n'm
-    <<e-nm>>
-  .^ 04 'e'-'x't
-    <<e-xt>>
-  :words^ .^ 05 'w'o'r'd's
+  :words$ .^ 05 'w'o'r'd's
     <<words>>
   .^ 04 'e'x'e'c
     <<exec>>
-  .^ 04 's'-'e'q
-    <<s-eq?>>
-    <<nz?>>
-  :word?^ .^ 05 'w'o'r'd'?
-    <<word?>>
     <<unknown>>
     <<putn/base>>
   .^ 04 'p'u't'n
@@ -469,15 +476,3 @@ At runtime, we need to initialize some variables:
     <<mm-free>>
 #+end_src
 
-* string table
-
-This just gives names to strings that appear in output.
-Since they just happen to match words already in the dictionary,
-these should probably just be inlined or turned into a macro.
-
-#+name: string-table
-#+begin_src b4a
-# string table
-:words-s li `words^ e-nm rt
-:word?-s li `word?^ e-nm rt
-#+end_src
