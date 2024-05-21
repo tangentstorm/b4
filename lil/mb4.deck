@@ -67,10 +67,13 @@ end
 # this way, we can swap out different vms easily
 # just by replacing vm.mem.
 vm:new[]
+labels:()dict()
+
 
 mod.clear: on clear do
   vm:new[]
   _wi[HERE 256]
+  labels:()dict()
 end
 mod.reset: on reset do
   vm.rg[RIP]:256
@@ -284,6 +287,10 @@ mod.showIp: on showIp do "ip: %02H" format vm.rg[RIP] end
 on assemble a s do n:count toks:" "split s  vm.mem[a,n]:raze asm@toks n end
 on asm_via hp s do a:_ri[hp]  n:assemble[a s] _wi[hp a+n] end
 
+on im_run a do # immediately run word at address a (for b4i)
+  cput[vm.rg[RIP]] cput[-1] _goto[a+1] run[] ip:cpop[] vm.rg[RIP]:ip
+end
+
 mod.b4i: on b4i line do
   toks: extract value where value from " " split line
   state:IMM:0 ASM:1 CMT:2    hp:HERE # may be THERE later
@@ -297,7 +304,7 @@ mod.b4i: on b4i line do
       elseif t="!" op.wr[r]
       elseif t="@" op.rr[r]
       elseif t="+" op.ir[r]
-      elseif t="^" cput[vm.rg[RIP]] cput[-1] _goto[_ri[r]+1] run[] ip:cpop[] vm.rg[RIP]:ip
+      elseif t="^" im_run[_ri[r]]
       elseif t=":" state:ASM _wi[r _ri[hp]]
       else echo["regop.no: ",tok] end
     elseif t="%"
@@ -321,7 +328,7 @@ mod.b4i: on b4i line do
       elseif 2=count tok echo[":.no: ", tok] # because it's 2 chars but not regop
       elseif tok=":" echo["no: :"]
       elseif (hex: ":%[a]H%[m]z" parse tok).m _wi[hp:THERE hex.a]
-      else state:CMT echo["nyi: '%s'" format tok] end
+      else labels[1 drop tok]: _ri[hp] end
     elseif t="'"
       v: if tok="'" 32 else ord[tok[1]] end
       if state=ASM asm_via[hp tok]
@@ -334,11 +341,23 @@ mod.b4i: on b4i line do
       if state=ASM asm_via[hp tok] end
     elseif isHex[tok]
       if state=ASM asm_via[hp tok] else dput[unHex[tok]] end
-    else
-    echo["no: %s" format tok] end
+    elseif tok in labels a:labels[tok]
+      if state=ASM asm_call[hp a] else im_run[a] end
+    elseif (t="`") & (k:1 drop tok) in labels
+      if state=ASM asm_int[hp labels[k]] else dput[labels[k]] end
+    elseif (t="@") & (k:1 drop tok) in labels
+      if state=ASM asm_get[hp labels[k]] else dput[labels[k]] op.rv[] end
+    elseif (t="!") & (k:1 drop tok) in labels
+      if state=ASM asm_set[hp labels[k]] else dput[labels[k]] op.wv[] end
+    else echo["no: %s" format tok] end
   end
   if vm.ob echo[vm.ob] vm.ob:() end
 end
+
+on asm_int hp i do a:_ri[hp] _wi[a i] _wi[hp a+4] end
+on asm_get hp i do asm_via[hp "lb"] asm_int[hp a] asm_via[hp "rv"] end
+on asm_set hp i do asm_via[hp "lb"] asm_int[hp a] asm_via[hp "wv"] end
+on asm_call hp a do asm_via[hp "cl"] asm_int[hp a] end
 
 on macro hp c do
   on m c do macro[hp c] end
