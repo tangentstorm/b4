@@ -52,7 +52,7 @@ function b4opc(code:opstring) : byte;
     else begin writeln('invalid op: ', code); halt end end;
 
 type
-  tokentag = ( wsp, cmt, raw, chr, def, ref, adr, get, put, fwd,
+  tokentag = ( wsp, cmt, raw, chr, def, ref, adr, get, put, ink, fwd,
               _if, _th, _el, _wh, _do, _od, _fr, _nx, _lp );
   token = record tag : tokentag; str : string; end;
 
@@ -94,6 +94,7 @@ function next( var tok : token; var ch : char ) : boolean;
       '!' : rest(put);
       '>' : rest(fwd);
       'a'..'z' : begin tok.tag := ref; while nextchar(ch) > #32 do keep end;
+      '+' : rest(ink);
       '.' :
         begin
           case nextchar(ch) of
@@ -110,6 +111,7 @@ function next( var tok : token; var ch : char ) : boolean;
           end;
           ch:=nextchar(ch);
         end
+      otherwise begin writeln('unknown word:', tok.str); halt end
     end;
   end;
 
@@ -166,6 +168,8 @@ procedure b4as;
               else begin
                 emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('rv')) end;
         put : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wv')) end;
+        ink : if isreg(tok.str) then emit(b4opc('+'+tok.str[1])) // inKrement :)
+              else begin writeln('no such word: +',tok.str); halt end;
         _wh : dput(here); {(- wh)}
         _if ,
         _do : hop_slot('h0');
