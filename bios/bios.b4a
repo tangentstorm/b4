@@ -69,11 +69,11 @@
 .^ 04 's'-'e'q
   # string compare
 :s-eq?                             # (st-?) are strings s and t the same?
-  ov ov eq .t eq rt .z             # a. if the addresses are the same, return 1
-  ov rb du dc ov rb eq nt .t       # b. (st-st?|n) if the lengths are different,
+  ov ov eq .i eq rt .z             # a. if the addresses are the same, return 1
+  ov rb du dc ov rb eq nt .i       # b. (st-st?|n) if the lengths are different,
      cd zp eq rt .z                #   drop loop counter and return 0 (we know eq=0 from a.)
   cd .f inc sw inc                 # st-TS  -> next char (doesn't matter that we swap order)
-     ov rb ov rb eq nt .t          # if the characters are not equal
+     ov rb ov rb eq nt .i          # if the characters are not equal
      cd zp eq rt .z .n             #   drop counter & return 0 (same as b. before)
   zp zp lb 1 rt                    # everything matched, so return 1
 :word?^ .^ 05 'w'o'r'd'?
@@ -83,7 +83,7 @@
   .w du lb 0 eq nt .d              # while e!=0 do:
     du e-nm                        #  ..- et|ts     fetch the entry's name (t)
     cd du dc                       #  ..- ets|ts
-    s-eq? .t cd zp rt .z           # return e if strings match
+    s-eq? .i cd zp rt .z           # return e if strings match
     ri .o                          # otherwise, visit next string
   cd zp rt                         # (e|ts - e)
   :unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
@@ -94,7 +94,7 @@
 :base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
 .^ 04 'p'u't'n
   :putn # (n - )
-  du lb 00 eq .t lb '0 tw rt
+  du lb 00 eq .i lb '0 tw rt
   .e lb 00 sw                      # ( n-kn) k:digit count=0
      .w du lb 00 eq nt .d          # while n!=0 do
         li `base rb dvm            # (kn-kdm) divmod
@@ -105,7 +105,7 @@
   rt
 
   :digit?                            # (c-d1) or (c-0)
- du lb '0 lb '9 between? .t
+ du lb '0 lb '9 between? .i
     zp lb '0 sb n1
  .e zp lb 0 .z
  rt
@@ -114,7 +114,7 @@
   du rb dc                         # (s    - s|i) a=addr of string
   lb 0                             # (s|i  - sr|i) r=0
   cd .f dc inc du rb               # (ar|i - ac|ri) a=addr of char, c=char
-     digit? .t
+     digit? .i
         cd lb 10 ml ad dc          #  r= r*10+d
      .e unknown
         zp cd zp cd zp rt .z       # drop result and return
@@ -155,7 +155,7 @@
 :mm-claim                             # (-a) claim mp (and possibly split end off)
   @mp mm-used @mu wi                  # (-) mem[a] := used
   @mp mm-size ri @ms sb               # (-r) remainder = block size - size
-  mm-split ov lt .t                # (r-r) if worth splitting
+  mm-split ov lt .i                # (r-r) if worth splitting
     # shrink old block:
     @ms @mp mm-size wi                # (r-r) mem[mp+SIZE] = ms
     @mp mm-data @ms ad                # (r-rn) n=(mp+DATA)+ms  (n=new next)
@@ -180,9 +180,9 @@
   :mm-loop
     @mp @ms mm-size lt                # if mn < mem[p+SIZE]
        @mp mm-used ri lb 0 eq an      #    and mem[p+USED]=0
-    .t @mp mm-claim rt
+    .i @mp mm-claim rt
     .e @mp mm-next ri                 # consider p^.next
-       du @mp lb 0 eq .t rt           # if next=null return null
+       du @mp lb 0 eq .i rt           # if next=null return null
        .e !mp .z .z                   # else update p
   jm `mm-loop
 .^ 07 'm'm'-'f'r'e'e
@@ -214,18 +214,18 @@
   rt
 
 :repl .w lb 01 .d
-  li `eol rb .t                    # if end of line flag
+  li `eol rb .i                    # if end of line flag
     lb 00 li `eol wb b4> .z        # show prompt if new line
   tr                               # read char from terminal
-  du lb '` eq .t db .z             # ` = debugger
-  du lb 32 eq .t tw                # on space,  (echo space and add dummy char)
+  du lb '` eq .i db .z             # ` = debugger
+  du lb 32 eq .i tw                # on space,  (echo space and add dummy char)
     end-token
     du word?                       #    look up the word
-    du lb 0 eq .t zp try-num       #    if not found, complain
+    du lb 0 eq .i zp try-num       #    if not found, complain
     .e sw zp exec .z               #    else execute
   .e
-    lb 31 ov lt .t du du s+ tw     # copy non-ctrl chars to buffer and echo
-    .e du lb 04 eq .t bye .z       # on ^d, exit
+    lb 31 ov lt .i du du s+ tw     # copy non-ctrl chars to buffer and echo
+    .e du lb 04 eq .i bye .z       # on ^d, exit
     .z zp
   .z .o
 # string table

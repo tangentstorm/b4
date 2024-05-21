@@ -99,7 +99,6 @@ function next( var tok : token; var ch : char ) : boolean;
           case nextchar(ch) of
             '^': tok.tag := _lp;
             'i': tok.tag := _if;
-            't': tok.tag := _th;
             'e': tok.tag := _el;
             'z': tok.tag := _fi;
             'w': tok.tag := _wh;
@@ -168,14 +167,13 @@ procedure b4as;
                 emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('rv')) end;
         put : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wv')) end;
         _wh : dput(here); {(- wh)}
-        _th ,
+        _if ,
         _do : hop_slot('h0');
         _od : begin { compile time: (wh do -)}
                 { first, an unconditional hop back to the _do }
                 emit(b4opc('hp')); dswp; hop_back;
                 { now go back to the guard and compile the forward jump }
                 hop_here end;
-        _if : ; { 'if' does nothing. just syntactic sugar. }
         _el : begin hop_slot('hp'); dswp; hop_here end;
         _fi : {(do-)} hop_here; { jump to 'end' when 'if' test fails }
         _fr : begin emit(b4opc('dc')); dput(here) end;
