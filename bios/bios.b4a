@@ -50,7 +50,6 @@
   :e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
 .^ 04 'e'-'x't
   :e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
-  :last  @^ rt
 :words^ .^ 05 'w'o'r'd's
   :words                             # list known words, starting at last entry:
   last
@@ -201,18 +200,17 @@
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
-# write cursors
-:ap   lb 20 rt                     # generic pointer stored in address $20
-:a+ ap ri du dc wb                 # a+ ( n - ) , writes a value to the
-    cd inc ap wi rt                #    address in ap and increments ap.
+# string cursors
+:s+ @S du dc wb                    # s+ ( n - ) , writes a value to the
+    cd inc !S rt                   #    address in ^S and increments ^S
 
 :eol 01                            # end of line flag
 
 :end-token
   lb 01 li `eol wb                 # set the eol flag
-  ap ri li `tok sb                 # calculate length: start of token buffer
+  @S li `tok sb                    # calculate length: start of token buffer
   li `tok-len sw ov wb             # save the length
-  li `tok ap wi                    # reset ap to start of buffer for next time
+  li `tok !S                       # reset ap to start of buffer for next time
   rt
 
 :repl .w lb 01 .d
@@ -226,18 +224,17 @@
     .i du lb 0 eq .t zp try-num    #    if not found, complain
     .e sw zp exec .z               #    else execute
   .e
-    .i lb 31 ov lt .t du du a+ tw  # copy non-ctrl chars to buffer and echo
+    .i lb 31 ov lt .t du du s+ tw  # copy non-ctrl chars to buffer and echo
     .e .i du lb 04 eq .t bye .z    # on ^d, exit
     .z zp
   .z .o
-
 # string table
 :words-s li `words^ e-nm rt
 :word?-s li `word?^ e-nm rt
 #--- end of bios ------------------/
 '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
 :\ # start of execution.
-li `tok ap wi # initialize string pointer
+li `tok !S # initialize string pointer
 # show word list and enter repl.
 lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
 repl

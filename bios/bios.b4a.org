@@ -18,7 +18,6 @@
   <<term-ops>>
   <<initial-words>>
   <<b4-repl>>
-  <<initialization>>
   <<string-table>>
   #--- end of bios ------------------/
   '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
@@ -59,7 +58,7 @@ dictionary.
 #+name: main
 #+begin_src b4a
   :\ # start of execution.
-  li `tok ap wi # initialize string pointer
+  li `tok !S # initialize string pointer
   # show word list and enter repl.
   lb 14 ta words-s puts lb ': tw sp lb 07 ta words nl
   repl
@@ -195,45 +194,44 @@ walks the chain backwards, printing each name.
 ** main logic
 #+name: b4-repl
 #+begin_src b4a
-# repl
+  # repl
 
-# shell
-:tok-len 00                        # length of the current token
-:tok                               # 64-byte token buffer
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  # shell
+  :tok-len 00                        # length of the current token
+  :tok                               # 64-byte token buffer
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
-# write cursors
-:ap   lb 20 rt                     # generic pointer stored in address $20
-:a+ ap ri du dc wb                 # a+ ( n - ) , writes a value to the
-    cd inc ap wi rt                #    address in ap and increments ap.
+  # string cursors
+  :s+ @S du dc wb                    # s+ ( n - ) , writes a value to the
+      cd inc !S rt                   #    address in ^S and increments ^S
 
-:eol 01                            # end of line flag
+  :eol 01                            # end of line flag
 
-:end-token
-  lb 01 li `eol wb                 # set the eol flag
-  ap ri li `tok sb                 # calculate length: start of token buffer
-  li `tok-len sw ov wb             # save the length
-  li `tok ap wi                    # reset ap to start of buffer for next time
-  rt
+  :end-token
+    lb 01 li `eol wb                 # set the eol flag
+    @S li `tok sb                    # calculate length: start of token buffer
+    li `tok-len sw ov wb             # save the length
+    li `tok !S                       # reset ap to start of buffer for next time
+    rt
 
-:repl .w lb 01 .d
-  .i li `eol rb .t                 # if end of line flag
-    lb 00 li `eol wb b4> .z        # show prompt if new line
-  tr                               # read char from terminal
-  .i du lb '` eq .t db .z          # ` = debugger
-  .i du lb 32 eq .t tw             # on space,  (echo space and add dummy char)
-    end-token
-    du word?                       #    look up the word
-    .i du lb 0 eq .t zp try-num    #    if not found, complain
-    .e sw zp exec .z               #    else execute
-  .e
-    .i lb 31 ov lt .t du du a+ tw  # copy non-ctrl chars to buffer and echo
-    .e .i du lb 04 eq .t bye .z    # on ^d, exit
-    .z zp
-  .z .o
+  :repl .w lb 01 .d
+    .i li `eol rb .t                 # if end of line flag
+      lb 00 li `eol wb b4> .z        # show prompt if new line
+    tr                               # read char from terminal
+    .i du lb '` eq .t db .z          # ` = debugger
+    .i du lb 32 eq .t tw             # on space,  (echo space and add dummy char)
+      end-token
+      du word?                       #    look up the word
+      .i du lb 0 eq .t zp try-num    #    if not found, complain
+      .e sw zp exec .z               #    else execute
+    .e
+      .i lb 31 ov lt .t du du s+ tw  # copy non-ctrl chars to buffer and echo
+      .e .i du lb 04 eq .t bye .z    # on ^d, exit
+      .z zp
+    .z .o
 #+end_src
 
 ** the prompt
@@ -437,7 +435,6 @@ walks the chain backwards, printing each name.
     <<e-nm>>
   .^ 04 'e'-'x't
     <<e-xt>>
-    <<last>>
   :words^ .^ 05 'w'o'r'd's
     <<words>>
     <<dyn-call>>
