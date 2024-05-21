@@ -1,0 +1,147 @@
+#+name: about the b4 bios
+
+* "BIOS" stands for "Basic Input / Output System".
+
+B4 is a virtual computer that can run in many different configurations,
+but it basically has two modes of operation:
+
+If it were a physical machine, you might imagine that it has 16x16
+array of buttons you can press - one for each possible byte.
+
+A small number of the buttons are hard-wired to do something specific.
+
+The machine starts with its memory pre-initialized: either blank (all zeroes)
+or filled with values read from a storage device.
+
+The machine has two basic modes of operation:
+
+- in calculator mode, you press the buttons and it responds
+
+- in computer mode, it "presses its own buttons" based on instructions stored in its memory
+
+Obviously, if the memory is blank, it means there aren't any instructions to follow, so calculator mode is the only logical choice.
+
+In practice, B4 starts in calculator mode unless a specific memory slot (named ^\) is filled (and even then, you can still choose to start it in calculator mode).
+
+In calculator mode, the "buttons" themselves are the BIOS.
+
+Now you want to tell it to do something.
+
+* The "hardware bios"
+
+Imagine the buttons are wired up to a data port. You have 8 pins for transmitting data (one byte at a time) plus another couple pins to say when the data is ready to be read or whatever. (Real serial ports most likely send one bit at a time, but it doesn't matter.)
+
+The point is a single byte of input arrives at the machine when you press a button.
+
+What happens? It depends on the byte:
+
+- $00..$1F (labeled ^@ through ^_) directly invoke a stored routine.
+- $20..$7F (ascii characters) push a number to the stack and directly invoke ^@
+  (but if ^@ is 0 they just push the number)
+- $80..$9F invoke standard primitive operations (a few are reserved)
+- $A0..$BF invoke custom operations
+- $C0..$C1 control a setting on the machine called the "value width"
+- $C2..$F4 put the calculator into a state where it awaits more buttons
+- $F5..$FF have to do with communication and introspection
+
+The standard primitives all work with the stack.
+At the start, the smallest number you can push onto the stack with a single button press is 32.
+
+If you wanted, you could treat that as the number 1 with 5 bits after the binary point. (Like a decimal point but for binary.)
+
+This is not a good calculator.
+
+So it would be nice if we could at least input some numbers in decimal or hex.
+
+So ^@ lets us do that.
+
+But even before that, one of the operations =lb= acts as an escape character.
+It pushes the next button's value onto the stack directly, and replicates the leftmost bit of the byte throughout the register.
+
+So =lb ^@= loads a 0 onto the stack.
+
+* so why a software bios?
+
+If the buttons already provide a way to invoke functions and whatnot, then why do we need a bios?
+
+Well, for some applications, the direct invocation of registers is enough.
+
+But, passing raw bytes around isn't always convenient, especially when we're using b4 to augment a high level programming language.
+
+Also we may just want more than 32 functions.
+
+Assume we have some way of finding the address of a function we want to execute.
+
+How do we run code at an address?
+
+- stick it into a register and call it ( =!\ ^\= ) (can be any register)
+- push it onto the control stack and "return" ( =dc rt= )
+- write it to memory ahead of the instruction pointer
+- whatever we choose, assign that to =^X= for e(X)ecute
+
+That =^X= definition is part of the bios.
+
+If we're running in a "centaur" configuration, where B4 sits atop some
+higher level programming language, this is really all we need, since the
+host language uses its own mapping of names to addresses.
+
+This model works fine if we want to add a bunch of custom ops and then
+stitch them together with the assembler. The host language can make
+use of its own dictionary types for this mapping.
+
+But if we want to provide a way to look up words on the system itself
+(say we want to make a library used in many host languages), then we
+don't want to force the host language to know how our dictionary works.
+We might even want to change it for different memory images (applications).
+
+Instead, the host language can populate a token buffer in the VM's ram,
+and it can search the internal dictionary.
+
+We provide =^F= (FIND) for this. The protocol is that =@T= points to the
+token to look up. We may also use some helpers like =@S= (string pointer) and =^Q= to test whether two strings are e(Q)ual. If the dictionary is a linked list, the convention is to store one end in =@^= since =^= looks like an arrow or pointer.
+
+So, when b4 is hosted in another language ("centaur" configuration) our bios looks like this:
+
+- :X execute
+- :F find (given token buffer address on stack)
+- @T (standard reusable token buffer)
+
+with helpers:
+  - :^ one end of the linked list
+  - :S string pointer
+  - :Q string equality
+
+* multiple tokens, using @
+But even this un-necessary. Instead of manually inserting text into the token buffer, what if we could just send strings and let the vm handle it?
+
+That's what ^@ is for.
+
+With ^@ we are not limited to sending one token at a time. We can whatever text we want, as long as ^@ is pointing to a function that knows how to handle it.
+
+The idea is that ^@ is pluggable and can vary from image to image or even change dynamically while the input stream is being processed, so that b4 can serve up lots of different languages, depending on your needs.
+
+By default, it should serve up a small forth-like language, where tokens are separated by spaces, and each token is looked up and executed in sequence.
+
+Then from there, we can start building a forth or lisp or apl.
+
+The main new word here is just =^@= ... It does the work of populating the token buffer from the input stream coming in over the wire.
+
+It does imply that there's a =get input= primitive (which has not yet been implemented) that fetches a byte from the input stream.
+
+* interactive mode (b4 as top-level repl?)
+
+Finally, what if we want to interact with b4 itself?
+
+now b4 bios should provide a simple input buffer.
+
+the bytes coming in are no longer space delimited tokens but rather
+keyboard commands.
+
+A good line editor will have a bunch of commands that eat up a lot of the dictionary registers.
+
+It might make sense to keep a second VM core around to serve that dictionary - perhaps a very tiny one.
+
+* other services provided by bios
+
+- list the known words
+- which requires printing or "yielding" strings
