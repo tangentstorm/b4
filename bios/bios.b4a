@@ -3,6 +3,7 @@
 # a decent command-line build step for tangling
 # the org file, because the pascal code requires it.
 
+:X dc rt rt       # (f-?) execute f by pushing it to ctrl stack and "returning"
 #--- begin bios -------------------\
 :tg lb 'g tm rt # (xy-) goto xy
 :ta lb 'a tm rt # (a-) set terminal attribute ((fg << 4) + bg))
@@ -58,14 +59,8 @@
     puts sp                        # emit str
     ri .o                          # move to next entry
   zp rt
-  # TODO: push to control stack instead
-:dyn-call cl :dyn-adr 00 00 00 00 rt
 .^ 04 'e'x'e'c
-  :exec
-  e-xt
-  li `dyn-adr wi
-  dyn-call
-  rt
+  :exec e-xt ^X rt  # call ^X given a dictionary entry
 .^ 04 's'-'e'q
   # string compare
 :s-eq?                             # (st-?) are strings s and t the same?
@@ -190,7 +185,6 @@
   lb 0 wi sw                          # (a-0a)
   lb 0 mm-data sb mm-used ri ad       # (0a-b) b=(a-DATA)+USED
   wi rt                               # mem[b]:0
-# repl
 
 # shell
 :tok-len 00                        # length of the current token

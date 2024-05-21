@@ -1,6 +1,6 @@
 #+title: the b4 bios
 
-** scope of the bios
+* scope of the bios
 
 - define dictionary of programs and enable running a program by name
 - provide a basic interactive shell for launching programs (when the system is running in standalone mode)
@@ -14,6 +14,7 @@
   # a decent command-line build step for tangling
   # the org file, because the pascal code requires it.
 
+  <<^X>>
   #--- begin bios -------------------\
   <<term-ops>>
   <<initial-words>>
@@ -22,6 +23,21 @@
   #--- end of bios ------------------/
   '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
   <<main>>
+#+end_src
+
+
+* =^X= : eXecute
+
+The very first thing we want is an op to let us call a function dynamically.
+
+There's a hidden "dynamic jump" operation, in the form of pushing
+an address to the control stack and then invoking the "return" operation.
+
+So we call that ^X for execute.
+
+#+name: ^X
+#+begin_src b4a
+:X dc rt rt       # (f-?) execute f by pushing it to ctrl stack and "returning"
 #+end_src
 
 
@@ -51,10 +67,6 @@ emulator should set the initial instruction pointer.
 
 At runtime, we need to initialize some variables:
 
-This is setting the variable =ap= to the start of the token buffer,
-and then sets the =last= pointer to the last defined word in the
-dictionary.
-
 #+name: main
 #+begin_src b4a
   :\ # start of execution.
@@ -64,7 +76,6 @@ dictionary.
   repl
 #+end_src
 
-* modules
 * word lists
 
 The system tracks the address of the last link in a variable called =last=.
@@ -128,6 +139,18 @@ walks the chain backwards, printing each name.
     ri .o                          # otherwise, visit next string
   cd zp rt                         # (e|ts - e)
 #+end_src
+
+** dynamic execution
+
+Once we've found a dictionary entry to execute, we just
+need to fetch its xt field and then call ^X.
+
+#+name: exec
+#+begin_src b4a
+:exec e-xt ^X rt  # call ^X given a dictionary entry
+#+end_src
+
+
 
 * text i/o
 
@@ -194,7 +217,6 @@ walks the chain backwards, printing each name.
 ** main logic
 #+name: b4-repl
 #+begin_src b4a
-  # repl
 
   # shell
   :tok-len 00                        # length of the current token
@@ -258,22 +280,6 @@ walks the chain backwards, printing each name.
 :unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
 :unknown
  lb 08 ta sp li `unkno-s puts nl rt
-#+end_src
-
-** repl: exec
-#+name: dyn-call
-#+begin_src b4a
-# TODO: push to control stack instead
-:dyn-call cl :dyn-adr 00 00 00 00 rt
-#+end_src
-
-#+name: exec
-#+begin_src b4a
-:exec
-  e-xt
-  li `dyn-adr wi
-  dyn-call
-  rt
 #+end_src
 
 * math library
@@ -437,7 +443,6 @@ walks the chain backwards, printing each name.
     <<e-xt>>
   :words^ .^ 05 'w'o'r'd's
     <<words>>
-    <<dyn-call>>
   .^ 04 'e'x'e'c
     <<exec>>
   .^ 04 's'-'e'q
