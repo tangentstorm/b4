@@ -1,0 +1,73 @@
+#+title: possible ops
+
+This is a list of opcodes/macros I've thought about and sometimes wanted.
+
+* inline macros for common operations
+
+A call operation costs 5 bytes. Some operations are smaller than this.
+
+For example:
+
+: :nz lb 00 eq nt rt
+
+Instead of calling this function, it might be better to just inline =lb 00 eq nt= and save one byte on each call, plus the 5 bytes of the definition.
+
+* =ex= op
+this would dynamically execute the bytes of the first number on the stack in little endian order. probably it would use the 'io' bytecode and not directly touch the instruction pointer.
+
+* macro ops?
+combining the idea of inline macros and =ex=, what if you could store the short definitions in some of the "extension" registers? $D0..$EF maybe?
+
+Mat2 had this idea for his virtual machine way back in the day.
+
+
+* alternate meanings for instruction pointer ops
+=jm hp h0 cl rt nx= don't make sense as "calculator buttons".
+
+
+* =rb=, =wb=, =ri=, =wi=
+These were previously ops.
+I consolidated them into =rv= / =wv= with the =vb= and =vi= configuration ops, because I didn't want two versions of every op, but I'm not sure I like this solution.
+
+One thought is to revert back to these opcodes and get rid of =wv= but there's also
+
+
+* per-register configuration for the + operations
+
+What this would do is replace the global =vw= flag with a read/write width for each register.
+
+This could be as simple as having vb/vi take an argument, or you could set all the registers at once with a 32-bit field.
+
+Or maybe +R should take a signed number off the stack?
+
+* save/restore registers   (.p .. .q) ?
+The idea here is to push and pop multiple registers to the control stack at once, so we can preserve/restore them.
+
+If there are bit flags for the register sizes, you probably want to preserve/restore those too. (But not always)
+
+This could be an assembler macro. The idea would be that =.p= would somehow take a set of registers as an argument, and at runtime, it pushes those registers and then pushes an address that comes after the function ends.
+
+Then you write =.q= at the end of the routine.
+
+
+* bit and set notation
+
+This wouldn't necessarily be an op, but just a two-character syntax for powers of two up to 2³².
+
+The point would be to access the nth bit of a 32-bit value, or to push a shifted bit onto the stack. (so like ,@ would write 1, ,A would writes 2, ,B would writes 4, etc)
+
+You could also combine the bits to make sets. And maybe =,ABC= writes 8 bits and =;ABC= writes 32 bits?
+
+Along those lines, why not also allow ,01101 and ;10101 as notation?
+
+This might be handy for bulk register operations.
+
+* small constants
+
+It would be nice to have a better notation for small constants, even if it still compiled to the same bytecode.
+
+Along the lines of the bit/set notation, what about:
+
+:  lb -1  →  -1,
+:  li -1  →  -1;
+
