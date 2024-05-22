@@ -29,25 +29,35 @@
 .^ 03 'd'e'c
   :dec  lb 01 sb rt
 .^ 04 'f'i'n'd
-  :find                              # (s-0|e) find word in dictionary
-  dc                               # s - |ts  push s to return stack
-  @^                               # ..-e|ts  fetch last entry
-  .w du nz? .d                     # while e!=0 do:
-     du e-nm                       #  ..- et|ts     fetch the entry's name (t)
-     cd du dc                      #  ..- ets|ts
-     ^Q .i cd zp rt .t             # return e if strings match (or ^Query -> 1)
-     ri .o                         # otherwise, visit next string
-  cd zp rt                         # (e|ts - e)
+  :find @^                            # (s - 0|e) find s in dictionary
+   .w du nz? .d                     # (e - e)  while e!=0 do:
+      du e-nm @T ^Q                 # (e - e?) fetch name, test condition ^Q
+         .i rt .t                   #          return if matched
+      ri .o                         # (e - e') otherwise, move on to next entry
+   rt                               # (0) e=0 so return it as fail result
 .^ 04 's'-'e'q
-  # string compare
-:Q :s-eq?                          # (st-?) are strings s and t the same?
-  ov ov eq .i eq rt .t             # a. if the addresses are the same, return 1
-  ov rb du dc ov rb eq nt .i       # b. (st-st?|n) if the lengths are different,
-     cd zp eq rt .t                #   drop loop counter and return 0 (we know eq=0 from a.)
-  cd .f inc sw inc                 # st-TS  -> next char (doesn't matter that we swap order)
-     ov rb ov rb eq nt .i          # if the characters are not equal
-     cd zp eq rt .t .n             #   drop counter & return 0 (same as b. before)
-  zp zp lb 1 rt                    # everything matched, so return 1
+  :s-eq? ^Q rt                 # (st-?) are strings s and t the same?
+
+:s-eq?-main                  # -- python translation:
+   vb @S @T eq .i            # if s is t:
+      lb 01 rt .t            #    return 1
+   +S rv @T rv eq .i         # if len(s) == len(t):
+      +T rv .f               #    for s,t
+         +S rv +T rv         #    in zip(s,t):
+         eq nt .i            #       if s!=t:
+            lb 00 rt .t .n   #          return 0
+   .e lb 00 rt .t            # else: return 0
+   lb 01 rt                  # return 1
+
+# !! This is experiment in style. I plan to make a nice syntax
+#    for this register capture/restore behavior.
+:Q @T dc !T                  # capture arg T
+      @S dc !S               # capture arg S
+         s-eq?-main
+      cd !S                  # restore S
+   cd !T                     # restore T
+   rt
+
 .^ 04 'e'x'e'c
   :exec e-xt ^X rt  # call ^X given a dictionary entry
 
@@ -190,6 +200,7 @@
   wi rt                               # mem[b]:0
 
 # shell
+:T
 :tok-len 00                        # length of the current token
 :tok                               # 64-byte token buffer
   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
