@@ -68,11 +68,12 @@ Entries in the dictionary are records with several fields:
 :e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
 #+end_src
 
+
 ** looking up a word with "find"
 
 #+name: nz?
 #+begin_src b4a
-:nz? lb 0 eq nt rt                  # (x-0|1) was x non-zero?
+  :nz? lb 00 eq nt rt                 # (x-0|1) was x non-zero?
 #+end_src
 
 #+name: find
@@ -89,26 +90,26 @@ Entries in the dictionary are records with several fields:
 
 #+name: s-eq?
 #+begin_src b4a
-  :s-eq? ^Q rt                 # (st-?) are strings s and t the same?
+  :s-eq? ^Q rt                        # (st-?) are strings s and t the same?
 
-  :s-eq?-main                  # -- python translation:
-     vb @S @T eq .i            # if s is t:
-        lb 01 rt .t            #    return 1
-     +S rv @T rv eq .i         # if len(s) == len(t):
-        +T rv .f               #    for s,t
-           +S rv +T rv         #    in zip(s,t):
-           eq nt .i            #       if s!=t:
-              lb 00 rt .t .n   #          return 0
-     .e lb 00 rt .t            # else: return 0
-     lb 01 rt                  # return 1
+  :s-eq?-main                         # -- python translation:
+     vb @S @T eq .i                   # if s is t:
+        lb 01 rt .t                   #    return 1
+     +S rv @T rv eq .i                # if len(s) == len(t):
+        +T rv .f                      #    for s,t
+           +S rv +T rv                #    in zip(s,t):
+           eq nt .i                   #       if s!=t:
+              lb 00 rt .t .n          #          return 0
+     .e lb 00 rt .t                   # else: return 0
+     lb 01 rt                         # return 1
 
   # !! This is experiment in style. I plan to make a nice syntax
   #    for this register capture/restore behavior.
-  :Q @T dc !T                  # capture arg T
-        @S dc !S               # capture arg S
+  :Q @T dc !T                         # capture arg T
+        @S dc !S                      # capture arg S
            s-eq?-main
-        cd !S                  # restore S
-     cd !T                     # restore T
+        cd !S                         # restore S
+     cd !T                            # restore T
      rt
 
 #+end_src
