@@ -448,6 +448,8 @@ At runtime, we need to initialize some variables:
     <<find>>
   .^ 04 's'-'e'q
     <<s-eq?>>
+  .^ 04 'e'x'e'c
+    <<exec>>
 
     <<b4-math>>
     <<b4-io-words>>
@@ -458,8 +460,6 @@ At runtime, we need to initialize some variables:
     <<puts>>
   :words$ .^ 05 'w'o'r'd's
     <<words>>
-  .^ 04 'e'x'e'c
-    <<exec>>
     <<unknown>>
     <<putn/base>>
   .^ 04 'p'u't'n
