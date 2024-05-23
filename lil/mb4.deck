@@ -13,14 +13,14 @@ description:"the b4 virtual machine"
 echo:print
 
 on ord c do first "%a" parse c end
-on reg c do 4*ord[c]-64 end
+mod.reg: on reg c do 4*ord[c]-64 end
 # get/set registers
-on _sr c v do _wi[reg[c] v] end
-on _gr c v do _ri[reg[c]] end
+mod.sr: on _sr c v do _wi[reg[c] v] end
+mod.gr: on _gr c v do _ri[reg[c]] end
 
 HERE:reg["_"]    # where the assembler will write data next
 THERE:reg["\\"]  # temp var when writing to specific address
-# LAST:reg["^"]    # will be used for dictionary
+LAST:reg["^"]    # used for dictionary
 
 MEMSIZE: 4096*4 # in bytes
 
@@ -152,7 +152,7 @@ op.im: on im r do cput[vm.rg[RIP]+1] _goto[_ri[r]] end
 op.lb: on lb do vm.rg[RIP]:vm.rg[RIP]+1 dput[vm.mem[vm.rg[RIP]]] end
 op.li: on li do dput[_ri[vm.rg[RIP]+1]] vm.rg[RIP]: vm.rg[RIP]+4 end
 
-on _goto a do vm.rg[RIP]:(max 256,a)-1 end
+mod.goto: on _goto a do vm.rg[RIP]:(max 256,a)-1 end
 on _hop do
   vm.mem.cast:"i8"
   _goto[vm.rg[RIP]+vm.mem[vm.rg[RIP]+1]]
@@ -231,11 +231,11 @@ TBL:
 ".. ^A ^B ^C ^D ^E ^F ^G ^H ^I ^J ^K ^L ^M ^N ^O
 ^P ^Q ^R ^S ^T ^U ^V ^W ^X ^Y ^Z ^[ ^\\ ^] ^^ ^_
 @@ @A @B @C @D @E @F @G @H @I @J @K @L @M @N @O
-@P @Q @R @S @T @U @V @W @X @Y @Z @[ @\\ @] @@ @_
+@P @Q @R @S @T @U @V @W @X @Y @Z @[ @\\ @] @^ @_
 !@ !A !B !C !D !E !F !G !H !I !J !K !L !M !N !O
-!P !Q !R !S !T !U !V !W !X !Y !Z ![ !\\ !] !! !_
+!P !Q !R !S !T !U !V !W !X !Y !Z ![ !\\ !] !^ !_
 +@ +A +B +C +D +E +F +G +H +I +J +K +L +M +N +O
-+P +Q +R +S +T +U +V +W +X +Y +Z +[ +\\ +] ++ +_
++P +Q +R +S +T +U +V +W +X +Y +Z +[ +\\ +] +^ +_
 ad sb ml dv md sh an or xr nt eq lt du sw ov zp
 dc cd rv wv lb li jm hp h0 cl rt nx 9C 9D 9E 9F
 A0 A1 A2 A3 A4 A5 A6 A7 A8 A9 AA AB AC AD AE AF
@@ -362,15 +362,16 @@ on asm_call hp a do asm_via[hp "cl"] asm_int[hp a] end
 on macro hp c do
   on m c do macro[hp c] end
   on a s do asm_via[hp s] end
-  on to a do slot:dpop[] dist:a-slot
+  on to a do slot:dpop[] dist:(a-slot)+1
     if dist <0 echo["invalid forward hop"]
     elseif dist > 126 echo["hop too far. dist:",dist]
     else vm.mem[slot]: dist end
   end
   on hr do _ri[hp] end                              # hr: "here"
   on hh do to[hr[]] end                             # hh: "hop here"
-  on bk do dist:dpop[]-hr[] em[dist+1] end          # bk: "back"
-  on em x do a:hr[] vm.mem[a]:x _wi[hp a+1] end     # em: "emit"
+  on bk do dist:dpop[]-hr[] eb[dist+1] end          # bk: "back"
+  on eb x do a:hr[] vm.mem[a]:x _wi[hp a+1] end     # em: "emit byte"
+  on ei x do a:hr[] _wi[a x] _wi[hp a+4] end        # em: "emit int"
   if     c="." a[".."]
   elseif c="_" dput[hr[]] a[".."]  # emit 0, leaving address on stack
   # -- if/else/then:  cond .i if-body .e el-body .t
@@ -381,9 +382,12 @@ on macro hp c do
   elseif c="w" dput[hr[]]
   elseif c="d" a["h0"] m["_"] # same as .i
   elseif c="z" a["hp"] op.sw[] bk[] hh[]  # hop back to .w, and tell .d where to exit
+  elseif c="o" a["hp"] op.sw[] bk[] hh[]  # .o was old word for .z
   # -- for/next:
   elseif c="f" a["dc"] dput[hr[]]
   elseif c="n" a["nx"] bk[]
+  # -- list builder:
+  elseif c="^" a:hr[] ei[_gr["^"]] _sr["^" a]
   # -- otherwise:
   else echo[".no: ",c] end
 end
@@ -391,11 +395,13 @@ end
 # put/pop used by terminal device
 mod.dput: dput
 mod.dpop: dpop
-
+mod.get_labels: on get_labels do labels end
 mod.echo: on echo line do mod.echo[line] end
 mod.set_cv: on set_cv cv do mod.cv: cv end
 mod.set_tm: on set_tm tm do mod.tm: tm end
 mod.set_echo: on set_echo fn do mod.echo: fn end
 mod.TBL: TBL
 mod.get_vm:on get_vm do vm end
+mod.get_ip:on get_ip do vm.rg[RIP] end
+mod.set_ip:on set_ip a do vm.rg[RIP]:a end
 {end}
