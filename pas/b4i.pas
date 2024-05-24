@@ -101,7 +101,7 @@ begin
         '%q' : done := true;
         '%s' : ub4.step;
         '?d' : WriteStack('ds: ', ds, rg^[RDS]);
-        '?c' : WriteStack('cs: ', rs, rg^[RCS]);
+        '?c' : WriteStack('cs: ', cs, rg^[RCS]);
         '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
         else case tok[1] of
           '''' : if length(tok)=1 then dput(32) // space
