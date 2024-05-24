@@ -5,4 +5,4 @@ export TEST_PLAN=~/b4/b4-tests.org
 TANCO="python /home/michal/ver/learntris/testris.py"
 
 cd pas
-make b4i && (cd ..; $TANCO ../b4/pas/b4i)
+make -q b4i && (cd ..; $TANCO ../b4/pas/b4i)
