@@ -69,10 +69,12 @@ end
 vm:new[]
 labels:()dict()
 
+mod.ri: on _ri a do vm.mem.here:a vm.mem.struct["i32l"] end
+mod.wi: on _wi a v do vm.mem.here:a vm.mem.struct["i32l" v] end
 
 mod.clear: on clear do
   vm:new[]
-  _wi[HERE 256]
+  mod.wi[HERE 256]
   labels:()dict()
 end
 mod.reset: on reset do
@@ -85,8 +87,6 @@ mod.reset: on reset do
 end
 clear[] reset[]
 
-on _ri a do vm.mem.here:a vm.mem.struct["i32l"] end
-on _wi a v do vm.mem.here:a vm.mem.struct["i32l" v] end
 
 on dpop do
   if 0<i:vm.rg[RDS] r:vm.ds[i-1] vm.rg[RDS]:i-1 r
@@ -261,6 +261,7 @@ end
 
 mod.step: on step do
   c:dis[o:vm.mem[vm.rg[RIP]]]
+  # echo["%i %4H %s" format vm.rg[RST], vm.rg[RIP], c]
   if c in op op[c][]
   elseif c=".." # ok
   else r:reg[c[1]]
@@ -294,6 +295,7 @@ end
 mod.b4i: on b4i line do
   toks: extract value where value from " " split line
   state:IMM:0 ASM:1 CMT:2    hp:HERE # may be THERE later
+  quit:0
   each tok in toks  t:tok[0]
     if (state=CMT) | (t="#") state:CMT
     elseif regop[tok] r:reg[c:tok[1]]
@@ -308,7 +310,7 @@ mod.b4i: on b4i line do
       elseif t=":" state:ASM _wi[r _ri[hp]]
       else echo["regop.no: ",tok] end
     elseif t="%"
-      if     tok="%q" if deck reset[] else exit[0] end
+      if     tok="%q" quit:1 stote:CMT
       elseif tok="%R" reset[]
       elseif tok="%C" clear[]
       elseif tok="%s" step[]
@@ -352,6 +354,7 @@ mod.b4i: on b4i line do
     else echo["no: %s" format tok] end
   end
   if vm.ob echo[vm.ob] vm.ob:() end
+  if quit if deck reset[] else mod.exit[0] end end
 end
 
 on asm_int hp i do a:_ri[hp] _wi[a i] _wi[hp a+4] end
@@ -404,4 +407,6 @@ mod.TBL: TBL
 mod.get_vm:on get_vm do vm end
 mod.get_ip:on get_ip do vm.rg[RIP] end
 mod.set_ip:on set_ip a do vm.rg[RIP]:a end
+mod.exit:exit # but this is probably not defined yet
+mod.set_exit: on set_exit f do mod.exit:f end
 {end}
