@@ -537,6 +537,46 @@ ip: 103
 > %q
 #+end_src
 
+* TODO =io= op
+
+** 'e for emit
+
+This should emit a single character.
+
+While running in the b4i interpreter, it should buffer the output until the end of line is received.
+
+#+name: op.io.e
+#+begin_src b4a
+> 'h 'e io 'i 'e io %q
+hi
+#+end_src
+
+* TODO defining the ctrl registers
+
+#+name: here
+#+begin_src b4a
+  > ?E                # by default, most registers are blank
+  00000000
+  > ?_                # but "here" pointer is set to $100=256
+  00000100
+  > :E lb 'e io rt    # assemble "emit"
+  > ?E                # now ^E should be assigned
+  00000100
+  > ?_                # and ^_ should reflect the 4 bytes we assembled
+  00000104
+#+end_src
+
+
+#+name: ctrl.e
+#+begin_src b4a
+  > :E lb 'e io rt
+  > 'o ^E 'k ^E
+  ok
+  > %q
+#+end_src
+
+
+
 * TODO host language
 * TODO virtual hardware
 * TODO [0/2] system ops (how to test these?)
