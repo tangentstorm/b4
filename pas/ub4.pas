@@ -39,6 +39,7 @@ var
   disk : file of block;
   term : uhw.TB4Device;
   vw   : byte = 4;
+  ob   : string = '';
 
 
 const {-- these are all offsets into the ram array --}
@@ -72,6 +73,8 @@ const {-- these are all offsets into the ram array --}
   procedure open( path : string );
   procedure boot;
   function step : value;
+  procedure runa(adr:address);
+  procedure runr(reg:char);
   function rdval(adr:address): value;
   procedure wrval(adr:address; v:value);
 
@@ -189,14 +192,14 @@ procedure cput( val : value );
     cs[rg[RCS]] := val;
   end;
 
-function rpop : value;
+function cpop : value;
   begin
     if rg[RCS] = -1 then fail('underflow(cs)');
-    rpop := cs[rg[RCS]]; dec(rg[RCS]);
+    cpop := cs[rg[RCS]]; dec(rg[RCS]);
   end;
 
-function tor : value;
-  begin tor := cs[rg[RCS]]
+function toc : value;
+  begin toc := cs[rg[RCS]]
   end;
 
 
@@ -269,7 +272,13 @@ procedure er(a:value); inline; begin cput(rg[RIP]+1); go(rdval(a)) end; { regist
 procedure rr(a:value); inline; begin dput(rdval(a)) end; { read register }
 procedure wr(a:value); inline; begin wrval(a, dpop) end; { write register }
 procedure ir(a:value); inline; begin rr(a); wrval(a,tos+vw); end; { read+inc register }
-
+
+procedure opio;
+  begin
+    case chr(dpop) of
+      'e': ob:=ob+chr(dpop)
+    end
+  end;
 
 procedure runop(op : byte);
   var t,a : value;
@@ -298,7 +307,7 @@ procedure runop(op : byte);
       $8E : {ov} dput(nos);
       $8F : {zp} zap(dpop);
       $90 : {dc} cput(dpop);
-      $91 : {cd} dput(rpop);
+      $91 : {cd} dput(cpop);
       $92 : {rv} if vw=1 then rb else ri; // todo: dynamic dispatch through fn ptr
       $93 : {wv} if vw=1 then wb else wi; // todo: same
       $94 : {lb} begin dput(bget(rg[RIP]+1)); inc(rg[RIP]) end;
@@ -307,13 +316,14 @@ procedure runop(op : byte);
       $97 : {hp} hop;
       $98 : {h0} if dpop = 0 then hop else inc(rg[RIP]);
       $99 : {cl} begin cput(rg[RIP]+4); rg[RIP]:=rdval(rg[RIP]+1)-1 end; { call }
-      $9A : {rt} rg[RIP] := rpop-1;
-      $9B : {nx} begin if tor > 0 then begin t:=rpop; dec(t); cput(t) end;
-                   if tor = 0 then begin zap(rpop); inc(rg[RIP]) end
+      $9A : {rt} begin rg[RIP] := cpop-1; if rg[RIP]=-1 then rg[RST]:=0 end;
+      $9B : {nx} begin if toc > 0 then begin t:=cpop; dec(t); cput(t) end;
+                   if toc = 0 then begin zap(cpop); inc(rg[RIP]) end
                    else hop end;
       $BE : {tm} term.invoke(chr(dpop));
       $C0 : {vb} vw := 1;
       $C1 : {vi} vw := 4;
+      $FD : {io} opio;
       $FE : {db} rg[RDB] := 1;
       $FF : {hl} halt;
       else { no-op };
@@ -326,6 +336,18 @@ function step : value;
     runop(ram[rg[RIP]]);
     inc(rg[RIP]);
     step := rg[RIP];
+  end;
+
+procedure run;
+  begin rg[RST]:=1; while rg[RST]=1 do step
+  end;
+
+procedure runa(adr:address);
+  begin cput(rg[RIP]); cput(0); go(adr+1); run; rg[RIP]:=cpop;
+  end;
+
+procedure runr(reg:char);
+  begin runa(rega(reg))
   end;
 
 begin

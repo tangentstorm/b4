@@ -64,38 +64,50 @@ begin
   halt;
 end;
 
-function ParseAddress(tok:string):integer;
+function ParseAddress(tok:string; out isHERE:boolean):integer;
 begin
-  result := hex2dec(RightStr(tok, length(tok)-1))
+  tok := RightStr(tok, length(tok)-1); isHERE:=false;
+  if length(tok)=1 then begin
+    isHERE := true;
+    if tok[1]<>':' then rg^[regn(tok[1])]:=rg^[RHP];
+    result := rg^[RHP] end
+  else result := hex2dec(tok)
 end;
 
 procedure PutMem(str:string);
-  var a,i:integer; v:byte; tok: string;
+  var a,i:integer; v:byte; tok: string; ishere:boolean;
 begin
   i := -1;
   for tok in SplitString(str, ' ') do begin
-    if i = -1 then a := ParseAddress(tok)
+    if i = -1 then a := ParseAddress(tok,isHere)
     else begin
       // TODO: handle integers instead of just bytes
       if not ub4asm.b4op(tok, v) then
         if tok = '..' then v := 0
+        else if tok[1]='''' then v := byte(tok[2])
         else if tok[1]='-' then v := byte(-unhex(tok[2]))
         else v := unhex(tok);
       ram[a+i] := byte(v)
     end;
     inc(i);
-  end
+  end;
+  if isHere then rg^[RHP]:=a+i;
 end;
 
-var str, tok : string; done: boolean = false; op:byte;
+type tstate = (st_cmt,st_asm,st_imm);
+var str, tok : string; done: boolean = false; op:byte; st:tstate=st_imm; _b:boolean;
 begin
-  rg^[RIP] := $100;
+  rg^[RIP] := $100; rg^[regn('_')] := $100;
   while not (done or eof) do begin
-    readln(str);
+    readln(str); st:=st_imm;
     if str[1] = ':' then PutMem(str)
     else for tok in SplitString(str, ' ') do begin
-      if tok = '' then continue;
-      if ub4asm.b4op(tok, op) then runop(op)
+      if tok[1] = '#' then st:=st_cmt;
+      if (st=st_cmt) or (tok='') then continue;
+      if ub4asm.b4op(tok, op) then begin
+        if op > $20 then runop(op)
+        else ub4.runa(4*op) // immediately invoke ^R
+        end
       else case tok of
         '%C' : boot;
         '%q' : done := true;
@@ -109,11 +121,13 @@ begin
           '`'  : if length(tok)=1 then err('invalid ctrl char')
                    // TODO test this against chars out of range
                  else dput(rega(tok[2]));
-          '?'  : ShowMem(parseAddress(tok));
+          '?'  : if length(tok)=2 then writeln(format('%.8x',[rg^[regn(tok[2])]]))
+                 else ShowMem(parseAddress(tok, _b));
           else if PutHex(tok) then ok
           else Writeln('what does "', tok, '" mean?');
         end
       end
     end;
+    if ub4.ob <> '' then begin writeln(ub4.ob); ub4.ob := '' end;
   end
 end.

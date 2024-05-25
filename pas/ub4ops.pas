@@ -130,7 +130,7 @@ begin
   optbl[250] := '';
   optbl[251] := '';
   optbl[252] := '';
-  optbl[253] := '';
+  optbl[253] := 'io';
   optbl[254] := 'db';
   optbl[255] := 'hl';
 end.
