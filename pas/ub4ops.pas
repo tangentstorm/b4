@@ -126,7 +126,7 @@ begin
   optbl[246] := '';
   optbl[247] := '';
   optbl[248] := '';
-  optbl[249] := '';
+  optbl[249] := 'wl';
   optbl[250] := 'ds';
   optbl[251] := 'cs';
   optbl[252] := 'hx';

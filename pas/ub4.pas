@@ -284,6 +284,17 @@ procedure opio;
       'e': ob:=ob+chr(dpop)
     end
   end;
+
+// write a string from memory
+procedure wl(a:address);
+  var i,b: byte;
+  begin
+    b := mem[a];
+    write(format('(@%x[%x]"', [a,b]));
+    for i := 1 to b do write(chr(mem[a+i]));
+    writeln('")');
+  end;
+
 
 procedure runop(op : byte);
   var t,a : value;
@@ -328,6 +339,7 @@ procedure runop(op : byte);
       $BE : {tm} term.invoke(chr(dpop));
       $C0 : {vb} vw := 1;
       $C1 : {vi} vw := 4;
+      $F9 : {wl} wl(dpop);
       $FA : {ds} WriteStack('ds: ', ds, rg^[RDS]);
       $FB : {cs} WriteStack('cs: ', cs, rg^[RCS]);
       $FC : {hx} write(format('(%x)', [dpop]));
