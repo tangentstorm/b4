@@ -29,7 +29,7 @@ procedure ParseParams(var ifn, ofn: string; var fmt: tfmt);
 procedure emit_b4x(ofn: string);
   var out : file of byte;
   begin assign(out, ofn); rewrite(out);
-    for i := 0 to ub4.maxcell do write(out, ub4.ram[i]);
+    for i := 0 to ub4.maxcell do write(out, ub4.mem[i]);
     close(out)
   end;
 
@@ -39,7 +39,7 @@ procedure emit_json(ofn: string);
     write(out, '[');
     while i < ub4.maxcell do begin
       if i mod 10 = 0 then writeln(out);
-      write(out, ' ', ub4.ram[i] : 3);
+      write(out, ' ', ub4.mem[i] : 3);
       inc(i); if i < ub4.maxcell then write(out, ',');
     end;
     writeln(out, ']');

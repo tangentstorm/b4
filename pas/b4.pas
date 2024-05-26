@@ -52,7 +52,7 @@ procedure dump;
     gotoxy(0, 15); bg('K'); clreol;
     wv('ip', rg[RIP]); wv('@_', rg[RHP]); wv('ep',rg[RED]);
 
-    { draw ram }
+    { draw memory }
     gotoxy(0,16); pg := pgsz * (rg[RED] div pgsz);
     literal := false; target := false; { next cell is literal or jump target }
     for i := pg to pg + pgsz-1 do begin
@@ -67,34 +67,34 @@ procedure dump;
       else bg('k');
       { literal numbers (after si/li) }
       if skip>0 then begin dec(skip); target := false; literal := false end
-      else if literal or (i < 32) then begin fg('y'); write(hex(ram[i],2):4); literal := false end
+      else if literal or (i < 32) then begin fg('y'); write(hex(mem[i],2):4); literal := false end
       else if target then { target adress for jump/etc }
           begin if i = rg[RED] then fg('k') else fg('r');
-                write(hex(ram[i],2):4); target := false
+                write(hex(mem[i],2):4); target := false
           end
       { past end of memory }
-      else if i > high(ram) then begin fg('K'); write('xx') end
+      else if i > high(mem) then begin fg('K'); write('xx') end
       { opcodes }
-      else if ram[i] in [$80 .. $BF] then
+      else if mem[i] in [$80 .. $BF] then
         begin
-          if ram[i] in [opli,oplb] then literal := true;
-          if ram[i] in [opjm,opcl] then target := true;
-          if (ram[i] = opli) or ((ram[i] in [opcl]) and (rdval(i+1) < high(address))) then
+          if mem[i] in [opli,oplb] then literal := true;
+          if mem[i] in [opjm,opcl] then target := true;
+          if (mem[i] = opli) or ((mem[i] in [opcl]) and (rdval(i+1) < high(address))) then
             begin
-              if ram[i] = opcl
+              if mem[i] = opcl
                 then begin skip := 4; find_ident(rdval(i+1), id) end
-                else begin skip := 1; find_ident(ram[i+1], id) end;
+                else begin skip := 1; find_ident(mem[i+1], id) end;
               write('  ');
-              if ram[i] = opcl then fg('W') else begin fg('K'); write('$') end;
+              if mem[i] = opcl then fg('W') else begin fg('K'); write('$') end;
               write(format('%-6s',[id]))
             end
-          else begin fg('C'); write(optbl[byte(ram[i])] :4) end;
+          else begin fg('C'); write(optbl[byte(mem[i])] :4) end;
         end
       { ascii characters }
-      else if (ram[i] >= 32) and (ram[i] < 128) then
-        begin fg('g'); write('  '''); write(chr(ram[i])) end
+      else if (mem[i] >= 32) and (mem[i] < 128) then
+        begin fg('g'); write('  '''); write(chr(mem[i])) end
       { anything else }
-      else begin fg('b'); write(hex(ram[i],2):4) end
+      else begin fg('b'); write(hex(mem[i],2):4) end
     end;
     { for ui debugging, draw line numbers on the right: }
     bg('K'); fg('k'); for i := 0 to 24 do begin gotoxy(xMax-1,i); write(i:2) end;
@@ -111,9 +111,9 @@ function step_over: boolean;
     result = true if stepping over a call }
   var skip : byte = 0;
   begin
-    result := ram[rg[RED]] = opcl;
-    if ram[rg[RED]] in [opcl,opjm,opli,opnx] then skip := 4
-    else if ram[rg[RED]] in [oplb,ophp,oph0] then skip := 1;
+    result := mem[rg[RED]] = opcl;
+    if mem[rg[RED]] in [opcl,opjm,opli,opnx] then skip := 4
+    else if mem[rg[RED]] in [oplb,ophp,oph0] then skip := 1;
     inc(rg[RED]);
     inc(rg[RED], skip);
   end;
@@ -156,7 +156,7 @@ begin
       end;
       if rg[RED] < 0 then rg[RED] := maxcell;
       if rg[RED] > maxcell then rg[RED] := 0;
-    end; { if ram[debug] }
+    end; { if mem[debug] }
     if not (pause and (rg[RDB]=1)) then step;
   end; { while }
   close(disk);

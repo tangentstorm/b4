@@ -35,14 +35,14 @@ type
   regs = array[0..63] of value;
 
 var
-  ram  : array[0..maxcell*cellsize] of byte;
+  mem  : array[0..maxcell*cellsize] of byte;
   disk : file of block;
   term : uhw.TB4Device;
   vw   : byte = 4;
   ob   : string = '';
 
 
-const {-- these are all offsets into the ram array --}
+const {-- these are all offsets into the mem array --}
 {$MACRO ON}
   {$define creg:=-ord('@')}
   { internal names for non-letter character registers }
@@ -64,9 +64,9 @@ const {-- these are all offsets into the ram array --}
   RED = $31; {used by the debugger's editor}
   RBP = $32; {internal breakpoint}
 {$TYPEDADDRESS OFF}
-  rg: ^regs = @ram[0];
-  ds : ^stack = @ram[mindata];
-  cs : ^stack = @ram[minretn];
+  rg: ^regs = @mem[0];
+  ds : ^stack = @mem[mindata];
+  cs : ^stack = @mem[minretn];
 {$TYPEDADDRESS ON}
 {$MACRO OFF}
 
@@ -96,7 +96,7 @@ uses math, sysutils{format};
 
 procedure boot;
   begin
-    fillchar(ram, (maxcell + 1) * cellsize, 0);
+    fillchar(mem, (maxcell + 1) * cellsize, 0);
     rg[RDS] := -1;
     rg[RCS] := -1;
     rg[RIP] := minheap;
@@ -127,25 +127,25 @@ function rdval(adr:address) : value;
   var i : byte;
   begin
     result := 0;
-    for i := 0 to 3 do result := result + (byte(ram[adr+i]) shl (8*i));
+    for i := 0 to 3 do result := result + (byte(mem[adr+i]) shl (8*i));
   end;
 
 procedure wrval(adr: address; v:value);
   var i :byte;
   begin
-    for i:= 0 to 3 do begin ram[adr] := byte(v shr (8*i)); inc(adr); end
+    for i:= 0 to 3 do begin mem[adr] := byte(v shr (8*i)); inc(adr); end
   end;
 
 function mget(a:address):value;
-  begin result := ram[a]
+  begin result := mem[a]
   end;
 
 function bget(a:address):byte;
-  begin result := byte(ram[a])
+  begin result := byte(mem[a])
   end;
 
 procedure mset(a:address; v:value);
-  begin ram[a] := v
+  begin mem[a] := v
   end;
 
 
@@ -228,7 +228,7 @@ procedure load;
   var tmp : block;
   begin
     read(disk, tmp);
-    move(tmp, ram[minbuff], 1024);
+    move(tmp, mem[minbuff], 1024);
   end;
 
 function size : word;
@@ -247,7 +247,7 @@ function grow : word;
 procedure save;
   var tmp : block;
   begin
-    move(ram[minbuff], tmp, 1024);
+    move(mem[minbuff], tmp, 1024);
     write(disk, tmp);
   end;
 
@@ -261,11 +261,11 @@ procedure go(addr :integer); inline;
 
 procedure hop(); inline;
   begin
-    go(rg[RIP] + int8(ram[rg[RIP]+1]));
+    go(rg[RIP] + int8(mem[rg[RIP]+1]));
   end;
 
-procedure rb; begin dput(ram[dpop]) end;   { read byte }
-procedure wb; var t:value; begin t:= dpop; ram[t]:= byte(dpop) end;  { write byte  }
+procedure rb; begin dput(mem[dpop]) end;   { read byte }
+procedure wb; var t:value; begin t:= dpop; mem[t]:= byte(dpop) end;  { write byte  }
 procedure ri; begin dput(rdval(dpop)) end; { read integer }
 procedure wi; var t:value; begin t := dpop; wrval(t, dpop) end; { write integer }
 
@@ -337,7 +337,7 @@ procedure runop(op : byte);
 function step : value;
   { execute next instruction, then increment and return the IP }
   begin
-    runop(ram[rg[RIP]]);
+    runop(mem[rg[RIP]]);
     inc(rg[RIP]);
     step := rg[RIP];
   end;
@@ -374,7 +374,6 @@ begin
   end;
   WriteLn(']');
 end;
-
 
 begin
   term := TB4Device.create;
