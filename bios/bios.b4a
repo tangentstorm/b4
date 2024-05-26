@@ -33,9 +33,9 @@
   @T dc !T @^                       # (s - e :-T)
   .w du nz? .d                      # (se - se?)  while e!=0 do:
      du e-nm @T ^Q                  # (see -sen) fetch name, test condition ^Q
-         .i cd !T rt .t             #          return if matched
-      ri .o                         # (e - e') otherwise, move on to next entry
-   cd !T rt                         # (0) e=0 so return it as fail result
+        .i cd !T rt .t              #          return if matched
+     ri .o                          # (e - e') otherwise, move on to next entry
+  cd !T rt                          # (0) e=0 so return it as fail result
 .^ 04 's'-'e'q
   :s-eq? ^Q rt                        # (st-?) are strings s and t the same?
 
@@ -149,12 +149,12 @@
 :ctrl? lb 32 lt rt
 
 :on-space tw # (20 - )
-  eol1
-  @B find
-  du nz?
-     .i exec
-     .e zp try-num .t
-  rt
+   eol1
+   @B find
+   du nz?
+      .i exec
+      .e try-num .t
+   rt
 
 :@ :on-ascii              # can't call ^@ directly. 00=no-op
    du tw vb +C wv
@@ -165,19 +165,19 @@
 :G db rt     # debug on ^G
 
 :on-key
-  du lb 32 eq
-     .i on-space rt
-     .e du ctrl?
-        .i lb 04 ml ri dc rt rt       # register dispatch for ctrl keys
-        .e on-ascii rt .t .t
-  rt
+   du lb 32 eq
+      .i on-space rt
+      .e du ctrl?
+         .i lb 04 ml ri dc rt rt       # register dispatch for ctrl keys
+         .e on-ascii rt .t .t
+   rt
 
 :repl
-  .w lb 01 .d
-    eol?
+   .w lb 01 .d
+      eol?
       .i eol0 lb 00 @B wb @B inc !C b4> .t  # show prompt if new line
-    tr on-key                     # read char from terminal
-  .o
+      tr on-key                     # read char from terminal
+   .o
 
 #--- end of bios ------------------/
 '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
