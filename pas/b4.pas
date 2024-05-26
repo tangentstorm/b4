@@ -4,7 +4,7 @@ program b4;
 uses xpc, ub4, ub4asm, ub4ops, kvm, kbd, uhw_vt,
  sysutils; // for format
 
-const pgsz = 8 * 8; { should be multiple of 8 to come out even }
+const pgsz = 16 * 8; { should be multiple of 8 to come out even }
 
 var opli, oplb, opjm, opcl, opnx, ophp, oph0 : value;
 
@@ -56,7 +56,7 @@ procedure dump;
     gotoxy(0,16); pg := pgsz * (rg[RED] div pgsz);
     literal := false; target := false; { next cell is literal or jump target }
     for i := pg to pg + pgsz-1 do begin
-      if (i mod 8 = 0) then begin
+      if (i mod 16 = 0) then begin
         bg('k'); if (i>pg) then writeln; clreol;
         fg('m'); write(hex(i,4));
       end;
