@@ -9,14 +9,14 @@ type
 const
   stacksize = 256;
   datasize = stacksize;
-  retnsize = stacksize;
+  ctrlsize = stacksize;
   cellsize = sizeof(value);
   {-- memory layout --}
   maxcell = 4095;
   maxbyte = ((maxcell+1) * cellsize)-1;
   { return stack }
   maxretn = maxcell;
-  minretn = maxretn-retnsize;
+  minretn = maxretn-ctrlsize;
   { data stack }
   maxdata = minretn-1;
   mindata = maxdata-datasize;
@@ -97,8 +97,8 @@ uses math, sysutils{format};
 procedure boot;
   begin
     fillchar(mem, (maxcell + 1) * cellsize, 0);
-    rg[RDS] := -1;
-    rg[RCS] := -1;
+    rg[RDS] := 0;
+    rg[RCS] := 0;
     rg[RIP] := minheap;
     rg[RHP] := minheap;
     rg[RED] := minheap;
@@ -153,26 +153,27 @@ procedure mset(a:address; v:value);
 
 procedure dput( val : value );
   begin
-    inc(rg[RDS]);
-    if rg[RDS] = datasize then rg[RDS] := 0;
+    if rg[RDS]+1 = datasize then fail('overflow(ds)');
     ds[rg[RDS]] := val;
+    inc(rg[RDS]);
   end;
 
 function dpop : value;
   begin
-    if rg[RDS] = -1 then fail('underflow(ds)');
-    dpop := ds[rg[RDS]]; dec(rg[RDS]);
+    if rg[RDS] = 0 then fail('underflow(ds)');
+    dpop := ds[rg[RDS]-1]; dec(rg[RDS]);
   end;
 
 function tos : value;
-  begin tos := ds[rg[RDS]]
+  begin
+    if rg[RDS] < 1 then fail('underflow(tos)')
+    else tos := ds[rg[RDS]-1]
   end;
 
 function nos : value;
   begin
-    if rg[RDS] = 0
-      then nos := ds[datasize-1]
-      else nos := ds[rg[RDS]-1]
+    if rg[RDS] < 2 then fail('underflow(nos)')
+    else nos := ds[rg[RDS]-2]
   end;
 
 procedure dswp;
@@ -189,19 +190,21 @@ function dpon:value; { pop the nos }
 
 procedure cput( val : value );
   begin
-    inc(rg[RCS]);
-    if rg[RCS] = retnsize then rg[RCS] := 0;
+    if rg[RCS]+1 = ctrlsize then fail('overflow(cs)');
     cs[rg[RCS]] := val;
+    inc(rg[RCS]);
   end;
 
 function cpop : value;
   begin
-    if rg[RCS] = -1 then fail('underflow(cs)');
-    cpop := cs[rg[RCS]]; dec(rg[RCS]);
+    if rg[RCS] = 0 then fail('underflow(cs)');
+    cpop := cs[rg[RCS]-1]; dec(rg[RCS]);
   end;
 
 function toc : value;
-  begin toc := cs[rg[RCS]]
+  begin
+    if rg[RCS] < 1 then fail('underflow(toc)')
+    else toc := cs[rg[RCS]-1]
   end;
 
 
@@ -269,11 +272,11 @@ procedure wb; var t:value; begin t:= dpop; mem[t]:= byte(dpop) end;  { write byt
 procedure ri; begin dput(rdval(dpop)) end; { read integer }
 procedure wi; var t:value; begin t := dpop; wrval(t, dpop) end; { write integer }
 
-function oreg(op:byte):value; begin oreg := rega(chr(64+op mod 32)) end; // like rega but takes an opcode
-procedure er(a:value); inline; begin cput(rg[RIP]+1); go(rdval(a)) end; { register }
-procedure rr(a:value); inline; begin dput(rdval(a)) end; { read register }
-procedure wr(a:value); inline; begin wrval(a, dpop) end; { write register }
-procedure ir(a:value); inline; begin rr(a); wrval(a,tos+vw); end; { read+inc register }
+function oregn(o:byte):byte; begin result := o mod 32 end;
+procedure oper(r:byte); inline; begin cput(rg[RIP]+1); go(rg[r]) end; { eval reg }
+procedure oprr(r:byte); inline; begin dput(rg[r]) end; { read register }
+procedure opwr(r:byte); inline; begin rg[r] := dpop end; { write register }
+procedure opir(r:byte); inline; begin oprr(r); rg[r]+=vw end; { read+inc register }
 
 procedure opio;
   begin
@@ -286,10 +289,10 @@ procedure runop(op : byte);
   var t,a : value;
   begin
     if op=0 then //ok
-    else if op<$20 then {^R} er(oreg(op))
-    else if op<$40 then {@R} rr(oreg(op))
-    else if op<$60 then {!R} wr(oreg(op))
-    else if op<$80 then {+R} ir(oreg(op))
+    else if op<$20 then {^R} oper(oregn(op))
+    else if op<$40 then {@R} oprr(oregn(op))
+    else if op<$60 then {!R} opwr(oregn(op))
+    else if op<$80 then {+R} opir(oregn(op))
     else case op of
       { Do not reformat this function! mkoptbl.pas uses it! }
       $80 : {ad} dput(dpop  + dpop);
@@ -325,7 +328,8 @@ procedure runop(op : byte);
       $BE : {tm} term.invoke(chr(dpop));
       $C0 : {vb} vw := 1;
       $C1 : {vi} vw := 4;
-      $FB : {ds} WriteStack('ds: ', ds, rg^[RDS]);
+      $FA : {ds} WriteStack('ds: ', ds, rg^[RDS]);
+      $FB : {cs} WriteStack('cs: ', cs, rg^[RCS]);
       $FC : {hx} write(format('(%x)', [dpop]));
       $FD : {io} opio;
       $FE : {db} rg[RDB] := 1;
@@ -362,15 +366,14 @@ begin
   else result := Format('%x',[v])
 end;
 
-procedure WriteStack(pre : string; s:pstack; count:integer);
-  var v: ub4.value; i:integer=0;
+procedure WriteStack(pre : string; s:pstack; count:value);
+  var v: value; i:integer=0;
 begin
   Write(pre);
   Write('[');
-  if count > 0 then for i := 1 to count do begin
-    if i>1 then Write(' ');
-    v := s^[i];
-    Write(b4mat(v));
+  if count > 0 then for i := 0 to count-1 do begin
+    if i>0 then Write(' ');
+    Write(b4mat(s^[i]));
   end;
   WriteLn(']');
 end;

@@ -12,9 +12,9 @@ procedure draw_stack(x,y : byte; id:char; var s:stack; n:value);
   var i : value;
   begin
     gotoxy(x,y); bg('k'); clreol; fg('w'); write(id,':');
-    fg('Y'); write(' <'); fg('y'); write(n+1); fg('Y');
+    fg('Y'); write(' <'); fg('y'); write(n); fg('Y');
     write('> '); fg('y');
-    for i := 0 to n do write(hex(s[i],1),' ');
+    for i := 0 to n-1 do write(hex(s[i],1),' ');
   end;
 
 procedure wv(k: string; v:value); { write value }
