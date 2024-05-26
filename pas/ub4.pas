@@ -1,10 +1,11 @@
 {$mode delphi}{$i xpc}
 unit ub4; { the b4 virtual machine }
-interface uses uhw;
+interface uses uhw,sysutils;
 
 type
   value = longint;
   block = array[0..1023] of byte;
+  EB4Exception = class(Exception);
 
 const
   stacksize = 256;
@@ -111,8 +112,29 @@ procedure zap( v : value );
   begin { discards a value (for turbo pascal) }
   end;
 
+function dis(b:byte):string;
+  begin
+    case b of
+      $00: result := '..';
+      $01..$1F: result := '^'+chr(64+b);
+      $20..$3F: result := '@'+chr(64+b-$20);
+      $40..$5F: result := '!'+chr(64+b-$40);
+      $60..$7F: result := '^'+chr(64+b-$60);
+      $80..$FF: begin
+                  result := ub4ops.optbl[b];
+                  if result = '' then result := format('%0.2x', [b])
+                end
+    end
+  end;
+
 procedure fail(msg: string);
-  begin writeln(msg); halt
+  var opc:string;
+  begin
+    writeln(msg);
+    writeln('ip: ', rg[RIP],' op: ', dis(mem[rg[RIP]]));
+    WriteStack('ds: ', ds, rg^[RDS]);
+    WriteStack('cs: ', cs, rg^[RCS]);
+    raise EB4Exception.Create(msg);
   end;
 
 procedure todo(op : string);

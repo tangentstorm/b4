@@ -157,7 +157,10 @@ begin
       if rg[RED] < 0 then rg[RED] := maxcell;
       if rg[RED] > maxcell then rg[RED] := 0;
     end; { if mem[debug] }
-    if not (pause and (rg[RDB]=1)) then step;
+    if not (pause and (rg[RDB]=1)) then
+      try step
+      except on e:EB4Exception do begin
+        rg[RDB]:=1; pause := true end end;
   end; { while }
   close(disk);
   {$IFDEF pauseafter} { for turbo pascal }
