@@ -3,8 +3,8 @@
 unit ub4i;
 interface uses sysutils, strutils, ub4, ub4asm, ub4ops;
 
-  procedure ShowMem(addr :integer );
-  procedure run;
+  procedure ShowMem(addr:integer);
+  function b4i(line:string):boolean; { returns 'done' flag }
 
 implementation
 
@@ -48,22 +48,25 @@ begin
   halt;
 end;
 
-function ParseAddress(tok:string; out isHERE:boolean):integer;
+function ParseAddress(tok:string; out isHERE:boolean; out a:address):boolean;
 begin
-  tok := RightStr(tok, length(tok)-1); isHERE:=false;
+  tok := RightStr(tok, length(tok)-1); isHERE:=false; a:=0; result:=true;
   if length(tok)=1 then begin
     isHERE := true;
     if tok[1]<>':' then rg^[regn(tok[1])]:=rg^[RHP];
-    result := rg^[RHP] end
-  else result := hex2dec(tok)
+    a := rg^[RHP] end
+  else try a := hex2dec(tok)
+  except on EConvertError do result:=false end
 end;
 
 procedure PutMem(str:string);
-  var a,i:integer; v:byte; tok: string; ishere:boolean;
+  var a:address; i:integer; v:byte; tok: string; ishere:boolean;
 begin
   i := -1;
   for tok in SplitString(str, ' ') do begin
-    if i = -1 then a := ParseAddress(tok,isHere)
+    if i = -1 then
+      if ParseAddress(tok,isHere,a) then ok
+      else writeln(format('bad: putmem(%s)', [str]))
     else begin
       // TODO: handle integers instead of just bytes
       if not ub4asm.b4op(tok, v) then
@@ -78,43 +81,64 @@ begin
   if isHere then rg^[RHP]:=a+i;
 end;
 
-procedure run;
-type tstate = (st_cmt,st_asm,st_imm);
-var str, tok : string; done: boolean = false; op:byte; st:tstate=st_imm; _b:boolean;
+procedure help;
 begin
-  rg^[RIP] := $100; rg^[regn('_')] := $100;
-  while not (done or eof) do begin
-    readln(str); st:=st_imm;
-    if str[1] = ':' then PutMem(str)
-    else for tok in SplitString(str, ' ') do begin
-      if tok[1] = '#' then st:=st_cmt;
-      if (st=st_cmt) or (tok='') then continue;
-      if ub4asm.b4op(tok, op) then begin
-        if op > $20 then runop(op)
-        else ub4.runa(4*op) // immediately invoke ^R
-        end
-      else case tok of
-        '%C' : boot;
-        '%q' : done := true;
-        '%s' : ub4.step;
-        '?d' : WriteStack('ds: ', ds, rg^[RDS]);
-        '?c' : WriteStack('cs: ', cs, rg^[RCS]);
-        '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
-        else case tok[1] of
-          '''' : if length(tok)=1 then dput(32) // space
-                 else dput(ord(tok[2])); // char literals
-          '`'  : if length(tok)=1 then err('invalid ctrl char')
-                   // TODO test this against chars out of range
-                 else dput(rega(tok[2]));
-          '?'  : if length(tok)=2 then writeln(format('%.8x',[rg^[regn(tok[2])]]))
-                 else ShowMem(parseAddress(tok, _b));
-          else if PutHex(tok) then ok
-          else Writeln('what does "', tok, '" mean?');
-        end
-      end
-    end;
-    if ub4.ob <> '' then begin writeln(ub4.ob); ub4.ob := '' end;
-  end
+  writeln('-- b4i: interactive interpreter for b4 virtual machine');
+  writeln;
+  writeln('enter b4a assembly language tokens to execute immediately');
+  writeln;
+  writeln('use :$hex-addr (ex: ":100") to assemble rest of line');
+  writeln('use :$reg-name (ex: ":E") to assemble line and assign register');
+  writeln;
+  writeln('example:');
+  writeln;
+  writeln('  :E ''e io rt                       # emit character');
+  writeln('  :W !R vb +R rv .f +R rv ^E .n rt  # write a counted string');
+  writeln('  :S 05 ''h ''e ''l ''l ''o              # counted string');
+  writeln('  @S ^W                             # (W)rite the (S)tring');
+  writeln;
+  writeln('for help, see https://github.com/tangentstorm/b4/tree/main/doc');
+  writeln;
+end;
+
+function b4i(line:string):boolean;
+  type tstate = (st_cmt,st_asm,st_imm);
+  var tok : string; done: boolean = false; op:byte; st:tstate=st_imm;
+  _b:boolean; a:address;
+begin
+  st:=st_imm;
+  if length(line)=0 then exit(false);
+  if line[1] = ':' then PutMem(line)
+  else for tok in SplitString(line, ' ') do begin
+    if length(tok)=0 then continue;
+    if tok[1] = '#' then st:=st_cmt;
+    if (st=st_cmt) or (tok='') then continue;
+    if ub4asm.b4op(tok, op) then begin
+      if op > $20 then runop(op)
+      else ub4.runa(4*op) end // immediately invoke ^R
+    else case tok of
+      '%C' : boot;
+      '%q' : done := true;
+      '%s' : ub4.step;
+      '%h' : help;
+      '?d' : WriteStack('ds: ', ds, rg^[RDS]);
+      '?c' : WriteStack('cs: ', cs, rg^[RCS]);
+      '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
+    else case tok[1] of
+      '''' : if length(tok)=1 then dput(32) // space
+             else dput(ord(tok[2])); // char literals
+      '`'  : if length(tok)=1 then err('invalid ctrl char')
+               // TODO test this against chars out of range
+             else dput(rega(tok[2]));
+      '?'  : if length(tok)=2 then writeln(format('%.8x',[rg^[regn(tok[2])]]))
+             else if parseAddress(tok,_b,a) then ShowMem(a)
+             else writeln('bad address:', tok);
+    else if PutHex(tok) then ok
+    else Writeln('what does "', tok, '" mean?') end;
+    end
+  end;
+  if ub4.ob <> '' then begin writeln(ub4.ob); ub4.ob := '' end;
+  result := done;
 end;
 
 end.

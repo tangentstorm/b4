@@ -1,6 +1,20 @@
-program b4i;
-uses ub4i;
+{$mode objfpc}{$i xpc}
+program b4i(input,output);
+uses ub4i, ub4;
 
+var prompt,line: string; done:boolean=false;
 begin
-  ub4i.run
+  if paramstr(1) = '-q' then prompt:=''
+  else begin
+    writeln('b4i.pas [',{$i %date%},'] ',
+            'type %h for help, %q to quit.');
+    prompt:='b4i> ';
+  end;
+  rg^[RIP] := $100; rg^[regn('_')] := $100;
+  write(prompt);
+  while not (done or eof) do begin
+    readln(line);
+    done := ub4i.b4i(line);
+    if not done then write(prompt);
+  end
 end.
