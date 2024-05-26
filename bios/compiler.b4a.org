@@ -1,0 +1,18 @@
+#+begin_src b4a
+  .^ 04 'h'e'r'e
+    <<here>>
+  .^ 01 ',
+    <<comma>>
+#+end_src
+
+* the compiler
+#+name: here
+#+begin_src b4a
+:here  lb 12 rt
+#+end_src
+
+#+name: comma
+#+begin_src b4a
+:, here ri du dc wb
+    cd inc here wi rt              # ',' is same as 'a+' but for heap
+#+end_src
