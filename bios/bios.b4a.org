@@ -60,14 +60,13 @@ Entries in the dictionary are records with several fields:
 
 #+name: e-nm
 #+begin_src b4a
-:e-nm lb 4 ad rt                   # (e-s) address of name relative to entry
+:e-nm lb 04 ad rt                  # (e-s) address of name relative to entry
 #+end_src
 
 #+name: e-xt
 #+begin_src b4a
-:e-xt e-nm du rb ad rt             # (e-a) address of code for entry "execution token"
+:e-xt e-nm du rb lb 01 ad ad rt        # (e-a) address of code for entry "execution token"
 #+end_src
-
 
 ** looking up a word with "find"
 
@@ -78,12 +77,13 @@ Entries in the dictionary are records with several fields:
 
 #+name: find
 #+begin_src b4a
-  :find @^                            # (s - 0|e) find s in dictionary
-     .w du nz? .d                     # (e - e)  while e!=0 do:
-        du e-nm @T ^Q                 # (e - e?) fetch name, test condition ^Q
-           .i rt .t                   #          return if matched
+  :find                               # (s - 0|e) find s in dictionary
+    @T dc !T @^                       # (s - e :-T)
+    .w du nz? .d                      # (se - se?)  while e!=0 do:
+       du e-nm @T ^Q                  # (see -sen) fetch name, test condition ^Q
+           .i cd !T rt .t             #          return if matched
         ri .o                         # (e - e') otherwise, move on to next entry
-     rt                               # (0) e=0 so return it as fail result
+     cd !T rt                         # (0) e=0 so return it as fail result
 #+end_src
 
 ** string compare
@@ -114,7 +114,6 @@ Entries in the dictionary are records with several fields:
 
 #+end_src
 
-
 ** dynamic execution
 
 Once we've found a dictionary entry to execute, we just
@@ -133,8 +132,9 @@ need to fetch its xt field and then call ^X.
 
 #+end_src
 
-
 * TODO ^Y: yield (so we can do different things with the word list)
+
+
 * list the words
 
 The word =words= reads from =last= to find the end of the chain, then
@@ -157,7 +157,7 @@ These were previously opcodes in the pascal version, now consolidating into an i
 #+begin_src b4a
   :tg lb 'g tm rt # (xy-) goto xy
   :ta lb 'a tm rt # (a-) set terminal attribute ((fg << 4) + bg))
-  :tw lb 'e tm rt # write (emit) char
+  :E :tw lb 'e tm rt # write (emit) char
   :tr lb 'r tm rt # readkey
   :tk lb 'k tm rt # keypressed?
   :ts lb 's tm rt # clear screen
@@ -177,7 +177,6 @@ At runtime, we need to initialize some variables:
 #+name: main
 #+begin_src b4a
     :\ # start of execution.
-    li `tok !S # initialize string pointer
     # show word list and enter repl.
     lb 14 ta
     li `words$ e-nm puts lb ': tw sp lb 07 ta words nl
@@ -188,16 +187,15 @@ At runtime, we need to initialize some variables:
 
 #+name: b4-io-words
 #+begin_src b4a
-:sp lb 32 tw rt                    # emit space
-:nl lb 10 tw lb 13 tw rt           # emit CRLF
+  :sp lb 32 ^E rt                    # emit space
+  :nl lb 10 ^E lb 13 ^E rt           # emit CRLF
 #+end_src
 
 #+name: puts
 #+begin_src b4a
-:puts                              # given address of counted string s, write s
-  du rb dc inc                     # push str start to d, len to r (loop counter)
-  cd .f du rb tw inc .n
-  zp rt
+  :puts @S dc !S vb                  # given address of counted string s, write s
+    +S rv .f +S rv ^E .n
+    cd !S rt
 #+end_src
 
 #+name: putn/base
@@ -209,16 +207,17 @@ At runtime, we need to initialize some variables:
 
 #+name: putn
 #+begin_src b4a
-:putn # (n - )
-  du lb 00 eq .i lb '0 tw rt
-  .e lb 00 sw                      # ( n-kn) k:digit count=0
-     .w du lb 00 eq nt .d          # while n!=0 do
-        li `base rb dvm            # (kn-kdm) divmod
-        li `digit ad rb dc         # (kdm-kd|c) push char to retn stack
-        sw inc sw .o               # k++, d is new n
-      zp                           # (kd-k)
-      .f cd cd tw dc .n .t         # loop through the characters
-  rt
+  :putn # (n - )
+    hx rt
+    du lb 00 eq .i lb '0 tw rt
+    .e lb 00 sw                      # ( n-kn) k:digit count=0
+       .w du lb 00 eq nt .d          # while n!=0 do
+          li `base rb dvm            # (kn-kdm) divmod
+          li `digit ad rb dc         # (kdm-kd|c) push char to retn stack
+          sw inc sw .o               # k++, d is new n
+        zp                           # (kd-k)
+        .f cd cd tw dc .n .t         # loop through the characters
+    rt
 
 #+end_src
 
@@ -250,43 +249,49 @@ At runtime, we need to initialize some variables:
 #+name: b4-repl
 #+begin_src b4a
 
-  # shell
-  :T
-  :tok-len 00                        # length of the current token
-  :tok                               # 64-byte token buffer
-    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-
-  # string cursors
-  # !! TODO if i rename s+ this to sw+ all words are unknown. what?! why?
-  :s+ vb +S wv rt                    # s+ ( n - ) mem[reg_s++]:n
+  :B 00 # length byte, plus 64-byte buffer
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
   :eol 01                            # end of line flag
+  :eol? li `eol rb rt
+  :eol0 lb 00 li `eol wb rt
+  :eol1 lb 01 li `eol wb rt
 
-  :end-token
-    lb 01 li `eol wb                 # set the eol flag
-    @S li `tok sb                    # calculate length: start of token buffer
-    li `tok-len sw ov wb             # save the length
-    li `tok !S                       # reset ap to start of buffer for next time
+  :ctrl? lb 32 lt rt
+
+  :on-space tw # (20 - )
+    eol1
+    @B find
+    du nz?
+       .i exec
+       .e zp try-num .t
     rt
 
-  :repl .w lb 01 .d
-    li `eol rb .i                    # if end of line flag
-      lb 00 li `eol wb b4> .t        # show prompt if new line
-    tr                               # read char from terminal
-    du lb '` eq .i db .t             # ` = debugger
-    du lb 32 eq .i tw                # on space,  (echo space and add dummy char)
-      end-token
-      du find                        #    look up the word
-      du lb 0 eq .i zp try-num       #    if not found, complain
-      .e sw zp exec .t               #    else execute
-    .e
-      lb 31 ov lt .i du du s+ tw     # copy non-ctrl chars to buffer and echo
-      .e du lb 04 eq .i bye .t       # on ^d, exit
-      .t zp
-    .t .o
+  :@ :on-ascii              # can't call ^@ directly. 00=no-op
+     du tw vb +C wv
+     @B rv inc @B wv
+     rt
+
+  :D bye    # exit on ^D
+  :G db rt     # debug on ^G
+
+  :on-key
+    du lb 32 eq
+       .i on-space rt
+       .e du ctrl?
+          .i lb 04 ml ri dc rt rt       # register dispatch for ctrl keys
+          .e on-ascii rt .t .t
+    rt
+
+  :repl
+    .w lb 01 .d
+      eol?
+        .i eol0 lb 00 @B wb @B inc !C b4> .t  # show prompt if new line
+      tr on-key                     # read char from terminal
+    .o
 #+end_src
 
 ** the prompt
@@ -296,13 +301,13 @@ At runtime, we need to initialize some variables:
   nl lb 02 ta                      # green on black
   lb 'b tw lb '4 tw lb '> tw       # echo 'b4>'
   lb 32 tw lb 07 ta                # gray on black for user input.
-  rt
+ rt
 #+end_src
 
 ** "bye" word
 #+name: bye
 #+begin_src b4a
-:bye nl lb 01 ta                  # red
+:bye nl lb 01 ta                   # red
   lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
   nl hl
 #+end_src
@@ -470,6 +475,8 @@ At runtime, we need to initialize some variables:
   .^ 03 'b'y'e
     <<bye>>
     <<b4-prompt>>
+  .^ 04 'e'm'i't
+    <<emit>>
   .^ 04 'p'u't's
     <<puts>>
   :words$ .^ 05 'w'o'r'd's
