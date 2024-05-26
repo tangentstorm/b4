@@ -31,8 +31,8 @@ type
   address = 0..maxcell;
   opcodes = $80..$BF;
   stack = array[0..stacksize-1] of value;
+  pstack = ^stack;
   regs = array[0..63] of value;
-
 
 var
   ram  : array[0..maxcell*cellsize] of byte;
@@ -87,10 +87,12 @@ const {-- these are all offsets into the ram array --}
   procedure runop(op : byte);
   function rega(ch : char):value;
   function regn(ch : char):byte;
+  function b4mat(v : value):string;
+  procedure WriteStack(pre : string; s:pstack; count:integer);
 
 
 implementation
-uses math;
+uses math, sysutils{format};
 
 procedure boot;
   begin
@@ -323,6 +325,8 @@ procedure runop(op : byte);
       $BE : {tm} term.invoke(chr(dpop));
       $C0 : {vb} vw := 1;
       $C1 : {vi} vw := 4;
+      $FB : {ds} WriteStack('ds: ', ds, rg^[RDS]);
+      $FC : {hx} write(format('(%x)', [dpop]));
       $FD : {io} opio;
       $FE : {db} rg[RDB] := 1;
       $FF : {hl} halt;
@@ -349,6 +353,28 @@ procedure runa(adr:address);
 procedure runr(reg:char);
   begin runa(rega(reg))
   end;
+
+
+// format as hex in b4 style
+function b4mat(v : value):string;
+begin
+  if v < 0 then result := Format('-%x',[-v])
+  else result := Format('%x',[v])
+end;
+
+procedure WriteStack(pre : string; s:pstack; count:integer);
+  var v: ub4.value; i:integer=0;
+begin
+  Write(pre);
+  Write('[');
+  if count > 0 then for i := 1 to count do begin
+    if i>1 then Write(' ');
+    v := s^[i];
+    Write(b4mat(v));
+  end;
+  WriteLn(']');
+end;
+
 
 begin
   term := TB4Device.create;

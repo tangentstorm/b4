@@ -128,8 +128,8 @@ begin
   optbl[248] := '';
   optbl[249] := '';
   optbl[250] := '';
-  optbl[251] := '';
-  optbl[252] := '';
+  optbl[251] := 'ds';
+  optbl[252] := 'hx';
   optbl[253] := 'io';
   optbl[254] := 'db';
   optbl[255] := 'hl';

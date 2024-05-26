@@ -3,26 +3,6 @@
 program b4i(input, output);
   uses sysutils, strutils, ub4, ub4asm, ub4ops;
 
-// format as hex in b4 style
-function b4mat(v : value):string;
-begin
-  if v < 0 then result := Format('-%x',[-v])
-  else result := Format('%x',[v])
-end;
-
-type pstack = ^stack;
-procedure WriteStack(pre : string; s:pstack; count:integer);
-  var v: ub4.value; i:integer=0;
-begin
-  Write(pre);
-  Write('[');
-  if count > 0 then for i := 1 to count do begin
-    if i>1 then Write(' ');
-    v := s^[i];
-    Write(b4mat(v));
-  end;
-  WriteLn(']');
-end;
 
 procedure ShowMem(addr :integer );
   var i: integer; v:byte; tok: string;
