@@ -8,7 +8,7 @@ procedure ShowMem(addr :integer );
   var i: integer; v:byte; tok: string;
 begin
   for i := 0 to 15 do begin
-    v := ram[(addr + i)];
+    v := mem[(addr + i)];
     case v of
       0 : tok := '..';
       $01..$1F : tok := '^' + chr(ord('@')+v);
@@ -67,7 +67,7 @@ begin
         else if tok[1]='''' then v := byte(tok[2])
         else if tok[1]='-' then v := byte(-unhex(tok[2]))
         else v := unhex(tok);
-      ram[a+i] := byte(v)
+      mem[a+i] := byte(v)
     end;
     inc(i);
   end;
