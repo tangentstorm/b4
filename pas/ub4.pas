@@ -93,7 +93,7 @@ const {-- these are all offsets into the mem array --}
 
 
 implementation
-uses math, sysutils{format};
+uses math, ub4ops;
 
 procedure boot;
   begin
@@ -146,16 +146,22 @@ procedure todo(op : string);
 
 function rdval(adr:address) : value;
   { read a longint (little-endian) }
-  var i : byte;
+  var p : ^value;
   begin
-    result := 0;
-    for i := 0 to 3 do result := result + (byte(mem[adr+i]) shl (8*i));
+    if (adr+4)>=length(mem) then fail('read past mem(rdval)');
+    {$TYPEDADDRESS off}
+    p := @mem[adr];
+    {$TYPEDADDRESS on}
+    result := p^;
   end;
 
 procedure wrval(adr: address; v:value);
-  var i :byte;
+  var p : ^value;
   begin
-    for i:= 0 to 3 do begin mem[adr] := byte(v shr (8*i)); inc(adr); end
+    {$TYPEDADDRESS off}
+    p := @mem[adr];
+    {$TYPEDADDRESS on}
+    p^ := v;
   end;
 
 function mget(a:address):value;
