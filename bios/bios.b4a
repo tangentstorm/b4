@@ -73,8 +73,8 @@
 
 :n1 lb 00 nt rt                    # TODO: better way to write "-1"
 
-  :sp lb 32 ^E rt                    # emit space
-:nl lb 10 ^E lb 13 ^E rt           # emit CRLF
+  :sp lb 20 ^E rt                    # emit space
+:nl lb 0A ^E lb 0D ^E rt           # emit CRLF
 .^ 03 'b'y'e
   :bye nl lb 01 ta                   # red
   lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
@@ -82,7 +82,7 @@
   :b4>
   nl lb 02 ta                      # green on black
   lb 'b tw lb '4 tw lb '> tw       # echo 'b4>'
-  lb 32 tw lb 07 ta                # gray on black for user input.
+  sp lb 07 ta                      # gray on black for user input.
  rt
 .^ 04 'e'm'i't
   
@@ -97,9 +97,9 @@
      du e-nm puts sp               # print the word followed by a space
      ri .o                         # move to next entry
   zp rt                            # drop the final null pointer
-  :unkno-s 13 'u'n'k'n'o'w'n' 'w'o'r'd'.
+  :unkno-s 0D 'u'n'k'n'o'w'n' 'w'o'r'd'.
 :unknown
- lb 08 ta sp li `unkno-s puts nl rt
+  lb 08 ta sp li `unkno-s puts nl rt
   # reading/writing numbers
 
 :base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
@@ -119,15 +119,15 @@
   :digit?                            # (c-d1) or (c-0)
  du lb '0 lb '9 between? .i
     zp lb '0 sb n1
- .e zp lb 0 .t
+ .e zp lb 00 .t
  rt
 
 :try-num                           # (s-n) try to parse string as number
   du rb dc                         # (s    - s|i) a=addr of string
-  lb 0                             # (s|i  - sr|i) r=0
+  lb 00                            # (s|i  - sr|i) r=0
   cd .f dc inc du rb               # (ar|i - ac|ri) a=addr of char, c=char
      digit? .i
-        cd lb 10 ml ad dc          #  r= r*10+d
+        cd lb 0A ml ad dc          #  r= r*10+d
      .e unknown
         zp cd zp cd zp rt .t       # drop result and return
      cd                            # (p|ri - pr|i) so next can do its thing
@@ -146,7 +146,7 @@
 :eol0 lb 00 li `eol wb rt
 :eol1 lb 01 li `eol wb rt
 
-:ctrl? lb 32 lt rt
+:ctrl? lb 20 lt rt
 
 :on-space tw # (20 - )
    eol1
@@ -161,11 +161,11 @@
    @B rv inc @B wv
    rt
 
-:D bye    # exit on ^D
+:D bye       # exit on ^D
 :G db rt     # debug on ^G
 
 :on-key
-   du lb 32 eq
+   du lb 20 eq
       .i on-space rt
       .e du ctrl?
          .i lb 04 ml ri dc rt rt       # register dispatch for ctrl keys
@@ -183,6 +183,6 @@
 '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
 :\ # start of execution.
 # show word list and enter repl.
-lb 14 ta
+lb 0E ta
 li `words$ e-nm puts lb ': tw sp lb 07 ta words nl
 repl

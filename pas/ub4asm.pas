@@ -52,7 +52,7 @@ function b4opc(code:opstring) : byte;
     else begin writeln('invalid op: ', code); halt end end;
 
 type
-  tokentag = ( wsp, cmt, raw, chr, def, ref, ivk, adr, get, put, ink, fwd,
+  tokentag = ( wsp, cmt, hex, chr, def, ref, ivk, adr, get, put, ink, fwd,
               _if, _th, _el, _wh, _do, _od, _fr, _nx, _lp );
   token = record tag : tokentag; str : string; end;
 
@@ -84,9 +84,9 @@ function next( var tok : token; var ch : char ) : boolean;
     case ch of
       #0..#32: begin tok.tag := wsp; repeat until eof or (nextchar(ch) >= #32) end;
       '#' : begin tok.tag := cmt; readln(tok.str); ch := nextchar(ch) end;
-      '0'..'9': begin { TODO : this should be hex! }
-        tok.tag := raw;
-        while nextchar(ch) in ['0'..'9'] do keep end;
+      '0'..'9','A'..'F':
+        begin tok.tag := hex;
+        while nextchar(ch) in ['0'..'9','A'..'F'] do keep end;
       '''' : begin tok.tag := chr; tok.str := nextchar(ch); nextchar(ch); end;
       ':' : rest(def);
       '^' : rest(ivk);
@@ -152,7 +152,7 @@ procedure b4as;
     begin
       case tok.tag of
         wsp, cmt : ok; { do nothing }
-        raw : begin val(tok.str, v, err);
+        hex : begin val('0x'+tok.str, v, err);
                 if err=0 then emit(v) else unknown(tok.str) end;
         chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
               else emit(ord(tok.str[1]));
