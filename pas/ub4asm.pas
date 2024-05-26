@@ -170,7 +170,9 @@ procedure b4as;
         get : if isreg(tok.str) then emit(b4opc('@'+tok.str[1]))
               else begin
                 emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('rv')) end;
-        put : begin emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wv')) end;
+        put : if isreg(tok.str) then emit(b4opc('!'+tok.str[1]))
+              else begin
+                emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wv')) end;
         ink : if isreg(tok.str) then emit(b4opc('+'+tok.str[1])) // inKrement :)
               else begin writeln('no such word: +',tok.str); halt end;
         _wh : dput(here); {(- wh)}
