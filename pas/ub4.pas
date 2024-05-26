@@ -8,17 +8,17 @@ type
 
 const
   stacksize = 256;
-  datasize = stacksize;
-  ctrlsize = stacksize;
   cellsize = sizeof(value);
   {-- memory layout --}
   maxcell = 4095;
   maxbyte = ((maxcell+1) * cellsize)-1;
-  { return stack }
-  maxretn = maxcell;
-  minretn = maxretn-ctrlsize;
+  { ctrl stack }
+  ctrlsize = stacksize;
+  maxctrl = maxcell;
+  minctrl = maxctrl-ctrlsize;
   { data stack }
-  maxdata = minretn-1;
+  datasize = stacksize;
+  maxdata = minctrl-1;
   mindata = maxdata-datasize;
   { io buffer }
   maxbuff = mindata-1;
@@ -66,7 +66,7 @@ const {-- these are all offsets into the mem array --}
 {$TYPEDADDRESS OFF}
   rg: ^regs = @mem[0];
   ds : ^stack = @mem[mindata];
-  cs : ^stack = @mem[minretn];
+  cs : ^stack = @mem[minctrl];
 {$TYPEDADDRESS ON}
 {$MACRO OFF}
 
