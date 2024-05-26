@@ -293,7 +293,10 @@ ds: [CCBBAA AA]
 
 
 
-** TODO registers
+
+* TODO registers
+
+** TODO read and write from shell
 #+name: op.rr-wr
 #+begin_src b4a
 > 12345678 !X ?d
@@ -301,6 +304,28 @@ ds: []
 > @X ?d %q
 ds: [12345678]
 #+end_src
+
+** TODO read and write while executing
+
+#+name: op.rr-wr.runtime
+#+begin_src b4a
+  > :100 lb 12 !X @X vb +X @X
+  > %s ?d
+  ds: [12]
+  > %s ?d ?X
+  ds: []
+  00000012
+  > %s ?d ?X  # @X
+  ds: [12]
+  00000012
+  > %s %s ?d ?X  # vb +X
+  ds: [12 12]
+  00000013
+  > %s ?d ?X # @X
+  ds: [12 12 13]
+  00000013
+#+end_src
+
 
 ** DONE =+x= ops
 
