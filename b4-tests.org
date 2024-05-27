@@ -80,7 +80,6 @@ ds: [6C 70 74 78 7C]
 = non-alphabetic control characters
 : there are 5 control characters after ^Z that use punctuation.
 #+end_src
-
 * DONE [17/17] alu / stack operations
 ** DONE =ad= op
 #+name: op.ad
@@ -219,28 +218,30 @@ cs: []
 .. AA BB CC .. .. .. .. .. .. .. .. .. .. .. ..
 #+end_src
 
-* DONE [3/5] memory operations
+* DONE [2/4] memory operations
 
 ** TODO: test that %C clears memory and stacks
 
-** DONE =wv= op
+** DONE =wi=
 
-By default we write a 32-bit integer:
+=wi= writes a 32-bit integer.
 
-#+name: io.wv
+#+name: io.wi
 #+begin_src b4a
 > %C
-> AABBCCDD 0100 wv
+> AABBCCDD 0100 wi
 > ?100 %q
 DD CC BB AA .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
 
-Invoking =vb= changes the value width to one byte:
+** TODO =wb=
 
-#+name: io.wv.vi
+=wb= writes a single byte:
+
+#+name: io.wb
 #+begin_src b4a
 > %C
-> AABBCCDD 0100 vb wv
+> AABBCCDD 0100 wb
 > ?100 %q
 DD .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
@@ -253,43 +254,30 @@ which of these should it be?
 : ds: [CC00BBAA]
 : ds: [-33FF4456]
 
-** DONE =rv= op : read a value from address
+** DONE =rb= op : read a value from address
 
-By default, we read a single byte:
+=rb= reads a byte
 
-#+name: op.rv
+#+name: op.rb
 #+begin_src b4a
 > :100 AA BB 00 77
 > ?100
 AA BB .. +W .. .. .. .. .. .. .. .. .. .. .. ..
-> 0100 rv ?d %q
+> 0100 ri ?d %q
 ds: [7700BBAA]
 #+end_src
 
-But the =vi= op sets the value width to 4 bytes.
+** =ri= writes a 32-bit integer
 
-Note that the bytes are "backwards" from the way we write them!
-B4 reads and writes integers in little-endian format.
-
-#+name: op.rv.vi
+#+name: op.ri
 #+begin_src b4a
 > :100 AA BB CC 00
 > ?100
 AA BB CC .. .. .. .. .. .. .. .. .. .. .. .. ..
-> vi 0100 rv ?d %q
+> 0100 ri ?d %q
 ds: [CCBBAA]
 #+end_src
 
-The =vb= op sets the value width back to 1 byte.
-
-#+name: op.rv.vb
-#+begin_src b4a
-> :100 AA BB CC 00
-> ?100
-AA BB CC .. .. .. .. .. .. .. .. .. .. .. .. ..
-> vi 0100 rv vb 0100 rv ?d %q
-ds: [CCBBAA AA]
-#+end_src
 
 
 
@@ -309,7 +297,7 @@ ds: [12345678]
 
 #+name: op.rr-wr.runtime
 #+begin_src b4a
-  > :100 lb 12 !X @X vb +X @X
+  > :100 lb 12 !X @X c1 +X @X
   > %s ?d
   ds: [12]
   > %s ?d ?X
@@ -318,7 +306,7 @@ ds: [12345678]
   > %s ?d ?X  # @X
   ds: [12]
   00000012
-  > %s %s ?d ?X  # vb +X
+  > %s %s ?d ?X  # c1 +X
   ds: [12 12]
   00000013
   > %s ?d ?X # @X
@@ -329,26 +317,25 @@ ds: [12345678]
 
 ** DONE =+x= ops
 
-The + ops increment a register by the value width, so we can use them as iterators through an array of values.
+The "+" ops take a value off the stack and add it to a register,
+leaving the original value of the register. You can use this to
+treat the register as a cursor through a string or array of values.
 
 #+name: op.plus-x
 #+begin_src b4a
 > 11223344 !X
-> +X +X @X ?d %q
-ds: [11223344 11223348 1122334C]
+> 04 +X 02 +X @X ?d %q
+ds: [11223344 11223348 1122334A]
 #+end_src
 
-With =vb=:
+* the constant ops
 
-#+name: op.plus-x.vb
+#+name: op.c0-c1
 #+begin_src b4a
-> vb 11223344 !X
-> +X +X @X ?d %q
-ds: [11223344 11223345 11223346]
+  > c0 c1 ?d
+  ds: [0 1]
 #+end_src
 
-Note that @X !X and +X transfer a complete register (32 bits) regardless of the value size.
-=vb= and =vi= affect the =rv=, =wv=, and =+x= ops, but for =+x= they only change by how much the value increments.
 
 * DONE [2/2] debugger/stepper
 ** DONE query instruction pointer

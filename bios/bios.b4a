@@ -14,9 +14,6 @@
 :tc lb 'p tm rt # (-xy) fetch cursor position
 
 :X dc rt             # (f-?) execute f by pushing to ctrl stack and "returning"
-
-:ri vi rv rt  :rb vb rv rt
-:wi vi wv rt  :wb vb wv rt
 :nz? lb 00 eq nt rt                 # (x-0|1) was x non-zero?
 
 .^ 04 'e'-'n'm
@@ -40,15 +37,15 @@
   :s-eq? ^Q rt                        # (st-?) are strings s and t the same?
 
 :s-eq?-main                         # -- python translation:
-   vb @S @T eq .i                   # if s is t:
+   @S @T eq .i                      # if s is t:
       lb 01 rt .t                   #    return 1
-   +S rv @T rv eq .i                # if len(s) == len(t):
-      +T rv .f                      #    for s,t
-         +S rv +T rv                #    in zip(s,t):
+   c1 +S rb @T rb eq .i             # if len(s) == len(t):
+      c1 +T rb .f                   #    for s,t
+         c1 +S rb c1 +T rb          #    in zip(s,t):
          eq nt .i                   #       if s!=t:
-            lb 00 rt .t .n          #          return 0
-   .e lb 00 rt .t                   # else: return 0
-   lb 01 rt                         # return 1
+            c0 rt .t .n             #          return 0
+   .e c0 rt .t                      # else: return 0
+   c1 rt                            # return 1
 
 # !! This is experiment in style. I plan to make a nice syntax
 #    for this register capture/restore behavior.
@@ -87,8 +84,8 @@
 .^ 04 'e'm'i't
   
 .^ 04 'p'u't's
-  :puts @S dc !S vb                  # given address of counted string s, write s
-  +S rv .f +S rv ^E .n
+  :puts @S dc !S                     # given address of counted string s, write s
+  c1 +S rb .f c1 +S rb ^E .n
   cd !S rt
 
 :words$ .^ 05 'w'o'r'd's
@@ -157,18 +154,25 @@
    rt
 
 :@ :on-ascii              # can't call ^@ directly. 00=no-op
-   du tw vb +C wv
-   @B rv inc @B wv
+   du tw c1 +C wb
+   @B rb inc @B wb
    rt
 
 :D bye       # exit on ^D
 :G db rt     # debug on ^G
 
+# :H # ^H is backspace
+
+:on-ctrl
+   lb 04 ml ri du nz?
+      .i dc rt
+      .e zp rt .t
+
 :on-key
    du lb 20 eq
       .i on-space rt
       .e du ctrl?
-         .i lb 04 ml ri dc rt rt       # register dispatch for ctrl keys
+         .i on-ctrl rt       # register dispatch for ctrl keys
          .e on-ascii rt .t .t
    rt
 

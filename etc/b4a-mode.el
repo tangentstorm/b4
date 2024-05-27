@@ -6,9 +6,9 @@
   '("ad" "sb" "ml" "dv" "md" "sh"
     "an" "or" "xr" "nt" "eq" "lt"
     "du" "sw" "ov" "zp" "dc" "cd"
-    "rv" "wv" "lb" "li" "jm" "hp"
-    "h0" "cl" "rt" "nx"
-    "vb" "vi"
+    "ri" "rb" "wi" "wb" "lb" "li"
+    "jm" "hp" "h0" "cl" "rt" "nx"
+    "c0" "c1"
     "io" "db" "hl")
   '(("^#.*" . 'font-lock-comment-face)
     ("[']." . 'font-lock-string-face)

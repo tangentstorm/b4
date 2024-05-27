@@ -128,7 +128,6 @@ function dis(b:byte):string;
   end;
 
 procedure fail(msg: string);
-  var opc:string;
   begin
     writeln(msg);
     writeln('ip: ', rg[RIP],' op: ', dis(mem[rg[RIP]]));
@@ -304,7 +303,8 @@ function oregn(o:byte):byte; begin result := o mod 32 end;
 procedure oper(r:byte); inline; begin cput(rg[RIP]+1); go(rg[r]) end; { eval reg }
 procedure oprr(r:byte); inline; begin dput(rg[r]) end; { read register }
 procedure opwr(r:byte); inline; begin rg[r] := dpop end; { write register }
-procedure opir(r:byte); inline; begin oprr(r); rg[r]+=vw end; { read+inc register }
+procedure opir(r:byte); inline;
+  var v:value; begin v:=rg[r]; rg[r]+=dpop; dput(v) end; { read+inc register }
 
 procedure opio;
   begin
@@ -352,21 +352,24 @@ procedure runop(op : byte);
       $8F : {zp} zap(dpop);
       $90 : {dc} cput(dpop);
       $91 : {cd} dput(cpop);
-      $92 : {rv} if vw=1 then rb else ri; // todo: dynamic dispatch through fn ptr
-      $93 : {wv} if vw=1 then wb else wi; // todo: same
-      $94 : {lb} begin dput(bget(rg[RIP]+1)); inc(rg[RIP]) end;
-      $95 : {li} begin dput(rdval(rg[RIP]+1)); inc(rg[RIP],3) end;
-      $96 : {jm} go(rdval(rg[RIP]+1));
-      $97 : {hp} hop;
-      $98 : {h0} if dpop = 0 then hop else inc(rg[RIP]);
-      $99 : {cl} begin cput(rg[RIP]+4); rg[RIP]:=rdval(rg[RIP]+1)-1 end; { call }
-      $9A : {rt} begin rg[RIP] := cpop-1; if rg[RIP]=-1 then rg[RST]:=0 end;
-      $9B : {nx} begin if toc > 0 then begin t:=cpop; dec(t); cput(t) end;
+      $92 : {rb} rb;
+      $93 : {wb} wb;
+      $94 : {ri} ri;
+      $95 : {wi} wi;
+      $96 : {lb} begin dput(bget(rg[RIP]+1)); inc(rg[RIP]) end;
+      $97 : {li} begin dput(rdval(rg[RIP]+1)); inc(rg[RIP],3) end;
+      $98 .. $99 : ;
+      $9A : {jm} go(rdval(rg[RIP]+1));
+      $9B : {hp} hop;
+      $9C : {h0} if dpop = 0 then hop else inc(rg[RIP]);
+      $9D : {cl} begin cput(rg[RIP]+4); rg[RIP]:=rdval(rg[RIP]+1)-1 end; { call }
+      $9E : {rt} begin rg[RIP] := cpop-1; if rg[RIP]=-1 then rg[RST]:=0 end;
+      $9F : {nx} begin if toc > 0 then begin t:=cpop; dec(t); cput(t) end;
                    if toc = 0 then begin zap(cpop); inc(rg[RIP]) end
                    else hop end;
       $BE : {tm} term.invoke(chr(dpop));
-      $C0 : {vb} vw := 1;
-      $C1 : {vi} vw := 4;
+      $C0 : {c0} dput(0);
+      $C1 : {c1} dput(1);
       $F9 : {wl} wl(dpop);
       $FA : {ds} WriteStack('ds: ', ds, rg^[RDS]);
       $FB : {cs} WriteStack('cs: ', cs, rg^[RCS]);
