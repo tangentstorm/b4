@@ -24,8 +24,8 @@ begin
   optbl[144] := 'dc';
   optbl[145] := 'cd';
   optbl[146] := 'rb';
-  optbl[147] := 'wb';
-  optbl[148] := 'ri';
+  optbl[147] := 'ri';
+  optbl[148] := 'wb';
   optbl[149] := 'wi';
   optbl[150] := 'lb';
   optbl[151] := 'li';
