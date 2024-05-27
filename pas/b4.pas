@@ -1,7 +1,7 @@
 {$mode delphi}{$i xpc}
 { this is the main entry point for b4 }
 program b4;
-uses xpc, ub4, ub4asm, ub4ops, kvm, kbd, uhw_vt,
+uses xpc, ub4, ub4asm, ub4ops, kvm, kbd, uhw_vt, ub4i,
  sysutils; // for format
 
 const pgsz = 16 * 8; { should be multiple of 8 to come out even }
@@ -24,7 +24,7 @@ procedure wv(k: string; v:value); { write value }
 
 
 procedure draw_help(x,y : byte);
-  begin gotoxy(x,y); write('keys. (0)top (I)P (s)tep (o)ver, (r)un, to (c)ursor, (q)uit ')
+  begin gotoxy(x,y); write('keys: (0)top, i(p), (s)tep (o)ver, (r)un, to (c)ursor, (q)uit, b4(i)')
   end;
 
 procedure dump_dict;
@@ -98,9 +98,8 @@ procedure dump;
     end;
     { for ui debugging, draw line numbers on the right: }
     bg('K'); fg('k'); for i := 0 to 24 do begin gotoxy(xMax-1,i); write(i:2) end;
-    gotoxy(0,24); for i := 1 to 8 do write(i*10:10);
     { help text }
-    draw_help(0, 24);
+    draw_help(0, 24); clreol;
     { restore cursor position and color so we don't break the vm }
     gotoxy(x,y); textattr := oldattr;
   end;
@@ -118,7 +117,44 @@ function step_over: boolean;
     inc(rg[RED], skip);
   end;
 
-var ch: ansichar; pause: boolean = false;
+function readstr:string;
+  // after reassigning input in the main program,
+  // readln no longer echos. weird, but this is
+  // a temporary ui anyway until i migrate over
+  // to kvm.pas in the xpl repo.
+  var c:char=^@;
+  begin
+    result := '';
+    while true do begin
+      c:=readkey;
+      if c in [^J,^M] then exit
+      else if c = ^H then begin
+        if length(result)>0 then begin
+          result:=leftstr(result,length(result)-1);
+          gotoxy(wherex-1,wherey); write(' ');
+          gotoxy(wherex-1,wherey);
+        end end
+      else begin
+        result += c;
+        write(c)
+      end
+    end
+  end;
+procedure b4i_loop;
+  var line:string; done:boolean=false;
+  begin
+    clrscr;
+    repeat
+      textattr := $0A;
+      write('b4i> ');
+      textattr := $07;
+      line:=readstr;
+      writeln;
+      done := (line='') or ub4i.b4i(line);
+    until done;
+  end;
+
+var ch: ansichar; pause: boolean = false; oldinput : text;
 begin
   ub4.term := uhw_vt.TB4KVMTerm.Create;
   opli := b4opc('li'); oplb := b4opc('lb');
@@ -126,8 +162,10 @@ begin
   ophp := b4opc('hp'); oph0 := b4opc('h0');
   opcl := b4opc('cl'); opnx := b4opc('nx');
   open('disk.b4'); boot; clrscr;
+  oldinput := input;
   assign(input, '../bios/bios.b4a');
   reset(input); b4as;
+  input := oldinput; reset(input);
   if rg[RGO]<>0 then rg[RIP] := rg[RGO]; { jump to address in @\ (or default=$100) }
   if paramstr(1)='-d' then rg[RDB] := 1;
   while rg[RIP] <= maxheap do begin
@@ -143,7 +181,8 @@ begin
         ^F : inc(rg[RED]);
         ^B : dec(rg[RED]);
         ^V : inc(rg[RED], pgsz);
-        'I': rg[RED] := rg[RIP];
+        ^I : b4i_loop;
+        'P': rg[RED] := rg[RIP];
         'S': pause := false;
         'C': begin pause := false; rg[RBP] := rg[RED] end;
         'O': begin pause := false;
