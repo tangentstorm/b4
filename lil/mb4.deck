@@ -144,8 +144,7 @@ op.c1: on c1 do dput[1] end
 op.rr: on rr r do dput[_ri[r]] end
 op.ir: on ir r do v:_ri[r] t:dpop[] _wi[r v+t] dput[v] end
 op.wr: on wr r do v:dpop[] _wi[r v] end
-# immediately invoke a "dictionary" register
-op.im: on im r do cput[vm.rg[RIP]+1] _goto[_ri[r]] end
+op.er: on er r do cput[vm.rg[RIP]+1] _goto[_ri[r]] end
 
 op.lb: on lb do vm.rg[RIP]:vm.rg[RIP]+1 dput[vm.mem[vm.rg[RIP]]] end
 op.li: on li do dput[_ri[vm.rg[RIP]+1]] vm.rg[RIP]: vm.rg[RIP]+4 end
@@ -263,7 +262,7 @@ mod.step: on step do
   if c in op op[c][]
   elseif c=".." # ok
   else r:reg[c[1]]
-    if c[0]="^" op.im[r]
+    if c[0]="^" op.er[r]
     elseif c[0]="@" op.rr[r]
     elseif c[0]="!" op.wr[r]
     elseif c[0]="+" op.ir[r]
@@ -277,7 +276,7 @@ mod.run: on run do vm.rg[RST]:1 while vm.rg[RST]=1 step[] end end
 mod.runToEnd: on runToEnd di do
   vm.rg[RST]: 1
   while (vm.rg[RST]=1) & (!vm.mem[vm.rg[RIP]]=RT) step[] end step[]
-  vm.rg[RIP]: vm.rg[RIP]+di # so op.im can not inc ip
+  vm.rg[RIP]: vm.rg[RIP]+di # so op.er can not inc ip
 end
 
 mod.showMem: on showMem a do " " fuse dis @ vm.mem @ a + range 16 end
