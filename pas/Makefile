@@ -16,7 +16,7 @@ run: always b4
 runi: b4i
 	./b4i
 
-b4i: b4 b4i.pas
+b4i: b4 b4i.pas ub4i.pas
 	$(FPC) -B b4i.pas
 
 b4: b4.pas ub4asm.pas ub4.pas ub4ops.pas uhw.pas uhw_vt.pas
