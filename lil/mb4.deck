@@ -135,16 +135,14 @@ op.dc: on dc do t:dpop[] cput[t] end
 op.cd: on cd do t:cpop[] dput[t] end
 
 
-on rb do dput[vm.mem[dpop[]]] end
-on ri do dput[_ri[dpop[]]] end
-on wb do vm.mem[dpop[]]: dpop[] end
-on wi do a:dpop[] v:dpop[] _wi[a v] end
-op.rv: ri
-op.wv: wi
-op.vb: on vb do vm.rg[RVW]:1  op.rv:rb  op.wv:wb end
-op.vi: on vi do vm.rg[RVW]:4  op.rv:ri  op.wv:wi end
+op.rb: on rb do dput[vm.mem[dpop[]]] end
+op.ri: on ri do dput[_ri[dpop[]]] end
+op.wb: on wb do vm.mem[dpop[]]: dpop[] end
+op.wi: on wi do a:dpop[] v:dpop[] _wi[a v] end
+op.c0: on c0 do dput[0] end
+op.c1: on c1 do dput[1] end
 op.rr: on rr r do dput[_ri[r]] end
-op.ir: on ir r do v:_ri[r] _wi[r v+vm.rg[RVW]] dput[v] end
+op.ir: on ir r do v:_ri[r] t:dpop[] _wi[r v+t] dput[v] end
 op.wr: on wr r do v:dpop[] _wi[r v] end
 # immediately invoke a "dictionary" register
 op.im: on im r do cput[vm.rg[RIP]+1] _goto[_ri[r]] end
@@ -237,10 +235,10 @@ TBL:
 +@ +A +B +C +D +E +F +G +H +I +J +K +L +M +N +O
 +P +Q +R +S +T +U +V +W +X +Y +Z +[ +\\ +] +^ +_
 ad sb ml dv md sh an or xr nt eq lt du sw ov zp
-dc cd rv wv lb li jm hp h0 cl rt nx 9C 9D 9E 9F
+dc cd rb ri wb wi lb li 98 99 jm hp h0 cl rt nx
 A0 A1 A2 A3 A4 A5 A6 A7 A8 A9 AA AB AC AD AE AF
 B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 BA BB BC BD tm cv
-vb vi C2 C3 C4 C5 C6 C7 C8 C9 CA CB CC CD CE CF
+c0 c1 C2 C3 C4 C5 C6 C7 C8 C9 CA CB CC CD CE CF
 D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 DA DB DC DD DE DF
 E0 E1 E2 E3 E4 E5 E6 E7 E8 E9 EA EB EC ED EE EF
 F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 FA FB FC io db hl"
