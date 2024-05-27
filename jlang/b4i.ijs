@@ -21,10 +21,22 @@ hexstr =: toupper@{{ if. y<0 do. '-',hfd -y else. hfd y end. }}
 stackstr =: ' ' joinstring toupper @ hexstr &.>
 asm =: {{
   if. (#ops__vm) > ix=.(<y) i.~ ops__vm do. OPCODE + ix
+  elseif. (2=#y) *.''''=0{y do.          ord 1{y
+  elseif. (2=#y) *. '^'=0{y do.      rgn__vm 1{y
+  elseif. (2=#y) *. '@'=0{y do. 32 + rgn__vm 1{y
+  elseif. (2=#y) *. '!'=0{y do. 64 + rgn__vm 1{y
+  elseif. (2=#y) *. '+'=0{y do. 96 + rgn__vm 1{y
   else. ihx y
   end. }}
-putmem =: {{ NB. decode str with ':addr bytes' and store in ram
-  'addr bytes' =. ({.;}.) asm &> ' 'splitstring y
+HERE=:rgn__vm'_'
+putmem =: {{ NB. decode str like 'addr bytes' and store in ram
+  'addr ops' =. ({.;<@}.) ' 'splitstring y
+  if. 1=#s=.>addr do.
+    addr=.rget__vm HERE
+    addr rset__vm r=.rgn__vm 0{s
+    (addr+#ops) rset__vm HERE
+  else. addr=.ihx>addr end.
+  bytes =. asm &> ops
   M__vm =: (bytes{a.) (addr+i.#bytes) } M__vm }}
 dis =: {{ NB. disassemble bytes to b4 assembly language
   if. y = 0 do. '..'
@@ -38,14 +50,15 @@ memstr =: {{ , ' ',.~ dis"0 a.i. (y+i.16) { M__vm  }}
 showmem =: echo@memstr
 
 main =: {{
-  P__vm =: 16b100
+  (rgn__vm'_') rset__vm~ P__vm =: 16b100 [ done=:0
   while. 1 do.
     line=:readln''
-    if. ':'=0{line do. putmem }.line
+    if. ''-:line do.
+    elseif.':'=0{line do. putmem }.line
     else. for_tok. ' 'splitstring line do.
       select. tok=.>tok
       case. ''   do.
-      case. '%q' do. exit''
+      case. '%q' do. done=:1
       case. '%s' do. step''
       case. '%C' do. create__vm'' NB. clear everything
       case. '?d' do. echo 'ds: [', (stackstr D__vm), ']'
@@ -56,21 +69,25 @@ main =: {{
       case. do.
         if. isop tok do. runop tok continue. end.
         select. 0{tok
-        case. '!' do. wr__vm _64 + ord 1{tok
-        case. '@' do. rr__vm _64 + ord 1{tok
-        case. '+' do. ir__vm _64 + ord 1{tok
+        case. '^' do. imr__vm rgn__vm 1{tok
+        case. '!' do. wr__vm rgn__vm 1{tok
+        case. '@' do. rr__vm rgn__vm 1{tok
+        case. '+' do. ir__vm rgn__vm 1{tok
         case. ''''do. NB. quote ascii char to push it onto stack
           if. 1=#tok do. dput 32 NB. space
           else. dput ord 1{tok end.
         case. '`' do. dput rega 1{tok
-        case. '?' do. showmem addr }.tok
+        case. '?' do.
+          if. 2=#tok do. echo _8 {. (8$'0'),hfd rget__vm rgn__vm 1{tok
+          else. showmem addr }.tok end.
         case. do.
           if. puthex tok do.
-          else. exit [ echo 'unrecognized token "',tok,'"'
-          end.
-        end.
-      end.
-    end. end.
+          else. exit [ echo 'unrecognized token "',tok,'"' end.
+        end. NB. select 0{tok
+      end. NB. select tok
+    end.end. NB. else/for_tok.
+    if. #O__vm do. O__vm=:'' [ echo O__vm end.
+    if. done do. exit'' end.
   end.}}
 
 doNext 'main _'
