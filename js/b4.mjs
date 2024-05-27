@@ -6,9 +6,11 @@ const
 AD = 128, SB = 129, ML = 130, DV = 131, MD = 132, SH = 133,
 AN = 134, OR = 135, XR = 136, NT = 137, EQ = 138, LT = 139,
 DU = 140, SW = 141, OV = 142, ZP = 143, DC = 144, CD = 145,
-RV = 146, WV = 147, LB = 148, LI = 149, JM = 150, HP = 151,
-H0 = 152, CL = 153, RT = 154, NX = 155, TM = 190, CV = 191,
-VB = 192, VI = 193, IO = 253, DB = 254, HL = 255
+RB = 146, RI = 147, WB = 148, WI = 149, LB = 150, LI = 151,
+JM = 154, HP = 155, H0 = 156, CL = 157, RT = 158, NX = 159,
+TM = 190, CV = 191,
+C0 = 192, C1 = 193,
+IO = 253, DB = 254, HL = 255
 
 // ", " fuse (list "op[%u]='%s'") format select code code from ops
 const op = Array(256)
@@ -16,13 +18,14 @@ op[ 0]='..',
 op[AD]='ad', op[SB]='sb', op[ML]='ml', op[DV]='dv', op[MD]='md', op[SH]='sh',
 op[AN]='an', op[OR]='or', op[XR]='xr', op[NT]='nt', op[EQ]='eq', op[LT]='lt',
 op[DU]='du', op[SW]='sw', op[OV]='ov', op[ZP]='zp', op[DC]='dc', op[CD]='cd',
-op[RV]='rv', op[WV]='wv', op[LB]='lb', op[LI]='li', op[JM]='jm', op[HP]='hp',
-op[H0]='h0', op[CL]='cl', op[RT]='rt', op[NX]='nx', op[TM]='tm', op[CV]='cv',
-op[VB]='vb', op[VI]='vi', op[IO]='io', op[DB]='db', op[HL]='hl'
+op[RB]='rb', op[RI]='ri', op[WB]='wb', op[WI]='wi', op[LB]='lb', op[LI]='li',
+op[JM]='jm', op[HP]='hp', op[H0]='h0', op[CL]='cl', op[RT]='rt', op[NX]='nx',
+op[TM]='tm', op[CV]='cv',
+op[C0]='c0', op[C1]='c1',
+op[IO]='io', op[DB]='db', op[HL]='hl'
 for (let i=1;i<32;i++) {
   let c=String.fromCharCode(64+i);
   op[i]=`^${c}`; op[i+32]=`@${c}`; op[i+64]=`!${c}`; op[i+96]=`+${c}` }
-op[0x7F]='^?'
 
 const REGS="@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 
@@ -90,8 +93,8 @@ export class B4VM {
   wi() { this._wi(this.dpop(), this.dpop()); return this}
 
   wv() { return this.wi() } rv(){ return this.ri() }
-  vb() { this.wv = this.wb; this.rv = this.rb; this.vw = 1 }
-  vi() { this.wv = this.wi; this.rv = this.ri; this.vw = 4 }
+  c0() { return this.dput(0) }
+  c1() { return this.dput(1) }
 
   // control ops
   lb() { this.dput(this.ram[this.ip+++1]); }
@@ -109,7 +112,6 @@ export class B4VM {
 
   step() {
     switch(this.ram[this.ip]){ // TODO: use a map of bound methods instead
-    case LB: this.lb(); break; case LI: thisli(); break
     case DU: this.du(); break; case SW: this.sw(); break
     case OV: this.ov(); break; case ZP: this.zp(); break
     case DC: this.dc(); break; case CD: this.cd(); break
@@ -119,11 +121,13 @@ export class B4VM {
     case AN: this.an(); break; case OR: this.or(); break
     case XR: this.xr(); break; case NT: this.nt(); break
     case EQ: this.eq(); break; case LT: this.lt(); break
+    case RB: this.rb(); break; case RI: this.ri(); break
+    case WB: this.wb(); break; case WI: this.wi(); break
+    case LB: this.lb(); break; case LI: this.li(); break
     case JM: this.jm(); break; case HP: this.hp(); break
     case H0: this.h0(); break; case CL: this.cl(); break
     case RT: this.rt(); break; case NX: this.nx(); break
-    case RV: this.rv(); break; case WV: this.wv(); break
-    case VB: this.vb(); break; case VI: this.vi(); break
+    case C0: this.c0(); break; case C1: this.c1(); break
     case TM: this.tm(); break // todo
     case DB: this.db(); break; case HL: this.hl(); break
     default: break}
