@@ -158,9 +158,9 @@ end
 op.hp: on hp do _hop[] end
 op.h0: on h0 do if dpop[] vm.rg[RIP]:vm.rg[RIP]+1 else _hop[] end end
 op.jm: on jm do _goto[_ri[vm.rg[RIP]+1]] end
-op.cl: on cl do cput[vm.rg[RIP]+4] _goto[_ri[vm.rg[RIP]+1]] end
-op.rt: on rt do if -1=a:cpop[] vm.rg[RST]:0 else _goto[a] end end
-op.nx: on rt do
+op.cl: on cl do cput[vm.rg[RIP]+5] _goto[_ri[vm.rg[RIP]+1]] end
+op.rt: on rt do if !a:cpop[] vm.rg[RST]:0 else _goto[a] end end
+op.nx: on nx do
   if 0<i:cpop[]-1  cput[i] _hop[] else vm.rg[RIP]:vm.rg[RIP]+1 end
 end
 
@@ -286,7 +286,7 @@ on assemble a s do n:count toks:" "split s  vm.mem[a,n]:raze asm@toks n end
 on asm_via hp s do a:_ri[hp]  n:assemble[a s] _wi[hp a+n] end
 
 on im_run a do # immediately run word at address a (for b4i)
-  cput[vm.rg[RIP]] cput[-1] _goto[a+1] run[] ip:cpop[] vm.rg[RIP]:ip
+  cput[vm.rg[RIP]] cput[0] _goto[a+1] run[] ip:cpop[] vm.rg[RIP]:ip
 end
 
 mod.b4i: on b4i line do

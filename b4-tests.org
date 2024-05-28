@@ -465,16 +465,16 @@ ip: 12345678
 
 ** TODO =cl= call
 
-=cl= is the same as =jm= but also pushes the instruction pointer to the call stack.
+=cl= is the same as =jm= but also pushes a return address to the control stack.
 
-Note that the instruction pointer is incremented by 4 first, to skip over the argument.
+Note that the instruction pointer is incremented by 5 first, to skip over the =cl= op itself, plus its 4-byte argument.
 
 #+name: op.cl
 #+begin_src b4a
 > :100 cl 78 56 34 12
 > %s ?i ?c %q
 ip: 12345678
-cs: [104]
+cs: [105]
 #+end_src
 
 ** TODO =rt= return

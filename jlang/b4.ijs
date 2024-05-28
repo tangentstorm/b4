@@ -118,7 +118,7 @@ jm =: pset@<:@mget@inc4         NB. jump to M[P+1 2 3 4]-1
 hp =: pset@<:@(]+sget@>:)@pget  NB. hop to P+M[P+1]-1
 h0 =: incp`hp@.(0-:dpop)        NB. hop if tos==0 else skip addr
 nx =: [: (hp`(incp@cpop))@.(0=ctos) cdec^:(0<ctos) NB. 'next': rtos--?hop:pop
-cl =: jm@([: cput 4 + pget)     NB. call: cput P then jump
+cl =: jm@([: cput 5 + pget)     NB. call: cput P then jump
 rt =: ((0&rset&RST)^:(0&>)]pset)@(cpop-1:)  NB. return
 rt =: {{
   if. 0>a=.<:cpop'' do. 0 rset RST

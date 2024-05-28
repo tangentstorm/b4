@@ -362,8 +362,10 @@ procedure runop(op : byte);
       $9A : {jm} go(rdval(rg[RIP]+1));
       $9B : {hp} hop;
       $9C : {h0} if dpop = 0 then hop else inc(rg[RIP]);
-      $9D : {cl} begin cput(rg[RIP]+4); rg[RIP]:=rdval(rg[RIP]+1)-1 end; { call }
-      $9E : {rt} begin rg[RIP] := cpop-1; if rg[RIP]=-1 then rg[RST]:=0 end;
+      $9D : {cl} begin cput(rg[RIP]+5); go(rdval(rg[RIP]+1)) end; { call }
+      $9E : {rt} begin
+                   rg[RIP]:=cpop-1; { no go() b/c b4i^R cputs 0 but go has min$100 }
+                   if rg[RIP]=-1 then rg[RST]:=0 end;
       $9F : {nx} begin if toc > 0 then begin t:=cpop; dec(t); cput(t) end;
                    if toc = 0 then begin zap(cpop); inc(rg[RIP]) end
                    else hop end;
