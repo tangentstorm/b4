@@ -87,24 +87,31 @@ mod.reset: on reset do
 end
 clear[] reset[]
 
+on fail msg do
+  echo["!!: ", msg]
+  echo[showIp[]]
+  echo[showStack.ds]
+  echo[showStack.cs]
+  panic[msg]
+end
 
 on dpop do
   if 0<i:vm.rg[RDS] r:vm.ds[i-1] vm.rg[RDS]:i-1 r
-  else panic["dpop: underflow"] end end
+  else fail["dpop: underflow"] end end
 on cpop do
   if 0<i:vm.rg[RCS] r:vm.cs[i-1] vm.rg[RCS]:i-1 r
-  else panic["cpop: underflow"] end end
+  else fail["cpop: underflow"] end end
 
 on dget x do
   if 0<i:vm.rg[RDS]-x vm.ds[i-1]
-  else panic["dget: underflow"] end end
+  else fail["dget: underflow"] end end
 on dtos do dget[0] end
 on dput x do
   if vm.rg[RDZ]>i:vm.rg[RDS] vm.ds[i]:x vm.rg[RDS]:i+1
-  else panic["dput: overflow"] end end
+  else fail["dput: overflow"] end end
 on cput x do
   if vm.rg[RCZ]>i:vm.rg[RCS] vm.cs[i]:x vm.rg[RCS]:i+1
-  else panic["cput: overflow"] end end
+  else fail["cput: overflow"] end end
 
 on dpop2 do r:dpop[] dpop[],r end
 mod.showStack: on showStack xs do
@@ -199,7 +206,7 @@ end
 mod.tm:0
 op.tm: on tm do
   if mod.tm mod.tm.op["%a" format dpop[]][]
-  else panic["tm: no terminal device!"] end
+  else fail["tm: no terminal device!"] end
 end
 
 
