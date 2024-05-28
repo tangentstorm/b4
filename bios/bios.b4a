@@ -14,17 +14,18 @@
 :tc lb 'p tm rt # (-xy) fetch cursor position
 
 :X dc rt             # (f-?) execute f by pushing to ctrl stack and "returning"
-:nz? lb 00 eq nt rt                 # (x-0|1) was x non-zero?
+:n1 c0 nt rt                        # n1: negative 1
+:nz? c0 eq nt rt                    # (x-0|1) was x non-zero?
 
 .^ 04 'e'-'n'm
   :e-nm lb 04 ad rt                  # (e-s) address of name relative to entry
 .^ 04 'e'-'x't
-  :e-xt e-nm du rb lb 01 ad ad rt        # (e-a) address of code for entry "execution token"
+  :e-xt e-nm du rb c1 ad ad rt        # (e-a) address of code for entry "execution token"
 
 .^ 03 'i'n'c
-  :inc  lb 01 ad rt
+  :inc c1 ad rt
 .^ 03 'd'e'c
-  :dec  lb 01 sb rt
+  :dec c1 sb rt
 .^ 04 'f'i'n'd
   :find                               # (s - 0|e) find s in dictionary
   @T dc !T @^                       # (s - e :-T)
@@ -38,14 +39,14 @@
 
 :s-eq?-main                         # -- python translation:
    @S @T eq .i                      # if s is t:
-      lb 01 rt .t                   #    return 1
+      n1 rt .t                      #    return -1
    c1 +S rb @T rb eq .i             # if len(s) == len(t):
       c1 +T rb .f                   #    for s,t
          c1 +S rb c1 +T rb          #    in zip(s,t):
          eq nt .i                   #       if s!=t:
             c0 rt .t .n             #          return 0
    .e c0 rt .t                      # else: return 0
-   c1 rt                            # return 1
+   n1 rt                            # return -1
 
 # !! This is experiment in style. I plan to make a nice syntax
 #    for this register capture/restore behavior.
@@ -67,8 +68,6 @@
 :between?                          # (x hi lo - x f)
   du dc lt nt                      # (x <=hi? |lo)  (x<=y is -.(y>x))
   ov cd sw lt nt an rt             # (x f)
-
-:n1 lb 00 nt rt                    # TODO: better way to write "-1"
 
   :sp lb 20 ^E rt                    # emit space
 :nl lb 0A ^E lb 0D ^E rt           # emit CRLF
@@ -97,22 +96,19 @@
   :unkno-s 0D 'u'n'k'n'o'w'n' 'w'o'r'd'.
 :unknown
   lb 08 ta sp li `unkno-s puts nl rt
-  # reading/writing numbers
-
-:base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
+  :base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
 .^ 04 'p'u't'n
   :putn # (n - )
   hx rt
-  du lb 00 eq .i lb '0 tw rt
-  .e lb 00 sw                      # ( n-kn) k:digit count=0
-     .w du lb 00 eq nt .d          # while n!=0 do
+  du c0 eq .i lb '0 tw rt
+  .e c0 sw                         # ( n-kn) k:digit count=0
+     .w du nz? .d                  # while n!=0 do
         li `base rb dvm            # (kn-kdm) divmod
         li `digit ad rb dc         # (kdm-kd|c) push char to retn stack
         sw inc sw .o               # k++, d is new n
       zp                           # (kd-k)
       .f cd cd tw dc .n .t         # loop through the characters
   rt
-
   :digit?                            # (c-d1) or (c-0)
  du lb '0 lb '9 between? .i
     zp lb '0 sb n1
@@ -177,9 +173,9 @@
    rt
 
 :repl
-   .w lb 01 .d
+   .w c1 .d
       eol?
-      .i eol0 lb 00 @B wb @B inc !C b4> .t  # show prompt if new line
+      .i eol0 c0 @B wb @B inc !C b4> .t  # show prompt if new line
       tr on-key                     # read char from terminal
    .o
 
