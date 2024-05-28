@@ -312,6 +312,7 @@ ds: [12345678]
   > %s ?d ?X # @X
   ds: [12 12 13]
   00000013
+  > %q
 #+end_src
 
 
@@ -332,7 +333,7 @@ ds: [11223344 11223348 1122334A]
 
 #+name: op.c0-c1
 #+begin_src b4a
-  > c0 c1 ?d
+  > c0 c1 ?d %q
   ds: [0 1]
 #+end_src
 
@@ -574,7 +575,7 @@ hi
   > :E lb 'e io rt    # assemble "emit"
   > ?E                # now ^E should be assigned
   00000100
-  > ?_                # and ^_ should reflect the 4 bytes we assembled
+  > ?_ %q             # and ^_ should reflect the 4 bytes we assembled
   00000104
 #+end_src
 
