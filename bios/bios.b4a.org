@@ -105,6 +105,7 @@ Entries in the dictionary are records with several fields:
         c1 +T rb .f                   #    for s,t
            c1 +S rb c1 +T rb          #    in zip(s,t):
            eq nt .i                   #       if s!=t:
+              cd zp                   #          <drop internal loop counter>
               c0 rt .t .n             #          return 0
      .e c0 rt .t                      # else: return 0
      n1 rt                            # return -1
