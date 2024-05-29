@@ -36,7 +36,7 @@ RCS:pr[] # cs height
 RCZ:pr[] # cs size (max height)
 RST:pr[] # state flag
 RDB:pr[] # debug flag
-RVW:pr[] # value width (1=byte 4=int)
+RED:pr[] # "edit pointer" (used by memory browsing ui)
 if p>64 panic["too many registers!"] end
 
 PAGE:4096
@@ -76,6 +76,7 @@ mod.clear: on clear do
   vm:new[]
   mod.wi[HERE 256]
   labels:()dict()
+  vm.ob:()
 end
 mod.reset: on reset do
   vm.rg[RIP]:256
@@ -83,7 +84,6 @@ mod.reset: on reset do
   vm.rg[RCS]:0
   vm.rg[RVW]:4
   vm.rg[RST]:0
-  vm.ob: ()
 end
 clear[] reset[]
 
@@ -409,8 +409,10 @@ mod.set_tm: on set_tm tm do mod.tm: tm end
 mod.set_echo: on set_echo fn do mod.echo: fn end
 mod.TBL: TBL
 mod.get_vm:on get_vm do vm end
-mod.get_ip:on get_ip do vm.rg[RIP] end
-mod.set_ip:on set_ip a do vm.rg[RIP]:a end
+mod.get_ip:on get_ip do vm.rg[RIP] end  mod.set_ip:on set_ip a do vm.rg[RIP]:a end
+mod.get_ed:on get_ed do vm.rg[RED] end  mod.set_ed:on set_ed a do vm.rg[RED]:a end
+mod.get_st:on get_st do vm.rg[RST] end  mod.set_st:on set_st a do vm.rg[RST]:a end
+mod.get_db:on get_db do vm.rg[RDB] end  mod.set_db:on set_db a do vm.rg[RDB]:a end
 mod.exit:exit # but this is probably not defined yet
 mod.set_exit: on set_exit f do mod.exit:f end
 {end}
