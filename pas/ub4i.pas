@@ -81,6 +81,16 @@ begin
   if isHere then rg^[RHP]:=a+i;
 end;
 
+procedure ShowRegs;
+var r:char; i:byte=0;
+begin
+  for r in '@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_' do begin
+    Write('  ',r,': ',format('%.8x', [rg^[regn(r)]]));
+    inc(i); if 0=i mod 4 then writeln;
+  end
+end;
+
+
 procedure help;
 begin
   writeln('-- b4i: interactive interpreter for b4 virtual machine');
@@ -124,6 +134,7 @@ begin
       '?d' : WriteStack('ds: ', ds, rg^[RDS]);
       '?c' : WriteStack('cs: ', cs, rg^[RCS]);
       '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
+      '?r' : ShowRegs;
     else case tok[1] of
       '''' : if length(tok)=1 then dput(32) // space
              else dput(ord(tok[2])); // char literals
