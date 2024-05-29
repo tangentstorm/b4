@@ -35,7 +35,7 @@ So we call that ^X for execute.
 
 #+name: ^X
 #+begin_src b4a
-:X dc rt             # (f-?) execute f by pushing to ctrl stack and "returning"
+  :X dc rt             # (f-?) execute f by pushing to ctrl stack and "returning"
 #+end_src
 
 * word lists
@@ -180,11 +180,10 @@ At runtime, we need to initialize some variables:
 
 #+name: main
 #+begin_src b4a
-    :\ # start of execution.
-    # show word list and enter repl.
-    lb 0E ta
-    li `words$ e-nm puts lb ': tw sp lb 07 ta words nl
-    repl
+  :\ # start of execution.
+  # show word list and enter repl.
+  lb 0E ta li `words$ e-nm puts lb ': tw sp lb 07 ta words nl
+  repl
 #+end_src
 
 * text i/o
@@ -202,47 +201,45 @@ At runtime, we need to initialize some variables:
     cd !S rt
 #+end_src
 
-#+name: putn/base
+*  numerals
+#+name: base/digits
 #+begin_src b4a
-  :base 10 :digit  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
+  :base 10 :digits  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
 #+end_src
 
 #+name: putn
 #+begin_src b4a
   :putn # (n - )
-    hx rt
     du c0 eq .i lb '0 tw rt
     .e c0 sw                         # ( n-kn) k:digit count=0
        .w du nz? .d                  # while n!=0 do
           li `base rb dvm            # (kn-kdm) divmod
-          li `digit ad rb dc         # (kdm-kd|c) push char to retn stack
+          li `digits ad rb dc        # (kdm-kd|c) push char to retn stack
           sw inc sw .o               # k++, d is new n
         zp                           # (kd-k)
         .f cd cd tw dc .n .t         # loop through the characters
     rt
 #+end_src
 
-
 #+name: try-num
 #+begin_src b4a
   :digit?                            # (c-d1) or (c-0)
-   du lb '0 lb '9 between? .i
-      zp lb '0 sb n1
-   .e zp lb 00 .t
-   rt
+     du lb '0 lb ': between? .i
+        lb '0 sb c1 rt .t
+     du lb 'A lb 'G between? .i
+        lb 'A sb lb 0A ad c1 rt .t
+     zp c0 rt
 
   :try-num                           # (s-n) try to parse string as number
-    du rb dc                         # (s    - s|i) a=addr of string
-    lb 00                            # (s|i  - sr|i) r=0
-    cd .f dc inc du rb               # (ar|i - ac|ri) a=addr of char, c=char
-       digit? .i
-          cd lb 0A ml ad dc          #  r= r*10+d
-       .e unknown
-          zp cd zp cd zp rt .t       # drop result and return
-       cd                            # (p|ri - pr|i) so next can do its thing
+    !S c0 !R
+    c1 +S rb .f
+       c1 +S rb digit?
+          .i @R li `base rb ml ad !R
+          .e unknown
+             cd zp  # drop loop counter
+             rt .t
     .n
-    sw zp rt                         # (pr-r)
-
+    @R rt                         # (pr-r)
 #+end_src
 
 * the repl
@@ -268,7 +265,7 @@ At runtime, we need to initialize some variables:
      @B find
      du nz?
         .i exec
-        .e try-num .t
+        .e zp @B try-num .t
      rt
 
   :@ :on-ascii              # can't call ^@ directly. 00=no-op
@@ -323,9 +320,9 @@ At runtime, we need to initialize some variables:
 ** repl: unknown word
 #+name: unknown
 #+begin_src b4a
-:unkno-s 0D 'u'n'k'n'o'w'n' 'w'o'r'd'.
-:unknown
-  lb 08 ta sp li `unkno-s puts nl rt
+  :unkno-s 0D 'u'n'k'n'o'w'n' 'w'o'r'd'.
+  :unknown
+    lb 08 ta sp li `unkno-s puts nl rt
 #+end_src
 
 * math library
@@ -343,15 +340,13 @@ At runtime, we need to initialize some variables:
 ** private words
 #+name: b4-math
 #+begin_src b4a
+  :dvm  # n d
+     ov ov md      # (xy-xy|m)
+     dc dv cd rt   # (xy|m-dm|)
 
-:dvm  # n d
-  ov ov md      # (xy-xy|m)
-  dc dv cd rt   # (xy|m-dm|)
-
-:between?                          # (x hi lo - x f)
-  du dc lt nt                      # (x <=hi? |lo)  (x<=y is -.(y>x))
-  ov cd sw lt nt an rt             # (x f)
-
+  :between?        # (xlh-?)
+     # -xl:xh    -?:xh    -??         -?
+     dc ov dc     lt nt    cd cd lt   an rt
 #+end_src
 
 
@@ -392,7 +387,7 @@ At runtime, we need to initialize some variables:
   :words$ .^ 05 'w'o'r'd's
     <<words>>
     <<unknown>>
-    <<putn/base>>
+    <<base/digits>>
   .^ 04 'p'u't'n
     <<putn>>
     <<try-num>>
