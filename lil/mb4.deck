@@ -127,7 +127,7 @@ op.ml: on ml do dput[dpop[] * dpop[]] end
 op.sb: on sb do y:dpop[] dput[dpop[]-y] end
 op.dv: on dv do y:dpop[] dput[floor dpop[]/y] end
 op.md: on md do dput[dpop[] % dpop[]] end # !!
-op.sh: on sh do y:2^dpop[] dput[dpop[]*y] end
+op.sh: on sh do y:2^dpop[] dput[floor dpop[]*y] end
 op.an: on an do dput[bits.and[dpop[] dpop[]]] end
 op.or: on or do dput[bits.or[dpop[] dpop[]]] end
 op.xr: on xr do dput[bits.xor[dpop[] dpop[]]] end
@@ -155,6 +155,11 @@ op.er: on er r do cput[vm.rg[RIP]+1] _goto[_ri[r]] end
 
 op.lb: on lb do vm.rg[RIP]:vm.rg[RIP]+1 dput[vm.mem[vm.rg[RIP]]] end
 op.li: on li do dput[_ri[vm.rg[RIP]+1]] vm.rg[RIP]: vm.rg[RIP]+4 end
+
+# signed bytes
+on short b do if b > 127 b-256 else b end end
+op.ls: on ls do vm.rg[RIP]:vm.rg[RIP]+1 dput[short[vm.mem[vm.rg[RIP]]]] end
+op.rs: on rs do dput[short[vm.mem[dpop[]]]] end
 
 mod.goto: on _goto a do vm.rg[RIP]:(max 256,a)-1 end
 on _hop do
@@ -241,7 +246,7 @@ TBL:
 +@ +A +B +C +D +E +F +G +H +I +J +K +L +M +N +O
 +P +Q +R +S +T +U +V +W +X +Y +Z +[ +\\ +] +^ +_
 ad sb ml dv md sh an or xr nt eq lt du sw ov zp
-dc cd rb ri wb wi lb li 98 99 jm hp h0 cl rt nx
+dc cd rb ri wb wi lb li rs ls jm hp h0 cl rt nx
 A0 A1 A2 A3 A4 A5 A6 A7 A8 A9 AA AB AC AD AE AF
 B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 BA BB BC BD tm cv
 c0 c1 C2 C3 C4 C5 C6 C7 C8 C9 CA CB CC CD CE CF
@@ -326,8 +331,16 @@ mod.b4i: on b4i line do
       elseif tok="?c" echo[showStack["cs"]]
       else hex: "?%[q].1oa%[a]H%[m]z" parse tok
         if hex.m echo[(if hex.q showMemA else showMem end)[hex.a]]
+        elseif (nm:1 drop tok) in labels
+          echo[":%04h %s" format labels[nm],showMem[labels[nm]]]
         else echo["?.no: ",tok] end
       end
+    elseif t="$"
+      if (nm:1 drop tok) in labels
+        on ei x do a:hr[] _wi[a x] _wi[hp a+4] end        # ei: "emit int"
+        v:labels[nm]
+        if state=ASM ei[v] else dput[v] end
+      else echo["$.no: ",tok] end
     elseif t=":"
       state:ASM hp:HERE c:tok[1]
       if tok="::" # ok
@@ -377,8 +390,8 @@ on macro hp c do
   on hr do _ri[hp] end                              # hr: "here"
   on hh do to[hr[]] end                             # hh: "hop here"
   on bk do dist:dpop[]-hr[] eb[dist+1] end          # bk: "back"
-  on eb x do a:hr[] vm.mem[a]:x _wi[hp a+1] end     # em: "emit byte"
-  on ei x do a:hr[] _wi[a x] _wi[hp a+4] end        # em: "emit int"
+  on eb x do a:hr[] vm.mem[a]:x _wi[hp a+1] end     # eb: "emit byte"
+  on ei x do a:hr[] _wi[a x] _wi[hp a+4] end        # ei: "emit int"
   if     c="." a[".."]
   elseif c="_" dput[hr[]] a[".."]  # emit 0, leaving address on stack
   # -- if/else/then:  cond .i if-body .e el-body .t
