@@ -297,7 +297,7 @@ mod.showIp: on showIp do "ip: %02H" format vm.rg[RIP] end
 on assemble a s do n:count toks:" "split s  vm.mem[a,n]:raze asm@toks n end
 on asm_via hp s do a:_ri[hp]  n:assemble[a s] _wi[hp a+n] end
 
-on im_run a do # immediately run word at address a (for b4i)
+mod.exec: on im_run a do # immediately run word at address a (for b4i)
   cput[vm.rg[RIP]] cput[0] _goto[a+1] run[] ip:cpop[] vm.rg[RIP]:ip
 end
 
@@ -309,6 +309,8 @@ mod.b4i: on b4i line do
     if (state=CMT) | (t="#") state:CMT
     elseif regop[tok] r:reg[c:tok[1]]
       if t="?" echo["%08H" format _ri[r]]
+      elseif t=":" state:ASM _wi[r _ri[hp]]
+        if c="\\" _goto[_gr["\\"]+1] end
       elseif state=ASM
         asm_via[hp if t="`" "lb ^%s" format c else tok end]
       elseif t="`" dput[r]
@@ -316,7 +318,6 @@ mod.b4i: on b4i line do
       elseif t="@" op.rr[r]
       elseif t="+" op.ir[r]
       elseif t="^" im_run[_ri[r]]
-      elseif t=":" state:ASM _wi[r _ri[hp]]
       else echo["regop.no: ",tok] end
     elseif t="%"
       if     tok="%q" quit:1 stote:CMT
@@ -324,6 +325,7 @@ mod.b4i: on b4i line do
       elseif tok="%C" clear[]
       elseif tok="%s" step[]
       elseif tok="%e" runToEnd[]
+      elseif tok="%\\" _goto[_gr["\\"]+1]
       else echo["%.no: ",tok] end
     elseif t="?"
       if tok="?i" echo[showIp[]]
@@ -337,9 +339,9 @@ mod.b4i: on b4i line do
       end
     elseif t="$"
       if (nm:1 drop tok) in labels
-        on ei x do a:hr[] _wi[a x] _wi[hp a+4] end        # ei: "emit int"
-        v:labels[nm]
-        if state=ASM ei[v] else dput[v] end
+        v:labels[nm] if state=ASM
+          a:_ri[hp] _wi[a v] _wi[hp a+4] # !!same as 'ei[v]' in `macro`
+        else dput[v] end
       else echo["$.no: ",tok] end
     elseif t=":"
       state:ASM hp:HERE c:tok[1]
