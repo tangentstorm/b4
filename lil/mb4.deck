@@ -348,7 +348,7 @@ mod.b4i: on b4i line do
       if tok="::" # ok
       elseif 2=count tok echo[":.no: ", tok] # because it's 2 chars but not regop
       elseif tok=":" echo["no: :"]
-      elseif (hex: ":%[a]H%[m]z" parse tok).m _wi[hp:THERE hex.a]
+      elseif isHex[a:1 drop tok]  _wi[hp:THERE unHex[a]]
       else labels[1 drop tok]: _ri[hp] end
     elseif t="'"
       v: if tok="'" 32 else ord[tok[1]] end
