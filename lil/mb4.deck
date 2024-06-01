@@ -364,12 +364,16 @@ mod.b4i: on b4i line do
       if state=ASM asm_via[hp tok] else dput[unHex[tok]] end
     elseif tok in labels a:labels[tok]
       if state=ASM asm_call[hp a] else im_run[a] end
-    elseif (t="`") & (k:1 drop tok) in labels
-      if state=ASM asm_int[hp labels[k]] else dput[labels[k]] end
-    elseif (t="@") & (k:1 drop tok) in labels
-      if state=ASM asm_get[hp labels[k]] else dput[labels[k]] op.rv[] end
-    elseif (t="!") & (k:1 drop tok) in labels
-      if state=ASM asm_set[hp labels[k]] else dput[labels[k]] op.wv[] end
+    elseif (t in "`@!+") & (k:1 drop tok) in labels  lk:labels[k]
+      if t="`"
+        if state=ASM asm_int[hp lk] else dput[lk] end
+      elseif t="@"
+        if state=ASM asm_get[hp lk] else dput[lk] op.ri[] end
+      elseif t="!"
+        if state=ASM asm_set[hp lk] else dput[lk] op.wi[] end
+      elseif t="+"
+        if state=ASM asm_inc[hp lk] else echo["nyi: +label"] end
+      end
     else echo["no: %s" format tok] end
   end
   if vm.ob echo[vm.ob] vm.ob:() end
@@ -377,8 +381,11 @@ mod.b4i: on b4i line do
 end
 
 on asm_int hp i do a:_ri[hp] _wi[a i] _wi[hp a+4] end
-on asm_get hp i do asm_via[hp "lb"] asm_int[hp a] asm_via[hp "rv"] end
-on asm_set hp i do asm_via[hp "lb"] asm_int[hp a] asm_via[hp "wv"] end
+on asm_get hp a do asm_via[hp "li"] asm_int[hp a] asm_via[hp "ri"] end
+on asm_set hp a do asm_via[hp "li"] asm_int[hp a] asm_via[hp "wi"] end
+on asm_inc hp a do asm_via[hp "li"] asm_int[hp a]
+   # (d)elta,(a)ddr = da -> ada      > adv|v   > aV|v  > v
+   asm_via[hp               "sw ov   ri du dc    ad    sw wi cd"] end
 on asm_call hp a do asm_via[hp "cl"] asm_int[hp a] end
 
 on macro hp c do
