@@ -7,6 +7,7 @@ AD = 128, SB = 129, ML = 130, DV = 131, MD = 132, SH = 133,
 AN = 134, OR = 135, XR = 136, NT = 137, EQ = 138, LT = 139,
 DU = 140, SW = 141, OV = 142, ZP = 143, DC = 144, CD = 145,
 RB = 146, RI = 147, WB = 148, WI = 149, LB = 150, LI = 151,
+RS = 152, LS = 153,
 JM = 154, HP = 155, H0 = 156, CL = 157, RT = 158, NX = 159,
 TM = 190, CV = 191,
 C0 = 192, C1 = 193,
@@ -19,6 +20,7 @@ op[AD]='ad', op[SB]='sb', op[ML]='ml', op[DV]='dv', op[MD]='md', op[SH]='sh',
 op[AN]='an', op[OR]='or', op[XR]='xr', op[NT]='nt', op[EQ]='eq', op[LT]='lt',
 op[DU]='du', op[SW]='sw', op[OV]='ov', op[ZP]='zp', op[DC]='dc', op[CD]='cd',
 op[RB]='rb', op[RI]='ri', op[WB]='wb', op[WI]='wi', op[LB]='lb', op[LI]='li',
+op[RS]='rs', op[LS]='ls',
 op[JM]='jm', op[HP]='hp', op[H0]='h0', op[CL]='cl', op[RT]='rt', op[NX]='nx',
 op[TM]='tm', op[CV]='cv',
 op[C0]='c0', op[C1]='c1',
@@ -30,7 +32,9 @@ for (let i=1;i<32;i++) {
 const REGS="@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 
 // helper routines
-const hex=b=>b.toString(16,0).toUpperCase()
+const hex=(b)=>b.toString(16,0).toUpperCase()
+const hexp=(b,w)=>hex(b).padStart(w,'0')
+
 
 
 export class B4VM {
@@ -39,7 +43,10 @@ export class B4VM {
     this.cs = []
     this.ds = []
     this.vw = 4
+    this.st = 0
     this.ram = new Uint8Array(4096).fill(0)
+    this.ob = [] // output buffer
+    this._wi(this.rega("_"), 0x100)
     this.out = console.log }
   reset() {
     this.ip = 0x100; this.vw = 4;
@@ -52,7 +59,7 @@ export class B4VM {
   ctos() { return this.cs[this.cs.length-1]}
   cpop() { return this.cs.pop() }
   dput(x) { this.ds.push(x); return this }
-  cput(x) { this.cs.push(x) }
+  cput(x) { this.cs.push(x); return this }
   peek(a,len) {
     let res = []
     for (let i=0; i<len; i++) res.push(this.dis(this.ram[a++]))
@@ -104,33 +111,51 @@ export class B4VM {
   hp() { this._go(this.ip+this._i8(this.ip+1))}
   h0() { if (this.dpop()==0) this.hp(); else this.ip++ }
   jm() { this._go(this._ri(this.ip+1)) }
-  cl() { this.cput(this.ip+4); this.jm() }
-  rt() { this._go(this.cpop()) }
+  cl() { this.cput(this.ip+5); this.jm() }
+  rt() { let a = this.cpop(); if (a) this._go(a); else this.st=0 }
   nx() { if (this.ctos()>0) this.cput(this.cpop()-1)
          if (this.ctos()==0) { this.cpop(); this.ip++ }
          else this.hp() }
 
+  io() {
+    let c=String.fromCharCode(this.dpop()&0x7F)
+    switch (c) {
+    case 'e': this.ob.push(String.fromCharCode(this.dpop())); break
+    default: break }}
+
+  er(r) { this.cput(this.ip+1); this._go(this._ri(r)) }
+  rr(r) { this.dput(this._ri(r)) }
+  wr(r) { this._wi(r, this.dpop()) }
+  ir(r) { let d=this.dpop(), v=this._ri(r); this.dput(v); this._wi(r, v+d) }
+
   step() {
-    switch(this.ram[this.ip]){ // TODO: use a map of bound methods instead
-    case DU: this.du(); break; case SW: this.sw(); break
-    case OV: this.ov(); break; case ZP: this.zp(); break
-    case DC: this.dc(); break; case CD: this.cd(); break
-    case AD: this.ad(); break; case SB: this.sb(); break
-    case ML: this.ml(); break; case DV: this.dv(); break
-    case MD: this.md(); break; case SH: this.sh(); break
-    case AN: this.an(); break; case OR: this.or(); break
-    case XR: this.xr(); break; case NT: this.nt(); break
-    case EQ: this.eq(); break; case LT: this.lt(); break
-    case RB: this.rb(); break; case RI: this.ri(); break
-    case WB: this.wb(); break; case WI: this.wi(); break
-    case LB: this.lb(); break; case LI: this.li(); break
-    case JM: this.jm(); break; case HP: this.hp(); break
-    case H0: this.h0(); break; case CL: this.cl(); break
-    case RT: this.rt(); break; case NX: this.nx(); break
-    case C0: this.c0(); break; case C1: this.c1(); break
-    case TM: this.tm(); break // todo
-    case DB: this.db(); break; case HL: this.hl(); break
-    default: break}
+    let op = this.ram[this.ip];
+    if (op==0) {}
+    else if (op < 0x20) this.er(4*op)
+    else if (op < 0x40) this.rr(4*(op-0x20))
+    else if (op < 0x60) this.wr(4*(op-0x40))
+    else if (op < 0x80) this.ir(4*(op-0x60))
+    else switch(op){ // TODO: use a map of bound methods instead
+      case DU: this.du(); break; case SW: this.sw(); break
+      case OV: this.ov(); break; case ZP: this.zp(); break
+      case DC: this.dc(); break; case CD: this.cd(); break
+      case AD: this.ad(); break; case SB: this.sb(); break
+      case ML: this.ml(); break; case DV: this.dv(); break
+      case MD: this.md(); break; case SH: this.sh(); break
+      case AN: this.an(); break; case OR: this.or(); break
+      case XR: this.xr(); break; case NT: this.nt(); break
+      case EQ: this.eq(); break; case LT: this.lt(); break
+      case RB: this.rb(); break; case RI: this.ri(); break
+      case WB: this.wb(); break; case WI: this.wi(); break
+      case LB: this.lb(); break; case LI: this.li(); break
+      case JM: this.jm(); break; case HP: this.hp(); break
+      case H0: this.h0(); break; case CL: this.cl(); break
+      case RT: this.rt(); break; case NX: this.nx(); break
+      case C0: this.c0(); break; case C1: this.c1(); break
+      case TM: this.tm(); break // todo
+      case IO: this.io(); break;
+      case DB: this.db(); break; case HL: this.hl(); break
+      default: break}
     this.ip++}
 
   asm(x) {
@@ -145,42 +170,59 @@ export class B4VM {
 
   fmtStack(which) {
     return `${which}: [${this[which].map(hex).join(' ')}]` }
-
-  reg(c) { return 4*(c.charCodeAt(0)-64) }
-  rr(r) { this.dput(this._ri(r)) }
-  wr(r) { this._wi(r, this.dpop()) }
+  rega(c) { return 4*(c.charCodeAt(0)-64) }
+  isRegLabel(x) { return x.length==2 && x[0]==':' && REGS.includes(x[1]) }
+  regHere(x) { let a=this._ri(this.rega("_")); this._wi(this.rega(x),a); return a }
 
+  imrun(a) {
+    this.st=1; this.cput(this.ip); this.cput(0); this.ip=a;
+    while (this.st) this.step()
+    this.ip = this.cpop()}
+
+
   b4i(line) {
+    let done =0;
     if (line.startsWith(':')) {
-      let [a0,...xs] = line.split(/\s+/)
-      let a = parseInt(a0.slice(1), 16)
-      for (let x of xs) { this.ram[a++]=this.asm(x) }
+      let a0,[x0,...xs] = line.split(/\s+/)
+      let a=a0=this.isRegLabel(x0) ? this.regHere(x0[1]) : parseInt(x0.slice(1), 16)
+      for (let x of xs) {
+        if (x[0]=="'") for (let c of x.slice(1).split("'")) {
+          this.ram[a++]=c.codePointAt(0)}
+        else if (this.isRegLabel(x)) this.regHere(x[1])
+        else this.ram[a++]=this.asm(x) }
+      this.dput(a-a0); this.ir(this.rega("_")); this.dpop() // update "HERE" pointer
       return }
     else for (let tok of line.split(' ')) {
+      if (done) break;
       switch (tok) {
       case '?c': this.out(this.fmtStack('cs')); break;
       case '?d': this.out(this.fmtStack('ds')); break;
       case '?i': this.out(`ip: ${hex(this.ip)}`); break;
-      case '%q': process.exit(1); break;
+      case '%q': done=1; break;
       case '%s': this.step(); break;
       case '%C': ; break;
       default:
         if (tok.match(/^[0-9A-F]+$/)){
           this.ds.push(parseInt(tok,16))}
         else if (tok[0]=="'") {
-          if (tok.length==2) this.ds.push(tok[1].charCodeAt(0))
-          else if (tok.length==1) this.ds.push(32)
+          if (tok.length==2) this.dput(tok[1].charCodeAt(0))
+          else if (tok.length==1) this.dput(32)
           else this.out(`unknown command: ${tok}\n`)}
         else if (tok.length==2 && REGS.includes(tok[1])) {
-          let r = this.reg(tok[1]); switch(tok[0]) {
+          let r = this.rega(tok[1]); switch(tok[0]) {
+            case "?": this.out(hexp(this._ri(r),8)); break;
             case "`": this.dput(r); break;
+            case "^": this.imrun(this._ri(r)); break;
             case "@": this.rr(r); break;
             case "!": this.wr(r); break;
-            case "+": this.rr(r); this._wi(r, this.dtos()+this.vw) }}
+            case "+": this.ir(r); break;}}
         else if (tok in this) { this[tok]() }
         else if (tok[0]=="?") {
           this.out(this.peek(parseInt(tok.slice(1),16), 16))  }
-        else this.out(`unknown command: ${tok}\n`)}}} }
+        else this.out(`unknown command: ${tok}\n`)}}
+    if (this.ob.length) { this.out(this.ob.join("")); this.ob=[] }
+    if (done) process.exit(0) }}
+
 
 const vm = new B4VM()
 
