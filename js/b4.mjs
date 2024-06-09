@@ -34,7 +34,7 @@ const REGS="@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 // helper routines
 const hex=(b)=>b.toString(16,0).toUpperCase()
 const hexp=(b,w)=>hex(b).padStart(w,'0')
-
+const isHex=(s)=>s.match(/^[0-9A-F]+$/)
 
 
 export class B4VM {
@@ -50,6 +50,7 @@ export class B4VM {
     this._conb = new Map() // custom op name -> byte
     this._cobn = new Map() // custom op byte -> name
     this._cobf = new Map() // custom op byte -> func
+    this._labels={}
     this.out = console.log; }
   reset() {
     this.ip = 0x100; this.vw = 4;
@@ -185,7 +186,9 @@ export class B4VM {
 
   rega(c) { return 4*(c.charCodeAt(0)-64) }
   isRegLabel(x) { return x.length==2 && x[0]==':' && REGS.includes(x[1]) }
-  regHere(x) { let a=this._ri(this.rega("_")); this._wi(this.rega(x),a); return a }
+  here(){return this._ri(this.rega("_"))}
+  regHere(x) { let a=this.here(); this._wi(this.rega(x),a); return a }
+  labelHere(s) { return this._labels[s]=this.here() }
 
   imrun(a) {
     this.st=1; this.cput(this.ip); this.cput(0); this.ip=a;
@@ -197,16 +200,26 @@ export class B4VM {
     let done =0;
     if (line.startsWith(':')) {
       let a0,[x0,...xs] = line.split(/\s+/)
-      let a=a0=this.isRegLabel(x0) ? this.regHere(x0[1]) : parseInt(x0.slice(1), 16)
+      let a=a0=this.isRegLabel(x0) ? this.regHere(x0[1])
+          : isHex(x0.slice(1)) ? parseInt(x0.slice(1), 16)
+          : this.labelHere(x0.slice(1))
       for (let x of xs) {
         if (x[0]=="'") for (let c of x.slice(1).split("'")) {
           this.ram[a++]=c.codePointAt(0)}
         else if (this.isRegLabel(x)) this.regHere(x[1])
+        else if (x in this._labels) {
+          this.ram[a++]=this.asm('cl')
+          let la=this._labels[x]
+          this.ram[a++]=la&0xFF
+          this.ram[a++]=(la>> 8)&0xFF
+          this.ram[a++]=(la>>16)&0xFF
+          this.ram[a++]=(la>>24)&0xFF}
         else this.ram[a++]=this.asm(x) }
       this.dput(a-a0); this.ir(this.rega("_")); this.dpop() // update "HERE" pointer
       return }
     else for (let tok of line.split(' ')) {
-      if (done) break;
+      if (done) break
+      if (!tok) continue
       switch (tok) {
       case '?c': this.out(this.fmtStack('cs')); break;
       case '?d': this.out(this.fmtStack('ds')); break;
@@ -215,7 +228,7 @@ export class B4VM {
       case '%s': this.step(); break;
       case '%C': ; break;
       default:
-        if (tok.match(/^[0-9A-F]+$/)){
+        if (isHex(tok)){
           this.ds.push(parseInt(tok,16))}
         else if (tok[0]=="'") {
           if (tok.length==2) this.dput(tok[1].charCodeAt(0))
@@ -233,6 +246,7 @@ export class B4VM {
         else if (tok in this._conb) {  this._cobf[this._conb[tok]]() }
         else if (tok[0]=="?") {
           this.out(this.peek(parseInt(tok.slice(1),16), 16))  }
+        else if (tok in this._labels) this.imrun(this._labels[tok])
         else this.out(`unknown command: ${tok}\n`)}}
     if (this.ob.length) { this.out(this.ob.join("")); this.ob=[] }
     if (done) process.exit(0) }}
