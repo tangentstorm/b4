@@ -47,7 +47,10 @@ export class B4VM {
     this.ram = new Uint8Array(4096).fill(0)
     this.ob = [] // output buffer
     this._wi(this.rega("_"), 0x100)
-    this.out = console.log }
+    this._conb = new Map() // custom op name -> byte
+    this._cobn = new Map() // custom op byte -> name
+    this._cobf = new Map() // custom op byte -> func
+    this.out = console.log; }
   reset() {
     this.ip = 0x100; this.vw = 4;
     this.cs=[]; this.ds=[]; this.ram = new Uint8Array(4096).fill(0) }
@@ -122,6 +125,11 @@ export class B4VM {
     switch (c) {
     case 'e': this.ob.push(String.fromCharCode(this.dpop())); break
     default: break }}
+
+  addOp(opbyte, opname, opfunc) {
+    this._conb[opname]=opbyte
+    this._cobn[opbyte]=opname
+    this._cobf[opbyte]=opfunc}
 
   er(r) { this.cput(this.ip+1); this._go(this._ri(r)) }
   rr(r) { this.dput(this._ri(r)) }
@@ -155,21 +163,26 @@ export class B4VM {
       case TM: this.tm(); break // todo
       case IO: this.io(); break;
       case DB: this.db(); break; case HL: this.hl(); break
-      default: break}
+      default:
+      let cof=this._cobf[op]; if (cof) { cof() }}
     this.ip++}
 
   asm(x) {
     if (x.match(/^-?[0-9A-F]+$/)) return parseInt(x,16)
     let res = op.indexOf(x)
-    if (res == -1) throw new Error(`unknown token: ${x}`)
-    else return res }
+    if (res == -1) {
+      res = this._conb[x]
+      if (!res) throw new Error(`unknown token: ${x}`)}
+    return res }
 
   dis(x) {
     //if (x>=32 && x<0x7F) return `'${String.fromCharCode(x)}`
-    return op[x] || x.toString(16,0).padStart(2,'0').toUpperCase() }
+    return op[x] || this._cobn[x] || x.toString(16,0).padStart(2,'0').toUpperCase() }
 
   fmtStack(which) {
     return `${which}: [${this[which].map(hex).join(' ')}]` }
+  fmtIp() { return `ip: ${hex(this.ip)}` }
+
   rega(c) { return 4*(c.charCodeAt(0)-64) }
   isRegLabel(x) { return x.length==2 && x[0]==':' && REGS.includes(x[1]) }
   regHere(x) { let a=this._ri(this.rega("_")); this._wi(this.rega(x),a); return a }
@@ -197,7 +210,7 @@ export class B4VM {
       switch (tok) {
       case '?c': this.out(this.fmtStack('cs')); break;
       case '?d': this.out(this.fmtStack('ds')); break;
-      case '?i': this.out(`ip: ${hex(this.ip)}`); break;
+      case '?i': this.out(this.fmtIp()); break;
       case '%q': done=1; break;
       case '%s': this.step(); break;
       case '%C': ; break;
@@ -217,6 +230,7 @@ export class B4VM {
             case "!": this.wr(r); break;
             case "+": this.ir(r); break;}}
         else if (tok in this) { this[tok]() }
+        else if (tok in this._conb) {  this._cobf[this._conb[tok]]() }
         else if (tok[0]=="?") {
           this.out(this.peek(parseInt(tok.slice(1),16), 16))  }
         else this.out(`unknown command: ${tok}\n`)}}
