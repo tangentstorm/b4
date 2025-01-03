@@ -100,13 +100,11 @@ ds: [100]
 .. .. .. .. .. ^A .. .. ^D ^A .. .. ^H ^A .. ..
 = .^ : linked list
 : creates a linked list in little endian format
-: each node points to the next node
-: The output `.. .. .. .. .. ^A .. .. ^D ^A .. .. ^H ^A .. ..` indicates that the memory is being populated with the addresses of the linked list nodes in little endian format.
-: The first four bytes are empty (0x00).
-: The next four bytes contain the address `0x100` (which is `0x00000100` in little endian format).
-: The next four bytes contain the address `0x104` (which is `0x00000104` in little endian format).
-: The next four bytes contain the address `0x108` (which is `0x00000108` in little endian format).
-: This output shows that the linked list nodes are correctly pointing to the next node's address, but the addresses are being displayed in little endian format, which is why the bytes appear in reverse order.
+: each node points to the previous node's address.
+: The first four bytes are the null value `0x00`,
+: then `0x100` (`00 01 00 00` in little endian format).
+: then `0x104` (`04 01 00 00` in little endian format).
+: then `0x108` (`08 01 00 00` in little endian format).
 #+end_src
 
 * TODO: Additional tests for other macros and interactive commands
@@ -123,4 +121,3 @@ ds: [100]
 = %\ : goto
 : jumps to the address stored in the "@\" register
 ##+end_src
-
