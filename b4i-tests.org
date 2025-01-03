@@ -2,12 +2,9 @@
 
 * About this file
 This file demonstrates the macro and interactive commands.
-Currently these are present only in the lil implementation
-(`mb4.deck`).
-
-* Running the tests
-
-To run these tests, use the b4i interpreter from the `mb4.deck` implementation.
+Currently these interactive features are present only in
+the lil implementation (`mb4.deck`). The macros are also
+available in the pascal version's assembler.
 
 * Macros
 ** .i .e .t (if/else/then)
