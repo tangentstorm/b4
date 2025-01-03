@@ -47,6 +47,21 @@ b
 : the counter is stored on the control stack
 #+end_src
 
+** .^ (linked list)
+#+name: macro.linked-list
+#+begin_src b4a
+> :100 .^ .^ .^ .^
+> ?100 %q
+.. .. .. .. .. ^A .. .. ^D ^A .. .. ^H ^A .. ..
+= .^ : linked list
+: creates a linked list in little endian format
+: each node points to the previous node's address.
+: The first four bytes are the null value `0x00`,
+: then `0x100` (`00 01 00 00` in little endian format).
+: then `0x104` (`04 01 00 00` in little endian format).
+: then `0x108` (`08 01 00 00` in little endian format).
+#+end_src
+
 * Interactive Commands
 ** %R (reset)
 #+name: interactive.reset
@@ -87,21 +102,6 @@ ds: [100]
 ^A ^B ^C ^D +H +E +L +L +O .. .. .. .. .. .. ..
 = ?m : show memory
 : displays the contents of memory starting at the specified address
-#+end_src
-
-** .^ (linked list)
-#+name: macro.linked-list
-#+begin_src b4a
-> :100 .^ .^ .^ .^
-> ?100 %q
-.. .. .. .. .. ^A .. .. ^D ^A .. .. ^H ^A .. ..
-= .^ : linked list
-: creates a linked list in little endian format
-: each node points to the previous node's address.
-: The first four bytes are the null value `0x00`,
-: then `0x100` (`00 01 00 00` in little endian format).
-: then `0x104` (`04 01 00 00` in little endian format).
-: then `0x108` (`08 01 00 00` in little endian format).
 #+end_src
 
 * TODO: Additional tests for other macros and interactive commands
