@@ -210,7 +210,9 @@ end
 
 mod.tm:0
 op.tm: on tm do
-  if mod.tm mod.tm.op["%a" format dpop[]][]
+  a: "%a" format dpop[]
+  if mod.tm mod.tm.op[a][]
+  elseif a="e" print["%a" format dpop[]] # fake 'emit' for tests
   else fail["tm: no terminal device!"] end
 end
 

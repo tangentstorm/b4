@@ -1,0 +1,126 @@
+#+title: b4i macro and interactive commands test suite
+
+* About this file
+This file demonstrates the macro and interactive commands.
+Currently these are present only in the lil implementation
+(`mb4.deck`).
+
+* Running the tests
+
+To run these tests, use the b4i interpreter from the `mb4.deck` implementation.
+
+* Macros
+** .i .e .t (if/else/then)
+#+name: macro.if-else-then
+#+begin_src b4a
+> :E lb 'e tm rt
+> :T lb 01 .i lb 'T ^E .e lb 'F ^E .t rt
+> ^T %q
+T
+= if/else/then macro
+: if the top of the stack is non-zero, execute the first block
+: otherwise, execute the second block
+#+end_src
+
+** .w .d .z (while/do)
+#+name: macro.while-do
+#+begin_src b4a
+> :E lb 'e tm rt
+> :T lb 'a !A lb 03 .w du .d lb 01 +A ^E lb 01 sb .z rt
+> ^T %q
+a
+b
+c
+= while/do macro
+: while the top of the stack is non-zero, execute the block
+: decrement the top of the stack each iteration
+#+end_src
+
+** .f .n (for/next)
+#+name: macro.for-next
+#+begin_src b4a
+> :E lb 'e tm rt
+> :T lb 03 .f cd du dc lb 'a ad ^E .n rt
+> ^T %q
+d
+c
+b
+= for/next macro
+: execute the block a fixed number of times
+: the counter is stored on the control stack
+#+end_src
+
+* Interactive Commands
+** %R (reset)
+#+name: interactive.reset
+#+begin_src b4a
+> 01 02 03 ?d %R ?d %q
+ds: [1 2 3]
+ds: []
+= %R : reset the virtual machine
+: resets the stacks and sets ip to 100.
+: does not clear memory.
+#+end_src
+
+** %C (clear)
+#+name: interactive.clear
+#+begin_src b4a
+> 01 02 03 ?d %R ?d %q
+ds: [1 2 3]
+ds: []
+= %C : clear the virtual machine
+: clears the stacks and resets memory
+#+end_src
+
+** $label (use label)
+#+name: interactive.use-label
+#+begin_src b4a
+> :foo
+> $foo ?d %q
+ds: [100]
+= $label : use label
+: pushes the address of the label onto the stack
+#+end_src
+
+** ?m (show memory)
+#+name: interactive.show-memory
+#+begin_src b4a
+> :100 01 02 03 04 'h 'e 'l 'l 'o
+> ?100 %q
+^A ^B ^C ^D +H +E +L +L +O .. .. .. .. .. .. ..
+= ?m : show memory
+: displays the contents of memory starting at the specified address
+#+end_src
+
+** .^ (linked list)
+#+name: macro.linked-list
+#+begin_src b4a
+> :100 .^ .^ .^ .^
+> ?100 %q
+.. .. .. .. .. ^A .. .. ^D ^A .. .. ^H ^A .. ..
+= .^ : linked list
+: creates a linked list in little endian format
+: each node points to the next node
+: The output `.. .. .. .. .. ^A .. .. ^D ^A .. .. ^H ^A .. ..` indicates that the memory is being populated with the addresses of the linked list nodes in little endian format.
+: The first four bytes are empty (0x00).
+: The next four bytes contain the address `0x100` (which is `0x00000100` in little endian format).
+: The next four bytes contain the address `0x104` (which is `0x00000104` in little endian format).
+: The next four bytes contain the address `0x108` (which is `0x00000108` in little endian format).
+: This output shows that the linked list nodes are correctly pointing to the next node's address, but the addresses are being displayed in little endian format, which is why the bytes appear in reverse order.
+#+end_src
+
+* TODO: Additional tests for other macros and interactive commands
+** %e (run to end)
+##+name: interactive.run-to-end
+##+begin_src b4a
+= %e : run to end
+: executes instructions until a return is encountered
+##+end_src
+
+** %\\ (goto)
+##+name: interactive.goto
+##+begin_src b4a
+= %\ : goto
+: jumps to the address stored in the "@\" register
+##+end_src
+

@@ -1,5 +1,5 @@
 #!/bin/sh
-export TEST_PLAN=b4-tests.org
+export TEST_PLAN=b4i-tests.org
 #export SKIP_LINES=2
 
 export INPUT_PATH=input.txt
@@ -7,4 +7,4 @@ export INPUT_PATH=input.txt
 # TODO: actually use tanco
 TANCO="../learntris/testris.py"
 
-$TANCO lilt lil/b4i.lil input.txt
+$TANCO ./lilt lil/b4i.lil input.txt
