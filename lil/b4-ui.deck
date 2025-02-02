@@ -38,7 +38,7 @@ on nav_sync do
   card:deck.card
   nb:card.widgets.navbar
   nb.pos: 0,16  nb.size: 400,20  nb.show: "transparent"
-  nb.afg: 1 nb.abg: 34 
+  nb.afg: 1 nb.abg: 34
   nb.ifg: 1 nb.ibg: 33
   nb.tnames: "|" fuse "ops","hexcalc","term","canvas","ref","pal"
   nb.wnames: "|" fuse wns:"ops","hexcalc","tm-demo","cv-demo","ref","palettes"
@@ -53,7 +53,7 @@ end
 on view do
   if "navbar" in deck.card.widgets
     nav_sync[]
-  end 
+  end
 end
 
 {end}
@@ -71,7 +71,7 @@ button1:{"type":"button","size":[60,20],"pos":[272,352],"script":"home.2","text"
 on view do
   other.value: field.value
   wait[10]
-  go[card] 
+  go[card]
 end
 
 on update_toc do
@@ -464,15 +464,15 @@ navbar:{"type":"contraption","size":[400,20],"pos":[0,16],"show":"transparent","
 
 {script:hexcalc.0}
 on click pos do
- 
+
 end
 
 on drag pos do
- 
+
 end
 
 on release pos do
- 
+
 end
 {end}
 
@@ -573,9 +573,9 @@ mb4.set_cv[canvas1]
 on view do
   nav_sync[]
   b4_step[]
-end 
-   
-on set_tab wn tn ts do 
+end
+
+on set_tab wn tn ts do
   if ts.name = "navbar"
     deck.event["set_tab" wn tn ts]
   else
@@ -610,7 +610,7 @@ end
 
 {script:ref.1}
 on click row do
- 
+
 end
 {end}
 
@@ -662,7 +662,7 @@ on draw cv ch fg bg xy do
  each r y in fnt[(16*ch),16]  m:1
    each x in 7-range 8
      cv[xy+x,y]: if bits.and[m r] fg else bg end
-     m:m*2 
+     m:m*2
    end
  end 0
 end
@@ -780,7 +780,7 @@ on view do
  each i in range 16
    c.pattern: i+32
    c.rect[0,i*ch cw,ch]
- end 
+ end
  # populate list of grids
  other_grids.value: select n:value..name from card.widgets
 end
@@ -810,7 +810,7 @@ field7:{"type":"field","size":[192,208],"pos":[416,80],"value":"example configur
 
 {script:swarm.0}
 on view do
- 
+
 end
 {end}
 
@@ -1154,7 +1154,7 @@ mod.b4i: on b4i line do
       elseif t="^" im_run[_ri[r]]
       else echo["regop.no: ",tok] end
     elseif t="%"
-      if     tok="%q" quit:1 stote:CMT
+      if     tok="%q" quit:1
       elseif tok="%R" reset[]
       elseif tok="%C" clear[]
       elseif tok="%s" step[]
@@ -1314,7 +1314,7 @@ on view do
 end
 on get_list_width do slider1.value end
 on set_list_width x do
- cw:card.size[0] lw: slider1.value: floor x 
+ cw:card.size[0] lw: slider1.value: floor x
  items.size: lw, items.size[1]
  items.widths: (max 20,lw-20),0
  item_text.pos: lw,item_text.pos[1]
@@ -1350,7 +1350,7 @@ on get_current do on current do items.value[items.row] end end
 
 {script:itemlist.1}
 on change val do
- 
+
 end
 {end}
 
@@ -1599,7 +1599,7 @@ end
 on show_ram do
  # start on debugger. draw some ram, highlight ip
  ip:mb4.get_vm[].ip
- a0: 256 gw:16 mw:31 cs: 18,18  ofs:3,4  
+ a0: 256 gw:16 mw:31 cs: 18,18  ofs:3,4
  on gxy i do (gw%i),floor i/gw end
  ixy: (ofs+(mw,0)-(3,3))+cs*gxy[ip-a0]+0,1
  c: card.widgets.debugger
@@ -1661,11 +1661,11 @@ on redraw do
   # start on debugger. draw some ram, highlight ip
   ip_field.value: "%04H" format ip:mb4.get_ip[]
   ed_field.value: "%04H" format ed:mb4.get_ed[]
-  
+
   ip_label.value: "ip: ", if f:fn[ip] then "(",f,")" else () end
   ed_label.value: "ed: ", if f:fn[ed] then "(",f,")" else () end
- 
-  a0: dbg_top.value gw:16 mw:31 cs: 18,18  ofs:3,4  
+
+  a0: dbg_top.value gw:16 mw:31 cs: 18,18  ofs:3,4
   on gxy i do (gw%i),floor i/gw end
   on xy a do (ofs+(mw,0)-(3,3))+cs*gxy[a-a0]+0,1 end
 
@@ -1685,7 +1685,7 @@ on redraw do
   end
 end
 
-on get_redraw do redraw end 
+on get_redraw do redraw end
 
 {end}
 
@@ -1766,7 +1766,7 @@ on draw do
     (dc.widgets@wns)..show:"none"
     dc.widgets[wn].show:"solid"
     deck.card.event["set_tab" wn tn card]
-  end  
+  end
 end
 
 on click do
@@ -1808,4 +1808,3 @@ on change val do
   view[]
 end
 {end}
-

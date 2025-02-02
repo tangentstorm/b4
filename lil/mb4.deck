@@ -322,7 +322,7 @@ mod.b4i: on b4i line do
       elseif t="^" im_run[_ri[r]]
       else echo["regop.no: ",tok] end
     elseif t="%"
-      if     tok="%q" quit:1 stote:CMT
+      if     tok="%q" quit:1
       elseif tok="%R" reset[]
       elseif tok="%C" clear[]
       elseif tok="%s" step[]
