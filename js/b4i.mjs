@@ -8,7 +8,8 @@ const rl = readline.createInterface({
 
 function repl() {
   rl.question('', line=>{
-    b4.b4i(line, rl)
+    try { b4.b4i(line, rl) }
+    catch (e) { console.error(e) }
     repl()})}
 
 repl()
