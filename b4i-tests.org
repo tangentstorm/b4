@@ -6,6 +6,17 @@ Currently these interactive features are present only in
 the lil implementation (`mb4.deck`). The macros are also
 available in the pascal version's assembler.
 
+* comments
+#+name: comments
+#+begin_src b4a
+> # this is a comment
+> 01 # 02
+> ?d
+ds: [1]
+= comments
+: comments start with '#' and everything until the end of line is ignored
+#+end_src
+
 * Macros
 ** .i .e .t (if/else/then)
 #+name: macro.if-else-then
