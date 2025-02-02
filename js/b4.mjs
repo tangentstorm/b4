@@ -1,5 +1,7 @@
 // b4 virtual machine - javascript edition
 
+function todo(s) { console.error(`TODO: ${s}`) }
+
 // ops: select code op where !code=(list "%2H") format op where index > 127 from mb4.TBL
 //  ", " fuse (list "%u = %i") format ops
 const
@@ -30,12 +32,17 @@ for (let i=1;i<32;i++) {
   op[i]=`^${c}`; op[i+32]=`@${c}`; op[i+64]=`!${c}`; op[i+96]=`+${c}` }
 
 const REGS="@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+const rega=(c)=>4*(c.charCodeAt(0)-64)
+const HERE=rega('_')
+const THERE=rega('\\')
+const LAST=rega('^')
+
 
 // helper routines
 const hex=(b)=>b.toString(16,0).toUpperCase()
 const hexp=(b,w)=>hex(b).padStart(w,'0')
-const isHex=(s)=>s.match(/^[0-9A-F]+$/)
-
+const isHex=(s)=>s.match(/^-?[0-9A-F]+$/)
+const isRegOp=s=>s.match(/[+`@:?!^][@A-Z[\\\]^_]/)
 
 export class B4VM {
   constructor() {
@@ -46,7 +53,7 @@ export class B4VM {
     this.st = 0
     this.ram = new Uint8Array(4096).fill(0)
     this.ob = [] // output buffer
-    this._wi(this.rega("_"), 0x100)
+    this._wi(rega("_"), 0x100)
     this._conb = new Map() // custom op name -> byte
     this._cobn = new Map() // custom op byte -> name
     this._cobf = new Map() // custom op byte -> func
@@ -184,10 +191,9 @@ export class B4VM {
     return `${which}: [${this[which].map(hex).join(' ')}]` }
   fmtIp() { return `ip: ${hex(this.ip)}` }
 
-  rega(c) { return 4*(c.charCodeAt(0)-64) }
   isRegLabel(x) { return x.length==2 && x[0]==':' && REGS.includes(x[1]) }
-  here(){return this._ri(this.rega("_"))}
-  regHere(x) { let a=this.here(); this._wi(this.rega(x),a); return a }
+  here(){return this._ri(rega("_"))}
+  regHere(x) { let a=this.here(); this._wi(rega(x),a); return a }
   labelHere(s) { return this._labels[s]=this.here() }
 
   imrun(a) {
@@ -195,61 +201,120 @@ export class B4VM {
     while (this.st) this.step()
     this.ip = this.cpop()}
 
+  // assemble ops to address a0. return byte count
+  assemble(a0, ops) {
+    let toks = ops.split(' ');
+    for (let i=0; i<toks.length; i++) this.ram[a0+i]=this.asm(toks[i]);
+    return toks.length}
+
+  // hp is a "here" pointer (generally HERE or THERE)
+  // we write to the address in this pointer, then increment it
+  asmVia(hp, ops) { let a=this._ri(hp), n=this.assemble(a, ops); this._wi(hp,a+n)}
+
 
   b4i(line) {
-    let done =0;
-    if (line.startsWith(':')) {
-      let a0,[x0,...xs] = line.split(/\s+/)
-      let a=a0=this.isRegLabel(x0) ? this.regHere(x0[1])
-          : isHex(x0.slice(1)) ? parseInt(x0.slice(1), 16)
-          : this.labelHere(x0.slice(1))
-      for (let x of xs) {
-        if (x[0]=="'") for (let c of x.slice(1).split("'")) {
-          this.ram[a++]=c.codePointAt(0)}
-        else if (this.isRegLabel(x)) this.regHere(x[1])
-        else if (x in this._labels) {
-          this.ram[a++]=this.asm('cl')
-          let la=this._labels[x]
-          this.ram[a++]=la&0xFF
-          this.ram[a++]=(la>> 8)&0xFF
-          this.ram[a++]=(la>>16)&0xFF
-          this.ram[a++]=(la>>24)&0xFF}
-        else this.ram[a++]=this.asm(x) }
-      this.dput(a-a0); this.ir(this.rega("_")); this.dpop() // update "HERE" pointer
-      return }
-    else for (let tok of line.split(' ')) {
-      if (done) break
-      if (!tok) continue
-      switch (tok) {
-      case '?c': this.out(this.fmtStack('cs')); break;
-      case '?d': this.out(this.fmtStack('ds')); break;
-      case '?i': this.out(this.fmtIp()); break;
-      case '%q': done=1; break;
-      case '%s': this.step(); break;
-      case '%C': ; break;
-      default:
-        if (isHex(tok)){
-          this.ds.push(parseInt(tok,16))}
-        else if (tok[0]=="'") {
-          if (tok.length==2) this.dput(tok[1].charCodeAt(0))
-          else if (tok.length==1) this.dput(32)
-          else this.out(`unknown command: ${tok}\n`)}
-        else if (tok.length==2 && REGS.includes(tok[1])) {
-          let r = this.rega(tok[1]); switch(tok[0]) {
-            case "?": this.out(hexp(this._ri(r),8)); break;
-            case "`": this.dput(r); break;
-            case "^": this.imrun(this._ri(r)); break;
-            case "@": this.rr(r); break;
-            case "!": this.wr(r); break;
-            case "+": this.ir(r); break;}}
-        else if (tok in this) { this[tok]() }
-        else if (tok in this._conb) {  this._cobf[this._conb[tok]]() }
-        else if (tok[0]=="?") {
-          this.out(this.peek(parseInt(tok.slice(1),16), 16))  }
-        else if (tok in this._labels) this.imrun(this._labels[tok])
-        else this.out(`unknown command: ${tok}\n`)}}
+    const IMM=0, ASM=1, CMT=2, BYE=3;
+    let state=IMM, hp=HERE;
+    for (let tok of line.split(' ')) {
+      let t = tok[0];
+      if (state===CMT | t==="#") state = CMT;
+      else if (isRegOp(tok)) {
+        let r = rega(tok[1]);
+        if (t==="?") this.out(hexp(this._ri(r),8))
+        else if (t===":") {
+          this.regHere(tok[1])
+          // TODO: if r=='\\' this._goto(this._gr('\\')+1
+          state=ASM}
+        else if (state===ASM) this.asmVia(hp, t==='`' ? `lb ${tok[1]}` : tok)
+        else switch(t) {
+          case "`": this.dput(r); break;
+          case "^": this.imrun(this._ri(r)); break;
+          case "@": this.rr(r); break;
+          case "!": this.wr(r); break;
+          case "+": this.ir(r); break;
+          default: console.warn(`Matched Unknown RegOp: ${tok}`) }}
+      else if (t==="%") switch(tok) {
+        case '%q': state=BYE; break;
+        case '%s': this.step(); break;
+        case '%C': break; // TODO clear
+        case '%R': break; // TODO reset
+        case '%e': break; // TODO run to end
+        case '%\\': break; // TODO jump to '\' register
+        default: this.out(`%.no: ${tok}`)}
+      else if (t==="?") switch(tok) {
+        case '?c': this.out(this.fmtStack('cs')); break;
+        case '?d': this.out(this.fmtStack('ds')); break;
+        case '?i': this.out(this.fmtIp()); break;
+        default:
+        let a = tok.slice(1);
+        if (Object.hasOwn(this._labels, a)) this.out(this.peek(this._labels[a], 16))
+        else if (isHex(a)) this.out(this.peek(parseInt(a,16), 16))
+        else this.out(`?.no: ${tok}`)}
+      else if (t==="$") {
+        let a = tok.slice(1); if (Object.hasOwn(this._labels, a)) {
+          if (state===ASM) { } // TODO: assemble the label
+          else this.dput(this._labels[a])}
+        else this.out(`\$.no: ${tok}`)}
+      else if (t===":") {
+        state = ASM; let a = tok.slice(1);
+        if (tok==="::") {} //  ok. assemble from here
+        else if (tok===":") this.out("no: :")
+        else if (isHex(a)) this._wi(hp=THERE, parseInt(a, 16))
+        else this.labelHere(a) }
+      else if (t==="'") {
+        let a = this._ri(hp);
+        for (let ch of tok.slice(1).split("'")) {
+          let c;
+          if (ch.length == 0) c=32
+          else if (ch.length==1) c =ch.codePointAt(0)
+          else throw new Error(`invalid literal: '${ch}`)
+          if (state===ASM) this.ram[a++]=c
+          else this.dput(c) }
+        if (state===ASM) this._wi(hp,a)}
+      else if (tok==="..") { if (state===ASM) this.asmVia(hp, "00"); else {} }
+      else if (t===".") {
+        // TODO: test for error when not in ASM mode
+        if (state===ASM) this.macro(hp, tok)
+        else this.out(`not in asm mode: ${tok}`) }
+      else if (op.includes(tok)) {
+        if (state===ASM) this.asmVia(hp, tok)
+        else try { this[tok]() }
+        catch (e) { console.log('tried running op:', tok);
+                    console.log(op); console.error(e) }}
+      else if (isHex(tok)) {
+        if (state===ASM) this.asmVia(hp, tok)
+        else this.dput(parseInt(tok,16)) }
+      else if (Object.hasOwn(this._labels, tok)) {
+        if (state===ASM) this.asmCall(hp, tok)
+        else this.imrun(this._labels[tok]) }
+      else if ('`@!+'.includes(t)) {
+        if (Object.hasOwn(this._labels, tok.slice(1))) {
+          let a = this._labels[tok.slice(1)];
+          switch (t) {
+          case "`":
+            if (state===ASM) this.asmInt(hp, a); else this.dput(a)
+            break
+          case "@":
+            if (state===ASM) this.asmGet(hp, a); else {this.dput(a); this.ri()}
+            break;
+          case "!":
+            if (state===ASM) this.asmSet(hp, a); else {this.dput(a); this.wi()}
+            break;
+          case "+":
+            if (state===ASM) this.asmInc(hp, a); else {todo(`+label: ${tok}`)}
+            break;}}
+        else this.out(`unknown label: ${tok}`); }
+      else this.out(`unknown token: ${tok}`); }
+    // done with line, now dump output:
     if (this.ob.length) { this.out(this.ob.join("")); this.ob=[] }
-    if (done) process.exit(0) }}
+    if (state==BYE) process.exit(0) }
+
+  macro(hp, tok) {
+    switch (tok) {
+    case '..': this.asmVia(hp, tok)
+    default: break}
+  }
+}
 
 
 const vm = new B4VM()
