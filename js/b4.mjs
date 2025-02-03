@@ -1,6 +1,7 @@
 // b4 virtual machine - javascript edition
 
 function todo(s) { console.error(`TODO: ${s}`) }
+function err(s) { throw new Error(s) }
 
 // ops: select code op where !code=(list "%2H") format op where index > 127 from mb4.TBL
 //  ", " fuse (list "%u = %i") format ops
@@ -105,6 +106,12 @@ export class B4VM {
   _wi(a,n) {
     for (let i=0;i<4;i++) { this.ram[a++]=n&0xff; n>>=8 }}
 
+  // _gr: get register
+  _gr(r) { return this._ri(rega(r)) }
+  // _sr: set register
+  _sr(r, x) { return this._wi(rega(r), x) }
+
+
   wb() { this.ram[this.dpop()]=this.dpop(); return this }
   rb() { return this.dput(this.ram[this.dpop()]) }
   ri() { return this.dput(this._ri(this.dpop())) }
@@ -118,7 +125,7 @@ export class B4VM {
   lb() { this.dput(this.ram[this.ip+++1]); }
   li() { this.dput(this._ri(this.ip++)); this.ip+=3; }
   _go(a) { this.ip = Math.max(0x100,a)-1 }
-  _i8(a) { let r=this.ram[a]; if (r>=0x80) r=-(r&0x7F)-1; return r }
+  _i8(a) { return (this.ram[a]<<24)>>24 }
   hp() { this._go(this.ip+this._i8(this.ip+1))}
   h0() { if (this.dpop()==0) this.hp(); else this.ip++ }
   jm() { this._go(this._ri(this.ip+1)) }
@@ -128,11 +135,20 @@ export class B4VM {
          if (this.ctos()==0) { this.cpop(); this.ip++ }
          else this.hp() }
 
+  _dpopChar() { return String.fromCharCode(this.dpop()) }
+
+  // TODO: i think this needs to be replaced entirely?
   io() {
-    let c=String.fromCharCode(this.dpop()&0x7F)
+    let c=this._dpopChar()
     switch (c) {
-    case 'e': this.ob.push(String.fromCharCode(this.dpop())); break
+    case 'e': this.ob.push(this._dpopChar()); break
     default: break }}
+
+  // terminal handler [TODO]
+  tm() {
+    let op=this._dpopChar();
+    // stub emit handler for tests:
+    if (op==='e') console.log(this._dpopChar())}
 
   addOp(opbyte, opname, opfunc) {
     this._conb[opname]=opbyte
@@ -180,7 +196,7 @@ export class B4VM {
     let res = op.indexOf(x)
     if (res == -1) {
       res = this._conb[x]
-      if (!res) throw new Error(`unknown token: ${x}`)}
+      if (!res) err(`unknown token: ${x}`)}
     return res }
 
   dis(x) {
@@ -192,7 +208,7 @@ export class B4VM {
   fmtIp() { return `ip: ${hex(this.ip)}` }
 
   isRegLabel(x) { return x.length==2 && x[0]==':' && REGS.includes(x[1]) }
-  here(){return this._ri(rega("_"))}
+  here(){return this._gr("_")}
   regHere(x) { let a=this.here(); this._wi(rega(x),a); return a }
   labelHere(s) { return this._labels[s]=this.here() }
 
@@ -223,7 +239,7 @@ export class B4VM {
         if (t==="?") this.out(hexp(this._ri(r),8))
         else if (t===":") {
           this.regHere(tok[1])
-          // TODO: if r=='\\' this._goto(this._gr('\\')+1
+          if (r=='\\') this._go(this._gr('\\')+1);
           state=ASM}
         else if (state===ASM) this.asmVia(hp, t==='`' ? `lb ${tok[1]}` : tok)
         else switch(t) {
@@ -233,11 +249,19 @@ export class B4VM {
           case "!": this.wr(r); break;
           case "+": this.ir(r); break;
           default: console.warn(`Matched Unknown RegOp: ${tok}`) }}
+      else if (t==="\\") { // set the instruction pointer directly
+        if (state===ASM) err(`can't use ${tok} in asm mode`)
+        let w = tok.slice(1),
+            a = ( Object.hasOwn(this._labels, w) ? this._labels[w]
+                  : isHex(w) ? parseInt(w, 16)
+                  : w.length==1 && REGS.includes(w) ? this._ri(rega(w))
+                  : err(`invalid address for '\\': ${tok}`))
+        this._go(a+1)}
       else if (t==="%") switch(tok) {
-        case '%q': state=BYE; break;
-        case '%s': this.step(); break;
+        case '%q': state=BYE; break
+        case '%s': this.step(); break
         case '%C': break; // TODO clear
-        case '%R': break; // TODO reset
+        case '%R': this.reset(); break
         case '%e': break; // TODO run to end
         case '%\\': break; // TODO jump to '\' register
         default: this.out(`%.no: ${tok}`)}
@@ -267,7 +291,7 @@ export class B4VM {
           let c;
           if (ch.length == 0) c=32
           else if (ch.length==1) c =ch.codePointAt(0)
-          else throw new Error(`invalid literal: '${ch}`)
+          else err(`invalid literal: '${ch}`)
           if (state===ASM) this.ram[a++]=c
           else this.dput(c) }
         if (state===ASM) this._wi(hp,a)}
@@ -290,7 +314,7 @@ export class B4VM {
       else if ('`@!+'.includes(t)) {
         if (Object.hasOwn(this._labels, tok.slice(1))) {
           let a = this._labels[tok.slice(1)];
-          switch (t) {
+          switch (t) { // TODO: all of the asmXXX things (regs are handled above)
           case "`":
             if (state===ASM) this.asmInt(hp, a); else this.dput(a)
             break
@@ -310,9 +334,36 @@ export class B4VM {
     if (state==BYE) process.exit(0) }
 
   macro(hp, tok) {
+    const A = s => this.asmVia(hp, s)
+    const M = s => this.macro(hp, s)
+    const TO = a => {
+      let slot = this.dpop(), dist = (a-slot)+1
+      if (dist < 0) console.warn("invalid forward hop")
+      else if (dist > 126) console.warn(`hop too far! dist: ${dist}`)
+      else this.ram[slot]=dist }
+    const HR = _ => this._ri(hp) // read the here-pointer
+    const HH = _ => TO(HR())  // hop here
+    const BK = _ => { let dist=this.dpop()-HR(); EB(dist+1) } // back
+    const EB = x => { let a=HR(); this.ram[a]=x; this._wi(hp, a+1) } // emit byte
+    const EI = x => { let a=HR(); this._wi(a, x); this._wi(hp, a+4) } // emit int
     switch (tok) {
-    case '..': this.asmVia(hp, tok)
-    default: break}
+    case '._': this.dput(HR()); A(".."); break // emit blank, leaving addr on stack
+    case '..': A(tok); break
+    // -- if/else/then: cond .i if-body .e .else-body .t
+    case '.i': A("h0"); M("._"); break
+    case '.e': A("hp"); M("._"); this.sw(); HH(); break
+    case '.t': HH(); break
+    // -- while loops: .w cond .d body .z
+    case '.w': this.dput(HR()); break
+    case '.d': A("h0"); M("._"); break
+    case '.z': A("hp");this.sw();BK();HH(); break// hop to .w, tell .d where to exit
+    case '.o': err(`.o is deprecated. use .z instead`)
+    // -- for/next
+    case '.f': A("dc"); this.dput(HR()); break
+    case '.n': A("nx"); BK(); break
+    // linked list builder
+    case '.^': let a=HR(); EI(this._gr("^")); this._sr("^", a); break
+    default: err(`.no: ${tok}`)}
   }
 }
 
