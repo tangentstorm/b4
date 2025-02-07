@@ -1,0 +1,6 @@
+{
+  "name": "b4",
+  "version": "1.0.0",
+  "main": "b4.mjs",
+  "type": "module"
+}

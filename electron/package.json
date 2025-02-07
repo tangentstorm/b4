@@ -7,9 +7,9 @@
   "version": "1.0.0",
   "author": "tange",
   "scripts": {
-    "start": "electron ."
+    "start": "xcopy /E /I /Y ..\\js node_modules\\b4 && electron ."
   },
-  "dependencies": {},
+  "type": "module",
   "devDependencies": {
     "electron": "31.2.1"
   }
