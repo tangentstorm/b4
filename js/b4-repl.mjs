@@ -85,6 +85,7 @@ class ReplComponent extends HTMLElement {
   handleKeyDown(event) {
     if (event.key === 'Enter') {
       this.submitCommand();
+      this.historyIndex = this.history.length; // Reset history index to the end
     } else if (event.key === 'ArrowUp') {
       if (this.historyIndex > 0) {
         this.historyIndex--;
