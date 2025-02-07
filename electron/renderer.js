@@ -1,3 +1,5 @@
+import { ReplComponent } from '../js/b4-repl.mjs';
+
 /**
  * This file is loaded via the <script> tag in the index.html file and will
  * be executed in the renderer process for that window. No Node.js APIs are
@@ -6,64 +8,21 @@
  * to expose Node.js functionality from the main process.
  */
 
-document.getElementById('repl-input').focus(); // Auto-focus the REPL prompt
+document.body.innerHTML = `
+  <repl-component id="frontend-repl"></repl-component>
+  <repl-component id="backend-repl"></repl-component>
+`;
 
-const history = [];
-let historyIndex = -1;
+document.body.style.display = 'flex';
+document.body.style.flexDirection = 'row';
+document.body.style.height = '100vh';
+document.body.style.width = '100vw';
+document.body.style.margin = '0';
 
-const updateStacks = (cs, ds) => {
-  const stackOutput = document.getElementById('stack-output');
-  stackOutput.textContent = `${cs}\n${ds}`;
-};
-
-const submitCommand = () => {
-  const input = document.getElementById('repl-input').value;
-  if (input.trim() === '') return;
-  history.push(input);
-  historyIndex = history.length;
-  const outputArea = document.getElementById('repl-output');
-  const commandElement = document.createElement('div');
-  commandElement.className = 'command';
-  commandElement.textContent = `> ${input}`;
-  outputArea.appendChild(commandElement);
-  window.electron.replInput(input).then(() => {
-    window.electron.getStacks().then(({ cs, ds }) => {
-      updateStacks(cs, ds);
-    });
-  });
-  document.getElementById('repl-input').value = '';
-  outputArea.scrollTop = outputArea.scrollHeight;
-};
-
-document.getElementById('repl-submit').addEventListener('click', submitCommand);
-
-document.getElementById('repl-input').addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') {
-    submitCommand();
-  } else if (event.key === 'ArrowUp') {
-    if (historyIndex > 0) {
-      historyIndex--;
-      document.getElementById('repl-input').value = history[historyIndex];
-    }
-  } else if (event.key === 'ArrowDown') {
-    if (historyIndex < history.length - 1) {
-      historyIndex++;
-      document.getElementById('repl-input').value = history[historyIndex];
-    } else {
-      historyIndex = history.length;
-      document.getElementById('repl-input').value = '';
-    }
-  }
-});
-
-window.electron.ipcRenderer.on('repl-output', (msg) => {
-  const outputArea = document.getElementById('repl-output');
-  const outputElement = document.createElement('div');
-  outputElement.textContent = msg;
-  outputArea.appendChild(outputElement);
-  outputArea.scrollTop = outputArea.scrollHeight;
-});
-
-window.electron.getStacks().then(({ cs, ds }) => {
-  updateStacks(cs, ds);
+const replComponents = document.querySelectorAll('repl-component');
+replComponents.forEach(component => {
+  component.style.flex = '1';
+  component.style.height = '100%';
+  component.style.boxSizing = 'border-box';
+  component.style.padding = '10px';
 });
