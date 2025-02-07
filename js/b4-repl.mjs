@@ -1,9 +1,29 @@
-class B4ReplCmpt extends HTMLElement {
+export class B4ElectronIpc {
+  constructor(electron) {
+    this.electron = electron;
+    this.out = console.log;
+  }
+
+  set out(listener) {
+    this.electron.ipcRenderer.on('repl-output', (event, ...args) => listener(...args));
+  }
+
+  getStacks() {
+    return this.electron.getStacks();
+  }
+
+  b4i(input) {
+    return this.electron.replInput(input);
+  }
+}
+
+export class B4ReplCmpt extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
     this.history = [];
     this.historyIndex = -1;
+    this.vm = new B4ElectronIpc(window.electron);
   }
 
   connectedCallback() {
@@ -11,8 +31,8 @@ class B4ReplCmpt extends HTMLElement {
     this.shadowRoot.getElementById('repl-input').focus();
     this.shadowRoot.getElementById('repl-submit').addEventListener('click', this.submitCommand.bind(this));
     this.shadowRoot.getElementById('repl-input').addEventListener('keydown', this.handleKeyDown.bind(this));
-    window.electron.ipcRenderer.on('repl-output', this.handleReplOutput.bind(this));
-    window.electron.getStacks().then(({ cs, ds }) => {
+    this.vm.out = this.handleReplOutput.bind(this);
+    this.vm.getStacks().then(({ cs, ds }) => {
       this.updateStacks(cs, ds);
     });
   }
@@ -85,8 +105,8 @@ class B4ReplCmpt extends HTMLElement {
     commandElement.className = 'command';
     commandElement.textContent = `> ${input}`;
     outputArea.prepend(commandElement);
-    window.electron.replInput(input).then(() => {
-      window.electron.getStacks().then(({ cs, ds }) => {
+    this.vm.b4i(input).then(() => {
+      this.vm.getStacks().then(({ cs, ds }) => {
         this.updateStacks(cs, ds);
       });
     });
@@ -124,5 +144,3 @@ class B4ReplCmpt extends HTMLElement {
 }
 
 customElements.define('b4-repl', B4ReplCmpt);
-
-export { B4ReplCmpt };
