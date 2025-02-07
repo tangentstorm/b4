@@ -1,4 +1,4 @@
-class ReplComponent extends HTMLElement {
+class B4ReplCmpt extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -24,6 +24,8 @@ class ReplComponent extends HTMLElement {
           display: flex;
           flex-direction: column;
           height: 100%;
+          box-sizing: border-box;
+          padding: 10px;
         }
         #repl-output {
           flex: 1;
@@ -32,6 +34,8 @@ class ReplComponent extends HTMLElement {
           padding: 10px;
           display: flex;
           flex-direction: column-reverse;
+          font-family: monospace;
+          white-space: pre;
         }
         #stack-container {
           display: flex;
@@ -42,6 +46,14 @@ class ReplComponent extends HTMLElement {
         }
         #repl-input {
           flex: 1;
+          padding: 10px;
+          font-family: monospace;
+        }
+        #repl-submit {
+          padding: 10px;
+        }
+        .command {
+          font-weight: bold;
         }
       </style>
       <div id="repl-output"></div>
@@ -111,6 +123,6 @@ class ReplComponent extends HTMLElement {
   }
 }
 
-customElements.define('repl-component', ReplComponent);
+customElements.define('b4-repl', B4ReplCmpt);
 
-export { ReplComponent };
+export { B4ReplCmpt };

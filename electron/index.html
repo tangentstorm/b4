@@ -6,63 +6,10 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
     <link href="./styles.css" rel="stylesheet">
     <title>B4 REPL</title>
-    <style>
-      body {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        margin: 0;
-        font-family: Arial, sans-serif;
-      }
-      #repl-container {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        padding: 10px;
-      }
-      #stack-output {
-        height: 100px;
-        overflow-y: auto;
-        font-family: monospace;
-        white-space: pre;
-        border: 1px solid #ccc;
-        padding: 10px;
-        margin-bottom: 10px;
-      }
-      #repl-output {
-        flex: 1;
-        overflow-y: auto;
-        font-family: monospace;
-        white-space: pre;
-        border: 1px solid #ccc;
-        padding: 10px;
-        margin-bottom: 10px;
-      }
-      #repl-input-container {
-        display: flex;
-      }
-      #repl-input {
-        flex: 1;
-        padding: 10px;
-        font-family: monospace;
-      }
-      #repl-submit {
-        padding: 10px;
-      }
-      .command {
-        font-weight: bold;
-      }
-    </style>
   </head>
   <body>
-    <div id="repl-container">
-      <div id="stack-output"></div>
-      <div id="repl-output"></div>
-      <div id="repl-input-container">
-        <input type="text" id="repl-input" placeholder="Enter command">
-        <button id="repl-submit">Submit</button>
-      </div>
-    </div>
+    <b4-repl id="frontend-repl"></b4-repl>
+    <b4-repl id="backend-repl"></b4-repl>
     <script type="module" src="./renderer.js"></script>
   </body>
 </html>
