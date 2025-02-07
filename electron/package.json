@@ -1,0 +1,16 @@
+{
+  "name": "erect-distance-bake-y37fi",
+  "productName": "erect-distance-bake-y37fi",
+  "description": "My Electron application description",
+  "keywords": [],
+  "main": "./main.js",
+  "version": "1.0.0",
+  "author": "tange",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "31.2.1"
+  }
+}
