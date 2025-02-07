@@ -1,0 +1,11 @@
+#!/bin/sh
+export TEST_PLAN=~/ver/b4/b4i-tests.org
+#export SKIP_LINES=2
+#export INPUT_PATH=b4-gd/input.txt
+
+# TODO: actually use tanco
+TANCO="python3 /home/michal/ver/learntris/testris.py"
+
+cd js
+$TANCO ./b4i.mjs
+cd ..
