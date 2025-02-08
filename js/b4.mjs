@@ -205,6 +205,9 @@ export class B4VM {
 
   fmtStack(which) {
     return `${which}: [${this[which].map(hex).join(' ')}]` }
+  fmtStacks() { return {
+    cs: this.fmtStack('cs'),
+    ds: this.fmtStack('ds') }}
   fmtIp() { return `ip: ${hex(this.ip)}` }
 
   isRegLabel(x) { return x.length==2 && x[0]==':' && REGS.includes(x[1]) }

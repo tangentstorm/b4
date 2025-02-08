@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
   replInput: (input) => ipcRenderer.invoke('repl-input', input),
-  getStacks: () => ipcRenderer.invoke('get-stacks'),
+  fmtStacks: () => ipcRenderer.invoke('fmt-stacks'),
   ipcRenderer: {
     send: (channel, data) => ipcRenderer.send(channel, data),
     on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args))

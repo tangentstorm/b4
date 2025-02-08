@@ -1,19 +1,46 @@
+import { B4VM } from './b4.mjs';
+
 export class B4ElectronIpc {
-  constructor(electron) {
-    this.electron = electron;
+  constructor() {
+    this.electron = window.electron;
     this.out = console.log;
   }
 
   set out(listener) {
-    this.electron.ipcRenderer.on('repl-output', (event, ...args) => listener(...args));
+    this.electron.ipcRenderer.on('repl-output', (...args) => {
+      listener(...args)});
   }
 
-  getStacks() {
-    return this.electron.getStacks();
+  fmtStacks() {
+    return this.electron.fmtStacks();
   }
 
   b4i(input) {
     return this.electron.replInput(input);
+  }
+}
+
+export class B4PromiseWrapper {
+  constructor() {
+    this.vm = new B4VM();
+    this.out = console.log;
+  }
+
+  set out(listener) {
+    this.vm.out = listener;
+  }
+
+  fmtStacks() {
+    return new Promise((resolve) => {
+      resolve(this.vm.fmtStacks());
+    });
+  }
+
+  b4i(input) {
+    return new Promise((resolve) => {
+      this.vm.b4i(input);
+      resolve();
+    });
   }
 }
 
@@ -23,7 +50,7 @@ export class B4ReplCmpt extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.history = [];
     this.historyIndex = -1;
-    this.vm = new B4ElectronIpc(window.electron);
+    this.vm = null;
   }
 
   connectedCallback() {
@@ -31,8 +58,13 @@ export class B4ReplCmpt extends HTMLElement {
     this.shadowRoot.getElementById('repl-input').focus();
     this.shadowRoot.getElementById('repl-submit').addEventListener('click', this.submitCommand.bind(this));
     this.shadowRoot.getElementById('repl-input').addEventListener('keydown', this.handleKeyDown.bind(this));
+    if (this.getAttribute('connect') === 'electron') {
+      this.vm = new B4ElectronIpc();
+    } else {
+      this.vm = new B4PromiseWrapper();
+    }
     this.vm.out = this.handleReplOutput.bind(this);
-    this.vm.getStacks().then(({ cs, ds }) => {
+    this.vm.fmtStacks().then(({ cs, ds }) => {
       this.updateStacks(cs, ds);
     });
   }
@@ -106,7 +138,7 @@ export class B4ReplCmpt extends HTMLElement {
     commandElement.textContent = `> ${input}`;
     outputArea.prepend(commandElement);
     this.vm.b4i(input).then(() => {
-      this.vm.getStacks().then(({ cs, ds }) => {
+      this.vm.fmtStacks().then(({ cs, ds }) => {
         this.updateStacks(cs, ds);
       });
     });

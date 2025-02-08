@@ -34,12 +34,8 @@ app.on('window-all-closed', function () {
 });
 
 ipcMain.handle('repl-input', (event, input) => {
-  if (!vm) {
-    vm = new b4.B4VM();
-  }
-  vm.out = (msg) => {
-    event.sender.send('repl-output', msg);
-  };
+  if (!vm) vm = new b4.B4VM();
+  vm.out = (msg) => event.sender.send('repl-output', msg);
   try {
     vm.b4i(input);
   } catch (e) {
@@ -47,12 +43,7 @@ ipcMain.handle('repl-input', (event, input) => {
   }
 });
 
-ipcMain.handle('get-stacks', () => {
-  if (!vm) {
-    vm = new b4.B4VM();
-  }
-  return {
-    cs: vm.fmtStack('cs'),
-    ds: vm.fmtStack('ds')
-  };
+ipcMain.handle('fmt-stacks', () => {
+  if (!vm) vm = new b4.B4VM();
+  return vm.fmtStacks();
 });
