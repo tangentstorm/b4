@@ -79,13 +79,20 @@ export class B4ReplCmpt extends HTMLElement {
           box-sizing: border-box;
           padding: 10px;
         }
-        #repl-output {
+        #repl-output-container {
           flex: 1;
           overflow-y: auto;
           border: 1px solid lightgray;
           padding: 10px;
           display: flex;
-          flex-direction: column-reverse;
+          flex-direction: column;
+        }
+        #spacer {
+          flex-grow: 1;
+        }
+        #repl-output {
+          display: flex;
+          flex-direction: column;
           font-family: monospace;
           white-space: pre;
         }
@@ -108,7 +115,10 @@ export class B4ReplCmpt extends HTMLElement {
           font-weight: bold;
         }
       </style>
-      <div id="repl-output"></div>
+      <div id="repl-output-container">
+        <div id="spacer"></div>
+        <div id="repl-output"></div>
+      </div>
       <div id="stack-container">
         <div id="data-stack"></div>
         <div id="control-stack"></div>
@@ -136,14 +146,14 @@ export class B4ReplCmpt extends HTMLElement {
     const commandElement = document.createElement('div');
     commandElement.className = 'command';
     commandElement.textContent = `> ${input}`;
-    outputArea.prepend(commandElement);
+    outputArea.appendChild(commandElement);
     this.vm.b4i(input).then(() => {
       this.vm.fmtStacks().then(({ cs, ds }) => {
         this.updateStacks(cs, ds);
       });
     });
     this.shadowRoot.getElementById('repl-input').value = '';
-    outputArea.scrollTop = 0;
+    commandElement.scrollIntoView({ behavior: 'smooth' });
   }
 
   handleKeyDown(event) {
@@ -171,7 +181,7 @@ export class B4ReplCmpt extends HTMLElement {
     const outputElement = document.createElement('div');
     outputElement.textContent = msg;
     outputArea.appendChild(outputElement);
-    outputArea.scrollTop = outputArea.scrollHeight;
+    outputElement.scrollIntoView({ behavior: 'smooth' });
   }
 }
 
