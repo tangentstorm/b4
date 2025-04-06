@@ -1,6 +1,7 @@
 #!/bin/env lilt
 # ------------------------------------------
 # console wrapper for b4 virtual machine
+# expects lilt 1.54 or greater
 # ------------------------------------------
 
 on exists dnm fnm do
@@ -10,7 +11,7 @@ end
 p: if exists["." "mb4.deck"] "mb4.deck"
    elseif exists["lil" "mb4.deck"] "lil/mb4.deck"
    else panic["couldn't find mb4.deck"] end
-dek:readdeck[p]
+dek:read[p]
 mb4:dek.modules.mb4.value
 mb4.set_exit[exit]
 mb4.set_echo[on echo s do print[s] end]
