@@ -1,7 +1,4 @@
 #!/bin/sh
-export VER="/d/ver"
-export TEST_PLAN="$VER/b4/b4-tests.org"
-
 # godot outputs a version header and blank line that cannot be suppressed:
 # (at least not without suppressing ALL output)
 export SKIP_LINES=2
@@ -10,9 +7,14 @@ export SKIP_LINES=2
 # so we write the commands to a file and then tell
 export INPUT_PATH=../b4-gd/input.txt
 
-# TODO: actually use tanco
-export TANCO="python $VER/learntris/testris.py"
+# Determine GODOT path: Use $GODOT from environment if set, otherwise use default
+DEFAULT_GODOT="~/Downloads/Godot_v4.3-stable_win64.exe/Godot_v4.3-stable_win64_console.exe"
+if [ -n "$GODOT" ]; then
+  GODOT_PATH="$GODOT"
+else
+  GODOT_PATH="$DEFAULT_GODOT"
+fi
+export GODOT="$GODOT_PATH"
 
-export GODOT="d:/ver/b4-gd/Godot_v4.1.2-stable_win64_console.exe"
-
-$TANCO $GODOT --path ../b4-gd --headless --script cli.gd -- input.txt
+# Use tanco to run tests
+tanco run --tests b4-tests.org "$GODOT" --path ../b4-gd --headless --script cli.gd -- input.txt
