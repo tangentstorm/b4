@@ -15,7 +15,7 @@ create =: {{
   0 0$0}}
 
 reset =: create                 NB. reset to initial state
-
+
 NB. helper defs. these are internal definitions
 NB. that are only used to define the instruction set.
 NB. (at some point, the stacks may just be designated
@@ -40,7 +40,6 @@ ord =: a.&i.
 rgn =: '@'-~&ord] NB. backtick = register number from char
 rga =: 4 * ]  NB. register address from register
 
-
 NB. "microcode"
 NB. not part of the instruction set, but each instruction
 NB. is composed of these building blocks.
@@ -71,7 +70,7 @@ NB. get/set internal registers
 NB. monad/dyad: lifts 1/2-arg J verbs to VM
 dy =: {{ dput mask (dpop u dpop) y }}
 mo =: {{ dput mask u dpop y }}
-
+
 NB. instruction set
 NB. ---------------------------------------------------------------------
 s_ops=:' lb li du sw ov zp dc cd'  NB. stack ops
@@ -86,7 +85,7 @@ e_ops=:' c0 c1'                    NB. extended ops
 ops =: ;: s_ops,n_ops,b_ops,c_ops,f_ops,m_ops,h_ops,e_ops
 
 ok =: ]                          NB. no-op ... this should be op 0 though
-
+
 NB. stack instructions
 lb =: dput@bget@incp             NB. load byte (u8) to data stack
 li =: dput@mget@inc4             NB. load i32
@@ -111,7 +110,6 @@ NB. comparison instructions
 (eq =: -@= dy) ` (lt =: -@< dy)
 
 
-
 NB. control flow instructions
 NB. -1/<: is because every op is followed by p++
 jm =: pset@<:@mget@inc4         NB. jump to M[P+1 2 3 4]-1
@@ -124,7 +122,6 @@ rt =: {{
   if. 0>a=.<:cpop'' do. 0 rset RST
   else. pset a end. }}
 
-
 NB. memory / messaging instructions
 ri =: dput@mget@dpop         NB. ( a-n) copy from addr y to stack (i32)
 wi =: (dpop mset dpop)       NB. (na- ) write x to addr y
@@ -158,7 +155,6 @@ NB. every input sequence that designates a valid utf-8
 NB. codepoint. (TODO: reconnect chev for io mode)
 chev =: ev@rget@0@dput
 
-
 NB. cpu emulator
 NB. ---------------------------------------------------------------------
 grps =: <:dfh&> cut'01 20 40 60 80 c0 c2 e0 f0 f5' NB. start of each group of ops
@@ -192,7 +188,7 @@ eval =: {{
     end.
   end.
   G =: (G AND NOT OGMASK) XOR g }}
-
+
 NB. step: read instruction from memory, eval, advance program counter
 NB. loop: does same until the program halts.
 loop =: {{ while. END > pc=.pget'' do. incp@'' eval bget pc end. 0 0$0 }}
