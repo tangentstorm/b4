@@ -1,6 +1,6 @@
 # XPL is http://github.com/tangentstorm/xpl
-XPL = ../../xpl
-FPC = fpc -gl -Fu$(XPL)/code -Fi$(XPL)/code -Mobjfpc
+
+FPC = fpc -gl -Mobjfpc
 
 main:
 	@echo 'make targets:'

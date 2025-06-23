@@ -1,9 +1,9 @@
 {$mode delphi}
 { this is the main entry point for b4 }
 program b4;
-uses ub4, ub4asm, ub4ops, kvm, kbd, uhw_vt, ub4i,
+uses ub4, ub4asm, ub4ops, crt, uhw_vt, ub4i,
  sysutils; // for format
- 
+
 const pgsz = 16 * 8; { should be multiple of 8 to come out even }
 
 var opli, oplb, opjm, opcl, opnx, ophp, oph0 : value;
