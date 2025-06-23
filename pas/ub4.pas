@@ -1,4 +1,4 @@
-{$mode delphi}{$i xpc}
+{$mode delphi}
 unit ub4; { the b4 virtual machine }
 interface uses uhw,sysutils;
 

@@ -1,5 +1,5 @@
 # XPL is http://github.com/tangentstorm/xpl
-XPL = ~/x
+XPL = ../../xpl
 FPC = fpc -gl -Fu$(XPL)/code -Fi$(XPL)/code -Mobjfpc
 
 main:

@@ -1,4 +1,4 @@
-{$mode delphi}{$i xpc}
+{$mode delphi}
 unit ub4asm;
 interface uses ub4ops, ub4;
 

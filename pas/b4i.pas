@@ -1,4 +1,4 @@
-{$mode objfpc}{$i xpc}
+{$mode objfpc}
 program b4i(input,output);
 uses ub4i, ub4;
 

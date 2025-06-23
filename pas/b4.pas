@@ -1,9 +1,9 @@
-{$mode delphi}{$i xpc}
+{$mode delphi}
 { this is the main entry point for b4 }
 program b4;
-uses xpc, ub4, ub4asm, ub4ops, kvm, kbd, uhw_vt, ub4i,
+uses ub4, ub4asm, ub4ops, kvm, kbd, uhw_vt, ub4i,
  sysutils; // for format
-
+ 
 const pgsz = 16 * 8; { should be multiple of 8 to come out even }
 
 var opli, oplb, opjm, opcl, opnx, ophp, oph0 : value;
@@ -14,12 +14,12 @@ procedure draw_stack(x,y : byte; id:char; var s:stack; n:value);
     gotoxy(x,y); bg('k'); clreol; fg('w'); write(id,':');
     fg('Y'); write(' <'); fg('y'); write(n); fg('Y');
     write('> '); fg('y');
-    for i := 0 to n-1 do write(hex(s[i],1),' ');
+    for i := 0 to n-1 do write(hexstr(s[i],1),' ');
   end;
 
 procedure wv(k: string; v:value); { write value }
   begin fg('w'); write(k); fg('k'); write(': ');
-    fg('W'); write(hex(v,4)); write(' ')
+    fg('W'); write(hexstr(v,4)); write(' ')
   end;
 
 
@@ -31,7 +31,7 @@ procedure dump_dict;
   var i : byte;
   begin
     for i := 0 to ub4asm.ents do begin
-      write(dict[i].id:8, ': ', hex(dict[i].adr,4) );
+      write(dict[i].id:8, ': ', hexstr(dict[i].adr,4) );
       if (i>0) and (i mod 4 = 0) then writeln;
     end;
     repeat until keypressed;
@@ -58,7 +58,7 @@ procedure dump;
     for i := pg to pg + pgsz-1 do begin
       if (i mod 16 = 0) then begin
         bg('k'); if (i>pg) then writeln; clreol;
-        fg('m'); write(hex(i,4));
+        fg('m'); write(hexstr(i,4));
       end;
       { color cell based on ip / editor cursor positions }
       if (i=rg[RIP]) and (i=rg[RED]) then bg('m')
@@ -67,10 +67,10 @@ procedure dump;
       else bg('k');
       { literal numbers (after si/li) }
       if skip>0 then begin dec(skip); target := false; literal := false end
-      else if literal or (i < 32) then begin fg('y'); write(hex(mem[i],2):4); literal := false end
+      else if literal or (i < 32) then begin fg('y'); write(hexstr(mem[i],2):4); literal := false end
       else if target then { target adress for jump/etc }
           begin if i = rg[RED] then fg('k') else fg('r');
-                write(hex(mem[i],2):4); target := false
+                write(hexstr(mem[i],2):4); target := false
           end
       { past end of memory }
       else if i > high(mem) then begin fg('K'); write('xx') end
@@ -94,7 +94,7 @@ procedure dump;
       else if (mem[i] >= 32) and (mem[i] < 128) then
         begin fg('g'); write('  '''); write(chr(mem[i])) end
       { anything else }
-      else begin fg('b'); write(hex(mem[i],2):4) end
+      else begin fg('b'); write(hexstr(mem[i],2):4) end
     end;
     { for ui debugging, draw line numbers on the right: }
     bg('K'); fg('k'); for i := 0 to 24 do begin gotoxy(xMax-1,i); write(i:2) end;

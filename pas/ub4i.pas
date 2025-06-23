@@ -1,5 +1,5 @@
 { b4 debugger/interpreter }
-{$mode objfpc}{$i xpc}
+{$mode objfpc}
 unit ub4i;
 interface uses sysutils, strutils, ub4, ub4asm, ub4ops;
 

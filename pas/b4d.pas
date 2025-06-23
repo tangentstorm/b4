@@ -1,4 +1,4 @@
-{$mode delphi}{$i xpc}
+{$mode delphi}
 program b4d; { b4 dis-assembler }
 uses ub4, ub4asm, ub4ops, sysutils;
 
