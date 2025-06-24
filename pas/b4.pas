@@ -1,7 +1,7 @@
 {$mode delphi}
 { this is the main entry point for b4 }
 program b4;
-uses ub4, ub4asm, ub4ops, crt, uhw_vt, ub4i,
+uses ub4, ub4asm, ub4ops, uhw_vt, ub4i,
  sysutils; // for format
 
 const pgsz = 16 * 8; { should be multiple of 8 to come out even }
@@ -11,7 +11,7 @@ var opli, oplb, opjm, opcl, opnx, ophp, oph0 : value;
 procedure draw_stack(x,y : byte; id:char; var s:stack; n:value);
   var i : value;
   begin
-    gotoxy(x,y); bg('k'); clreol; fg('w'); write(id,':');
+    goxy(x,y); bg('k'); clreol; fg('w'); write(id,':');
     fg('Y'); write(' <'); fg('y'); write(n); fg('Y');
     write('> '); fg('y');
     for i := 0 to n-1 do write(hexstr(s[i],1),' ');
@@ -24,7 +24,7 @@ procedure wv(k: string; v:value); { write value }
 
 
 procedure draw_help(x,y : byte);
-  begin gotoxy(x,y); write('keys: (0)top, i(p), (s)tep (o)ver, (r)un, to (c)ursor, (q)uit, b4(i)')
+  begin goxy(x,y); write('keys: (0)top, i(p), (s)tep (o)ver, (r)un, to (c)ursor, (q)uit, b4(i)')
   end;
 
 procedure dump_dict;
@@ -42,18 +42,18 @@ procedure dump;
   var x, y, oldattr: word; i, pg: value; skip: byte=0;
       literal, target: boolean; id: ub4asm.ident;
   begin
-    x := wherex; y := wherey; oldattr := textattr;
+    x := wherex; y := wherey; oldattr := getTextAttr;
     id := 'call';
     { draw the data and return stacks }
     draw_stack(0, 13, 'd', ds^, rg[RDS]);
     draw_stack(0, 14, 'c', cs^, rg[RCS]);
 
     { draw some important registers }
-    gotoxy(0, 15); bg('K'); clreol;
+    goxy(0, 15); clreol;
     wv('ip', rg[RIP]); wv('@_', rg[RHP]); wv('ep',rg[RED]);
 
     { draw memory }
-    gotoxy(0,16); pg := pgsz * (rg[RED] div pgsz);
+    goxy(0,16); pg := pgsz * (rg[RED] div pgsz);
     literal := false; target := false; { next cell is literal or jump target }
     for i := pg to pg + pgsz-1 do begin
       if (i mod 16 = 0) then begin
@@ -96,12 +96,12 @@ procedure dump;
       { anything else }
       else begin fg('b'); write(hexstr(mem[i],2):4) end
     end;
-    { for ui debugging, draw line numbers on the right: }
-    bg('K'); fg('k'); for i := 0 to 24 do begin gotoxy(xMax-1,i); write(i:2) end;
+    // { for ui debugging, draw line numbers on the right: }
+    for i := 0 to 24 do begin goxy(xMax-2,i); write(i:2) end;
     { help text }
     draw_help(0, 24); clreol;
     { restore cursor position and color so we don't break the vm }
-    gotoxy(x,y); textattr := oldattr;
+    goxy(x,y); setTextAttr(oldattr);
   end;
 
 
@@ -131,8 +131,8 @@ function readstr:string;
       else if c = ^H then begin
         if length(result)>0 then begin
           result:=leftstr(result,length(result)-1);
-          gotoxy(wherex-1,wherey); write(' ');
-          gotoxy(wherex-1,wherey);
+          goxy(wherex,wherey); write(' ');
+          goxy(wherex,wherey);
         end end
       else begin
         result += c;
@@ -140,14 +140,14 @@ function readstr:string;
       end
     end
   end;
+
 procedure b4i_loop;
   var line:string; done:boolean=false;
   begin
     clrscr;
     repeat
-      textattr := $0A;
-      write('b4i> ');
-      textattr := $07;
+      fg('G'); write('b4i'); fg('g'); write('> ');
+      fg('w');
       line:=readstr;
       writeln;
       done := (line='') or ub4i.b4i(line);

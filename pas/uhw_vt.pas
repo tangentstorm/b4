@@ -14,11 +14,29 @@ function xmax : byte;
 function ymax : byte;
 procedure fg(ch : char);
 procedure bg(ch : char);
+procedure goxy( x, y : byte );
+function wherex: byte;
+function wherey: byte;
+procedure clrscr;
+procedure clreol;
+function keypressed:boolean;
+function readkey:char;
+function getTextAttr:word;
+procedure setTextAttr(a : word);
 
 implementation
 uses ub4;
 
-var _fg:byte = 7; _bg:byte = 0; _hi:boolean = false;
+function wherex: byte; begin result := crt.wherex-1 end;
+function wherey: byte; begin result := crt.wherey-1 end;
+procedure clrscr; begin crt.clrscr end;
+procedure clreol; begin crt.clreol end;
+function keypressed:boolean; begin result := crt.keypressed end;
+function readkey:char; begin result := crt.readkey end;
+function getTextAttr:word; begin result := crt.textattr end;
+procedure setTextAttr(a : word); begin crt.textattr := a end;
+
+var _fg : byte = 7; _bg:byte = 0; _hi:boolean = false;
 
 function tc(ch : char): byte;
   begin
@@ -32,7 +50,8 @@ function tc(ch : char): byte;
 procedure fg(ch: char);
   begin
     _fg := tc(ch);
-    crt.TextColor(_fg);
+    if _hi then crt.TextColor(_fg + crt.blink)
+    else crt.TextColor(_fg);
   end;
 
 procedure bg(ch: char);

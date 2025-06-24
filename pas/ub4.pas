@@ -325,7 +325,7 @@ procedure wl(a:address);
 
 
 procedure runop(op : byte);
-  var t,a : value;
+  var t : value;
   begin
     if op=0 then //ok
     else if op<$20 then {^R} oper(oregn(op))
@@ -412,7 +412,7 @@ begin
 end;
 
 procedure WriteStack(pre : string; s:pstack; count:value);
-  var v: value; i:integer=0;
+  var i:integer=0;
 begin
   Write(pre);
   Write('[');
