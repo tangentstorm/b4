@@ -131,8 +131,8 @@ function readstr:string;
       else if c = ^H then begin
         if length(result)>0 then begin
           result:=leftstr(result,length(result)-1);
-          goxy(wherex,wherey); write(' ');
-          goxy(wherex,wherey);
+          goxy(wherex-1,wherey); write(' ');
+          goxy(wherex-1,wherey);
         end end
       else begin
         result += c;
