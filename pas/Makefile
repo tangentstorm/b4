@@ -35,5 +35,9 @@ b4a: b4 b4a.pas
 b4d: b4 b4d.pas
 	$(FPC) -B b4d.pas
 
+colortest: uhw_vt.pas colortest.pas
+	$(FPC) -B colortest.pas
+	./colortest
+
 clean:
 	@rm -f *.o *.ppu b4 b4.exe *~

@@ -18,7 +18,9 @@ procedure bg(ch : char);
 implementation
 uses ub4;
 
-function tc(ch: char): byte;
+var _fg:byte = 7; _bg:byte = 0; _hi:boolean = false;
+
+function tc(ch : char): byte;
   begin
     // result := pos(ch, 'krgybmcwKRGYBMCW');
     // crt uses a different ordering:
@@ -29,12 +31,18 @@ function tc(ch: char): byte;
 
 procedure fg(ch: char);
   begin
-    crt.TextColor(tc(ch));
+    _fg := tc(ch);
+    crt.TextColor(_fg);
   end;
 
 procedure bg(ch: char);
   begin
-    crt.TextBackground(tc(ch));
+    _bg := tc(ch);
+    { "blink" doesn't actually work in crt, but can be used for bright backgrounds }
+    if _bg > 7
+      then if not _hi then begin _hi := true; crt.TextColor(_fg + crt.blink) end
+      else if _hi then begin _hi := false; crt.TextColor(_fg) end;
+    crt.TextBackground(_bg);
   end;
 
 function xmax : byte;
