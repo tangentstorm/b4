@@ -1,0 +1,29 @@
+
+old notes about the memory allocator:
+
+
+* heap structure
+- 'new' and 'del' bios opcodes (predefined in the ^^ and ^_ slots)
+  simple interface but we can plug in more or less sophisticated algorithms.
+  
+- heap header has multiple linked lists of sized blocks
+- each block has a header (next, size, used)
+  used is either the actual used size or 0 for free
+http://www.flounder.com/inside_storage_allocation.htm#ALLOCSIZE
+
+* traversing the lists
+- every block is part of at least one linked list.
+
+
+* finding big enough block
+- only look for blocks of size 2^n cells
+- there's some max sized block (4k or whatever)
+- first check the list for the block size we want.
+- if list is empty, check next list and split
+
+* split a block
+
+* delete
+
+* coalesce
+

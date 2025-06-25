@@ -1,0 +1,14 @@
+#+title: message passing
+
+B4 machines exist in a swarm and can pass messages to each other.
+
+Messages are strings broken into 64-byte chunks.
+The first 63 bytes of a chunk contain the data (and possibly
+padding or garbage bytes at the end).
+
+The final byte describes the length of the chunk
+(6 bits to indicate the numbers 0..63), 1 bit to
+indicate whether more messages are coming, and 1 bit
+that acts as a semaphore indicating whether the message
+has been processed (and can therefore be overwritten).
+

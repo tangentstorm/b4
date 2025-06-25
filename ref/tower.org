@@ -1,0 +1,281 @@
+#+title: a tower of languages
+
+* Overview
+
+- We want to make a tower of languages running on this virtual machine.
+- Tower means each language is implemented in terms of the layer below.
+
+* b4a (with labels, macros)
+- Flat assembly language (no parens or nested syntax).
+
+* b4s
+- this is b4a but with s-expressions ('b4n')
+- only type is 'int', but has many uses
+  - number
+  - pointer (with get/set memory)
+  - function reference (still just a pointer)
+  - tuple (ip address, colors)
+  - 4-char string/symbol
+  - set (individual bits)
+- core semantics are similar similar to oberon/0:
+  - if/then/else
+  - while/do  (whilst?)
+  - variables (ints)
+  - def (procedure/function)
+  - set to assign variables
+  - seq to sequence a list of statements
+- has a 'b4a' construct that lets you inline b4a code
+- adds quote, lift, sink (up/down lambda calculus)
+
+* TODO up/down lambda calculus
+This is still fuzzy in my head.
+It's from the paper /Collapsing Towers of Interpreters/
+
+
+* TODO goal: evaluate (prn (+ 1 2))
+** TODO parse the string into a tree
+** TODO basic cons cell structure
+#+begin_src b4a
+  # cells are 64 bits (8 bytes) so pointer to cell always ends in bits 0b000.
+  # so we can use these last 3 bits to store information.
+
+  # low bit is used as a "seen" flag for the garbage collector
+  :seen lb 01 an rt  # (item -> bit)
+
+  # other two bits are used for a type code:
+  :type lb 06 an rt  # (item -> code)
+
+  # -- item type codes (bits will be 000, 010, 100, or 110) ---
+  :cel? c0 eq rt     # 000 : normal cell (ptr to car)
+  :num? lb 02 eq rt  # 010 : number (32-bit int stored in cdr)
+  :sym? lb 04 eq rt  # 100 : symbol (32-bit sym stored in cdr)
+  :var? lb 06 eq rt  # 110 : reserved for "variant" types later
+
+  # variable to store the address of the special 'nil' cell
+  :nil 00 00 00 00
+  :nil? @nil eq rt
+
+  # -- following the pointers ---
+  :wipe lb 07 nt an rt     # we have to clear the mark bit so might as well clear all 3 at once
+  :car wipe ri rt
+  :cdr wipe 04 ad ri rt
+  :cel wipe du 04 ad ri ri rt # (adr -- cdr car)
+
+  # the other two are just aliases, but the "return type" is different
+  :>num cdr rt
+  :>sym cdr rt
+
+  # memory system
+  :acel TODO rt # allocate cell (fetch next from freelist)
+
+  # constructors
+  :cons                  # (car cdr) -> adress of new cell
+    acel du dc           # -> car cdr adr | adr
+    lb 04 ad wi          # -> car | adr   {write cdr}
+    cd du dc             # -> car adr | adr
+    wi cd rt             # -> adr
+
+  # sym and int are the same, except for the type code
+  :v> c0 sw cons rt      # x -> address of (0 . x)
+  :num> v> lb 02 an rt
+  :sym> v> lb 04 an rt
+  # TODO: :var>
+
+
+  ## -- putn copied from bios
+  :base 10 :digits  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
+  :dvm  # divmod (n d -- q r)
+     ov ov md      # (xy-xy|m)
+     dc dv cd rt   # (xy|m-dm|)
+  :putn # (n - )
+    du c0 eq .i lb '0 ^E rt
+    .e c0 sw                         # ( n-kn) k:digit count=0
+       .w du .d                      # while n!=0 do
+          li `base rb dvm            # (kn-kdm) divmod
+          li `digits ad rb dc        # (kdm-kd|c) push char to retn stack
+          sw c1 ad sw .o             # k++, d is new n
+        zp                           # (kd-k)
+        .f cd cd ^E dc .n .t         # loop through the characters
+    rt
+
+  # -- printer for s-expressions --------------------
+
+  # ^E : emit char
+  # ^P : call pexp
+
+  :p4ch                  # print 4 chars stored in int
+     .w du .d
+        du lb FF an ^E    # print low byte
+        ls -8 sh          # move to next char
+     .o zp rt
+
+  :psym >sym p4ch rt
+  :pnum >num putn rt
+  :pcel cel
+     lb '( ^E ^P          # print '( + car
+     du nil? .i zp lb ') ^E rt .t
+     du cel? .i ^P lb ') ^E rt .t
+     # otherwise emit ' . cdr)'
+     li '  '. '  00 p4ch ^P  lb ') ^E rt
+
+  :P :pexp
+     du sym? .i psym rt .t
+     du num? .i pnum rt .t
+     du cel? .i pcel rt .t
+     zp lb '? ^E rt
+
+  :E :emit
+     lb 'e tm rt
+
+#+end_src
+
+** the horrors of "sym<"
+this is an example of why you might want a higher level language for some of your work
+
+but it's a bad example, because sym is just a synonym for 'li' :D
+
+#+begin_src b4a
+  :sym<                  # read 4-byte "symbol" following the call (`sym< AA BB CC 00`   becomes CCBBAA on stack)
+    cd du                # fetch return address
+    ri sw                # leaving (sym ret)
+    lb 04 ad             # increment ret address by 4 bytes
+    dc rt                # return
+#+end_src
+
+note that it introduces control flow to jump over data.
+it adds 4 bytes to its return address
+powerful and convenient, but starts getting hard to reason about.
+
+there's also just no easy way to see where the function ends.
+(there might be multiple "rt" codes, as with =:ev=)
+
+(if you allow the b4s language to drop down into b4a, then it too can do all sorts
+of madness within a function, and possibly even break everything about how functions
+work, but you can at least adopt the convention that you don't do this.
+
+for peace of mind, we could disable opcodes that manipulate the instruction pointer,
+or require they be tagged with an 'unsafe' attribute)
+
+
+
+** TODO reader with actual horrors
+#+begin_src b4a
+
+  # would be nice to keep parser state in registers for easy stacking
+  # mapping of parseco.ijs vars to b4a:
+  #
+  # mb : @M : match bit     <--- could just be on the stack?
+  # ib : @B : input buffer
+  # ch : @C : current character (slightly redundant)
+  # mk : @[ : mark (start of current token)
+  # ix : @] : read pointer
+  # ts : @_ : here pointer for forth
+
+  # @B : (ib)
+  # @C : (ch)
+  # ^E : emit char
+  # ^K : read keyboard char
+  # ^M : (mb)
+  # ^P : print expression
+  # ^R : read expression
+  # ^V : eval expression
+  # @[ : (mk)
+  # @] : (ix)
+  # @^ : dictionary
+  # @_ : here
+
+  # when do we really need to push and pop the state?
+  # only when testing alternatives!
+  # push when we enter an "alt"
+  # pop when we exit the alt
+  # pop, copy, and push when we try the next alt
+
+  # -- match state --
+  :ib .. .. .. ..            # @ib: address of input buffer
+  :rp .. .. .. ..            # @rp: read pointer
+  :mk .. .. .. ..            # @mk: mark (start of current token)
+  :ch .. .. .. ..            # @ch: current char
+  # -- tree state --
+  :tr .. .. .. ..            # @tr: tree root (top-level s-expr)
+  :nd .. .. .. ..            # @nd: node (start of current list)
+  :hr .. .. .. ..            # @hr: "here" pointer (cell whose cdr we should set)
+
+  :node @tp nil? .i nil .t
+
+  :nc c1 +A rb rt # read next char
+
+  :btwn # (x lo hi -> lo <= x <= y)  NOTE: hi/lo can be swapped
+    ov ov lt nt .i sw .t # -- x lo hi
+    dc ov dc             # -- x lo | x hi
+    lt .i cd cd zp zp c0 rt .t  # 0 if x<lo
+    cd cd sw lt nt rt           # -- hi>=x
+
+  :rsym
+  :rnum rt # already in bios
+  :rlis # read list from 
+
+  :rexp
+
+     .w @ok .i nc .e c0 .t .d
+        du lb '( eq .i zp rlis nc rt .t # TODO check for ')
+        du lb '0 lb '9 btwn .i rnum .t
+        du lb 'A lb 'F btwn .i rnum .t
+        rsym
+     .o rt
+
+  :R :read # (a -> sx) read expression from address (zero-terminated string)
+     @A dc !A rexp
+     cd !A rt
+
+#+end_src
+
+
+
+** TODO how do i do a forward reference in the assembler?
+need it for recursive evaluation (ev-form needs to evaluate the args)
+
+** TODO implement eval
+#+begin_src b4a
+
+  # ast-builders
+  b4a>: li 'b '4 'a .. sym> sw cons rt  # sx -> (b4a sx)
+  li>:  li 'l 'i .. .. sym> sw cons rt  # sx -> (li sx)
+
+  stage:  00  # 0=eval, 1=compile
+
+  :ev-plus # '(+ x y)
+    ~~~~~~~~~~~~~~~~~~TODO~~~~~~~~~~~~~~~~~~~~~~~~
+    # if staging, emit `(b4a ,(ev x) ,(ev y) ad)
+    # else call lisp version of "plus" (which evals each arg to b4 int, then calls ad)
+
+
+  :ev-pnum # '(pnum x)
+    # if staging, emit `(b4a ,(ev x) (cl 'pnum))
+    # else eval x then call pnum
+
+
+  :ev-form            # 'form' is a cell whose car is a symbol
+     cel >sym          # (frm -- cdr sym) where sym is the int
+     du li 'p 'n 'u 'm eq .i zp ev-pnum rt .t
+     du li '+ .. .. .. eq .i zp ev-plus rt .t
+     rt  # else return unchanged
+
+  # if staging, wrap with (b4a (li _)) else return unchanged
+  :ev-num  @stage .i           li> b4a> .t rt
+  :ev-sym  @stage .i >sym num> li> b4a> .t rt
+
+  :ev # top-level evaluator
+     du cel? .i
+        du nil? .i rt .t         # nil -> self
+        du car sym? nt .i rt .t  # for now, weird (x . y) pairs -> self
+        ev-form rt .t
+     du num? .i  ev-num rt .i   # num -> self
+     du sym? .i  ev-sym rt .i   # sym -> self
+
+#+end_src
+
+
+
+* parser implementation
+- pluggable tree builder. start with cons cells for now
+- for now, limit to 4-char symbols

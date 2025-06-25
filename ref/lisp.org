@@ -1,0 +1,79 @@
+lisp paper:  https://www-formal.stanford.edu/jmc/recursive.pdf
+
+* page 10, part c: the elementary s-functions and predicates
+
+
+1. atom
+   atom[x] = T
+   atom[(x . a)] = F
+2. eq
+   eq[x;x] = T
+   eq[x;a] = F
+   eq[x;(x.a)] = undefined
+3. car
+4. cdr
+5. cons
+
+
+* recursive
+1. ff
+2. subst
+3. equal
+
+* s-expressions as lists
+1. append[x;y]
+2. among[x;y]
+3. pair[x;y]  (zip)
+4. assoc[x;y]
+5. sublis[x;y]
+
+* e. s-functions as s-expressions
+1. quote
+2. (symbols)
+3. application (f a0 a1 ...)
+4. (\lambda (x0 x1 ...) e)
+5. (let (kv*) v)
+
+* f. apply
+apply:{[f;args] eval[cons[f; appq[args]]; nil]}
+appq:{[m]
+  :[null[m]; nil
+    `else; cons[list[`quote; car[`m]]; appq[cdr[m]]]]}
+eval:{[e;a]
+  :[atom[e]; assoc[e;a]
+    atom[s:car[e]]
+      :[s=`quote ; cadr[e]
+        s=`atom  ; atom[eval[cadr[e]; a]]
+        s=`eq    ; :[eval[cadr[e];a] = eval[caddr[e];a]]
+        s=`cond  ; evcon[cdr[e]; a]
+        s=`car   ; car[eval[cadr[e]; a]]
+        s=`cdr   ; cdr[eval[cadr[e]; a]]
+        s=`cons  ; cons[eval[cadr[e]; a]; eval[caddr[e];a]]
+        `else; eval[cons[assoc[car[e];a]; evlis[cdr[e];a]]; a]]
+    caar[e]~`lambda;
+    caar[e]~`label;
+    `else ;  '"cannot eval:",5:e ]}
+
+
+
+
+
+#+begin_src javascript
+  eval:{[e; a]
+   :[atom[e];  assoc[e; a]
+     atom [car [e]] → :[
+       eq [car [e]; QUOTE] → cadr [e]
+       eq [car [e]; ATOM] → atom [eval [cadr [e]; a]]
+       eq [car [e]; EQ] → [eval [cadr [e]; a] = eval [caddr [e]; a]]
+       eq [car [e]; COND] → evcon [cdr [e]; a]
+       eq [car [e]; CAR] → car [eval [cadr [e]; a]]
+       eq [car [e]; CDR] → cdr [eval [cadr [e]; a]]
+       eq [car [e]; CONS] → cons [eval [cadr [e]; a]
+                                  eval [caddr [e]; a]]
+       T → eval [cons [assoc [car [e]; a]
+                       evlis [cdr [e]; a]]; a]]
+     eq [caar [e]; LABEL] → eval [cons [caddar [e]; cdr [e]]
+                                  cons [list [cadar [e]; car [e]; a]]]
+     eq [caar [e]; LAMBDA] → eval [caddar [e]
+                                   append [pair [cadar [e]; evlis [cdr [e]; a]; a]]]]}
+#+end_src
