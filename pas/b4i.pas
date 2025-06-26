@@ -7,14 +7,14 @@ begin
   if paramstr(1) = '-q' then prompt:=''
   else begin
     writeln('b4i.pas [',{$i %date%},'] ',
-            'type %h for help, %q to quit.');
+            'type \h for help, \q to quit.');
     prompt:='b4i> ';
   end;
   rg^[RIP] := $100; rg^[regn('_')] := $100;
   write(prompt);
-  while not (done or eof) do begin
+  repeat
     readln(line);
     done := ub4i.b4i(line);
     if not done then write(prompt);
-  end
+  until done or eof;
 end.

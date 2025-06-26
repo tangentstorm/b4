@@ -127,10 +127,10 @@ begin
       if op > $20 then runop(op)
       else ub4.runa(4*op) end // immediately invoke ^R
     else case tok of
-      '%C' : boot;
-      '%q' : done := true;
-      '%s' : ub4.step;
-      '%h' : help;
+      '\C', '%C' : boot;
+      '\q', '%q' : done := true;
+      '\s', '%s' : ub4.step;
+      '\h', '%h' : help;
       '?d' : WriteStack('ds: ', ds, rg^[RDS]);
       '?c' : WriteStack('cs: ', cs, rg^[RCS]);
       '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
