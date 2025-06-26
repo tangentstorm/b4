@@ -55,8 +55,8 @@ begin
   OldY := WhereY;
   StateWindow;
   TextColor(Black);
-  WriteStack('ds: ', ds, rg^[RDS]);
-  WriteStack('cs: ', cs, rg^[RCS]);
+  WriteStack('ds: ', ds, rg^[RDS]); ClrEol; WriteLn;
+  WriteStack('cs: ', cs, rg^[RCS]); ClrEol; WriteLn;
   TextBackground(Blue);
   TextAttr := $70;
   Write('addr +0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F ');

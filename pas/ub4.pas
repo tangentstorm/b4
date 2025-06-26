@@ -129,10 +129,10 @@ function dis(b:byte):string;
 
 procedure fail(msg: string);
   begin
-    writeln(msg);
-    writeln('ip: ', rg[RIP],' op: ', dis(mem[rg[RIP]]));
-    WriteStack('ds: ', ds, rg^[RDS]);
-    WriteStack('cs: ', cs, rg^[RCS]);
+    WriteLn(msg);
+    WriteLn('ip: ', rg[RIP],' op: ', dis(mem[rg[RIP]]));
+    WriteStack('ds: ', ds, rg^[RDS]); WriteLn;
+    WriteStack('cs: ', cs, rg^[RCS]); WriteLn;
     raise EB4Exception.Create(msg);
   end;
 
@@ -373,9 +373,9 @@ procedure runop(op : byte);
       $C0 : {c0} dput(0);
       $C1 : {c1} dput(1);
       $F9 : {wl} wl(dpop);
-      $FA : {ds} WriteStack('ds: ', ds, rg^[RDS]);
-      $FB : {cs} WriteStack('cs: ', cs, rg^[RCS]);
-      $FC : {hx} write(format('(%x)', [dpop]));
+      $FA : {ds} begin WriteStack('ds: ', ds, rg^[RDS]); WriteLn end;
+      $FB : {cs} begin WriteStack('cs: ', cs, rg^[RCS]); WriteLn end;
+      $FC : {hx} Write(format('(%x)', [dpop]));
       $FD : {io} opio;
       $FE : {db} rg[RDB] := 1;
       $FF : {hl} halt;
@@ -420,7 +420,7 @@ begin
     if i>0 then Write(' ');
     Write(b4mat(s^[i]));
   end;
-  WriteLn(']');
+  Write(']');
 end;
 
 begin

@@ -131,8 +131,8 @@ begin
       '\q', '%q' : done := true;
       '\s', '%s' : ub4.step;
       '\h', '%h' : help;
-      '?d' : WriteStack('ds: ', ds, rg^[RDS]);
-      '?c' : WriteStack('cs: ', cs, rg^[RCS]);
+      '?d' : begin WriteStack('ds: ', ds, rg^[RDS]); WriteLn end;
+      '?c' : begin WriteStack('cs: ', cs, rg^[RCS]); WriteLn end;
       '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
       '?r' : ShowRegs;
     else case tok[1] of
