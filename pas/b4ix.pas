@@ -17,10 +17,10 @@ procedure DrawHeadings;
 begin
   GotoXY(1,1); TextAttr := $70;
   Write('B4 Terminal'); ClrEol;
-  GotoXY(1,TermHeight+1); TextAttr := $70;
+  GotoXY(1,TermHeight+1); TextAttr := $70; TextBackground(Yellow);
   Write('Interactive Assembler'); ClrEol;
   GotoXY(1,ScreenMaxY-StateHeight-1); TextAttr := $70;
-  Write('Internal State'); ClrEol;
+  Write('Machine State'); ClrEol;
 end;
 
 procedure TermWindow;
@@ -74,7 +74,7 @@ procedure DrawPrompt;
 begin
   TextColor(Cyan); Write('b4i');
   TextColor(LightBlue); Write('> ');
-  TextColor(White);
+  TextAttr := $07;
 end;
 
 var prompt,line: string; done:boolean=false;
