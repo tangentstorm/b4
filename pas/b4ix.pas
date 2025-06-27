@@ -54,7 +54,7 @@ begin
   OldX := WhereX;
   OldY := WhereY;
   StateWindow;
-  TextColor(Black);
+  TextColor(White);
   WriteStack('ds: ', ds, rg^[RDS]); ClrEol; WriteLn;
   WriteStack('cs: ', cs, rg^[RCS]); ClrEol; WriteLn;
   TextBackground(Blue);
