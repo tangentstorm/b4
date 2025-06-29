@@ -1,97 +1,89 @@
 #+title: b4 implementation plan
 
-* -- b4vm
-* -- debugger
-** DONE show labels in the debugger
-- defs could always be line-aligned (just leave spaces)
-  and we could have a comment on the left
-** DONE read/write individual bytes
-    rb/wb
-    ri/wi
+* -- roadmap --
+** TODO b4s (a tiny lisp-like interface)
+** TODO finish memory alloctor
+** TODO implement variants
 
-    -- stacks and registers are all 32 bits
-    -- but the main content can be bytes
+* -- sprint --
+** TODO separate bios from b4f
+- bios
+  - num : number i/o
+  - trm : terminal commands
+  - str : string i/o
+  - ibf : allocate a 255-byte input buffer (+1 len cel)
+- the rest goes into b4f, the forth-like interpreter
 
-    --  READ byte VS READ value (4 bytes) --
-    -> s-eq? wants to read a byte at a time
-    -> eol flag could just be a byte.
+** TODO command to assemble a file                              :b4i:
+** TODO implement 4ch symbol routines
+** TODO implement nxcl 'allocator'                             :b4s:
+** TODO read lists from input buffer                           :b4s:
+** TODO reader macros for up/dn/qt                             :b4s:
+** TODO implement lisp-style 'eval'                            :b4s:
 
-    -- but: we also want to write registers
-** DONE [3/3] make the debug display easier to see
-*** DONE explicit 'call' op
-*** DONE use high bits for ops
-*** DONE switch ram to bytes
-** DONE [2/2] add 'step over', 'run to cursor' in debugger
-- [X] 'step over' is only for calls.
-  just move the cursor to the next active cell, and then 'run to cursor'
-- [X] 'run to cursor' should move to next active cell, and then sets a breakpoint
+* -- backlog --
+** TODO rename 'mnemonics.org' to 'b4-opcodes.org'              :doc:
+*** make mnemonics just a section
+** TODO generate 16x16 opcode table for the docs                :doc:
+** TODO [0/3] add assembler.org doc for b4a assembler syntax    :doc:
+*** TODO describe label usage: :name name `name @name !name
+*** TODO document character literals with 'x
+*** TODO document .^ macro for linked lists
+*** [0/3] TODO document built-in macros for structured programming
+**** TODO .f .n       # isn't .n just nx? (should i drop nx?)
+**** TODO .w .d .o    # maybe .o should be .l?
+**** TODO .i .e .t    # think of '.i' as 'ifso'
+** TODO document memory layout                                  :doc:
+- 0000..007F holds the 32 named registers
+- 0080..00FF holds internal/system registers
+- 0100..0FFF reserved for bios
+- usable ram starts at 1000
 
-** TODO show a prettier version of the return stack (with labels)
-[ ] show a stack somewhere
+** TODO describe how b4i interactive assembler is different     :doc:
+** TODO command to list known labels                            :b4i:
+** TODO command to save a memory image                          :b4i:
+** TODO command to load a memory image                          :b4i:
+** TODO command to load a file into the input buffer            :b4i:
+** TODO allow placing a cursor for "run to cursor" (^]) ?       :b4i:
+** TODO command to set the start of view memory                 :b4i:
+** TODO [0/4] integrate ideas from the b4.pas debugger          :b4i:
+*** TODO show calls with their names
+*** TODO run to cursor command
+*** TODO step over command for calls
+temporarily move the cursor to the next active cell,
+and then 'run to cursor'
+** TODO show/browse assigned names                              :b4ix:
+** TODO show labels for calls                                   :b4ix:
+** TODO show the return stack with labels                       :b4ix:
 
-** DONE show name for calls
-[ ] show the label
+** TODO ui to edit the input buffer directly                    :b4ix:
+** TODO allow setting arbitrary breakpoints                     :b4i:
+** TODO break bios into smaller files (nums, term)              :bios:
+** TODO finish and test the memory allocator                    :bios:mm:
+** TODO describe existing forth interpreter                     :b4f:
+*** TODO line editor
+**** break on any key
+**** read the key
+**** emit corresponding character to the screen
+**** wait for specific key (C-c ? Esc ?)
 
-** TODO allow setting breakpoints
-** TODO source-level assembly language debugger
+*** TODO process word from buffer
+*** TODO lookup word in dictionary
+**** traverse the chain
+**** compare to ram
+- last
+- e-nm ("lb 4 ad")
+- s-eq uses "inc" ("lb 1 ad")
+- find (currently "word?")
 
-* -- b4a assembler
-** DONE add !var and @var to assembler
-** TODO b4a repl
-you should be able to execute assembly language instructions directly
-(in the vm implementation itself)
-- maybe even show exactly how it's getting assembled underneath
-- run opcodes directly
-- show stacks
-- show ram
+*** TODO obtain the code and type fields
+*** TODO execute the code
 
-** TODO have assembler use si, hop, h0 if possible
-stacks are still cell-based
-
-** assembler plan
-- b4a should extend b3a with:
-  - labels
-  - special control words ( { } | [ ]  .data .code )
-  - call and $addr syntax
-- eventually, write b4a in b3a
-
-** b4a spec [runs on the b4 vm, so has a stack, etc]
-- immediate need: dictionary
-- adds labels
-- allow both decimal and hex numbers
-- =.data= to allow building raw binary data
-  - counted strings
-- =.code= to make it nice to write forth-like code
-  - auto-call functions
-  - add 'si' or 'li' before chars, numbers
-- =.dict= to define a dictionary entry
-- structured programming constructs:
-  - .if .th .el .ef .en
-  - .wh .do .od
-  - .fr .nx
-
-** DONE use the new 2-char b4 opcodes
-** DONE allow character literals with 'x
-** TODO macros for dictionary entries
-maybe .xxx is label
-and   :xxx is dictionary entry?
-
-** DONE export binary numbers padded to proper size
-** DONE implement enough of minno to allow in-band debug signals
-** TODO only show debug messages when given a flag
-** TODO escape the control codes in the output in debug mode
-* -- bios
-** DONE get a string match working
-** DONE implement number parser
-** DONE implement number printer
-** TODO memory allocator
-* -- interpreter (b4th? b4i?)
-** TODO add dictionary entries for all non-control-flow ops
-** TODO [2/4] implement the forth interpreter
-*** DONE [4/4] implement a forth-style dictionary
-**** DONE implement headers manually
-**** DONE implement 'words'
-**** DONE implement 'word?' (s-a)
+** TODO document how the dictionary gets bootstrapped           :b4f:
+- uses .^ macro for linked list
+- counted strings
+- followed immediately by code
+** TODO document 'word?'                                        :b4f:
 - find definition
   - get last entry address
   - while entry address != 0 do:
@@ -99,90 +91,44 @@ and   :xxx is dictionary entry?
     - compare entry to goal string
     - if match, then leave address of value on stack
   - if entry = 0, say 'not found'
-
-*** DONE interpreter word (exec)
-*** TODO complier words
-- if compiling:
-  - write 'call' + address
-*** TODO defining words
-**** ':' defines new word
-  - creates new entry
-  - reads token for name
-  - copies token to heap
-  - turns on the compiler
-**** ';' emits return and turns off the compiler
-
-**** dictionary entry format
-  - prev: addr
-  - hash: (optional single cell with 32-bit hash/crc)
-  - word: str with len
-  - data: the data or value
-**** create new entry:
+** TODO implement the colon compiler (=:=)                        :b4f:
+*** TODO ':' defines new word
+- creates new entry
+- reads token for name
+- copies token to heap
+- turns on the compiler
+*** TODO ';' emits =rt= and turns off the compiler
+*** dictionary entry format
+- prev: addr
+- hash: (optional single cell with 32-bit hash/crc)
+- word: str with len
+- data: the data or value
+*** create new entry:
   - last @ ,
   - here @ last !
   # - $goal hash ,
   - str,
 
-**** 'str,' copies a string
+*** 'str,' copies a string
   - args: start, length
   - duplicate and write the length
   - copy the string
 
-**** copy tokens to token buffer
+*** copy tokens to token buffer
 - read name
 - write name
 
-** TODO look up and execute a single word
-
-- last
-- e-nm ("lb 4 ad")
-- s-eq uses "inc" ("lb 1 ad")
-- find (currently "word?")
-
-** TODO number/base
-** TODO quote
-** TODO repeatedly load tokens from input buffer
-** TODO line editor
+** TODO number/base                                             :b4f:
+** TODO wait for input when input buffer exhausted              :b4f:
+** TODO implement quote                                         :b4f:
+* -- maybe later --
+** TODO onboard line editor
 ** TODO "calculator mode" (send ascii chars)
 - copy input bytes to buffer
 - let enter trigger word
 
-** TODO read tokens from input buffer instead of keyboard
-* -- implementations
-** DONE [3/3] bring turbo vm in sync with j version
-
-** TODO use hex numbers only in turbo b4a
-** TODO pas: flags to configure loading bios
-** TODO pas: include bios in the executable
-* -- unclear
-** TODO allow defining aliases up front in a table
-* -- lessons
-** operations on state: simple calculator
-- visual 'buttons' that do the work
-- number buttons: multiply by base and add digit
-- clear, inc, dec?
-
-** sequence:
-*** visual virtual machine
-*** no-op, breakpoints
-(so we can see the cursor moving)
-*** place opcodes in the cells directly
-
-** repetition:
-- simple counter
-- implement addition, multiplication
-
-** conditionals
-- show jumping over some code
-- show 'else' using [a?] [b?] [c?] [d?]
-- so consider this instead: [ c ? a | b ]
-- now:
-  [ c0 ? a | [ c1 ? b ] ]
-- so just allow 'elif'
-
-** TODO library mode to edit the input buffer directly
-* -- ancient tasks from retro days
-** TODO [4/9] implement io devices                             :easy:
+** TODO show b4f dictionary in the debugger
+** TODO [4/9] implement io devices
 *** DONE port 1 : keyboard
 *** DONE port 2 : character generator
 *** TODO extend character generator with ability to change bitmap font
@@ -219,113 +165,38 @@ http://www.freepascal.org/docs-html/rtl/sysutils/getenvironmentvariable.html
 **** TODO mouse op 2 | push mb ( button state : 1 bit per button )
 *** DONE port 8 : enhanced text output
 
-** TODO [0/1] show user-defined words in the debugger
-*** TODO procedure to walk the dictionary and extract details
-**** COMMENT Crc said that positon 2 in the image is the pointer to "last"
-(the address of the last defined word, from which you can follow the links back to get the others.)
-
-See file:~/vrx/doc/Commentary.txt
-and file:~/vrx/examples/autopsy.rx
-# ( ~/vrx is just my retroforth working copy )
-
-**** TODO define a record structure to hold the word
-**** TODO populate the fields
 ** TODO [0/12] exercise vm with more ngaro assembly programs
-*** TODO square : draw a square                               :nga:
-*** TODO color  : draw the palette                            :nga:
-*** TODO click  : click screen to change color                :nga:
-*** TODO keys   : press any key to change color               :nga:
-*** TODO hello  : show the word hello                         :nga:
-*** TODO caps   : letters on screen (uppercase)               :nga:
-*** TODO shift  : captital letters / shift key                :nga:
-*** TODO color  : colored text input                          :nga:
-*** TODO read   : read a file from disk                       :nga:
-*** TODO write  : write a file to disk                        :nga:
-*** TODO port pixel.hex to pixel.nga
-**** NOTE Just use the syntax retro gives when you type =see=
-#+begin_example
-Retro 11.0 (1309798464)
-
-ok  see ok
-1423 nop
-1424 nop
-1425 lit   4
-1427 @
-1428 call  167
-1429 0;
-1430 drop
-1431 call  421
-1432 lit   54
-1434 call  443
-1435 ;
-
-ok
-
-#+end_example
-
-** TODO memory manager to allow sharing pascal and retro data
-:PROPERTIES:
-:TS:       <2012-10-30 04:04AM>
-:ID:       mky1x9405xf0
-:END:
-#+begin_src pascal
-{  todo : custom memmory manager
-  http://www.freepascal.org/docs-html/prog/progsu160.html#x205-2180008.4.4
-}
-
-{ retro's file format conventions ( see image/kernel.rx in retro source ) }
-  type rx_header = class
-		     prev, wordclass : int32;
-		     docptr : ^ansistring;
-		     xt     : ^ansistring; { h.xt = @h.code }
-		     token  : ansistring;
-		     code   : ansistring;
-		   end;
-  const
-    rx_last  = 2;
-    rx_xtofs = ;
-
-#+end_src
-
-* -- ancient wishlist
-** NOTE on contributing to this project
-*** these are things that are off the critical path (for now)
-*** ~[#A]~ is easy, ~[#B]~ medium, ~[#C]~ advanced
-*** i could use help with the [[file:b4.00.tasklist.org][main tasklist]], too, but:
-***** usually discover i need something out of order
-***** probably best to chat on freenode/#b4 if you want to work on main tasklist
-*** licensing issues
-- if you contribute / port something, make sure license is MIT/ [[http://en.wikipedia.org/wiki/ISC_license][ISC]] compatible ([[http://retroforth.org/license.html][retroforth license]] is ISC)
-- [[http://www.freepascal.org/faq.var#general-license][freepascal]] code has a tendency to use MPL/LGPL style. I'm okay with that, too.
-
+*** TODO hello  : show the word hello                         :demo:
+*** TODO square : draw a square                               :demo:
+*** TODO color  : draw the palette                            :demo:
+*** TODO click  : click screen to change color                :demo:
+*** TODO keys   : press any key to change color               :demo:term:
+*** TODO caps   : letters on screen (uppercase)               :demo:
+*** TODO shift  : captital letters / shift key                :demo:
+*** TODO color  : colored text input                          :demo:term:
+*** TODO read   : read a file from disk                       :demo:io:
+*** TODO write  : write a file to disk                        :demo:io:
+*** TODO implement mastermind game                            :demo:big:
+*** TODO port mineswpr from retro                             :demo:big:
+** WANT standalone org-babel-tangle (preferably native)        :tool:
 ** WANT relational database (b4 has tiny relational database)
-*** [#C] [[http://en.wikipedia.org/wiki/B-tree][b-tree]] or [[http://en.wikipedia.org/wiki/B%2B_tree][b+-tree]] implementation                     :nga:
-*** [#A] codd's 8 relational operators                        :nga:
+*** [#C] [[http://en.wikipedia.org/wiki/B-tree][b-tree]] or [[http://en.wikipedia.org/wiki/B%2B_tree][b+-tree]] implementation                     :database:
+*** [#A] codd's 8 relational operators                        :database:
 
 There is psuedocode for all 8 here:
 
 http://science.kennesaw.edu/~mguimara/3310/RA_SQL.htm
 
-** WANT port of gamesketchlib to b4
+** WANT port of gestalt/gamesketchlib to b4
 
-I made the java/processing game library at http://gamesketchlib.org/ and will try to follow the same design patterns as I work on this system.
+I made the java/processing game library at https://github.com/tangentstorm/gamesketchlib
+and will try to follow the same design patterns as I work on this system.
 
-** WANT python bytecode -> ngaro translator
-*** [#A] research step : match up the two sets of bytecode
+godot 4 version: https://github.com/tangentstorm/fnarbmlyx
 
-ngaro only has 30 instructions, python has around the same. There is much overlap, and in forth-like languages, it's very easy to translate things like this.
+(there is a javsacript version of this as well but it's currently in a private repo)
 
-So it's possible that at least some python code should be able to run here.
-
-The first step would be to compile a table that compares and contrasts the two sets of bytecode:
-
-[[http://docs.python.org/library/dis.html][python dis module]] and the opcode section in [[http://retroforth.org/docs/The_Ngaro_Virtual_Machine.html][ngaro-vm reference]]
-
-*** ?? pending above step, add new primitives to let us run python
-
-probably the most dynamic aspects of python will not run well, but simpler python code probably can.
-
-** WANT modfile player.
+** WANT midi/modfile player.
 
 I would really really like a modfile player for retro sounds and music. (don't know what modfiles are? see http://modarchive.org/ )
 
@@ -338,17 +209,6 @@ I would really really like a modfile player for retro sounds and music. (don't k
 [13:07] <tangentstorm> to make something like this: http://www.photonstorm.com/flod
 
 #+end_quote
-
-** WANT render org-files to something more readable.           :elisp:
-*** github makes org-code ugly
-*** [#A] org itself does better job... make me a macro?
-**** http://orgmode.org/
-**** http://orgmode.org/worg/org-contrib/babel/
-** WANT standalone org-babel-tangle (preferably in pascal)
-** IDEA interface IDebuggable ?
-It would probably have like a .tostring, plus menu options?
-
-Not really sure what would be included in the interface, but I had the debugger in one section of my org-file for ngaro.pas.org, and then it got spread out.
 
 ** IDEA ramdisk / image layout
 *** things that need to be in ram somewhere early:
@@ -371,8 +231,7 @@ Not really sure what would be included in the interface, but I had the debugger 
 **** the paging system would emulate contiguous ram
 **** basically just like the processor does
 
-** WANT clarify interfaces between the modules
-#+DATE: [2012-09-20 Thu]
+** IDEA module names (is this still useful?)
 *** module io : high level input/output abstraction
 **** module io_nw - network
 **** module iokb - keyboard
@@ -384,281 +243,17 @@ Not really sure what would be included in the interface, but I had the debugger 
 *** module vt : virtual terminal
 *** module ui : text widgets
 *** module sg : scenegraph
-** IDEA create a simple game in pascal. translate to assembly. (mastermind?)
-:PROPERTIES:
-:TS: <2013-02-16 07:23AM>
-:ID: e6v3wwq0v0g0
-:END:
-* -- b4th --
-** TODO license and header
-:PROPERTIES:
-:TS: <2013-02-26 10:51AM>
-:ID: l01epu9181g0
-:END:
-#+begin_src b4th
-# b4th : a bootstrapped forth-like environment
-# --------------------------------------------------------------
-# <<isc-license>>
-# --------------------------------------------------------------
-#+end_src
+** IDEA posix-friendly "block storage" files
 
-** DONE layout of the image
-:PROPERTIES:
-:TS: <2013-02-25 10:10PM>
-:ID: ihahkx7181g0
-:END:
-*** header
-#+begin_src b4a :tangle "~/b/b4a/b4th.b4a" :padline yes :noweb tangle
-<<b4:header>
-JMP: --begin-- # jump over the data block
-<<data>>
-<<bios>>
-:--begin--
-<<boot>>
-<<main>>
-#+end_src
+Forth systems tend to use "blocks" instead of "files"
+- simplifies editors (no scrolling, just edit screen)
 
-*** TODO SECT data - the data block
-:PROPERTIES:
-:TS: <2013-02-26 10:17AM>
-:ID: zt36m98181g0
-:END:
-**** DONE Overview of the data block.
-:PROPERTIES:
-:TS: <2013-02-26 10:44AM>
-:ID: 0ys5ji9181g0
-:END:
+I made a lil/decker tool to browse old block files.
+- [ ] find the url?
 
-#+name: @data
-#+begin_src b4a
-# -- DATA ------------------------------------------------------
-<<data:end>
-#+end_src
-
-We will use the first 256-cell block (1KB) to hold global variables and system buffers.
-
-Since the VM treats any number that is not an opcode as a call to a routine, this means the first 256 numbers can be used as opcodes. The default implementation requires only 30 opcodes, which leaves users plenty of room to add new opcodes if they want to experiment.
-
-**** TODO End data block.
-:PROPERTIES:
-:TS: <2013-02-26 10:44AM>
-:ID: dzshri9181g0
-:END:
-
-Now, tell the assembler to pad the rest of the 256-cell block with zeros.
-
-#+name: data:end
-#+begin_src b4a
- # <- http://en.wikipedia.org/wiki/End_Transmission_Block_character
-#+end_src
-
-*** TODO SECT bios - basic input/output system
-:PROPERTIES:
-:TS: <2013-02-26 10:37AM>
-:ID: am5dc69181g0
-:END:
-#+name: bios
-#+begin_src b4a
-# -- BIOS ------------------------------------------------------
-:bios
-#+end_src
-
-*** TODO SECT boot - the boot process
-:PROPERTIES:
-:TS: <2013-02-26 10:18AM>
-:ID: 4v4j6b8181g0
-:END:
-#+name: boot
-#+begin_src b4a
-# -- BOOT --( boot process )------------------------------------
-#+end_src
-
-*** TODO SECT main - main loop
-:PROPERTIES:
-:TS: <2013-02-26 10:36AM>
-:ID: wqoew49181g0
-:END:
-#name: main
-#+begin_src b4a
-# -- MAIN --( the main loop of the system )---------------------
-:mainloop
-JMP: mainloop
-#+end_src
-
-** TODO describe the stack machine's algorithm
-:PROPERTIES:
-:TS: <2013-02-16 06:58AM>
-:ID: 4v58esp0v0g0
-:END:
-*** TODO simple flowchart
-:PROPERTIES:
-:TS: <2013-02-16 07:00AM>
-:ID: yeg1ivp0v0g0
-:END:
-*** TODO capture this with "ifso/else" syntax
-:PROPERTIES:
-:TS: <2013-02-16 07:00AM>
-:ID: l8z7nvp0v0g0
-:END:
-** NOTE . create an assembler via stepwise refinement
-:PROPERTIES:
-:TS: <2013-02-16 07:21AM>
-:ID: hikafuq0v0g0
-:END:
-*** TODO write an assembler in pascal-like psuedocode
-:PROPERTIES:
-:TS: <2013-02-16 07:20AM>
-:ID: mcgidsq0v0g0
-:END:
-*** TODO show how to translate that psuedocode to instructions
-:PROPERTIES:
-:TS: <2013-02-16 07:20AM>
-:ID: qcue5tq0v0g0
-:END:
-** NOTE . block usage policy
-:PROPERTIES:
-:TS: <2013-02-16 06:20AM>
-:ID: w13c71o0v0g0
-:END:
-I'm thinking for now, I would follow the colorforth convention of putting documentation in the odd numbered blocks and source code in the even numbered blocks. Some blocks would also be binary blocks used by the kernel.
-
-In fact, I could just stipulate that up front: the first 16KB are reserved for the system, input buffer, memory map, etc... So code would start at $10.
-
-** NOTE . block map
-:PROPERTIES:
-:TS: <2013-02-16 06:22AM>
-:ID: 1pdg34o0v0g0
-:END:
-*** NOTE . core variables
-:PROPERTIES:
-:TS: <2013-02-16 06:30AM>
-:ID: lvifqgo0v0g0
-:END:
-*** NOTE . core listener
-:PROPERTIES:
-:TS: <2013-02-16 06:29AM>
-:ID: 8g36sfo0v0g0
-:END:
-*** NOTE . hex assembler
-:PROPERTIES:
-:TS: <2013-02-16 06:29AM>
-:ID: ynhkffo0v0g0
-:END:
-*** NOTE . bootstrap system
-:PROPERTIES:
-:TS: <2013-02-16 06:30AM>
-:ID: p1uk8go0v0g0
-:END:
-*** NOTE . core compiler
-:PROPERTIES:
-:TS: <2013-02-16 06:31AM>
-:ID: 6c85sio0v0g0
-:END:
-**** def , (comma)
-:PROPERTIES:
-:TS: <2013-02-16 06:32AM>
-:ID: po41oko0v0g0
-:END:
-*** NOTE . dictionary routines
-:PROPERTIES:
-:TS: <2013-02-16 06:34AM>
-:ID: yq3ifno0v0g0
-:END:
-**** TODO find a word in the dictionary
-:PROPERTIES:
-:TS: <2013-02-16 06:35AM>
-:ID: 6aq4qoo0v0g0
-:END:
-**** TODO simple hash function
-:PROPERTIES:
-:TS: <2013-02-16 06:35AM>
-:ID: bjuexoo0v0g0
-:END:
-
-** TODO build a forth
-:PROPERTIES:
-:TS: <2013-02-01 06:08AM>
-:ID: jfm9ysy0b0g0
-:END:
-*** TODO identify the branch/jump opcodes
-:PROPERTIES:
-:TS: <2013-02-01 06:11AM>
-:ID: nvn67yy0b0g0
-:END:
-*** TODO start with an infinite loop
-:PROPERTIES:
-:TS: <2013-02-01 06:11AM>
-:ID: j4s11zy0b0g0
-:END:
-*** TODO break the loop
-:PROPERTIES:
-:TS: <2013-02-01 06:12AM>
-:ID: 1yr1dzy0b0g0
-:END:
-**** break on any key
-:PROPERTIES:
-:TS: <2013-02-01 06:18AM>
-:ID: m1q4c9z0b0g0
-:END:
-Not really a loop at all, unless asking for a key blocks the cpu.
-An async version might check a specific port for a signal.
-**** read the key
-:PROPERTIES:
-:TS: <2013-02-01 06:16AM>
-:ID: awbgp6z0b0g0
-:END:
-**** emit corresponding character to the screen
-:PROPERTIES:
-:TS: <2013-02-01 06:22AM>
-:ID: mhk4sfz0b0g0
-:END:
-**** wait for specific key (C-c ? Esc ?)
-:PROPERTIES:
-:TS: <2013-02-01 06:16AM>
-:ID: el4ie6z0b0g0
-:END:
-
-*** TODO accept a word
-:PROPERTIES:
-:TS: <2013-02-01 06:12AM>
-:ID: gh80d0z0b0g0
-:END:
-**** create a buffer
-:PROPERTIES:
-:TS: <2013-02-01 06:23AM>
-:ID: 6b7ehhz0b0g0
-:END:
-
-**** pack the string
-:PROPERTIES:
-:TS: <2013-02-01 06:15AM>
-:ID: jc6hl5z0b0g0
-:END:
-
-*** TODO lookup word in dictionary
-:PROPERTIES:
-:TS: <2013-02-01 06:13AM>
-:ID: atdl01z0b0g0
-:END:
-**** traverse the chain
-:PROPERTIES:
-:TS: <2013-02-01 06:14AM>
-:ID: erccx3z0b0g0
-:END:
-**** compare to ram
-:PROPERTIES:
-:TS: <2013-02-01 06:15AM>
-:ID: 107hd4z0b0g0
-:END:
-
-*** TODO obtain the code and type fields
-:PROPERTIES:
-:TS: <2013-02-01 06:13AM>
-:ID: f8scq1z0b0g0
-:END:
-*** TODO execute the code
-:PROPERTIES:
-:TS: <2013-02-01 06:14AM>
-:ID: i18jk3z0b0g0
-:END:
-
+Idea to make block format that's readable with modern tools:
+- force 64-char lines with lf
+- extra lf or ---- line every 64 lines
+- loader would just ignore those lines
+- saver would always add those lines
+- use a blkfmt file to enforce/repair the format
