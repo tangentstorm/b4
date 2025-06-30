@@ -111,6 +111,25 @@ begin
   writeln;
 end;
 
+procedure b4i_file(path:string);
+var f: textfile;
+    line: string;
+    done: boolean;
+begin
+  if not FileExists(path) then begin
+    writeln('file not found: ', path);
+    exit;
+  end;
+  assign(f, path);
+  reset(f);
+  done := false;
+  while not eof(f) and not done do begin
+    readln(f, line);
+    done := b4i(line);
+  end;
+  close(f);
+end;
+
 function b4i(line:string):boolean;
   type tstate = (st_cmt,st_asm,st_imm);
   var tok : string; done: boolean = false; op:byte; st:tstate=st_imm;
@@ -143,6 +162,14 @@ begin
         ub4asm.b4a_file(toks[i]);
       end else
         writeln('usage: \a <filename>');
+      continue;
+    end;
+    if tok = '\i' then begin
+      if i < High(toks) then begin
+        inc(i);
+        b4i_file(toks[i]);
+      end else
+        writeln('usage: \i <filename>');
       continue;
     end;
     if ub4asm.b4op(tok, op) then begin
