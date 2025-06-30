@@ -10,6 +10,7 @@ interface uses ub4ops, ub4, classes, sysutils, strutils;
   function b4opc(code:opstring) : byte;
   function find_ident(adr:ub4.address; out id:ident): boolean;
   function isRegChar(c:char; out r:byte) : boolean;
+  function find(s:string; out a:ub4.address):boolean;
   procedure b4as;
   procedure b4a_strs(strs:TStringList);
   procedure b4a_file(path:string);
@@ -163,6 +164,21 @@ function next( var tok : token; var ch : char ) : boolean;
   end;
 
 
+function find(s:string; out a:ub4.address):boolean;
+var op:byte = 0;
+begin
+  result := false;
+  while (op < ents) and not result do
+  begin
+    if dict[op].id = s then
+    begin
+      a := dict[op].adr;
+      result := true;
+    end;
+    inc(op);
+  end;
+end;
+
 procedure b4as_core;
   var here: value; err: integer; tok: token; ch: char;
   procedure emit(v:value); begin mem[here] := v; inc(here); end;
@@ -172,12 +188,15 @@ procedure b4as_core;
   function isreg(s:string):boolean; begin
     result:=(length(s)=1) and (s[1]>='@') and (s[1]<='_') end;
   function find_addr(s:string): value; { return address of label }
-    var op:byte = 0; found: boolean=false;
-    begin while (op < ents) and not found do begin
-      if dict[op].id = s then begin find_addr := dict[op].adr; found:=true end;
-      inc(op) end;
-      if not found then
-        if isreg(s) then result := rega(s[1]) else unknown(s) end;
+    var a: ub4.address;
+    begin
+      if find(s, a) then
+        result := a
+      else if isreg(s) then
+        result := rega(s[1])
+      else
+        unknown(s);
+    end;
   procedure hop_slot(op:string); begin emit(b4opc(op)); dput(here); emit(0); end;
   procedure hop_here(); var slot,dist:value;
     begin slot := dpop; dist := here-slot;

@@ -111,7 +111,7 @@ end;
 function b4i(line:string):boolean;
   type tstate = (st_cmt,st_asm,st_imm);
   var tok : string; done: boolean = false; op:byte; st:tstate=st_imm;
-  toks: TStringArray; i: integer = -1;
+  toks: TStringArray; i: integer = -1; addr: ub4.address;
 begin
   st:=st_imm;
   if length(line)=0 then exit(false);
@@ -171,7 +171,9 @@ begin
         '?'  : if length(tok)=2 then writeln(format('%.8x',[rg^[regn(tok[2])]]))
              else ShowMem(ub4asm.unhex(copy(tok,2,length(tok)-1)));
         else if PutHex(tok) then ok
-        else Writeln('what does "', tok, '" mean?') end;
+        else if ub4asm.find(tok, addr) then ub4.runa(addr)
+        else WriteLn('what does "', tok, '" mean?');
+      end;
     end
   end;
   if ub4.ob <> '' then begin writeln(ub4.ob); ub4.ob := '' end;
