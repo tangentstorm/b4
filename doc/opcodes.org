@@ -198,7 +198,7 @@ the individual letters refer to a register or stack.
   n: not(nt), next(nx), negative(n1)
   o: over(ov), or(or), output(io)
   r: return(rt), read(ri,rb,rx,ry)
-  s: swap(sw), subtract(sb), shift(sh)
+  s: shift(sh), signed byte(ls,rs), swap(sw), subtract(sb)
   t: terminal (tg,ta,tw,tr,tk,ts,tl,tc)
   w: write(wb,wi,wz)
   x: xor(xr) x-register(rx)
