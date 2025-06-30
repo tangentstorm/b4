@@ -4,6 +4,7 @@ unit ub4i;
 interface uses sysutils, strutils, ub4, ub4asm, ub4ops;
 
   procedure ShowMem(addr:integer);
+  procedure ShowOpcodes;
   procedure b4i_file(path:string);
   function b4i(line:string):boolean; { returns 'done' flag }
   function b4i_args:boolean; { returns true if should quit }
@@ -79,6 +80,36 @@ begin
   writeln;
 end;
 
+procedure ShowOpcodes;
+var
+  row, col, op: integer;
+  tok: string;
+begin
+  write('    ');
+  for col := 0 to 15 do
+    write(' +', Uppercase(hexstr(col, 1)));
+  writeln;
+  writeln('   +------------------------------------------------');
+  for row := 0 to 15 do begin
+    write('$', Uppercase(hexstr(row * 16, 2)), '| ');
+    for col := 0 to 15 do begin
+      op := row * 16 + col;
+      case op of
+        0 : tok := '..';
+        $01..$1F : tok := '^' + chr(ord('@')+op);
+        $20..$3F : tok := '@' + chr(ord('@')+op-$20);
+        $40..$5F : tok := '!' + chr(ord('@')+op-$40);
+        $60..$7F : tok := '+' + chr(ord('@')+op-$60);
+        else begin
+          tok := optbl[op];
+          if tok = '' then tok := '  ';
+        end;
+      end;
+      write(format('%-3s', [tok]));
+    end;
+    writeln;
+  end;
+end;
 
 procedure help;
 begin
@@ -175,6 +206,7 @@ begin
       '\q', '%q' : done := true;
       '\s', '%s' : ub4.step;
       '\h', '%h' : help;
+      '\o', '-o' : ShowOpcodes;
       '\p', '%p' : PrintWords;
       '?d' : begin WriteStack('ds: ', ds, rg^[RDS]); WriteLn end;
       '?c' : begin WriteStack('cs: ', cs, rg^[RCS]); WriteLn end;
@@ -227,6 +259,7 @@ begin
         if i <= ParamCount then ub4asm.b4a_file(ParamStr(i))
         else writeln('error: -a requires a filename');
       end;
+      '-o': ShowOpcodes;
       '-p': PrintWords;
       '-q': done := true;
     end;
