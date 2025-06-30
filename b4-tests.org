@@ -218,7 +218,7 @@ cs: []
 .. AA BB CC .. .. .. .. .. .. .. .. .. .. .. ..
 #+end_src
 
-* DONE [2/4] memory operations
+* DONE [3/5] memory operations
 
 ** TODO: test that %C clears memory and stacks
 
@@ -234,7 +234,7 @@ cs: []
 DD CC BB AA .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
 
-** TODO =wb=
+** DONE =wb=
 
 =wb= writes a single byte:
 
@@ -280,6 +280,17 @@ ds: [CCBBAA]
 
 
 
+
+** =rs= and =ls= : read / load signed bytes
+#+name: op.rs
+#+begin_src b4a
+> :R ls FF rt
+> ^R
+> @R c1 ad rb # read the FF directly from the code
+> @R c1 ad rs # read the FF directly as -1
+> ?d
+ds: [-1 FF -1]
+#+end_src
 
 
 * TODO registers
