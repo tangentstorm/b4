@@ -1,6 +1,6 @@
 {$mode delphi}
 unit ub4asm;
-interface uses ub4ops, ub4;
+interface uses ub4ops, ub4, classes, sysutils;
 
   type ident = string[16];
   type entry = record id: ident; adr: ub4.address end;
@@ -10,12 +10,20 @@ interface uses ub4ops, ub4;
   function b4opc(code:opstring) : byte;
   function find_ident(adr:ub4.address; out id:ident): boolean;
   procedure b4as;
+  procedure b4a_strs(strs:TStringList);
+  procedure b4a_file(path:string);
 
 
 implementation
 
   type chargen = function( var ch : char ) : char;
-  var nextchar : chargen;
+  var
+    nextchar : chargen;
+    atEnd: boolean;
+    g_strs: TStringList;
+    g_line: integer;
+    g_col: integer;
+
 
 procedure ok; begin end;
 
@@ -57,7 +65,28 @@ type
   token = record tag : tokentag; str : string; end;
 
 function readnext( var ch : char ) : char;
-  begin read(ch); readnext := ch; end;
+  begin
+    atEnd := eof;
+    if not atEnd then read(ch);
+    readnext := ch;
+  end;
+
+function read_from_strs(var ch: char): char;
+begin
+  if g_line >= g_strs.Count then atEnd := true
+  else begin
+    if g_col > length(g_strs[g_line]) then begin
+      g_col := 1;
+      inc(g_line);
+      if g_line >= g_strs.Count then atEnd := true else ch := #10;
+    end else begin
+      ch := g_strs[g_line][g_col];
+      inc(g_col);
+    end;
+  end;
+  if atEnd then ch := #0;
+  result := ch;
+end;
 
 
 function find_ident(adr:ub4.address; out id:ident): boolean;
@@ -79,14 +108,15 @@ procedure clear_dict;
 function next( var tok : token; var ch : char ) : boolean;
   procedure keep; begin tok.str := tok.str + ch end;
   procedure rest(t:tokentag);
-    begin tok.tag := t; tok.str := ''; while nextchar(ch) > #32 do keep end;
+    begin tok.tag := t; tok.str := ''; while (not atEnd) and (nextchar(ch) > #32) do keep end;
   begin tok.str := ch; next := true;
     case ch of
-      #0..#32: begin tok.tag := wsp; repeat until eof or (nextchar(ch) >= #32) end;
-      '#' : begin tok.tag := cmt; readln(tok.str); ch := nextchar(ch) end;
+      #0: next := false;
+      #1..#32: begin tok.tag := wsp; repeat until atEnd or (nextchar(ch) >= #32) end;
+      '#' : begin tok.tag := cmt; while (not atEnd) and (ch <> #10) do ch := nextchar(ch); end;
       '0'..'9','A'..'F':
         begin tok.tag := hex;
-        while nextchar(ch) in ['0'..'9','A'..'F'] do keep end;
+        while (not atEnd) and (nextchar(ch) in ['0'..'9','A'..'F']) do keep end;
       '''' : begin tok.tag := chr; tok.str := nextchar(ch); nextchar(ch); end;
       ':' : rest(def);
       '^' : rest(ivk);
@@ -94,7 +124,7 @@ function next( var tok : token; var ch : char ) : boolean;
       '@' : rest(get);
       '!' : rest(put);
       '>' : rest(fwd);
-      'a'..'z' : begin tok.tag := ref; while nextchar(ch) > #32 do keep end;
+      'a'..'z' : begin tok.tag := ref; while (not atEnd) and (nextchar(ch) > #32) do keep end;
       '+' : rest(ink);
       '.' :
         begin
@@ -117,7 +147,7 @@ function next( var tok : token; var ch : char ) : boolean;
   end;
 
 
-procedure b4as;
+procedure b4as_core;
   var here: value; err: integer; tok: token; ch: char;
   procedure emit(v:value); begin mem[here] := v; inc(here); end;
   procedure emitv(v:value); begin wrval(here, v); inc(here,4) end;
@@ -191,11 +221,45 @@ procedure b4as;
       end end;
   begin
     SetLength(fwds, 0);
-    clear_dict; err := 0; ents := 0; here := rg[RHP]; read(ch);
-    while (err = 0) and not eof do if next(tok, ch) then compile;
+    clear_dict; err := 0; ents := 0; here := rg[RHP];
+    ch := nextchar(ch);
+    while (err = 0) and not atEnd do if next(tok, ch) then compile;
     if err <> 0 then dput(err) else rg[RHP] := here;
     for fw in fwds do wrval(fw.at, find_addr(fw.key));
   end;
+
+procedure b4as;
+begin
+  nextchar := @readnext;
+  atEnd := eof;
+  b4as_core;
+end;
+
+procedure b4a_strs(strs:TStringList);
+begin
+  g_strs := strs;
+  g_line := 0;
+  g_col := 1;
+  atEnd := g_strs.Count = 0;
+  nextchar := @read_from_strs;
+  b4as_core;
+end;
+
+procedure b4a_file(path:string);
+var strs: TStringList;
+begin
+  if not FileExists(path) then begin
+    writeln('file not found: ', path);
+    exit;
+  end;
+  strs := TStringList.Create;
+  try
+    strs.LoadFromFile(path);
+    b4a_strs(strs);
+  finally
+    strs.Free;
+  end;
+end;
 
 begin
   nextchar := readnext;

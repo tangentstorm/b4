@@ -137,6 +137,14 @@ begin
       writeln(GetCurrentDir);
       continue;
     end;
+    if tok = '\a' then begin
+      if i < High(toks) then begin
+        inc(i);
+        ub4asm.b4a_file(toks[i]);
+      end else
+        writeln('usage: \a <filename>');
+      continue;
+    end;
     if ub4asm.b4op(tok, op) then begin
       if op > $20 then runop(op)
       else ub4.runa(4*op) end // immediately invoke ^R
