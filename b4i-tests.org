@@ -6,6 +6,30 @@ Currently these interactive features are present only in
 the lil implementation (`mb4.deck`). The macros are also
 available in the pascal version's assembler.
 
+* TODO tanco bug: first test is not running?!?
+#+name: insta.fail
+#+begin_src src
+THIS WILL FAIL.
+#+end_src
+
+
+* invoke word via the "register dictionary"
+
+#+name: b4i.invoke
+#+begin_src b4a
+> :A lb 'a lb 'e io rt
+> :B lb 'b lb 'e io rt
+> ?A
+00000100
+> ?B
+00000106
+> ^A ^B %q
+ab
+= invoke register
+: using ^ with a register name should trigger the register
+#+end_src
+
+
 * TODO comments
 
 this doesn't work because the old test parser can't andle the "#"
@@ -24,8 +48,8 @@ this doesn't work because the old test parser can't andle the "#"
 ** .i .e .t (if/else/then)
 #+name: macro.if-else-then
 #+begin_src b4a
-> :E lb 'e tm rt
-> :T lb 01 .i lb 'T ^E .e lb 'F ^E .t rt
+> :E lb 'e io rt
+> :T c1 .i lb 'T ^E .e lb 'F ^E .t rt
 > ^T %q
 T
 = if/else/then macro
@@ -33,15 +57,13 @@ T
 : otherwise, execute the second block
 #+end_src
 
-** .w .d .z (while/do)
+** .w .d .o (while/do)
 #+name: macro.while-do
 #+begin_src b4a
-> :E lb 'e tm rt
-> :T lb 'a !A lb 03 .w du .d lb 01 +A ^E lb 01 sb .z rt
+> :E lb 'e io rt
+> :T lb 'a !A lb 03 .w du .d c1 +A ^E c1 sb .o rt
 > ^T %q
-a
-b
-c
+abc
 = while/do macro
 : while the top of the stack is non-zero, execute the block
 : decrement the top of the stack each iteration
@@ -50,12 +72,10 @@ c
 ** .f .n (for/next)
 #+name: macro.for-next
 #+begin_src b4a
-> :E lb 'e tm rt
+> :E lb 'e io rt
 > :T lb 03 .f cd du dc lb 'a ad ^E .n rt
 > ^T %q
-d
-c
-b
+dcb
 = for/next macro
 : execute the block a fixed number of times
 : the counter is stored on the control stack

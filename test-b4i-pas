@@ -1,0 +1,3 @@
+#!/bin/sh
+(cd pas; make b4i) && \
+tanco run -t b4i-tests.org -c pas/b4i
