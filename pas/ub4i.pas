@@ -6,6 +6,7 @@ interface uses sysutils, strutils, ub4, ub4asm, ub4ops;
   procedure ShowMem(addr:integer);
   procedure b4i_file(path:string);
   function b4i(line:string):boolean; { returns 'done' flag }
+  function b4i_args:boolean; { returns true if should quit }
 
 implementation
 
@@ -199,6 +200,31 @@ begin
     end
   end;
   if ub4.ob <> '' then begin writeln(ub4.ob); ub4.ob := '' end;
+  result := done;
+end;
+
+function b4i_args:boolean;
+var
+  i: integer = 1;
+  done: boolean = false;
+begin
+  while (i <= ParamCount) and (not done) do
+  begin
+    case ParamStr(i) of
+      '-i': begin
+        inc(i);
+        if i <= ParamCount then b4i_file(ParamStr(i))
+        else writeln('error: -i requires a filename');
+      end;
+      '-a': begin
+        inc(i);
+        if i <= ParamCount then ub4asm.b4a_file(ParamStr(i))
+        else writeln('error: -a requires a filename');
+      end;
+      '-q': done := true;
+    end;
+    inc(i);
+  end;
   result := done;
 end;
 

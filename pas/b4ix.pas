@@ -87,14 +87,17 @@ begin
   writeln('b4ix [',{$i %date%},'] ',
           'type \h for help, \q to quit');
   rg^[RIP] := $100; rg^[regn('_')] := $100;
-  ShowState; DrawPrompt;
-  repeat
-    ReadLn(line);
-    done := ub4i.b4i(line);
-    if not done then begin
-      ShowState; DrawPrompt;
-    end
-  until done or eof;
+  done := b4i_args;
+  if not done then begin
+    ShowState; DrawPrompt;
+    repeat
+      ReadLn(line);
+      done := ub4i.b4i(line);
+      if not done then begin
+        ShowState; DrawPrompt;
+      end
+    until done or eof;
+  end;
   // clean up screen at end:
   Window(1,1,ScreenMaxX,ScreenMaxY);
   GotoXY(1,ScreenMaxY); TextAttr := $07; WriteLn;
