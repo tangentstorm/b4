@@ -1,0 +1,62 @@
+#+title: The b4i Interactive Interpreter
+
+The =b4i= program is an interactive assembler, debugger, and shell for the b4 virtual machine. It allows for direct execution of b4 assembly mnemonics, inspection of the VM state, and scripting through files.
+
+* Table of Contents                                 :TOC:
+- [[#general-syntax][General Syntax]]
+- [[#command-line-arguments][Command-Line Arguments]]
+- [[#commands][Commands]]
+  - [[#file-and-system-commands][File and System Commands]]
+  - [[#vm-control-and-debugging][VM Control and Debugging]]
+- [[#literals-and-memory-access][Literals and Memory Access]]
+
+* General Syntax
+
+Commands are typically prefixed with a special character, like =?=, =\=, or =%=. Standard b4 assembly mnemonics can be typed directly and are executed immediately. Hexadecimal numbers are pushed onto the data stack. Anything following a =#= character is treated as a comment and ignored.
+
+* Command-Line Arguments
+
+The =b4i= interpreter can be launched with command-line arguments to automate tasks. After processing all arguments, it will enter the interactive REPL unless the =-q= flag is used.
+
+- =-a <file>=: Assembles the specified file using the b4a assembler syntax.
+- =-i <file>=: Interprets the specified file, executing the commands as if they were typed in the REPL.
+- =-p=: Prints the assembler's dictionary of defined words.
+- =-q=: Quits the interpreter after processing all other command-line arguments.
+
+Arguments are processed in the order they appear. For example, to assemble a library and then run an interactive script against it:
+#+end_src
+
+* Commands
+
+**NOTE:** Many commands have a =\= prefix and a =%= prefix variant (e.g., =\q= and =%q=). They are interchangeable.
+
+*** File and System Commands
+
+- =\d=: Shows the current working directory.
+- =\d <path>=: Changes the current working directory to the specified relative path.
+- =\a <file>=: Assembles a file containing standard b4a assembly syntax.
+- =\i <file>=: Interprets a file containing b4i commands, as if they were typed into the REPL.
+- =\p=: Prints the assembler's dictionary of defined words.
+
+*** VM Control and Debugging
+
+- =\q= or =%q=: Quits the b4i session.
+- =\s= or =%s=: Executes the next single instruction (step).
+- =\h= or =%h=: Displays a brief help message.
+- =\C= or =%C=: Re-boots the virtual machine, resetting its state.
+- =?d=: Prints the contents of the data stack.
+- =?c=: Prints the contents of the control (return) stack.
+- =?i=: Prints the current value of the instruction pointer (IP).
+- =?r=: Prints the values of all general-purpose registers.
+- =?X=: Queries and prints the value of a single register =X= (e.g., =?A=).
+- =?addr=: Shows a hexdump of 16 bytes of memory starting at the specified hexadecimal =addr=. If =addr= is not a valid hexadecimal number, it is treated as a word and its address is looked up in the dictionary.
+
+* Literals and Memory Access
+
+- =<hex>=: A hexadecimal number (e.g., =100=, =FF=) is converted to a value and pushed onto the data stack.
+- ='c'=: A character literal (e.g., ='A'=) is pushed onto the data stack as its ASCII value.
+- =`R=: Pushes the address of a control register (e.g., =`A= for =^A=) onto the data stack.
+- =:foo <bytes...>=: Defines a new word =foo= at the current =here= pointer and assembles the following bytes.
+- =:R <bytes...>=: Assembles a sequence of bytes into memory starting at the address currently held in register =R=, and updates =R= to point to the end of the assembled bytes.
+- =:: <bytes...>=: Resumes assembly at the current =here= pointer without creating a new definition.
+
