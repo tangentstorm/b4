@@ -119,10 +119,16 @@ begin
   close(f);
 end;
 
+function tryHex(tok:string; out i:integer):boolean;
+begin
+  try i := unhex(tok); result := true;
+  except on EConvertError do result := false end
+end;
+
 function b4i(line:string):boolean;
   type tstate = (st_cmt,st_asm,st_imm);
   var tok : string; done: boolean = false; op:byte; st:tstate=st_imm;
-  toks: TStringArray; i: integer = -1; addr: ub4.address;
+  toks: TStringArray; i: integer = -1; addr: ub4.address; a: integer;
 begin
   st:=st_imm;
   if length(line)=0 then exit(false);
@@ -180,9 +186,20 @@ begin
         '`'  : if length(tok)=1 then err('invalid ctrl char')
                  // TODO test this against chars out of range
                else dput(rega(tok[2]));
-        '?'  : if length(tok)=2 then writeln(format('%.8x',[rg^[regn(tok[2])]]))
-             else ShowMem(ub4asm.unhex(copy(tok,2,length(tok)-1)));
-        else if PutHex(tok) then ok
+        '?'  : if length(tok)=2 then begin
+                 WriteLn(Format('%.8x',[rg^[regn(tok[2])]])); end
+               else if (length(tok)=3) and (tok[2]='@') then begin
+                 a := rdval(rega(tok[3]));
+                 write(format('%.8x ',[a])); ShowMem(a); end
+               else begin
+                 tok := copy(tok,2,length(tok)-1);
+                 if tryHex(tok, a) then showmem(a)
+                 else if ub4asm.find(tok, addr) then begin
+                   a:=longint(addr);
+                   write(format('%.8x ',[a])); ShowMem(a); end
+                 else writeln('invalid address: ', tok);
+               end;
+        else if tryHex(tok, a) then dput(a)
         else if ub4asm.find(tok, addr) then ub4.runa(addr)
         else WriteLn('what does "', tok, '" mean?');
       end;
