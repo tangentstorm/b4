@@ -331,10 +331,10 @@ ds: [11223344 11223348 1122334A]
 
 * the constant ops
 
-#+name: op.c0-c1
+#+name: op.c
 #+begin_src b4a
-  > c0 c1 ?d %q
-  ds: [0 1]
+  > c0 c1 c2 n1 c4 ?d %q
+  ds: [0 1 2 -1 4]
 #+end_src
 
 

@@ -71,9 +71,9 @@ begin
   optbl[191] := '';
   optbl[192] := 'c0';
   optbl[193] := 'c1';
-  optbl[194] := '';
-  optbl[195] := '';
-  optbl[196] := '';
+  optbl[194] := 'c2';
+  optbl[195] := 'n1';
+  optbl[196] := 'c4';
   optbl[197] := '';
   optbl[198] := '';
   optbl[199] := '';

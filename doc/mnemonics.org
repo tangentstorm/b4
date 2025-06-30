@@ -53,6 +53,16 @@ The following two operations load signed numbers onto the stack from the next by
 - lb :: =$80= load (signed) byte ~( -- n)~ ex: =lb 00= pushes 0 to ds.
 - li :: =$81= load (signed, little-endian) int32 ~(-- n)~  ex: =li 00 01 02 03= pushes =0x03020100= to ds
 
+** constant ops
+
+These push a small, constant integer to the data stack.
+
+- c0 :: =$C0= push 0 ~( -- 0)~
+- c1 :: =$C1= push 1 ~( -- 1)~
+- c2 :: =$C2= push 2 ~( -- 2)~
+- n1 :: =$C3= push -1 ~( -- -1)~
+- c4 :: =$C4= push 4 ~( -- 4)~
+
 ** stack ops
 
 - du :: =$82= /duplicate/ tos ~( x -- xx )~
@@ -150,7 +160,7 @@ the individual letters refer to a register or stack.
 #+begin_src text
   a: add(ad), and(an)
   b: byte(lb,rb,wb)
-  c: call(cl), control stack (dc,cd)
+  c: call(cl), constant(c0,c1,c2,c4), control stack (dc,cd)
   d: duplicate(du), data stack (dc,cd), divide(dv), debugger(db)
   e: equal(eq)
   h: halt(hl), hop(hp,h0)
@@ -158,7 +168,7 @@ the individual letters refer to a register or stack.
   j: jump(jm)
   l: load/literal(lb,li), less-than(lt)
   m: multiply(ml), modulo(md)
-  n: not(nt), next(nx)
+  n: not(nt), next(nx), negative(n1)
   o: over(ov), or(or), output(io)
   r: return(rt), read(ri,rb,rx,ry)
   s: swap(sw), subtract(sb), shift(sh)
