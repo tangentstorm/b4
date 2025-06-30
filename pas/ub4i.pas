@@ -68,6 +68,17 @@ begin
   end
 end;
 
+procedure PrintWords;
+var i: integer;
+begin
+  for i := 0 to ub4asm.ents - 1 do
+  begin
+    write(hexstr(ub4asm.dict[i].adr, 4), ':', format('%-11s', [ub4asm.dict[i].id]));
+    if (i > 0) and (i mod 5 = 4) then writeln;
+  end;
+  writeln;
+end;
+
 
 procedure help;
 begin
@@ -158,6 +169,7 @@ begin
       '\q', '%q' : done := true;
       '\s', '%s' : ub4.step;
       '\h', '%h' : help;
+      '\p', '%p' : PrintWords;
       '?d' : begin WriteStack('ds: ', ds, rg^[RDS]); WriteLn end;
       '?c' : begin WriteStack('cs: ', cs, rg^[RCS]); WriteLn end;
       '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
@@ -198,6 +210,7 @@ begin
         if i <= ParamCount then ub4asm.b4a_file(ParamStr(i))
         else writeln('error: -a requires a filename');
       end;
+      '-p': PrintWords;
       '-q': done := true;
     end;
     inc(i);
