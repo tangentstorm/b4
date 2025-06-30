@@ -6,9 +6,10 @@
   '("ad" "sb" "ml" "dv" "md" "sh"
     "an" "or" "xr" "nt" "eq" "lt"
     "du" "sw" "ov" "zp" "dc" "cd"
-    "ri" "rb" "wi" "wb" "lb" "li"
+    "rb" "ri" "wb" "wi" "lb" "li" "rs" "ls"
     "jm" "hp" "h0" "cl" "rt" "nx"
     "c0" "c1" "c2" "n1" "c4"
+    "wl" "ds" "hx" "tm" ; scaffolding ops in pascal version
     "io" "db" "hl")
   '(("^#.*" . 'font-lock-comment-face)
     ("[']." . 'font-lock-string-face)
