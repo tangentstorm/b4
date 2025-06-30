@@ -292,7 +292,7 @@ find index of char =c= in string (address) =s= with length =l=. return 0 if not 
 #+name: ctl-k
 #+begin_src b3a
 
-  :p # firt chars of alphebetized mnemonics
+  :p # first chars of alphabetized mnemonics
      'a 'a 'c 'c 'd 'd 'd 'd
      'e 'h 'h 'h 'j 'l 'l 'l
      'm 'n 'm 'n 'o 'o 'r 'r

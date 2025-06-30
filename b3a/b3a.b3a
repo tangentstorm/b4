@@ -58,7 +58,7 @@
 :x '0 '1 '2 '3 '4 '5 '6 '7 '8 '9 'A 'B 'C 'D 'E 'F
 :h .i ^x lb 10 ^s nt .t lb 00 .z rt
 
-:p # firt chars of alphebetized mnemonics
+:p # first chars of alphebetized mnemonics
    'a 'a 'c 'c 'd 'd 'd 'd
    'e 'h 'h 'h 'j 'l 'l 'l
    'm 'n 'm 'n 'o 'o 'r 'r
