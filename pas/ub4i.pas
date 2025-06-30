@@ -114,15 +114,29 @@ end;
 function b4i(line:string):boolean;
   type tstate = (st_cmt,st_asm,st_imm);
   var tok : string; done: boolean = false; op:byte; st:tstate=st_imm;
-  _b:boolean; a:address;
+  _b:boolean; a:address; toks: TStringArray; i: integer = -1;
 begin
   st:=st_imm;
   if length(line)=0 then exit(false);
-  if line[1] = ':' then PutMem(line)
-  else for tok in SplitString(line, ' ') do begin
+  if line[1] = ':' then begin PutMem(line); exit(false); end;
+  toks := SplitString(line, ' ');
+  while i < High(toks) do begin
+    inc(i); tok := toks[i];
     if length(tok)=0 then continue;
     if tok[1] = '#' then st:=st_cmt;
     if (st=st_cmt) or (tok='') then continue;
+    if tok = '\d' then begin { inspect/change working directory }
+      if (i < High(toks)) and (toks[i+1] <> '')
+        and (toks[i+1][1] <> '') and (toks[i+1][1] <> '%')
+      then
+        begin
+          inc(i); ChDir(toks[i]);
+          if IoResult <> 0
+          then writeln('error changing directory to ', toks[i]);
+        end;
+      writeln(GetCurrentDir);
+      continue;
+    end;
     if ub4asm.b4op(tok, op) then begin
       if op > $20 then runop(op)
       else ub4.runa(4*op) end // immediately invoke ^R
@@ -135,17 +149,17 @@ begin
       '?c' : begin WriteStack('cs: ', cs, rg^[RCS]); WriteLn end;
       '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
       '?r' : ShowRegs;
-    else case tok[1] of
-      '''' : if length(tok)=1 then dput(32) // space
-             else dput(ord(tok[2])); // char literals
-      '`'  : if length(tok)=1 then err('invalid ctrl char')
-               // TODO test this against chars out of range
-             else dput(rega(tok[2]));
-      '?'  : if length(tok)=2 then writeln(format('%.8x',[rg^[regn(tok[2])]]))
-             else if parseAddress(tok,_b,a) then ShowMem(a)
-             else writeln('bad address:', tok);
-    else if PutHex(tok) then ok
-    else Writeln('what does "', tok, '" mean?') end;
+      else case tok[1] of
+        '''' : if length(tok)=1 then dput(32) // space
+               else dput(ord(tok[2])); // char literals
+        '`'  : if length(tok)=1 then err('invalid ctrl char')
+                 // TODO test this against chars out of range
+               else dput(rega(tok[2]));
+        '?'  : if length(tok)=2 then writeln(format('%.8x',[rg^[regn(tok[2])]]))
+               else if parseAddress(tok,_b,a) then ShowMem(a)
+               else writeln('bad address:', tok);
+        else if PutHex(tok) then ok
+        else Writeln('what does "', tok, '" mean?') end;
     end
   end;
   if ub4.ob <> '' then begin writeln(ub4.ob); ub4.ob := '' end;
