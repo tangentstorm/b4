@@ -29,16 +29,9 @@ begin
   writeln;
 end;
 
-function unhex(tok:string): integer;
-begin
-  if length(tok) = 0 then raise EConvertError.Create('unhex of empty string?');
-  if tok[1]='-' then result := -Hex2Dec(copy(tok,2,length(tok)-1))
-  else result := Hex2Dec(tok);
-end;
-
 function PutHex(tok : string): boolean;
 begin
-  try dput(unhex(tok)); result := true
+  try dput(ub4asm.unhex(tok)); result := true
   except on EConvertError do result := false; end
 end;
 
@@ -50,37 +43,20 @@ begin
   halt;
 end;
 
-function ParseAddress(tok:string; out isHERE:boolean; out a:address):boolean;
-begin
-  tok := RightStr(tok, length(tok)-1); isHERE:=false; a:=0; result:=true;
-  if length(tok)=1 then begin
-    isHERE := true;
-    if tok[1]<>':' then rg^[regn(tok[1])]:=rg^[RHP];
-    a := rg^[RHP] end
-  else try a := hex2dec(tok)
-  except on EConvertError do result:=false end
-end;
-
 procedure PutMem(str:string);
-  var a:address; i:integer; v:byte; tok: string; ishere:boolean;
+var r: byte;
+    asm_str: string;
 begin
-  i := -1;
-  for tok in SplitString(str, ' ') do begin
-    if i = -1 then
-      if ParseAddress(tok,isHere,a) then ok
-      else writeln(format('bad: putmem(%s)', [str]))
-    else begin
-      // TODO: handle integers instead of just bytes
-      if not ub4asm.b4op(tok, v) then
-        if tok = '..' then v := 0
-        else if tok[1]='''' then v := byte(tok[2])
-        else if tok[1]='-' then v := byte(-unhex(tok[2]))
-        else v := unhex(tok);
-      mem[a+i] := byte(v)
-    end;
-    inc(i);
-  end;
-  if isHere then rg^[RHP]:=a+i;
+  asm_str := copy(str, 2, length(str));
+  if str[2] = ':' then
+    ub4asm.b4a(copy(asm_str, 2, length(asm_str)))
+  else if ub4asm.isRegChar(str[2], r) then
+  begin
+    rg^[r] := rg^[RHP];
+    ub4asm.b4a(copy(asm_str, 2, length(asm_str)));
+  end
+  else
+    ub4asm.b4a(str);
 end;
 
 procedure ShowRegs;
@@ -135,7 +111,7 @@ end;
 function b4i(line:string):boolean;
   type tstate = (st_cmt,st_asm,st_imm);
   var tok : string; done: boolean = false; op:byte; st:tstate=st_imm;
-  _b:boolean; a:address; toks: TStringArray; i: integer = -1;
+  toks: TStringArray; i: integer = -1;
 begin
   st:=st_imm;
   if length(line)=0 then exit(false);
@@ -193,8 +169,7 @@ begin
                  // TODO test this against chars out of range
                else dput(rega(tok[2]));
         '?'  : if length(tok)=2 then writeln(format('%.8x',[rg^[regn(tok[2])]]))
-               else if parseAddress(tok,_b,a) then ShowMem(a)
-               else writeln('bad address:', tok);
+             else ShowMem(ub4asm.unhex(copy(tok,2,length(tok)-1)));
         else if PutHex(tok) then ok
         else Writeln('what does "', tok, '" mean?') end;
     end

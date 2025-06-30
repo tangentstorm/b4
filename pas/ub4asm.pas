@@ -1,6 +1,6 @@
 {$mode delphi}
 unit ub4asm;
-interface uses ub4ops, ub4, classes, sysutils;
+interface uses ub4ops, ub4, classes, sysutils, strutils;
 
   type ident = string[16];
   type entry = record id: ident; adr: ub4.address end;
@@ -9,9 +9,12 @@ interface uses ub4ops, ub4, classes, sysutils;
   function b4op(code : opstring; out op:byte) : boolean;
   function b4opc(code:opstring) : byte;
   function find_ident(adr:ub4.address; out id:ident): boolean;
+  function isRegChar(c:char; out r:byte) : boolean;
   procedure b4as;
   procedure b4a_strs(strs:TStringList);
   procedure b4a_file(path:string);
+  procedure b4a(s:string);
+  function unhex(tok:string): integer;
 
 
 implementation
@@ -24,6 +27,13 @@ implementation
     g_line: integer;
     g_col: integer;
 
+
+function unhex(tok:string): integer;
+begin
+  if length(tok) = 0 then raise EConvertError.Create('unhex of empty string?');
+  if tok[1]='-' then result := -Hex2Dec(copy(tok,2,length(tok)-1))
+  else result := Hex2Dec(tok);
+end;
 
 procedure ok; begin end;
 
@@ -114,6 +124,11 @@ function next( var tok : token; var ch : char ) : boolean;
       #0: next := false;
       #1..#32: begin tok.tag := wsp; repeat until atEnd or (nextchar(ch) >= #32) end;
       '#' : begin tok.tag := cmt; while (not atEnd) and (ch <> #10) do ch := nextchar(ch); end;
+      '-': begin
+        tok.tag := hex;
+        tok.str := '-';
+        while (not atEnd) and (nextchar(ch) in ['0'..'9','A'..'F']) do keep;
+      end;
       '0'..'9','A'..'F':
         begin tok.tag := hex;
         while (not atEnd) and (nextchar(ch) in ['0'..'9','A'..'F']) do keep end;
@@ -129,6 +144,7 @@ function next( var tok : token; var ch : char ) : boolean;
       '.' :
         begin
           case nextchar(ch) of
+            '.': begin tok.tag := hex; tok.str := '0'; ch := nextchar(ch); end;
             '^': tok.tag := _lp;
             'i': tok.tag := _if;
             'e': tok.tag := _el;
@@ -178,12 +194,11 @@ procedure b4as_core;
   type TFwd = record key: string; at: value end;
   var fwds : array of TFwd; fw:TFwd;
   procedure compile;
-    var op : byte; v : value;
+    var op : byte;
     begin
       case tok.tag of
         wsp, cmt : ok; { do nothing }
-        hex : begin val('0x'+tok.str, v, err);
-                if err=0 then emit(v) else unknown(tok.str) end;
+        hex : emit(unhex(tok.str));
         chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
               else emit(ord(tok.str[1]));
         def : if isreg(tok.str) then rg[regn(tok.str[1])]:=here
@@ -255,6 +270,18 @@ begin
   strs := TStringList.Create;
   try
     strs.LoadFromFile(path);
+    b4a_strs(strs);
+  finally
+    strs.Free;
+  end;
+end;
+
+procedure b4a(s:string);
+var strs: TStringList;
+begin
+  strs := TStringList.Create;
+  try
+    strs.Text := s;
     b4a_strs(strs);
   finally
     strs.Free;
