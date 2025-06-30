@@ -1,10 +1,37 @@
-#+title: opcode mnemonics
+#+title: b4 opcodes
 
 * opcode mnemonics
 
-This document lists the 2-letter opcodes of b4 virtual machine instructions.
+#+begin_src sh :dir ../pas :results output verbatim
+instantfpc -B b4i.pas -o -q
+#+end_src
 
-See file:../b4-tests.org for the full specification.
+#+RESULTS:
+#+begin_example
+     +0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F
+   +------------------------------------------------
+$00| .. ^A ^B ^C ^D ^E ^F ^G ^H ^I ^J ^K ^L ^M ^N ^O
+$10| ^P ^Q ^R ^S ^T ^U ^V ^W ^X ^Y ^Z ^[ ^\ ^] ^^ ^_
+$20| @@ @A @B @C @D @E @F @G @H @I @J @K @L @M @N @O
+$30| @P @Q @R @S @T @U @V @W @X @Y @Z @[ @\ @] @^ @_
+$40| !@ !A !B !C !D !E !F !G !H !I !J !K !L !M !N !O
+$50| !P !Q !R !S !T !U !V !W !X !Y !Z ![ !\ !] !^ !_
+$60| +@ +A +B +C +D +E +F +G +H +I +J +K +L +M +N +O
+$70| +P +Q +R +S +T +U +V +W +X +Y +Z +[ +\ +] +^ +_
+$80| ad sb ml dv md sh an or xr nt eq lt du sw ov zp
+$90| dc cd rb ri wb wi lb li rs ls jm hp h0 cl rt nx
+$A0|
+$B0|                                           tm
+$C0| c0 c1 c2 n1 c4
+$D0|
+$E0|
+$F0|                            wl ds cs hx io db hl
+#+end_example
+
+This document lists the 2-letter opcodes of b4 virtual machine instructions
+and their meanings.
+
+See file:../b4-tests.org for examples of each opcode.
 
 The hex numbers after the opcodes indicate the bytecode in the communication protocol (which is not yet stable, so may change slightly).
 
