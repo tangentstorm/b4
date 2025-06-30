@@ -4,6 +4,7 @@ interface uses uhw,sysutils;
 
 type
   value = longint;
+  short = -128..127;
   block = array[0..1023] of byte;
   EB4Exception = class(Exception);
 
@@ -295,6 +296,7 @@ procedure hop(); inline;
   end;
 
 procedure rb; begin dput(mem[dpop]) end;   { read byte }
+procedure rs; begin dput(short(mem[dpop])) end;   { read short }
 procedure wb; var t:value; begin t:= dpop; mem[t]:= byte(dpop) end;  { write byte  }
 procedure ri; begin dput(rdval(dpop)) end; { read integer }
 procedure wi; var t:value; begin t := dpop; wrval(t, dpop) end; { write integer }
@@ -358,7 +360,8 @@ procedure runop(op : byte);
       $95 : {wi} wi;
       $96 : {lb} begin dput(bget(rg[RIP]+1)); inc(rg[RIP]) end;
       $97 : {li} begin dput(rdval(rg[RIP]+1)); inc(rg[RIP],3) end;
-      $98 .. $99 : ;
+      $98 : {rs} rs;
+      $99 : {ls} begin dput(short(bget(rg[RIP]+1))); inc(rg[RIP]) end;
       $9A : {jm} go(rdval(rg[RIP]+1));
       $9B : {hp} hop;
       $9C : {h0} if dpop = 0 then hop else inc(rg[RIP]);

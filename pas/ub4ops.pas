@@ -29,8 +29,8 @@ begin
   optbl[149] := 'wi';
   optbl[150] := 'lb';
   optbl[151] := 'li';
-  optbl[152] := '$9';
-  optbl[153] := '';
+  optbl[152] := 'rs';
+  optbl[153] := 'ls';
   optbl[154] := 'jm';
   optbl[155] := 'hp';
   optbl[156] := 'h0';
