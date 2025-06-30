@@ -24,6 +24,9 @@ The =b4i= interpreter can be launched with command-line arguments to automate ta
 - =-q=: Quits the interpreter after processing all other command-line arguments.
 
 Arguments are processed in the order they appear. For example, to assemble a library and then run an interactive script against it:
+
+#+begin_src shell
+b4i -a my_lib.b4a -i my_script.b4i
 #+end_src
 
 * Commands
@@ -49,7 +52,9 @@ Arguments are processed in the order they appear. For example, to assemble a lib
 - =?i=: Prints the current value of the instruction pointer (IP).
 - =?r=: Prints the values of all general-purpose registers.
 - =?X=: Queries and prints the value of a single register =X= (e.g., =?A=).
-- =?addr=: Shows a hexdump of 16 bytes of memory starting at the specified hexadecimal =addr=. If =addr= is not a valid hexadecimal number, it is treated as a word and its address is looked up in the dictionary.
+- =?addr=: Shows a hexdump of 16 bytes of memory starting at the specified hexadecimal =addr=.
+- =?name=: Looks up =name= in the dictionary and prints its address.
+- =? @name=: Looks up =name=, dereferences its address, and shows a hexdump of the memory at the resulting address.
 
 * Literals and Memory Access
 
@@ -59,4 +64,3 @@ Arguments are processed in the order they appear. For example, to assemble a lib
 - =:foo <bytes...>=: Defines a new word =foo= at the current =here= pointer and assembles the following bytes.
 - =:R <bytes...>=: Assembles a sequence of bytes into memory starting at the address currently held in register =R=, and updates =R= to point to the end of the assembled bytes.
 - =:: <bytes...>=: Resumes assembly at the current =here= pointer without creating a new definition.
-
