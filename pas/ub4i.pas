@@ -4,6 +4,7 @@ unit ub4i;
 interface uses sysutils, strutils, ub4, ub4asm, ub4ops;
 
   procedure ShowMem(addr:integer);
+  procedure b4i_file(path:string);
   function b4i(line:string):boolean; { returns 'done' flag }
 
 implementation
