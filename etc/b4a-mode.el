@@ -8,7 +8,7 @@
     "du" "sw" "ov" "zp" "dc" "cd"
     "ri" "rb" "wi" "wb" "lb" "li"
     "jm" "hp" "h0" "cl" "rt" "nx"
-    "c0" "c1"
+    "c0" "c1" "c2" "n1" "c4"
     "io" "db" "hl")
   '(("^#.*" . 'font-lock-comment-face)
     ("[']." . 'font-lock-string-face)
