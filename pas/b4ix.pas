@@ -11,7 +11,7 @@ uses ub4i, ub4, crt, sysutils;
 var
   ScreenMaxX, ScreenMaxY : dword;
   StateHeight            : byte = 13;
-  TermHeight             : byte = 16;
+  TermHeight             : byte = 17;
 
 procedure DrawHeadings;
 begin
@@ -25,7 +25,12 @@ end;
 
 procedure TermWindow;
 begin
-  Window(1,2,64,TermHeight);
+  Window(1,2,64,TermHeight+1);
+end;
+
+procedure FullScreen;
+begin
+  Window(1,1,ScreenMaxX,ScreenMaxY);
 end;
 
 procedure InitTerm;
@@ -33,6 +38,24 @@ begin
   Window(1,2,ScreenMaxX,TermHeight);
   TextBackground(Blue); ClrScr;
   TermWindow; TextAttr := $07; ClrScr;
+end;
+
+const ScreenAddr : ub4.address = $0140;
+const hexit = '0123456789ABCDEF';
+procedure DrawTerm;
+  var x,y: word;
+      c  : char;
+begin
+  TermWindow; TextAttr := $07;
+  for y := 0 to 15 do begin
+    GotoXY(1,y+1);
+    for x := 0 to 63 do begin
+      c := char(mem[ScreenAddr + y*64+x]);
+      if c < ' ' then c := ' ';
+      // if x = 0 then c := hexit[y+1];
+      write(c);
+    end;
+  end;
 end;
 
 procedure MainWindow;
@@ -48,11 +71,21 @@ begin
   TextBackground(Blue);
 end;
 
-procedure ShowState;
-  var oldX, oldY : dword; i, a : word;
+var oldX, oldY : dword;
+procedure StoreXY;
 begin
   OldX := WhereX;
   OldY := WhereY;
+end;
+
+procedure LoadXY;
+begin
+  GotoXY(OldX,OldY);
+end;
+
+procedure ShowState;
+  var i, a : word;
+begin
   StateWindow;
   TextColor(White);
   WriteStack('ds: ', ds, rg^[RDS]); ClrEol; WriteLn;
@@ -66,8 +99,6 @@ begin
     TextAttr := $70; Write(HexStr(a,4));
     TextAttr := $07; Write(' '); ShowMem(a);
   end;
-  MainWindow;
-  GoToXY(OldX,OldY);
 end;
 
 procedure DrawPrompt;
@@ -77,26 +108,30 @@ begin
   TextAttr := $07;
 end;
 
-var prompt,line: string; done:boolean=false;
+procedure redraw;
+begin
+  StoreXY; DrawTerm; ShowState;
+  FullScreen; DrawHeadings;
+  MainWindow; GoToXY(OldX,OldY); DrawPrompt;
+end;
+
+var line: string; done:boolean=false;
 begin
   ScreenMaxX := WindMaxX; ScreenMaxY := WindMaxY;
   ClrScr; DrawHeadings; InitTerm;
   StateWindow; ClrScr;
-  MainWindow; ClrScr;
-  GoToXY(1, WindMaxY); TextColor(DarkGray);
+  MainWindow; ClrScr; GoToXY(1, WindMaxY); TextColor(DarkGray);
   writeln('b4ix [',{$i %date%},'] ',
           'type \h for help, \q to quit');
   rg^[RIP] := $100; rg^[regn('_')] := $100;
   done := b4i_args;
   if not done then begin
-    ShowState; DrawPrompt;
+    Redraw;
     repeat
       ReadLn(line);
       done := ub4i.b4i(line);
-      if not done then begin
-        ShowState; DrawPrompt;
-      end
-    until done or eof;
+      if not done then redraw;
+    until done or eof
   end;
   // clean up screen at end:
   Window(1,1,ScreenMaxX,ScreenMaxY);
