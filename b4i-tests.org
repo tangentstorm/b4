@@ -31,14 +31,26 @@ THIS WILL FAIL.
 * interactive labels
 #+name: b4i.label
 #+begin_src b4a
-> :def 'a 'b 'c 'd
-> `def ?ds
-ds: [100]
-> : li `def rt
-+A +B +C +D li .. ^A .. .. rt .. .. .. .. .. ..
+  > :lbl 'a 'b 'c 'd
+  > : li `lbl rt
+  > ?lbl
+  00000100 +A +B +C +D li .. ^A .. .. rt .. .. .. .. .. ..
+  > `lbl ?d
+  ds: [100]
 #+end_src
 
 
+* edge case: names that are also lowercase hex numbers
+Only uppercase hex should work.
+#+name: b4i.hexname
+#+begin_src b4a
+  > :def 'a 'b 'c 'd
+  > : li `def rt
+  > ?def
+  00000100 +A +B +C +D li .. ^A .. .. rt .. .. .. .. .. ..
+  > `def ?d
+  ds: [100]
+#+end_src
 * invoke word via the "register dictionary"
 
 #+name: b4i.invoke

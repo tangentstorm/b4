@@ -1,7 +1,7 @@
 { b4 debugger/interpreter }
 {$mode objfpc}
 unit ub4i;
-interface uses sysutils, strutils, ub4, ub4asm, ub4ops;
+interface uses sysutils, strutils, ub4, ub4asm, ub4ops, character;
 
   procedure ShowMem(addr:integer);
   procedure ShowOpcodes;
@@ -12,7 +12,9 @@ interface uses sysutils, strutils, ub4, ub4asm, ub4ops;
 implementation
 
 function tryHex(tok:string; out i:integer):boolean;
+  var c:char;
 begin
+  for c in tok do if not (isdigit(c) or isUpper(c)) then exit(false);
   try i := unhex(tok); result := true;
   except on EConvertError do result := false end
 end;
