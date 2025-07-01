@@ -31,14 +31,10 @@ type
     buf : string;
   end;
 
-const
-  MAX_LINE_SIZE = 1024;
-  force_plain   = false;
-
-var
-  ed	: TLineEditor;
-
+var ed : TLineEditor;
 function input( var buf : string ) : boolean;
+procedure loadHist( path : string );
+procedure saveHist( path : string );
 
 
 implementation
@@ -205,9 +201,20 @@ begin
 end;
 
 
+
 function input( var buf : string ) : boolean;
 begin
   result := ed.input( buf )
+end;
+
+procedure loadHist( path : string );
+begin
+  if FileExists(path) then ed.history.LoadFromFile(path)
+end;
+
+procedure saveHist( path : string );
+begin
+  ed.history.SaveToFile(path)
 end;
 
 

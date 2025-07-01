@@ -115,8 +115,10 @@ begin
   MainWindow; GoToXY(OldX,OldY); DrawPrompt;
 end;
 
-var line: string; done:boolean=false;
+var line: string; done:boolean=false; histPath:string;
 begin
+  histPath := GetUserDir + '/' + '.b4ix';
+  uled.loadHist(histPath);
   ScreenMaxX := WindMaxX; ScreenMaxY := WindMaxY;
   ClrScr; DrawHeadings; InitTerm;
   StateWindow; ClrScr;
@@ -125,7 +127,10 @@ begin
           'type \h for help, \q to quit');
   rg^[RIP] := $100; rg^[regn('_')] := $100;
   if not b4i_args then
-    repeat redraw; uled.input(line); writeln;
+    repeat
+      redraw;
+      uled.input(line); writeln;
+      uled.saveHist(histPath);
     until ub4i.b4i(line);
   // clean up screen at end:
   Window(1,1,ScreenMaxX,ScreenMaxY);
