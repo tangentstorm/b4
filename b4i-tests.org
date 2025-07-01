@@ -134,7 +134,22 @@ dcb
 : then `0x108` (`08 01 00 00` in little endian format).
 #+end_src
 
+* interactive get/set for labels
+
+** get/set (b4i)
+#+name: b4i.getset
+#+begin_src b4a
+  > :int 04 03 02 01
+  > @int ?d
+  ds: [1020304]
+  > zp 5 !int ?d
+  ds: []
+  > @int ?d %q
+  ds: [5]
+#+end_src
+
 * Interactive Commands
+
 ** %R (reset)
 #+name: interactive.reset
 #+begin_src b4a
