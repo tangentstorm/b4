@@ -21,7 +21,7 @@ THIS WILL FAIL.
   ds: [2 3]
 #+end_src
 
-* interactive assembler: assemble to any address
+* Interactive assembler: assemble to any address
 #+name: b4i.addr
 #+begin_src b4a
   > :100 ^A ^B
@@ -37,29 +37,6 @@ THIS WILL FAIL.
   ^C ^D .. .. .. .. .. .. .. .. .. .. .. .. .. ..
 #+end_src
 
-* interactive labels
-#+name: b4i.label
-#+begin_src b4a
-  > :lbl 'a 'b 'c 'd
-  > : li `lbl rt
-  > ?lbl
-  00000100 +A +B +C +D li .. ^A .. .. rt .. .. .. .. .. ..
-  > `lbl ?d
-  ds: [100]
-#+end_src
-
-
-* edge case: names that are also lowercase hex numbers
-Only uppercase hex should work.
-#+name: b4i.hexname
-#+begin_src b4a
-  > :def 'a 'b 'c 'd
-  > : li `def rt
-  > ?def
-  00000100 +A +B +C +D li .. ^A .. .. rt .. .. .. .. .. ..
-  > `def ?d
-  ds: [100]
-#+end_src
 * invoke word via the "register dictionary"
 
 #+name: b4i.invoke
@@ -182,17 +159,32 @@ ds: []
 : clears the stacks and resets memory
 #+end_src
 
-** $label (use label)
-#+name: interactive.use-label
+** `label (use label)
+#+name: b4i.label
 #+begin_src b4a
-> :foo
-> $foo ?d %q
-ds: [100]
-= $label : use label
-: pushes the address of the label onto the stack
+  > :lbl 'a 'b 'c 'd
+  > : li `lbl rt
+  > ?lbl
+  00000100 +A +B +C +D li .. ^A .. .. rt .. .. .. .. .. ..
+  > `lbl ?d %q
+  ds: [100]
+  = `label : use label
+  : pushes the address of the label onto the stack
 #+end_src
 
-** ?m (show memory)
+** edge case: names that are also lowercase hex numbers
+Only uppercase hex should work.
+#+name: b4i.hexname
+#+begin_src b4a
+  > :def 'a 'b 'c 'd
+  > : li `def rt
+  > ?def
+  00000100 +A +B +C +D li .. ^A .. .. rt .. .. .. .. .. ..
+  > `def ?d
+  ds: [100]
+#+end_src
+
+*** ?m (show memory)
 #+name: interactive.show-memory
 #+begin_src b4a
 > :100 01 02 03 04 'h 'e 'l 'l 'o
