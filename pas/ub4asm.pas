@@ -111,7 +111,10 @@ function find_ident(adr:ub4.address; out id:ident): boolean;
 procedure clear_dict;
   var i : byte;
   begin
-    for i := 0 to high(dict) do begin dict[i].id := ''; dict[i].adr := 0 end
+    for i := 0 to high(dict) do begin
+      dict[i].id := ''; dict[i].adr := 0
+    end;
+    ents := 0;
   end;
 
 
@@ -255,7 +258,7 @@ procedure b4as_core;
       end end;
   begin
     SetLength(fwds, 0);
-    clear_dict; err := 0; ents := 0; here := rg[RHP];
+    err := 0; here := rg[RHP];
     ch := nextchar(ch);
     while (err = 0) and not atEnd do if next(tok, ch) then compile;
     if err <> 0 then dput(err) else rg[RHP] := here;
@@ -309,4 +312,5 @@ end;
 
 begin
   nextchar := readnext;
+  clear_dict;
 end.
