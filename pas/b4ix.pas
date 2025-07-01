@@ -6,7 +6,7 @@
 // area to display the 64/16 b4 terminal.
 
 program b4ix(input,output);
-uses ub4i, ub4, crt, sysutils;
+uses ub4i, ub4, crt, sysutils, uled;
 
 var
   ScreenMaxX, ScreenMaxY : dword;
@@ -124,15 +124,9 @@ begin
   writeln('b4ix [',{$i %date%},'] ',
           'type \h for help, \q to quit');
   rg^[RIP] := $100; rg^[regn('_')] := $100;
-  done := b4i_args;
-  if not done then begin
-    Redraw;
-    repeat
-      ReadLn(line);
-      done := ub4i.b4i(line);
-      if not done then redraw;
-    until done or eof
-  end;
+  if not b4i_args then
+    repeat redraw; uled.input(line); writeln;
+    until ub4i.b4i(line);
   // clean up screen at end:
   Window(1,1,ScreenMaxX,ScreenMaxY);
   GotoXY(1,ScreenMaxY); TextAttr := $07; WriteLn;
