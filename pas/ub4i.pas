@@ -162,7 +162,7 @@ end;
 
 function b4i(line:string):boolean;
   type tstate = (st_cmt,st_asm,st_imm);
-  var tok : string; done: boolean = false; op:byte; st:tstate=st_imm;
+  var tok : string; done: boolean = false; r,op:byte; st:tstate=st_imm;
   toks: TStringArray; i: integer = -1; addr: ub4.address; a: integer;
 begin
   st:=st_imm;
@@ -220,8 +220,10 @@ begin
         '''' : if length(tok)=1 then dput(32) // space
                else dput(ord(tok[2])); // char literals
         '`'  : begin
-                 tok := copy(tok,2,length(tok)-1);
-                 if ub4asm.find(tok, addr) then dput(addr)
+                 if (length(tok)=2) and IsRegChar(tok[2],r)
+                   then dput(rega(tok[2]))
+                 else if ub4asm.find(copy(tok,2,length(tok)-1), addr)
+                   then dput(addr)
                  else err('unknown `word')
                end;
         '?'  : if length(tok)=2 then begin
