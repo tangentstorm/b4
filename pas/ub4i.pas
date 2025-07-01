@@ -52,6 +52,13 @@ begin
   halt;
 end;
 
+procedure reset_vm;
+begin
+  rg^[RCS] := 0;
+  rg^[RDS] := 0;
+  rg^[RIP] := rg^[RHP];
+end;
+
 procedure PutMem(str:string);
   var r: byte; tok, w_tok : string; a : integer;
       toks : TStringArray;
@@ -209,6 +216,7 @@ begin
       '\h', '%h' : help;
       '\o', '-o' : ShowOpcodes;
       '\p', '%p' : PrintWords;
+      '\R', '%R' : reset_vm;
       '?d' : begin WriteStack('ds: ', ds, rg^[RDS]); WriteLn end;
       '?c' : begin WriteStack('cs: ', cs, rg^[RCS]); WriteLn end;
       '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
