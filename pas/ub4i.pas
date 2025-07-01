@@ -202,7 +202,8 @@ begin
         writeln('usage: \i <filename>');
       continue;
     end;
-    if ub4asm.b4op(tok, op) then begin
+    if ub4asm.find(tok, addr) then ub4.runa(addr)
+    else if ub4asm.b4op(tok, op) then begin
       if op < $20 then ub4.runa(ub4.address(rg^[op]))
       else runop(op) end // immediately invoke ^R
     else case tok of

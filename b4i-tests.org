@@ -12,6 +12,15 @@ available in the pascal version's assembler.
 THIS WILL FAIL.
 #+end_src
 
+
+* TODO bug: b4i treated first two chars as opcode
+#+name: b4i.bug.mlatu
+#+begin_src b4a
+  > :mlatu rt
+  > 2 3 mlatu ?d %q
+  ds: [2 3]
+#+end_src
+
 * interactive assembler: assemble to any address
 #+name: b4i.addr
 #+begin_src b4a
@@ -66,6 +75,8 @@ ab
 = invoke register
 : using ^ with a register name should trigger the register
 #+end_src
+
+
 
 
 * TODO comments
