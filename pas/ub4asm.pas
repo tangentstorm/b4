@@ -236,10 +236,10 @@ procedure b4as_core;
         adr : emitv(find_addr(tok.str));
         get : if isreg(tok.str) then emit(b4opc('@'+tok.str[1]))
               else begin
-                emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('rv')) end;
+                emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('ri')) end;
         put : if isreg(tok.str) then emit(b4opc('!'+tok.str[1]))
               else begin
-                emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wv')) end;
+                emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wi')) end;
         ink : if isreg(tok.str) then emit(b4opc('+'+tok.str[1])) // inKrement :)
               else begin writeln('no such word: +',tok.str); halt end;
         _wh : dput(here); {(- wh)}

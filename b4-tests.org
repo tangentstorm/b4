@@ -13,6 +13,27 @@ https://github.com/tangentstorm/learntris
 
 See the =test-b4-*= scripts in this repository for examples.
 
+
+* TODO fix skipped first test
+#+name: shouldfail
+#+begin_src b4a
+  this should fail but will be skipped
+  because of a bug in tanco.
+#+end_src
+
+* TODO put this elsewhere. variables
+** get/set (b4a)
+#+name: b4a.getset
+#+begin_src b4a
+  > :int 04 03 02 01
+  > :get @int rt
+  > :set !int rt
+  > get ?d
+  ds: [1020304]
+  > 5 set get ?d %q
+  ds: [1020304 5]
+#+end_src
+
 * DONE [6/6] debugger interface
 ** DONE establish a command loop and a way to exit
 #+name: io.%q
@@ -217,6 +238,7 @@ cs: []
 > ?100 %q
 .. AA BB CC .. .. .. .. .. .. .. .. .. .. .. ..
 #+end_src
+
 
 * DONE [3/5] memory operations
 
