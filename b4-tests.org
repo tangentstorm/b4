@@ -240,7 +240,7 @@ cs: []
 #+end_src
 
 
-* DONE [3/5] memory operations
+* DONE [4/8] memory operations
 
 ** TODO: test that %C clears memory and stacks
 
@@ -268,14 +268,6 @@ DD CC BB AA .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 DD .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
 
-
-** TODO test the display of negative numbers
-
-which of these should it be?
-
-: ds: [CC00BBAA]
-: ds: [-33FF4456]
-
 ** DONE =rb= op : read a value from address
 
 =rb= reads a byte
@@ -289,7 +281,7 @@ AA BB .. +W .. .. .. .. .. .. .. .. .. .. .. ..
 ds: [7700BBAA]
 #+end_src
 
-** =ri= writes a 32-bit integer
+** DONE =ri= writes a 32-bit integer
 
 #+name: op.ri
 #+begin_src b4a
@@ -300,20 +292,38 @@ AA BB CC .. .. .. .. .. .. .. .. .. .. .. .. ..
 ds: [CCBBAA]
 #+end_src
 
-
-
-
-** =rs= and =ls= : read / load signed bytes
-#+name: op.rs
+** TODO lb : load a byte
+#+name: op.lb
 #+begin_src b4a
-> :R ls FF rt
-> ^R
-> @R c1 ad rb # read the FF directly from the code
-> @R c1 ad rs # read the FF directly as -1
-> ?d
-ds: [-1 FF -1]
+  > :L lb 7F lb FF rt
+  > ^L ?d %q
+  ds: [7F FF]
 #+end_src
 
+** TODO ls : load signed byte
+#+name: op.ls
+#+begin_src b4a
+  > :L ls 7F ls FF rt
+  > ^L ?d %q
+  ds: [7F -1]
+#+end_src
+
+** =rs= : read signed bytes
+#+name: op.rs
+#+begin_src b4a
+  > :A 7F :B FF
+  > :R @A rs @B rs rt
+  > ^R ?d %q
+  ds: [7F -1]
+#+end_src
+
+
+** TODO test the display of negative numbers
+
+which of these should it be?
+
+: ds: [CC00BBAA]
+: ds: [-33FF4456]
 
 * TODO registers
 
@@ -389,9 +399,9 @@ ip: 101
 = %s : step
 : step and execute a no-op
 #+end_src
-* TODO [1/3] sequences
+* DONE [2/2] sequences
 ** DONE =lb= op
-#+name: op.lb
+#+name: op.seq.lb
 #+begin_src b4a
 > :100 lb AB
 > ?100
@@ -406,8 +416,14 @@ ip: 102
 : we never needed it before because our debug shell
 : is pushing numbers directly to the stack
 #+end_src
-** TODO =li= op
+
+** DONE =li= op
 #+name: op.li
+#+begin_src b4a
+  > :100 li 44 33 22 11 li FF FF FF FF rt
+  > %s %s ?d %q
+  ds: [11223344 -1]
+#+end_src
 
 * TODO [1/8] control flow
 ** DONE =..= (zero) is no-op

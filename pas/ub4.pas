@@ -359,7 +359,7 @@ procedure runop(op : byte);
       $94 : {wb} wb;
       $95 : {wi} wi;
       $96 : {lb} begin dput(bget(rg[RIP]+1)); inc(rg[RIP]) end;
-      $97 : {li} begin dput(rdval(rg[RIP]+1)); inc(rg[RIP],3) end;
+      $97 : {li} begin dput(rdval(rg[RIP]+1)); inc(rg[RIP],4) end;
       $98 : {rs} rs;
       $99 : {ls} begin dput(short(bget(rg[RIP]+1))); inc(rg[RIP]) end;
       $9A : {jm} go(rdval(rg[RIP]+1));
