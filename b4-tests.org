@@ -140,8 +140,20 @@ ds: [1]
 ** DONE =sh= op
 #+name: math.sh
 #+begin_src b4a
-> 06 01 sh ?d %q
-ds: [C]
+  > : c4 c1 sh rt
+  >   %s %s %s ?d
+  ds: [8]
+  = sh : shift
+  : The 'sh' op shifts the bits of NOS by the amount in TOS.
+#+end_src
+
+#+name: math.shr
+#+begin_src b4a
+  > : c4 n1 sh rt
+  >   %s %s %s ?d
+  ds: [2]
+  = sh : shift right
+  : When the TOS is negative, we shift the NOS to the right.
 #+end_src
 
 ** DONE =an= op

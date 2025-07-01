@@ -341,7 +341,7 @@ procedure runop(op : byte);
       $82 : {ml} dput(dpop * dpop);
       $83 : {dv} begin t:=dpop; dput(dpop div t) end;
       $84 : {md} begin t:=dpop; dput(dpop mod t) end;
-      $85 : {sh} begin dswp; dput(dpop shl dpop) end;
+      $85 : {sh} begin t:=dpop; if t<0 then dput(dpop shr -t) else dput(dpop shl t) end;
       $86 : {an} dput(dpop and dpop);
       $87 : {or} dput(dpop or dpop);
       $88 : {xr} dput(dpop xor dpop);
