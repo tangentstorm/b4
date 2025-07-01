@@ -12,6 +12,22 @@ available in the pascal version's assembler.
 THIS WILL FAIL.
 #+end_src
 
+* interactive assembler: assemble to any address
+#+name: b4i.addr
+#+begin_src b4a
+  > :100 ^A ^B
+  > ?100
+  ^A ^B .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+  > :104 ^C ^D
+  > ?100
+  ^A ^B .. .. ^C ^D .. .. .. .. .. .. .. .. .. ..
+  > :100 ^X ^Y
+  > ?100
+  ^X ^Y .. .. ^C ^D .. .. .. .. .. .. .. .. .. ..
+  > ?104
+  ^C ^D .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
 
 * invoke word via the "register dictionary"
 

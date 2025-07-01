@@ -11,6 +11,12 @@ interface uses sysutils, strutils, ub4, ub4asm, ub4ops;
 
 implementation
 
+function tryHex(tok:string; out i:integer):boolean;
+begin
+  try i := unhex(tok); result := true;
+  except on EConvertError do result := false end
+end;
+
 procedure ShowMem(addr :integer );
   var i: integer; v:byte; tok: string;
 begin
@@ -45,19 +51,24 @@ begin
 end;
 
 procedure PutMem(str:string);
-var r: byte;
-    asm_str: string;
+  var r: byte; tok : string; a : integer;
+      toks: TStringArray; i: integer = 0;
 begin
-  asm_str := copy(str, 2, length(str));
-  if str[2] = ':' then
-    ub4asm.b4a(copy(asm_str, 2, length(asm_str)))
-  else if ub4asm.isRegChar(str[2], r) then
-  begin
-    rg^[r] := rg^[RHP];
-    ub4asm.b4a(copy(asm_str, 2, length(asm_str)));
-  end
-  else
-    ub4asm.b4a(str);
+  toks := SplitString(str, ' ');
+  if (length(toks) > 0) and (toks[0][1] = ':') then begin
+    tok := copy(toks[0], 2, length(toks[0]));
+    if length(tok) > 0 then begin
+      if (length(tok) = 1) and ub4asm.isRegChar(tok[1], r) then
+        rg^[r] := rg^[RHP]
+      else if tryHex(tok, a) then rg^[RHP] := a
+      else ub4asm.b4a(':' + tok);
+    end;
+    inc(i);
+  end;
+  while i <= High(toks) do begin
+    ub4asm.b4a(toks[i]);
+    inc(i);
+  end;
 end;
 
 procedure ShowRegs;
@@ -148,12 +159,6 @@ begin
     done := b4i(line);
   end;
   close(f);
-end;
-
-function tryHex(tok:string; out i:integer):boolean;
-begin
-  try i := unhex(tok); result := true;
-  except on EConvertError do result := false end
 end;
 
 function b4i(line:string):boolean;
