@@ -51,24 +51,21 @@ begin
 end;
 
 procedure PutMem(str:string);
-  var r: byte; tok : string; a : integer;
-      toks: TStringArray; i: integer = 0;
+  var r: byte; tok, w_tok : string; a : integer;
+      toks : TStringArray;
 begin
   toks := SplitString(str, ' ');
-  if (length(toks) > 0) and (toks[0][1] = ':') then begin
-    tok := copy(toks[0], 2, length(toks[0]));
-    if length(tok) > 0 then begin
-      if (length(tok) = 1) and ub4asm.isRegChar(tok[1], r) then
+  for tok in toks do begin
+    if length(tok) = 0 then continue;
+    if tok[1] = ':' then begin
+      w_tok := copy(tok, 2, length(tok));
+      if length(w_tok) = 0 then continue;
+      if (length(w_tok) = 1) and ub4asm.isRegChar(w_tok[1], r) then
         rg^[r] := rg^[RHP]
-      else if tryHex(tok, a) then rg^[RHP] := a
-      else ub4asm.b4a(':' + tok);
-    end;
-    inc(i);
-  end;
-  while i <= High(toks) do begin
-    ub4asm.b4a(toks[i]);
-    inc(i);
-  end;
+      else if tryHex(w_tok, a) then rg^[RHP] := a
+      else ub4asm.b4a(tok) // let b4a add ':name'
+    end else ub4asm.b4a(tok)
+  end
 end;
 
 procedure ShowRegs;
@@ -220,9 +217,11 @@ begin
       else case tok[1] of
         '''' : if length(tok)=1 then dput(32) // space
                else dput(ord(tok[2])); // char literals
-        '`'  : if length(tok)=1 then err('invalid ctrl char')
-                 // TODO test this against chars out of range
-               else dput(rega(tok[2]));
+        '`'  : begin
+                 tok := copy(tok,2,length(tok)-1);
+                 if ub4asm.find(tok, addr) then dput(addr)
+                 else err('unknown `word')
+               end;
         '?'  : if length(tok)=2 then begin
                  WriteLn(Format('%.8x',[rg^[regn(tok[2])]])); end
                else if (length(tok)=3) and (tok[2]='@') then begin

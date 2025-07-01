@@ -28,6 +28,16 @@ THIS WILL FAIL.
   ^C ^D .. .. .. .. .. .. .. .. .. .. .. .. .. ..
 #+end_src
 
+* interactive labels
+#+name: b4i.label
+#+begin_src b4a
+> :def 'a 'b 'c 'd
+> `def ?ds
+ds: [100]
+> : li `def rt
++A +B +C +D li .. ^A .. .. rt .. .. .. .. .. ..
+#+end_src
+
 
 * invoke word via the "register dictionary"
 
