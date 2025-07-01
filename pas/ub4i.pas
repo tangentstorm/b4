@@ -202,11 +202,7 @@ begin
         writeln('usage: \i <filename>');
       continue;
     end;
-    if ub4asm.find(tok, addr) then ub4.runa(addr)
-    else if ub4asm.b4op(tok, op) then begin
-      if op < $20 then ub4.runa(ub4.address(rg^[op]))
-      else runop(op) end // immediately invoke ^R
-    else case tok of
+    case tok of
       '\C', '%C' : boot;
       '\q', '%q' : done := true;
       '\s', '%s' : ub4.step;
@@ -227,6 +223,12 @@ begin
                    then dput(addr)
                  else err('unknown `word')
                end;
+        '@' : if (length(tok)=2) and isRegChar(tok[2],r) then dput(rg^[r])
+              else if ub4asm.find(copy(tok,2,length(tok)-1), addr) then dput(rdval(addr))
+              else err('unknown @word');
+        '!' : if (length(tok)=2) and isRegChar(tok[2],r) then rg^[r] := dpop
+              else if ub4asm.find(copy(tok,2,length(tok)-1), addr) then wrval(addr, dpop)
+              else err('unknown !word');
         '?'  : if length(tok)=2 then begin
                  WriteLn(Format('%.8x',[rg^[regn(tok[2])]])); end
                else if (length(tok)=3) and (tok[2]='@') then begin
@@ -240,9 +242,13 @@ begin
                    write(format('%.8x ',[a])); ShowMem(a); end
                  else writeln('invalid address: ', tok);
                end;
-        else if tryHex(tok, a) then dput(a)
-        else if ub4asm.find(tok, addr) then ub4.runa(addr)
-        else WriteLn('what does "', tok, '" mean?');
+        else
+          if tryHex(tok, a) then dput(a)
+          else if ub4asm.find(tok, addr) then ub4.runa(addr)
+          else if ub4asm.b4op(tok, op) then begin
+            if op < $20 then ub4.runa(ub4.address(rg^[op]))
+            else runop(op) end // immediately invoke ^R
+          else WriteLn('what does "', tok, '" mean?');
       end;
     end
   end;
