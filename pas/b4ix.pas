@@ -40,7 +40,7 @@ begin
   TermWindow; TextAttr := $07; ClrScr;
 end;
 
-const ScreenAddr : ub4.address = $0140;
+const ScreenAddr : ub4.address = $0400;
 const hexit = '0123456789ABCDEF';
 procedure DrawTerm;
   var x,y: word;
