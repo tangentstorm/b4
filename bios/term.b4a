@@ -41,8 +41,19 @@
       goxy             # ( - ) update cursor with new x,y
    .t rt
 
+:E                      # assign ^E to terminal
 :emit @tmb              # (c-) emits character at current position
    cury @tmw ml ad
    curx ad wb
    @cur c1 ad !cur
    wrap rt
+
+:S                     # assign ^S to print string
+:puts @S dc !S         # write counted string at address s
+  c1 +S rb .f c1 +S rb ^E .n
+  cd !S rt
+
+:nl c0 cury c1 ad goxy rt
+:sp lb '  ^E rt
+:maxx @tmw c1 sb rt
+:maxy @tmh c1 sb rt
