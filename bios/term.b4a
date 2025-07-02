@@ -1,0 +1,41 @@
+# -- bios/term: terminal
+
+# -- general memory routines ----------------------------------
+
+:ng c0 sw sb rt         # (n--n) negate
+:hi ls -8 sh            # (n-x) return bits 8-F of n (FALLS THROUGH)
+:lo lb FF an rt         # (n-x) return bits 0-7 of n
+
+:mfil # (xna-) fill memory: set n ints to x, starting at address a
+   @A dc !A .f          # (ina-i|na)  for n := n downto 0
+      du c4 +A wi       # (i|na-i|na) copy x to @A and increment @A
+   .n zp cd !A rt       # (i|n-|)  restore old @A and clear stack
+
+
+# -- terminal buffer ------------------------------------------
+
+:tmb 00 04 00 00        # address of terminal buffer
+:tmw 40 .. .. ..        # terminal width
+:tmh 10 .. .. ..        # terminal height
+:cur 00 00 ^[ ^]       # cursor position (8 bits each x y)
+
+
+:cscr
+   li '  '  '  '        # fill pattern
+   @tmw @tmh ml         # number chars on screen
+   c4 dv                # divide by 4 to get num of ints
+   @tmb mfil rt         # fill screen with pattern
+
+
+:cury @cur hi rt        # (-y) cursor y position
+:curx @cur lo rt        # (-x) cursor x position
+
+:wrap rt                # (-) wrap cursor at line end
+
+:emit @tmb              # (c-) emits character at current position
+   cury @tmw ml ad
+   curx ad wb
+   @cur c1 ad !cur rt
+:go00 c0 !cur rt
+:goxy li `cur sw ov     # (x y -)
+   c1 ad wb wb rt
