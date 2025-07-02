@@ -29,13 +29,20 @@
 
 :cury @cur hi rt        # (-y) cursor y position
 :curx @cur lo rt        # (-x) cursor x position
+:go00 c0 !cur rt
+:goxy li `cur sw ov     # (x y -)
+   c1 ad wb wb rt
 
-:wrap rt                # (-) wrap cursor at line end
+:wrap                  # ( - ) wrap cursor if x >= width
+   curx @tmw lt nt     # ( - f) x >: width?
+   .i c0 cury c1 ad    # ( - 0 y' ) ifso, x=0, y+=1
+      du @tmh lt nt    # ( - 0 y' f) y >: height?
+      .i zp c0 .t      # ( - 0 0 ) ifso, y=0
+      goxy             # ( - ) update cursor with new x,y
+   .t rt
 
 :emit @tmb              # (c-) emits character at current position
    cury @tmw ml ad
    curx ad wb
-   @cur c1 ad !cur rt
-:go00 c0 !cur rt
-:goxy li `cur sw ov     # (x y -)
-   c1 ad wb wb rt
+   @cur c1 ad !cur
+   wrap rt
