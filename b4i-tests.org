@@ -194,6 +194,17 @@ Only uppercase hex should work.
 : displays the contents of memory starting at the specified address
 #+end_src
 
+* bug: %C should clear the dictionary
+#+name: bug.c.clears.dictionary
+#+begin_src b4a
+> :foo rt
+> \p
+0100:foo
+> %C
+> \p
+> %q
+#+end_src
+
 * TODO: Additional tests for other macros and interactive commands
 ** %e (run to end)
 ##+name: interactive.run-to-end
@@ -202,7 +213,7 @@ Only uppercase hex should work.
 : executes instructions until a return is encountered
 ##+end_src
 
-** %\\ (goto)
+** %\ (goto)
 ##+name: interactive.goto
 ##+begin_src b4a
 = %\ : goto

@@ -210,7 +210,7 @@ begin
       continue;
     end;
     case tok of
-      '\C', '%C' : boot;
+      '\C', '%C' : begin boot; ub4asm.clear_dict; end;
       '\q', '%q' : done := true;
       '\s', '%s' : ub4.step;
       '\h', '%h' : help;

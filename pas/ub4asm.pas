@@ -16,6 +16,7 @@ interface uses ub4ops, ub4, classes, sysutils, strutils;
   procedure b4a_file(path:string);
   procedure b4a(s:string);
   function unhex(tok:string): integer;
+  procedure clear_dict;
 
 
 implementation
