@@ -139,10 +139,10 @@ begin
   writeln;
   writeln('example:');
   writeln;
-  writeln('  :E ''e io rt                       # emit character');
-  writeln('  :W !R vb +R rv .f +R rv ^E .n rt  # write a counted string');
-  writeln('  :S 05 ''h ''e ''l ''l ''o              # counted string');
-  writeln('  @S ^W                             # (W)rite the (S)tring');
+  writeln('  :E lb ''e io rt                        # emit character');
+  writeln('  :W !R c1 +R rb .f c1 +R rb ^E .n rt   # write counted string');
+  writeln('  :S 05 ''h ''e ''l ''l ''o                  # counted string');
+  writeln('  @S ^W                                 # (W)rite the (S)tring');
   writeln;
   writeln('for help, see https://github.com/tangentstorm/b4/tree/main/doc');
   writeln;
