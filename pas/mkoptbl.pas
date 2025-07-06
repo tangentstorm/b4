@@ -73,7 +73,8 @@ begin
   writeln(out, '{-- do not edit! regenerate with mkoptbl.pas --}');
   writeln(out, 'unit ub4ops;');
   writeln(out, 'interface');
-  writeln(out, '  type opstring = string[2];');
+  // we make it string[3] just so we can test for trailing characters
+  writeln(out, '  type opstring = string[3];');
   writeln(out, '  var optbl : array[ $80 .. $FF ] of opstring;');
   writeln(out, 'implementation');
   writeln(out, 'begin');

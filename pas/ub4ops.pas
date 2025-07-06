@@ -1,7 +1,7 @@
 {-- do not edit! regenerate with mkoptbl.pas --}
 unit ub4ops;
 interface
-  type opstring = string[2];
+  type opstring = string[3];
   var optbl : array[ $80 .. $FF ] of opstring;
 implementation
 begin
