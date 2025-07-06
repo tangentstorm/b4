@@ -1,0 +1,17 @@
+#+title: bootstrapping from /almost/ nothing
+
+* Inspiration: =bcc= by Edmund Grimley Evans
+
+Edmund Grimley Evans, [[http://web.archive.org/web/20061108010907/http://www.rano.org/bcompiler.html][Bootstrapping a simple compiler from nothing.]] (March 2001) ([[http://web.archive.org/web/20121030222527/http://homepage.ntlworld.com/edmund.grimley-evans/bcompiler.tar.gz][bcompiler.tar.gz]]).
+
+"Unfortunately, a modern PC has neither front panel switches nor a punched card reader, so you need some software running on the machine just to read in a new program."
+
+Evans bootstraps a compiler for a small language, starting by writing hand-assembled machine code in hex, and using the standard posix =od= command to convert it to binary. From there he follows this basic path:
+
+- hex1 :: a hex assemebler with comments
+- hex2 :: adds one-character labels ('.X', etc)
+- hex3 :: four-character labels and calls
+- hex4 :: arbitrary labels, implicit calls (forth-like)
+- (implements basic stack words in hex4)
+- hex5 :: structured programming (def, if..else..fi, {..} for loops)
+- bcc :: (the final language) reorganize and add error codes, etc
