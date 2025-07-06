@@ -1,0 +1,86 @@
+#+title: b4 bios tests
+
+These tests use b4i to test the bios.
+
+* TODO fix tanco skipping first test
+#+name: skip
+#+begin_src b4a
+this gets skipped :/
+#+end_src
+
+
+* cscr : fill screen with spaces
+#+name: cscr
+#+begin_src b4a
+  > # the terminal buffer is set to address 400
+  > @tmb ?d
+  ds: [400]
+  > # by default, that memory should be zeroed out
+  > ?400
+  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+  > # but 'cscr' fills it with spaces
+  > cscr ?400
+  @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
+  > # the output buffer ends at address 800
+  > @tmb @tmw @tmh ml ad ?d
+  ds: [400 800]
+  > # so that memory should still be clear:
+  > ?800
+  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+  > # but the cscr should have filled the 16 previous bytes:
+  > ?7F0 %q
+  @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
+#+end_src
+
+* maxx/maxy
+#+name: maxx/maxy
+#+begin_src b4a
+  > @tmw maxx @tmh maxy ?d %q
+  ds: [40 3F 10 F]
+#+end_src
+
+* cursor
+#+name: cursor
+#+begin_src b4a
+  > curx cury ?d zp zp
+  ds: [0 0]
+  > 2F C goxy curx cury ?d %q
+  ds: [2F C]
+#+end_src
+
+* emit
+#+name: emit
+#+begin_src b4a
+  > cscr 'h emit 'i emit ?400 %q
+  +H +I @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
+#+end_src
+
+* goxy
+#+name: goxy-emit
+#+begin_src b4a
+  > cscr 4 0 goxy 'h emit 'i emit ?400 %q
+  @@ @@ @@ @@ +H +I @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
+#+end_src
+
+* puts
+#+name: puts
+#+begin_src b4a
+  > :S 0D 'h 'e 'l 'l 'o ', 20 'w 'o 'r 'l 'd '!
+  > @S puts ?400 %q
+  +H +E +L +L +O @L @@ +W +O +R +L +D @A .. .. ..
+#+end_src
+
+* TODO putn/base
+
+
+* TODO 'screen view' commands for b4i
+** \0 .. \F to see individual lines of the screen
+** \0-F to see a range (inclusive)
+** \- to see the whole screen
+
+* TODO send keys to the keyboard buffer
+** manual way
+** '\> ' syntax
+
+* TODO test moving/resizing the screen buffer
+

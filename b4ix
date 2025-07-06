@@ -1,1 +1,1 @@
-cd pas && instantfpc -B b4ix.pas $1 $2 $3 $4 $5
+(cd pas && make b4ix) && pas/b4ix $1 $2 $3 $4 $5
