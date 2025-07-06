@@ -1,26 +1,26 @@
-#+title: the b4 bios
+#+title: b4f: a mini-forth in b4 assembly
 
-* scope of the bios
+* scope
 
 - define dictionary of programs and enable running a program by name
 - provide a basic interactive shell for launching programs (when the system is running in standalone mode)
 
 * structure
 
-#+begin_src b4a :tangle bios.b4a :noweb yes
+#+begin_src b4a :tangle b4f.b4a :noweb yes
 
-  # note: bios.b4a is generated from bios.b4a.org
+  # note: this file is generated from b4f.b4a.org
   # I'm keeping it in version control until I have
   # a decent command-line build step for tangling
   # the org file, because the pascal code requires it.
 
-  #--- begin bios -------------------\
+  #--- begin b4f -------------------\
   <<term-ops>>
   <<initial-words>>
   <<b4-repl>>
   <<string-table>>
-  #--- end of bios ------------------/
-  '- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
+  #--- end of b4f ------------------/
+  '- '- '- 'e 'n 'd '- 'o 'f '- 'b '4 'f '-
   <<main>>
 #+end_src
 

@@ -163,7 +163,7 @@ begin
   opcl := b4opc('cl'); opnx := b4opc('nx');
   open('disk.b4'); boot; clrscr;
   oldinput := input;
-  assign(input, '../bios/bios.b4a');
+  assign(input, '../bios/b4f.b4a');
   reset(input); b4as;
   input := oldinput; reset(input);
   if rg[RGO]<>0 then rg[RIP] := rg[RGO]; { jump to address in @\ (or default=$100) }
