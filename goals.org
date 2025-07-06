@@ -1,0 +1,146 @@
+#+title: goals for b4
+
+* TODO build a useful scripting toolkit that can run atop multiple software stacks
+
+* TODO create a computing system that individuals can understand from the ground up
+
+** the gestalt problem
+
+- Dan Ingals "Design Principles Behind Smalltalk" : the system should be completely comprehensible to an individual user (should fit in one person's head). May be true of smalltalk, but how do you load it into your head? It's overwhelming. You're immediately hit with overchoice and the gestalt problem.
+
+- The gestalt problem: you simply cannot serialize a big graph quickly into a human brain, because we have limited bandwidth and working memory. This is the "can't see the forrest for the trees" problem. So in smalltalk (and any open source system), it's all there for you to see, but where do you even start? Their philosophy: just get used to not knowing, and trusting that you'll learn more later.
+
+- On the other hand, big complex systems don't come into the world fully formed. They start as smaller systems, and this is true recursively. So what if you could tell the story of the system, starting with something very small that's easy to understand, and then building your way up? Then people would have a path to follow to understand the final gestalt.
+
+- We need a place to start, and that place is a small, easy to understand virtual machine that people can inspect and interact with visually.
+
+- (P.S. smalltalk is amazing and has many tools to help you inspect the sytsem and try to explore it for yourself. For a full featured modern smalltalk that can help you explore /any/ system, I highly recommend [[http://gtoolkit.com][Glamorous Toolkit]])
+
+*** TODO : follow that link up with a b4 implementation you can run in GT.
+
+*** TODO : build a b4 version for GT :)
+
+
+** on building things from scratch
+
+In the face of overchoice and the gestalt problem, it's perfectly rational to say "this thing is way too complicated" and go off to build your own.
+
+For someone who wants really master programming, "building your own <whatever>" can be a great learning exercise, even if you eventually abandon the project.
+
+On the other hand, organizations trying to make money can easily suffer from "not invented here" syndrome, where time is lost "reinventing the wheel" or replacing systems, rather than adopting open source tools or enhancing internal systems that already exist.
+
+The problem is that when the creators of the original system move on, a great deal of knowledge about /how to understand/ the system is lost[fn:1].
+
+Tools like the previously mentioned Glamorous Toolkit exist to help ease the cost of exploring and understanding foreign systems, but the cost of loading knowledge about a system into your brain is still very high.
+
+Why does it seem easier to start from scratch? Because you can just focus on solving the small part of the problem that's important to you at each step. The complexity becomes self-serializing based on your priorities. You understand the system you're building at each step, and so in the end you understand the final system, no matter how complex it turns out to be.
+
+Eventually, you move on from the project, and the next person comes along.
+They take one look at your creation, say "wow this thing is way too
+complicated", and go off to build their own...
+
+** leaving a trail... of problems
+
+The combination of open source software and public version control histories already leaves some opportunity to "watch a system grow" from scratch (or at least from whatever happens to be in the initial commit).
+
+Version control histories are great at telling you what happened, and the
+commit messages may even give you some insight as to /why/ a change was made.
+
+At a high level, reading what someone else did can be informative. In a way, the change history can act as a latent tutorial on "how to build this thing".
+
+But tutorials have their own problems. Programming communities are filled with questions about "tutorial hell", where students who have worked through multiple tutorials and duplicated the authors results don't feel like they've accomplished much, and that they're still not capable of building things on their own.
+
+My suggested remedy for this has been to try a curated list of programming challenges. ( http://learntris.org/ for example )
+
+The long-term b4 project expands that concept to the following experiment:
+
+- what if we built a whole programming environment from scratch
+- but left a trail at each step, in the form of a challenge backed by test cases
+- and then encouraged people to follow the trail on their own?
+
+
+** the b4 "trail"
+
+*** concept
+- The b4 test suites double as programming challenges via [[https://github.com/tangentcode/tanco][tanco]].
+- Each test suite acts as a spec but also a trail for part of the system.
+- The trails themselves are ordered in a "tech tree" of conceptual dependencies.
+- (aspirational): we try not to depend on features that are further
+  down the trail, so that you can work through the tests in order and
+  "follow the trail" using only features you've already encountered.
+
+*** the tests
+
+- [[file:b4-tests.org][b4-tests.org]] is for anyone implementing the virtual machine itself,
+  in some programming language. It includes specs for a bare-bones
+  version of the assembler, and a simple "debugger" that allows
+  stepping through the assembled code, and inspecting the vm's memory,
+  stacks, and registers through standard i/o.
+
+- [[file:b4i-tests.org][b4i-tests.org]] guides you through the interactive interpreter, which
+  is a more advanced repl that allows invoking b4 operations directly,
+  and assembling bytes to arbitrary locations in memory.
+
+*** TODO forthcoming "trails"
+
+Some of these already exist in some form, but I am still "blazing" these trails. (To blaze a trail is to go wandering around, leaving markers for others to follow).
+
+**** [[bios/bios.b4a.org][bios.b4a.org]]
+
+This is currently an implementation in b4a, not a test suite.
+It currently contains the following, which will probably be
+broken out into separate files:
+
+- the actual BIOS
+  - in-memory color text terminal (see [[bios/term.b4a][term.b4a]])
+  - read/write numbers
+  - read/write strings
+
+- B4f ("beforf" : a small forth-like interpreter)
+  - There is currently a forth "dictionary" (a linked list
+    of routines labeled with strings )
+  - Words can be looked up and executed.
+  - There are not yet any words for defining new words.
+
+**** [[file:bios/mm.b4a][mm.b4a]]
+
+**** B4s ("beforce" : a small lisp-like interpreter)
+This is intended to be a bootstrapping layer for all
+further language work. There is some completely
+untested work on this in [[file:ref/tower.org][tower.org]]
+
+**** =pre (prex?)= : parsing and regular expressions
+I have numerous implementations of the same small library of
+parsing combinators lying around in various languages. There is
+not yet an implementation for b4, but see [[https://github.com/tangentstorm/syndir/blob/main/parseco.ijs][parseco.ijs]] for a nice implementation in j.
+
+The "tree buliding" part of this will be pluggable, so it can be
+configured to run on lisp-like cons cells or other dynamically
+allocated memory.
+
+**** [[file:bios/mm.b4a.org][mm.b4a.org]] : a basic memory manager
+This is there but largely untested.
+
+**** [[file:b3a/b3a.org][b3a.org]] is a self-hosting assembler
+
+b3a is a subset of the b4a assembly language, written in itself.
+the org file also includes a bootstrap assembler written in python.
+
+Status: probably broken, as this was made with a slightly older
+version of the instruction set.
+
+**** retro pascal : a real language
+- intended to be very similar to oberon, and to dovetail with
+  niklaus wirth's project oberon.
+
+- no work has been done on this yet, but i have an old antlr3
+  project that transpiles oberon to various languages:
+  https://github.com/nickelsworth/noct
+
+**** implish: a new dynamic language
+**** tainka: a k-like language
+
+
+* TODO Footnotes
+
+[fn:1] track down and cite that classic peter naur paper about institutional knowledge
