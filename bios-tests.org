@@ -70,17 +70,16 @@ this gets skipped :/
   +H +E +L +L +O @L @@ +W +O +R +L +D @A .. .. ..
 #+end_src
 
-* TODO putn/base
-
-
-* TODO 'screen view' commands for b4i
-** \0 .. \F to see individual lines of the screen
-** \0-F to see a range (inclusive)
-** \- to see the whole screen
+* \0 to show first line
+#+name: .slash-0
+#+begin_src b4a
+  > :S 0D 'h 'e 'l 'l 'o ', 20 'w 'o 'r 'l 'd '!
+  > @S puts \0 %q
+  hello, world!
+#+end_src
 
 * TODO send keys to the keyboard buffer
 ** manual way
 ** '\> ' syntax
 
 * TODO test moving/resizing the screen buffer
-

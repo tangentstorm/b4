@@ -48,12 +48,20 @@
    @cur c1 ad !cur
    wrap rt
 
-:P                     # assign ^P to print string
-:puts @S dc !S         # write counted string at address s
-  c1 +S rb .f c1 +S rb ^O .n
-  cd !S rt
-
 :nl c0 cury c1 ad goxy rt
 :sp lb '  ^O rt
 :maxx @tmw c1 sb rt
 :maxy @tmh c1 sb rt
+
+:\0 # debug assist: print first line of screen using the 'io' op
+   @X dc @tmb !X
+   @tmw .f c1 +X rb lb 'e io .n
+   cd !X rt
+
+
+#-- data printers ---------------------------------------------
+
+:P                     # assign ^P to print string
+:puts @S dc !S         # write counted string at address s
+   c1 +S rb .f c1 +S rb ^O .n
+   cd !S rt

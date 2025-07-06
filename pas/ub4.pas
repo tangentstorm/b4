@@ -309,9 +309,14 @@ procedure opir(r:byte); inline;
   var v:value; begin v:=rg[r]; rg[r]+=dpop; dput(v) end; { read+inc register }
 
 procedure opio;
+  var ch: char;
   begin
     case chr(dpop) of
-      'e': ob:=ob+chr(dpop)
+      'e' : begin
+              ch := chr(dpop);
+              if ch < ' ' then ch := ' ';
+              ob:=ob+ch
+            end
     end
   end;
 
