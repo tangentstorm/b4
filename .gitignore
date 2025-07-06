@@ -17,3 +17,10 @@ fp___.*
 fp.*
 .directory
 *.bak
+
+# these link to ASSISTANTS.md
+CLAUDE.md
+GEMINI.md
+
+# used for gemini key:
+.env
