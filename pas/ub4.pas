@@ -91,6 +91,9 @@ const {-- these are all offsets into the mem array --}
   function regn(ch : char):byte;
   function b4mat(v : value):string;
   procedure WriteStack(pre : string; s:pstack; count:integer);
+  procedure cput( val : value );
+  function cpop:value;
+  procedure go(addr :integer);
 
 
 implementation

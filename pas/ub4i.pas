@@ -9,7 +9,46 @@ interface uses sysutils, strutils, ub4, ub4asm, ub4ops, character;
   function b4i(line:string):boolean; { returns 'done' flag }
   function b4i_args:boolean; { returns true if should quit }
 
+var
+  logging_enabled: boolean = false;
+
 implementation
+
+procedure LogState(op_str: string);
+begin
+  if logging_enabled then begin
+    Write(format('| IP: %s, OP: %s', [ub4.b4mat(ub4.rg^[ub4.RIP]), op_str]));
+    WriteStack('  ds: ', ub4.ds, ub4.rg^[ub4.RDS]);
+    WriteStack('  cs: ', ub4.cs, ub4.rg^[ub4.RCS]); WriteLn;
+  end;
+end;
+
+procedure wrapOp(op: byte);
+begin
+  LogState(ub4ops.optbl[op]);
+  ub4.runop(op);
+end;
+
+function step_wrapped : value;
+begin
+  wrapOp(ub4.mem[ub4.rg^[ub4.RIP]]);
+  inc(ub4.rg^[ub4.RIP]);
+  step_wrapped := ub4.rg^[ub4.RIP];
+end;
+
+procedure run_wrapped;
+begin
+  ub4.rg^[ub4.RST]:=1; while ub4.rg^[ub4.RST]=1 do step_wrapped
+end;
+
+procedure wrapCall(addr: ub4.address);
+begin
+  ub4.cput(ub4.rg^[ub4.RIP]);
+  ub4.cput(0);
+  ub4.go(addr+1);
+  run_wrapped;
+  ub4.rg^[ub4.RIP]:=ub4.cpop;
+end;
 
 function tryHex(tok:string; out i:integer):boolean;
   var c:char;
@@ -219,6 +258,7 @@ begin
       '\o', '-o' : ShowOpcodes;
       '\p', '%p' : PrintWords;
       '\R', '%R' : reset_vm;
+      '\g' : logging_enabled := not logging_enabled;
       '?d' : begin WriteStack('ds: ', ds, rg^[RDS]); WriteLn end;
       '?c' : begin WriteStack('cs: ', cs, rg^[RCS]); WriteLn end;
       '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
@@ -254,10 +294,10 @@ begin
                end;
         else
           if tryHex(tok, a) then dput(a)
-          else if ub4asm.find(tok, addr) then ub4.runa(addr)
+          else if ub4asm.find(tok, addr) then wrapCall(addr)
           else if ub4asm.b4op(tok, op) then begin
-            if op < $20 then ub4.runa(ub4.address(rg^[op]))
-            else runop(op) end // immediately invoke ^R
+            if op < $20 then wrapCall(ub4.address(rg^[op]))
+            else wrapOp(op) end // immediately invoke ^R
           else WriteLn('what does "', tok, '" mean?');
       end;
     end
