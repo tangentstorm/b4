@@ -62,8 +62,11 @@ end;
 procedure PutMem(str:string);
   var r: byte; tok, w_tok : string; a : integer;
       toks : TStringArray;
+      cmt_pos: integer;
 begin
-  toks := SplitString(str, ' ');
+  cmt_pos := Pos('#', str);
+  if cmt_pos > 0 then str := copy(str, 1, cmt_pos - 1);
+  toks := SplitString(trim(str), ' ');
   for tok in toks do begin
     if length(tok) = 0 then continue;
     if tok[1] = ':' then begin
@@ -177,10 +180,9 @@ begin
   if line[1] = ':' then begin PutMem(line); exit(false); end;
   toks := SplitString(line, ' ');
   while i < High(toks) do begin
-    inc(i); tok := toks[i];
-    if length(tok)=0 then continue;
-    if tok[1] = '#' then st:=st_cmt;
-    if (st=st_cmt) or (tok='') then continue;
+    inc(i); tok := toks[i]; if tok='' then continue;
+    // skip comments, but note ':' has its own comment handler :/
+    if tok[1] = '#' then st:=st_cmt; if st=st_cmt then continue;
     if tok = '\d' then begin { inspect/change working directory }
       if (i < High(toks)) and (toks[i+1] <> '')
         and (toks[i+1][1] <> '') and (toks[i+1][1] <> '%')
