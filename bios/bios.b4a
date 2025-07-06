@@ -65,3 +65,22 @@
 :puts @S dc !S         # write counted string at address s
    c1 +S rb .f c1 +S rb ^O .n
    cd !S rt
+
+
+:base 10 :digits  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
+
+:dvm ov ov md dc dv cd rt           # (x y - q r) divmod
+
+:putn                               # (n - ) print n using current base
+   du c0 eq                         # if n=0
+   .i zp lb '0 ^O rt .t             # then just print 0 and return
+   du c0 lt                         # negative?
+   .i lb '- ^O c0 sw sb .t          # ifso emit '-' and flip sign
+   c0 sw                            # else count digits. start with k=0 (n-kn)
+   .w du .d                         # while n!=0 do
+      li `base rb dvm               # (kn-kqr) divmod
+      li `digits ad rb dc           # (kqr-kq|c) push digits[r] char to ctrl stack
+      sw c1 ad sw .o                # (kq-Kn|c) k++, n=q
+   zp                               # (kn-k|k$c) k copies of c are now on stack
+   .f cd cd ^O dc .n                # (|ic-ic|) loop through chars. (have to pop/push loop counter)
+   rt

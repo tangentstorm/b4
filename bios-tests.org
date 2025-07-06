@@ -78,6 +78,28 @@ this gets skipped :/
   hello, world!
 #+end_src
 
+* putn
+#+name: putn
+#+begin_src b4a
+  > c0 putn \0 cscr
+  0
+  > n1 putn \0 cscr
+  -1
+  > ABCDEF putn \0 cscr
+  ABCDEF
+#+end_src
+
+* base
+Base allows you to =putn= in different bases (up to base 16 unless you extend the string)
+#+name: base
+#+begin_src base
+  > 0A `base wb 0F putn \0 cscr # decimal
+  15
+  > 10 `base wb 0F putn \0 cscr # hex
+  F
+#+end_src
+
+
 * TODO send keys to the keyboard buffer
 ** manual way
 ** '\> ' syntax
