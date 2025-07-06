@@ -1,0 +1,1 @@
+cd pas && instantfpc -B b4ix.pas $1 $2 $3 $4 $5
