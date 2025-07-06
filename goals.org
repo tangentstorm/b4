@@ -92,7 +92,7 @@ It currently contains the following, which will probably be
 broken out into separate files:
 
 - the actual BIOS
-  - in-memory color text terminal (see [[bios/term.b4a][term.b4a]])
+  - in-memory color text terminal (see [[bios/bios.b4a][bios.b4a]])
   - read/write numbers
   - read/write strings
 
