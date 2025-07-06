@@ -1,0 +1,27 @@
+* -- lessons
+** operations on state: simple calculator
+- visual 'buttons' that do the work
+- number buttons: multiply by base and add digit
+- clear, inc, dec?
+
+** sequence:
+*** visual virtual machine
+*** no-op, breakpoints
+(so we can see the cursor moving)
+*** place opcodes in the cells directly
+
+** repetition:
+- simple counter
+- implement addition, multiplication
+
+** conditionals
+- show jumping over some code
+- show 'else' using [a?] [b?] [c?] [d?]
+- so consider this instead: [ c ? a | b ]
+- now:
+  [ c0 ? a | [ c1 ? b ] ]
+- so just allow 'elif'
+
+** idea create an assembler via stepwise refinement
+*** TODO write an assembler in pascal-like psuedocode
+*** TODO show how to translate that psuedocode to instructions

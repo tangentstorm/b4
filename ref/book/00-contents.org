@@ -1,0 +1,14 @@
+#+title: b4 book
+
+* table of contents
+
+- intro
+- b4: the b4 virtual machine
+- b4a: the assembler
+- b4i: the interactive interpreter
+- bios: the text terminal
+- b4f: the shell
+- b4s: symbolic computing
+- pre: parsing and regular expressions
+- memory management
+- appendix A: opcode tests

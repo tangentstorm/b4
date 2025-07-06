@@ -1,0 +1,110 @@
+#+title: tower (of interpreters) plan (for b4)
+
+
+* basic lisp notation (b4n)
+
+We will bootstrap a simple lisp notation from b4 assembly.
+
+Every value on the stack will be a pointer to a cons cell.
+A cons cell is a pair of 4-byte values, aligned to an
+8-byte address. This means the hex address of the first
+item ends in either 00 or 08.
+
+In keeping with lisp tradition, we refer to the first item
+as its 'car' and the second item as its 'cdr' (more or less
+rhymes with "footer").
+
+Since the address of a cons cell always ends in 0x0 or
+0x8, we have three low bits in the pointer to use to store
+other information.
+
+We will use the lowest of these bits later in a mark-and-sweep
+garbage collection system.
+
+The other two bits will be used for a type code:
+
+| hex | bits | meaning                                   |
+|-----+------+-------------------------------------------|
+|   0 |  00. | cons cell                                 |
+|   2 |  01. | number                                    |
+|   4 |  10. | symbol                                    |
+|   6 |  11. | (reserved for extended type system later) |
+
+In the 'bits' column, the '.' stands for the mark bit. In
+practice it should always be 0, but we mask it out when
+extracting the type code.
+
+* high level plan for the notation (b4n)
+** print
+- putn: print raw numbers
+- pnum: number in cell
+- same for 4-byte symbols
+  - put4: print 4-byte symbol
+  - p4ch: print 4-byte symbol cell
+- pcel: print a cons cell
+  - pair notation
+  - list notation (recursive)
+    - requires special end cell (nil)
+    - whether to show parens or not depends on whether it's the car
+
+** cell constructors
+- to load num/sym from bytecode to stack is just li op
+- to create the pair we need memory allocator
+  - allocate a chunk of ram to hold the cells
+  - first cell contains pointers
+    - car points to free list
+    - cdr reserved for link to next block of cells
+ - next cell is root of the environment tree
+   - anything we don't want garbage collected must be attached
+   - (except nil is outside and never garbage collected)
+   - (first cell is not garbage collected but also never a lisp value)
+ - 'ncel' pushes next free cell to stack and updates the free pointer
+   - if out of cells halt with error for now
+   - later, we can garbage collect, allocate more cells, etc
+ - so we need a linked list of cells to pull from
+ - 'cels' (n--a) creates the linked list of n free cells
+
+** reader
+- requires an input string somewhere
+  - assembler should probably let us load an ascii file into ram
+- rnum from input string (requires parsing number)
+- rsym (just have to detect space/ignore 5+ chars)
+- rcel (recursive descent parser)
+
+
+* TODO plan for the interpreter (b4s)
+- allow all 'live' ops
+- allow special symbols: QT UP DN for ('`,)
+- should lisp get its own stack made of cons cells, or does it share the b4 stack?
+  - probably needs its own because of the garbage collector
+- define
+- lambda
+- apply
+- eval
+
+* implementation
+
+** TODO [0/5] print
+*** TODO putn: print a raw number (4 bytes)
+- we could come up with fancy encoding to pack 5 letters (no uppercase)
+- but easier to just chain them together later later
+- also 8-bit ascii works much nicer with the assembler and memory view
+*** TODO pnum: print a lisp number from a cell
+*** TODO put4: print a raw symbol (4 bytes)
+*** TODO psym: print a lisp symbol
+*** TODO pval (=^P=): print an arbitrary value
+*** TODO plis: print a list
+
+*** TODO vtyp: type code extractor
+
+** TODO [0/2] allocator
+*** TODO cels
+*** TODO ncel
+
+** TODO [0/4] reader
+*** TODO rval (=^R=)
+*** TODO rnum
+*** TODO rsym
+*** TODO rlis
+
+** TODO eval
