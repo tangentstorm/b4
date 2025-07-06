@@ -1,11 +1,72 @@
 #+title: b4 implementation plan
 
 * -- roadmap --
+** TODO get screen io working
 ** TODO b4s (a tiny lisp-like interface)
 ** TODO finish memory alloctor
 ** TODO implement variants
 
 * -- sprint --
+** DONE [14/14]
+*** DONE fill out constant ops c0 c1 c2 n1 c4
+*** DONE use =\d= to change the directory                        :b4i:
+*** DONE use =\a= to assemble a file (b4a)                      :b4i:
+*** DONE use =\i= to interpret a file (b4i)                      :b4i:
+*** DONE flm (fill memory with number)                         :bios:
+#+begin_src b4a
+  :flm # (ina-) fill n ints with i, starting at address a
+    @A dc !A .f          # (ina-i|n)  for a := n downto 0
+       du c4 +A wi       # (i|n-i|n) copy i to @A and increment @A
+    .n zp cd !A rt       # (i|n-|)  restore old @A and clear stack
+#+end_src
+
+*** DONE draw the video buffer                                 :b4ix:
+
+*** DONE =\a= command to assemble a file                         :b4i:
+
+*** DONE bug: =li= loads extra byte
+(actualy it could do any number of strange things: the
+we needed to add 4 to the ip but only added 3 so the last
+byte was treated as an opcode!)
+
+*** DONE bug: =2 3 mlatu= multiplies in b4i
+probably just need to check for labels before ops, and
+only treat two-character codes as ops
+
+*** DONE implement =@name= and =!name=                             :b4i:
+*** DONE implement %R                                          :b4i:
+*** DONE get ./test-b4i-pas working
+*** DONE fix =sh= with negative TOS                              :ub4:
+*** DONE use a line editor with history
+** TODO [14/19] memory-mapped video terminal                   :term:
+*** DONE @tmb : buffer pointer
+*** DONE @tmw : width
+*** DONE @tmh : height
+*** DONE cscr : clear screen
+*** DONE @cur : cursor position
+*** DONE curx : cursor x
+*** DONE cury : cursor y
+*** DONE emit : write char to screen buffer
+*** DONE goxy : set cursor position
+*** DONE sp   : emit space
+*** DONE nl   : emit newline
+*** DONE maxx : screen width-1
+*** DONE maxy : screen height-1
+*** DONE puts : write a string
+*** TODO ceol : clear to end of line
+@cur @tmw curx sb .f sp .n !cur
+*** TODO scup : scroll up
+*** TODO toggle scroll vs wrap
+*** TODO attr : attribute variable
+** TODO [0/4] tools to simulate keyboard input                 :bios:term:
+*** TODO kr readkey
+*** TODO kR put key into buffer
+*** TODO kp get keypressed flag
+*** TODO kP set keypressed flag
+** -- bios tests ---
+** TODO command to dump video text                             :b4i:
+could just be a flag to =\m=
+** -- b4f --
 ** TODO separate bios from b4f
 - bios
   - num : number i/o
@@ -13,17 +74,16 @@
   - str : string i/o
   - ibf : allocate a 255-byte input buffer (+1 len cel)
 - the rest goes into b4f, the forth-like interpreter
-
-** TODO command to assemble a file                              :b4i:
+** -- bugs --
+** TODO bug %C does not clear dictionary, causing "too many :defs"
+** TODO bug: uled sometimes shows stray characters after submit
+** -- b4s --
 ** TODO implement 4ch symbol routines
 ** TODO implement nxcl 'allocator'                             :b4s:
 ** TODO read lists from input buffer                           :b4s:
 ** TODO reader macros for up/dn/qt                             :b4s:
 ** TODO implement lisp-style 'eval'                            :b4s:
-
 * -- backlog --
-** TODO rename 'mnemonics.org' to 'b4-opcodes.org'              :doc:
-*** make mnemonics just a section
 ** TODO generate 16x16 opcode table for the docs                :doc:
 ** TODO [0/3] add assembler.org doc for b4a assembler syntax    :doc:
 *** TODO describe label usage: :name name `name @name !name
@@ -121,6 +181,73 @@ and then 'run to cursor'
 ** TODO number/base                                             :b4f:
 ** TODO wait for input when input buffer exhausted              :b4f:
 ** TODO implement quote                                         :b4f:
+* -- inbox --
+** TODO scdn : scroll down (?)
+
+** TODO terminal widgets
+*** TODO vbuf : create another video buffer
+*** TODO cbuf : copy buffer (needs stride)
+*** TODO scrw : scroll window (needs stride)
+*** TODO line editor
+*** TODO list editor
+
+** TODO do allow a forward declaration syntax: =/:=              :b4a:
+- when a label is placed, check if it's new and fill in backrefs
+
+** TODO add =$= macro for explicit large hex numbers             :b4a:
+** TODO strictly limit features used in the b4a tests          :test:
+- b4a is a static assembler + debugger
+- should only use step/run, not =^R= or =:R= syntax,
+  (because these are b4i features)
+- probably do not allow uppercase labels at all
+  (at least the first character)
+** TODO #!b4 should be standalone executable that runs b4 files
+- =x.b4o= :: plain b4 opcodes/hex (no comments, only 2-char whitespace)
+- =x.b4a= :: assembly language with comments, labels, macro code
+- =x.b4m= :: a saved b4 machine (binary)
+- =x.b4d= :: data (binary like k's .l files)
+
+** TODO you should be able to use a machine "statefully" from the command line
+- meaning: load a b4m, reads messages from stdin
+- then when it's done, save the state back to the b4m
+- (should also have option to load and save separately)
+
+** TODO prefix all assembler/debugger commands with =/=
+=/s= : step
+=/g= : go
+=/q= : quit
+=/r= : reset stack
+=/R= : reset everything
+
+** TODO add breakpoints                                        :b4i:
+=/+= addr : breakpoint?
+=/-= addr
+=/b= : list breakpoints?
+
+** TODO add timer/profiler commands                            :b4i:
+=/t= : run with timing (in clock + num ops + num calls)
+
+** TODO trace mode that shows every op?
+** TODO idea: assembler command to align to 4byte boundary =:|=  :b4a:
+** TODO idea: allocate buffer =:bufname :+HEXNUM=                :b4a:
+** TODO macros to write strings
+how strings work outside words:
+."hello \"cool\" world"
+
+how strings work in words:
+:hello  .[ ."hi" .] echo rt
+
+:hello  jm `end :bgn 02 'h 'i :end li `bgn li `echo cl rt
+
+
+** TODO rn op to push 32 random bits
+** TODO ct curent time
+** TODO "scaffolding ops" that can be replaced with macros
+- c1, c2 etc
+** TODO custom assembler macros (uppercase)
+** TODO "bicameral" aspect
+- some things might be much easier if we can use one machine to program another
+
 * -- maybe later --
 ** TODO onboard line editor
 ** TODO "calculator mode" (send ascii chars)
@@ -244,7 +371,6 @@ I would really really like a modfile player for retro sounds and music. (don't k
 *** module ui : text widgets
 *** module sg : scenegraph
 ** IDEA posix-friendly "block storage" files
-
 Forth systems tend to use "blocks" instead of "files"
 - simplifies editors (no scrolling, just edit screen)
 
@@ -257,3 +383,7 @@ Idea to make block format that's readable with modern tools:
 - loader would just ignore those lines
 - saver would always add those lines
 - use a blkfmt file to enforce/repair the format
+** IDEA use `R in b4i while assembling to run a dynamic macro?
+- template compilation?
+- currently it compiles the address of the register,
+  but why do you need that?
