@@ -41,6 +41,8 @@ and is also used to indcate false.
 #+end_src
 
 
+* TODO mention wipe/tag?/type codes
+
 * car and cdr (nil)
 
 Every cell is a pair of values.
@@ -136,6 +138,7 @@ cause the =nxt^= to move to the next cell in the list.
   > celn ?d %q
   ds: [0]
 #+end_src
+
 
 
 * TODO [0/7] the printer

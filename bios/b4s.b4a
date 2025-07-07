@@ -43,15 +43,6 @@
 
 :pnum cdr putn rt
 
- # - csym
- # - cons
-
-
-
- # # printer
-
- # - numbers
- # - symbols
- # - lists
-
-# constructors
+# --- symbols --------------------------
+# --- lists ----------------------------
+# (todo)
