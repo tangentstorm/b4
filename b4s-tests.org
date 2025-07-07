@@ -122,6 +122,21 @@ cause the =nxt^= to move to the next cell in the list.
 #+end_src
 
 
+* numbers: create and print a number
+
+=cnum= wraps a plain b4 number in a cell.
+
+=pnum= prints the numeric cell (depends on =putn= from the bios).
+
+#+name: b4s.nums
+#+begin_src b4a
+  > inic
+  > 7C cnum du pnum \0 cscr
+  7C
+  > celn ?d %q
+  ds: [0]
+#+end_src
+
 
 * TODO [0/7] the printer
 ** TODO pnum: print a lisp number from a cell

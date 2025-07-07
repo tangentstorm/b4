@@ -12,9 +12,13 @@
 :nxt^ .. .. .. ..                       # ptr to next free cell (init=same as fst^)
 :numc .. .. .. ..                       # total number of cells. 'inic' makes this
 
-:car  ri rt     :cdr  c4 ad ri rt       # get car, cdr
-:car! wi rt     :cdr! c4 ad wi rt       # set car, cdr
-:nil @nil^ rt   :nil? @nil^ eq rt       # push / test nil
+:wipe lb 06 nt an rt                    # wipe: (c-c) remove type code
+:ntag wipe c2 xr rt                     # ntag: tag cell as number
+:stag wipe c4 xr rt                     # ntag: tag cell as symbol
+
+:car  wipe ri rt :cdr  wipe c4 ad ri rt # get car, cdr (c - c)
+:car! wipe wi rt :cdr! wipe c4 ad wi rt # set car, cdr (x c -)
+:nil @nil^ rt    :nil? @nil^ eq rt      # push / test nil
 
 :inic                                   # init cells (by making a linked list)
    @end^ @fst^ sb lb 08 dv c1 sb !numc  # numc := number of cells (leave 1 at end for nil)
@@ -32,8 +36,13 @@
 
 :nxtc @nxt^ du ri !nxt^ rt              # (-c) claim next free cell
 
- # - cnum : wrap a number
- # - cnum
+# --- numbers --------------------------
+
+:cnum nxtc sw ov                        # cnum: (n-c) construct b4s number from raw b4 [n-nc-cn-cnc]
+   cdr! nil ov car! ntag rt             # [cnc-c-c0-c0c-c]
+
+:pnum cdr putn rt
+
  # - csym
  # - cons
 
