@@ -1,1 +1,43 @@
 # b4s : symbolic processing
+
+# allocate some space for cells
+# note this is probably far ahead in memory and there is nothing
+# to prevent the assembler from writing over it.
+
+# TODO: the assembler needs :|8 to allign and :+<size> to allocate
+
+:fstc 00 10 .. ..                       # ptr to first normal cell
+:endc 00 30 .. ..                       # ptr to end of cell memory
+:nila .. .. .. ..                       # address of nil
+:nxtc .. .. .. ..                       # ptr to next free cell (init=same as fstc)
+:numc .. .. .. ..                       # total number of cells. 'inic' makes this
+
+:car  ri rt   :cdr  c4 ad ri rt         # get car, cdr
+:car! wi rt   :cdr! c4 ad wi rt         # set car, cdr
+
+:inic                                   # init cells (by making a linked list)
+   @endc @fstc sb lb 08 dv c1 sb !numc  # numc := number of cells (leave 1 at end for nil)
+   @endc lb 08 sb !nila                 # nila := last cell
+   @nila du du du car! cdr!             # nil := (nil . nil)
+   @A dc @fstc !A                       # A := first cell
+   @numc .f                             # for each real cell (non-nil)
+      @A lb 08 +A wi .n                 # link it to the next cell (last -> nil)
+   cd !A rt
+
+:nil @nila rt :nil? @nila eq rt         # push / cmp nil
+
+
+ # - cnum : wrap a number
+ # - cnum
+ # - csym
+ # - cons
+
+
+
+ # # printer
+
+ # - numbers
+ # - symbols
+ # - lists
+
+# constructors

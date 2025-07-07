@@ -20,3 +20,57 @@ See [[file:bios-tests.org][bios-tests.org]] for more info.
   ok B4
 #+end_src
 
+* nil
+#+name: b4s.cells
+#+begin_src b4a
+  > inic
+  > @numc ?d zp  # should be $3ff (1023) cells
+  ds: [3FF]
+  > @numc 8 ml @fstc ad   # nil should be in cell 400
+  > @nila eq ?d zp
+  ds: [-1]
+  > @nila nil eq ?d zp
+  ds: [-1]
+  > @nila nil? ?d zp
+  ds: [-1]
+  > %q
+#+end_src
+
+* nil: car/cdr
+#+name: b4s.nil-struct
+#+begin_src b4a
+  > inic
+  > nil car nil?
+  > nil cdr nil?
+  > ?d %q
+  ds: [-1 -1]
+#+end_src
+
+
+
+* TODO [0/7] the printer
+** TODO pnum: print a lisp number from a cell
+** TODO put4: print a raw symbol (4 bytes)
+- we could come up with fancy encoding to pack 5 letters (no uppercase)
+- but easier to just chain them together later
+- also 8-bit ascii works much nicer with the assembler and memory view
+** TODO p4ch: print 4 chars of a symbol
+** TODO pval (=^P=): print an arbitrary value
+** TODO plis: print a list
+** TODO vtyp: type code extractor
+
+* TODO [0/3] the allocator (cons)
+** TODO cels
+** TODO ncel
+** TODO cons
+
+* TODO [0/4] the reader
+** TODO rnum
+** TODO rsym
+** TODO rlis
+** TODO rval (=^R=)
+
+* TODO [0/2] eval
+** TODO eval
+- start here because syms, nums, and nil eval to themselves
+** TODO elis
