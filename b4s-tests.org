@@ -1,0 +1,22 @@
+#+title: b4s: a lisp-like language in b4a
+
+* TODO tanco skips first test
+#+name: skip
+#+begin_src b4a
+(tanco bug makes this skip)
+#+end_src
+
+* ensure BIOS is loaded
+
+Assuming the bios is loaded, the following line clears
+the internal video screen and prints 'ok B4'.
+
+The `\0` word prints out the first line of video memory.
+See [[file:bios-tests.org][bios-tests.org]] for more info.
+
+#+name: b4s.bios
+#+begin_src b4a
+  > cscr 'o ^O 'k ^O sp B4 putn \0 %q
+  ok B4
+#+end_src
+
