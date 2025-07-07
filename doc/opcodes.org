@@ -2,7 +2,7 @@
 
 * opcode table
 
-The opcode table can be genarated from the pascal version
+The opcode table can be generated from the Pascal version
 of =b4i= with the command: =instantfpc -B b4i.pas -o -q=
 
 #+begin_example
@@ -26,12 +26,12 @@ $E0|
 $F0|                            wl ds cs hx io db hl
 #+end_example
 
-This document lists the 2-letter opcodes of b4 virtual machine instructions
+This document lists the 2-letter opcodes of the b4 virtual machine instructions
 and their meanings.
 
-See file:../b4-tests.org for examples of each opcode.
+See [[file:../b4-tests.org][b4-tests.org]] for examples of each opcode.
 
-The hex numbers after the opcodes indicate the bytecode in the communication protocol (which is not yet stable, so may change slightly).
+The hex numbers after the opcodes indicate the bytecode in the communication protocol (which is not yet stable, so they may change slightly).
 
 * terms
 
@@ -63,7 +63,7 @@ diagram.
 The individual characters represent arbitrary 32-bit numbers, which may
 be assigned various meanings. By convention, =a= would refer to a number
 treated as an address, =x= and =y= as first and second inputs, =n= is a number,
-b is a boolean (either 0 or -1), and =r= as a computed result.
+=b= is a boolean (either 0 or -1), and =r= as a computed result.
 
 When the same value appears multiple times inside the parens, it always
 represents the same value.
@@ -72,7 +72,7 @@ represents the same value.
 
 ** literal ops
 
-The following two operations load signed numbers onto the stack from the next byte(s) in memory.
+The following operations load numbers onto the stack from the next byte(s) in memory.
 
 - lb :: =$80= load (unsigned) byte ~( -- n)~ ex: =lb 00= pushes 0 to ds.
 - li :: =$81= load (signed, little-endian) int32 ~(-- n)~  ex: =li 00 01 02 03= pushes =0x03020100= to ds
@@ -80,7 +80,7 @@ The following two operations load signed numbers onto the stack from the next by
 
 ** constant ops
 
-These push a small, constant integer to the data stack.
+These push small, constant integers to the data stack.
 
 - c0 :: =$C0= push 0 ~( -- 0)~
 - c1 :: =$C1= push 1 ~( -- 1)~
@@ -104,7 +104,7 @@ These push a small, constant integer to the data stack.
 - ml :: =$8A= multiply ~( xy -- r )~ ex: ~( 05 03 ml --> 0F )~
 - dv :: =$8B= integer division ~( xy -- r )~ ex: ~( 0A 03 dv --> 03 )~
 - md :: =$8C= modulo (remainder) ~( xy -- r )~ ex: ~( 0A 03 md --> 01 )~
-- sh :: =$8D= shift =x= left =y= bits (=y= may be negative) ~(xy - r )~ ex: ~(06 01 sh --> 0C)~
+- sh :: =$8D= shift =x= left =y= bits (=y= may be negative) ~(xy -- r)~ ex: ~(06 01 sh --> 0C)~
 
 ** logic ops
 
@@ -116,19 +116,25 @@ These push a small, constant integer to the data stack.
 ** comparison ops
 
 - eq :: =$92= equal? ~(xy -- b)~ . pushes -1 to ds if x and y are equal, else 0.
-- lt :: =$93= less than? (x y -- b) pushes -1 if =x < y,= else 0
+- lt :: =$93= less than? ~(x y -- b)~ pushes -1 if =x < y,= else 0
 
-The other obvious comparison ops (=ne,gt,ge,le=) can be defined in terms of these as extended operations,
-or can be achieved by some combination of re-ordering the arguments and using =nt=.
+The other obvious comparison ops (=ne,gt,ge,le=) can be defined in terms
+of these as extended operations, or can be achieved by some
+combination of re-ordering the arguments and using =nt=.
 
 ** control flow ops:
 
-Note that the communication protocol is meant to allow using a b4 vm as a "calculator" or "repl", and control flow ops don't make sense in the communication protocol. The hex numbers here indicate the bytecodes used in the pascal implementation of the virtual machine, but these will probably not be directly part of the communications protocol (with the possible exceptions of =hl= and =db= (?)).
+Note that the communication protocol is meant to allow using a b4 vm
+as a "calculator" or "repl", and control flow ops don't make sense in
+the communication protocol. The hex numbers here indicate the
+bytecodes used in the pascal implementation of the virtual machine,
+but these will probably not be directly part of the communication
+protocol (with the possible exceptions of =hl= and =db= (?)).
 
 - hl :: =$96= halt (cause the virtual machine to terminate)
 - jm :: =$97= unconditional jump to the address held in next 4 bytes of ram
 - hp :: =$98= /hop/. add next signed byte (minus 1) to ip.
-- h0 :: =$A0= /hop if 0/. remove tos, and if was 0, perform a hop. (otherwise increment ip to ignore the distance byte)
+- h0 :: =$A0= /hop if 0/. remove tos, and if it was 0, perform a hop. (otherwise increment ip to ignore the distance byte)
 - cl :: =$A1= /call/. push ip to cs, then jump to address held in next 4 bytes.
 - rt :: =$A2= /return/. jump to address taken from cs.  ~(cs: a -- )~
 - nx :: =$A4= /next/. a kind of hop. uses top of cs as loop counter. if the counter is 0, drop and increment ip to skip the (signed) distance byte, otherwise decrement it and hop. ~(cs: n -- (n-1))~ if n>0 else ~(cs: n --   )~
@@ -156,7 +162,7 @@ output to some other function.
 
 Note that op $00 is a no-op, and written as =..= rather than '^@'.
 There is no way to invoke the @ register directly. (The plan is
-to use this register initialize the instruction pointer on startup
+to use this register to initialize the instruction pointer on startup
 when using an image file, but this is not yet implemented as of
 this writing.)
 
@@ -192,19 +198,19 @@ These are only implemented in the pascal version (file:../pas/uhw_vt.pas), and a
 
 Probably they will be removed in favor of the in-memory terminal in file:../bios/bios.b4a .
 
-B4 will eventually have an official spec for color terminal i/o, but it will just regular forth words that use =io= to talk to virtual hardware, rather than dedicated ops.
+B4 will eventually have an official spec for color terminal i/o, but it will just be regular Forth words that use =io= to talk to virtual hardware, rather than dedicated ops.
 
 (But: the byte-codes $B0 .. = $BF are reserved for you to implement whatever you want, and may even change from instance to instance depending on how you implement the machine, so the current use is valid).
 
 
-- tg :: =$B0= /term.goto/: move cursor to position (x, y) (x y -- )
-- ta :: =$B1= /term.attr/: set foreground and background color for future output to x  ~(x -- )~ fg and bg are 4 bits and packed into the least significant byte of x. (this is an artefact of how the pascal =crt= unit works, and will probably change to allow separate true color fg/bg commands)
-- tw :: =$B2= write a character (unicode code point) to the terminal ~(x -- )~ (should emit utf-8. probably only does ascii in pascal imp.)
-- tr :: =$B3= wait for user to press a key and read the code from the terminal. ~(x -- )~
+- tg :: =$B0= /term.goto/: move cursor to position (x, y) ~(x y -- )~
+- ta :: =$B1= /term.attr/: set foreground and background color for future output to x  ~(x -- )~ fg and bg are 4 bits and packed into the least significant byte of x. (this is an artifact of how the pascal =crt= unit works, and will probably change to allow separate true color fg/bg commands)
+- tw :: =$B2= write a character (unicode code point) to the terminal ~(x -- )~ (should emit utf-8. probably only does ascii in the Pascal implementation.)
+- tr :: =$B3= wait for user to press a key and read the code from the terminal. ~( -- x)~
 - tk :: =$B4= check whether key is pressed (so you don't have to block with =tr=). ~( -- b)~
-- ts :: =$B5= clear terminal screen. (fill entire screen with spaces and current bg color)
-- tl :: =$B6= clear terminal line. (clear from cursor to right side of screen)
-- tc :: =$B7= terminal cursor position ~( - xy)~ (where x and y are the current coordinates of the cursor)
+- ts :: =$B5= clear terminal screen. ~( -- )~ (fill entire screen with spaces and current bg color)
+- tl :: =$B6= clear terminal line. ~( -- )~ (clear from cursor to right side of screen)
+- tc :: =$B7= terminal cursor position ~( -- x y)~ (where x and y are the current coordinates of the cursor)
 
 
 * assembler macros
@@ -215,8 +221,8 @@ These are not opcodes, but macros built into the assembler (at least in the pasc
 |-------+-----------------------------------------------------------------------------------------|
 | =.f=    | "for" begins a for/next loop. pushes counter to =cs=. loops until counter is 0            |
 | =.n=    | "next" ends a for/next loop. decrements counter and loops, or breaks if counter is 0.   |
-| =.i=    | "ifso" consumes top of =ds= and if non-0, proceeds, else jumps to next .e or .t           |
-| =.e=    | "else" starts an "else" section to take  between .i and .t if TOS=0                     |
+| =.i=    | "ifso" consumes top of =ds= and if non-zero, proceeds, else jumps to next .e or .t          |
+| =.e=    | "else" starts an "else" section to take place between .i and .t if TOS=0                    |
 | =.t=    | "then" marks end of .i or .e sections                                                   |
 | =.w=    | "while" marks start of a while loop. unlike =.i=, the condition follows the =.w=.           |
 | =.d=    | "do" marks end of while condition and start of loop body. jumps to =.o= if condition is 0 |
