@@ -21,29 +21,104 @@ See [[file:bios-tests.org][bios-tests.org]] for more info.
 #+end_src
 
 * nil
+
+Nil is a special cell that marks the end of the list,
+and is also used to indcate false.
+
 #+name: b4s.cells
 #+begin_src b4a
   > inic
-  > @numc ?d zp  # should be $3ff (1023) cells
+  > @numc ?d zp
   ds: [3FF]
-  > @numc 8 ml @fstc ad   # nil should be in cell 400
-  > @nila eq ?d zp
+  > @numc 8 ml @fst^ ad   # nil should be in cell 400
+  > @nil^ eq ?d zp
   ds: [-1]
-  > @nila nil eq ?d zp
+  > @nil^ nil eq ?d zp
   ds: [-1]
-  > @nila nil? ?d zp
+  > @nil^ nil? ?d zp
   ds: [-1]
   > %q
 #+end_src
 
-* nil: car/cdr
-#+name: b4s.nil-struct
+
+* car and cdr (nil)
+
+Every cell is a pair of values.
+
+Traditionally, the first of the pair is called the "car"
+and the second is called the "cdr" (rhymes with 'footer').
+
+Nil's car and cdr both point back to nil.
+
+#+name: b4s.nil-parts
 #+begin_src b4a
   > inic
   > nil car nil?
   > nil cdr nil?
   > ?d %q
   ds: [-1 -1]
+#+end_src
+
+
+* celn
+
+The function =celn= can be used to map a cell back to its number.
+This is only intended for use by these tests, so that we can test
+cell adddresses without refering to exact memory locations.
+
+#+name: celn
+#+begin_src b4a
+  > inic
+  > nil celn ?d zp  # nil is -1
+  ds: [-1]
+  > @fst^ celn ?d zp
+  ds: [0]
+  > # last (non-nil) cell should have number (numc-1)
+  > @end^ 10 sb celn
+  > @numc c1 sb eq ?d %q
+  ds: [-1]
+#+end_src
+
+
+* nxt^ : pointer to next free cell
+
+The =inic= routine's last job is to link the allocated
+cells together into a list of free cells, storing the
+address of the first free cell in @nxtc.
+
+At start, the first free cell should be the first cell,
+and its car should point to the next cell (which is the
+address 8 bytes ahead).
+
+#+name: b4s.nxt^
+#+begin_src b4a
+  > inic
+  > @nxt^ celn ?d zp   # next cell should be cell 0
+  ds: [0]
+  > @nxt^ car celn ?d zp
+  ds: [1]
+  > @nxt^ car car car car celn ?d zp
+  ds: [4]
+  > # car of last cell in list should be nil
+  > @end^ 10 sb car nil? ?d %q
+  ds: [-1]
+#+end_src
+
+* nxtc : take next cell from free list
+
+We can take the next cell from the free list with =nxtc=,
+which will put the current value of =nxt^= on the stack, and
+cause the =nxt^= to move to the next cell in the list.
+
+#+name: b4s.nxtc
+#+begin_src b4a
+  > inic
+  > # next free should be cell 0
+  > @nxt^ celn ?d zp
+  ds: [0]
+  > # if we take it, then next up is cell 1
+  > nxtc celn @nxt^ celn ?d %q
+  ds: [0 1]
 #+end_src
 
 
