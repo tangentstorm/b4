@@ -229,9 +229,6 @@ These are not opcodes, but macros built into the assembler (at least in the pasc
 
 * letter mnemonics
 
-Sometimes the two-letter code itself is mnemonic, and sometimes
-the individual letters refer to a register or stack.
-
 #+begin_src text
   a: add(ad), and(an)
   b: byte(lb,rb,wb)
@@ -245,11 +242,10 @@ the individual letters refer to a register or stack.
   m: multiply(ml), modulo(md)
   n: not(nt), next(nx), negative(n1)
   o: over(ov), or(or), output(io)
-  r: return(rt), read(ri,rb,rx,ry)
+  r: return(rt), read(ri,rb,rs)
   s: shift(sh), signed byte(ls,rs), swap(sw), subtract(sb)
   t: terminal (tg,ta,tw,tr,tk,ts,tl,tc)
-  w: write(wb,wi,wz)
-  x: xor(xr) x-register(rx)
-  y: y-register(ry)
-  z: zap(zp), z-register(zw)
+  w: write(wb,wi)
+  x: xor(xr)
+  z: zap(zp)
 #+end_src
