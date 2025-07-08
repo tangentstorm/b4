@@ -12,6 +12,7 @@
 :nxt^ .. .. .. ..                       # ptr to next free cell (init=same as fst^)
 :numc .. .. .. ..                       # total number of cells. 'inic' makes this
 
+:ctyp lb 06 an rt                       # ctyp: (c-t) return the cell's type code
 :wipe lb 06 nt an rt                    # wipe: (c-c) remove type code
 :ntag wipe c2 xr rt                     # ntag: tag cell as number
 :stag wipe c4 xr rt                     # ntag: tag cell as symbol
@@ -35,15 +36,13 @@
    .e @fst^ sb lb 8 dv .t rt            # otherwise find offset and div by 8
 
 :nxtc @nxt^ du ri !nxt^ rt              # (-c) claim next free cell
+:encl nxtc sw ov cdr! nil ov car! rt    # encl: (n-c) enclose a b4 value in a cell (store in cdr)
 
 # --- numbers --------------------------
-
-:encl nxtc sw ov cdr! nil ov car! rt    # encl: (n-c) enclose a b4 value in a cell (store in cdr)
 :cnum encl ntag rt                      # cnum: (n-c) construct b4s number from raw b4 [n-nc-cn-cnc]
 :pnum cdr putn rt                       # pnum: (c- ) print b4s number
 
 # --- symbols --------------------------
-
 :glu lb 03 .f lb 08 sh ad .n rt         # glu: (abcd-4) glue up to 4 chars together. ex: 'a 'b 'c 0 m4c
 :o4c c4 .f                              # o4c: (4-) output a 4-char symbol. loop 4 times:
      du lb FF an du .i ^O .e zp .t      #   loop and print non-0 char

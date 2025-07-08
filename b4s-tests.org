@@ -157,7 +157,44 @@ together into a standard int32.
 
 Symbols are stored in the cdr of a cell, just like a b4s number.
 
+* =ctyp= : distinguish cell types
+#+name: b4s.ctyp
+#+begin_src b4a
+  > inic
+  > # by default, cells are type 0b000=0 (lists)
+  > nxtc ctyp ?d zp
+  ds: [0]
+  > # numbers are type 0b010=2
+  > 12345 cnum ctyp ?d zp
+  ds: [2]
+  > # symbols are type 0b100=4
+  > 's 'i 'm 'i glu csym ctyp ?d zp
+  ds: [4]
+#+end_src
 
+So far, symbols and numbers are both cells with =nil=
+in the car and a 32-bit value in the cdr. Since we created the
+cells ourselves, we know what's in them, and can call the
+correct print routine manually.
+
+But when we're dealing with dynamic data, we need some way to
+tell them apart.
+
+Since we know that cells are aligned to an 8-byte address (meaning
+a cell address always ends in =0= or =8=), we can use the lower three
+bits to store extra data.
+
+We will use the lowest bit in a mark-and-sweep garbage collector later.
+Meanwhile, the next two bits are a type code.
+
+The =ctyp= word returns this code.
+
+(The final bit pattern 0b110=6 is reserved for future use. It will
+indicate a pointer to a non-b4s value for interop with other languages
+running on the vm.)
+
+Note that once you implement =ctyp=, you will probably need to mask out
+the type code in the implementation of =car= and =cdr=.
 
 
 * TODO [0/7] the printer
