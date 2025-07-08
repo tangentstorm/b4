@@ -5,11 +5,27 @@ This is a suite of acceptance tests for the B4 virtual machine.
 There are B4 implementations in multiple languages, so this file
 helps to make sure they are all compatible and follow the spec.
 
+* How to read the tests
+
+The important lines in this file are the code sections.
+
+Lines starting with =>= are /input/ to the program.
+
+Lines without =>= are the expected outputs.
+
 * Running the tests
 
-This is a slightly messy process at the moment, as test runner is currently in another repository:
+The tests in this file are run using Python and require [[https://github.com/tangentcode/tanco][tanco]].
 
-https://github.com/tangentstorm/learntris
+#+begin_src bash
+pip install tanco
+#+end_src
+
+To run, you supply tanco with a test file (like this one) using
+the =-t= parameter, and a command to run with the =-c= parameter.
+
+The command is generally an implementation of [[docs/b4i.org][b4i]] (the b4
+interactive assembler) in some host language.
 
 See the =test-b4-*= scripts in this repository for examples.
 
@@ -21,56 +37,50 @@ See the =test-b4-*= scripts in this repository for examples.
   because of a bug in tanco.
 #+end_src
 
-* TODO put this elsewhere. variables
-** get/set (b4a)
-#+name: b4a.getset
-#+begin_src b4a
-  > :int 04 03 02 01
-  > :get @int rt
-  > :set !int rt
-  > get ?d
-  ds: [1020304]
-  > 5 set get ?d %q
-  ds: [1020304 5]
-#+end_src
 
-* DONE [6/6] debugger interface
-** DONE establish a command loop and a way to exit
+* debugger interface
+** =%q= : quit
+
+The =%q= command instructs b4 to quit.
+
+b4 should not produce any output unless explicitly instructed to do so.
+
 #+name: io.%q
 #+begin_src b4a
 > %q
-= %q : quit
-: The '%q' command instructs b4 to quit.
-:
-: b4 should not produce any output unless
-: explicitly instructed to do so.
 #+end_src
 
-** DONE print the data stack
+** =?d= : query the data stack
 #+name: io.?d
 #+begin_src b4a
 > ?d %q
 ds: [] # should be an empty array
-= ?d : query the data stack
 #+end_src
 
-** DONE print the call stack
+** TODO test the display of negative numbers
+
+which of these should it be?
+
+: ds: [CC00BBAA]
+: ds: [-33FF4456]
+
+
+** =?c= : query the call stack
 #+name: io.?c
 #+begin_src b4a
 > ?c %q
 cs: [] # should be an empty array
-= ?c : query the call stack
 #+end_src
 
-** DONE push a hex number to the stack
+** push a hex number to the stack
 #+name: io.hex
 #+begin_src b4a
 > FF CC ?d %q
 ds: [FF CC]
-= hex numbers are pushed to data stack
+= hex numbers are pushed to the data stack
 : it should print in hex
 #+end_src
-** DONE push an ascii character onto the stack
+** push an ASCII character onto the stack
 #+name: io.ascii
 #+begin_src b4a
 > 'a 'A ' ?d %q
@@ -79,19 +89,19 @@ ds: [61 41 20]
 : note lack of a second space after the '
 : it should print in hex
 #+end_src
-** DONE push control character addresses to stack
+** push control character addresses to stack
 #+name: io.ctrl
 #+begin_src b4a
 > `@ `A `B `C `X `Y `Z ?d %q
 ds: [0 4 8 C 60 64 68]
 = control characters
-: the 32 ascii control characters act as a dictionary.
+: the 32 ASCII control characters act as a dictionary.
 : (^@ is written 00 and is a no-op)
 : ^@ calls the word whose address is at address 0000
 :   (but the actual code emitted is =lb 00 cl= op, as bytecode 0 is a null op)
 : ^A calls the word whose address is at address (4 * 1 = 0004)
-: ^X calls the word whose address is at address (4 * ord('X')-ord('A') = 5C)
-: But if we want handy way to refer to the address, we use `X
+: ^X calls the word whose address is at address (4 * (ord('X') - ord('@')) = 0x60)
+: But if we want a handy way to refer to the address, we use `X
 #+end_src
 
 #+name: io.ctrl2
@@ -101,35 +111,44 @@ ds: [6C 70 74 78 7C]
 = non-alphabetic control characters
 : there are 5 control characters after ^Z that use punctuation.
 #+end_src
-* DONE [17/17] alu / stack operations
-** DONE =ad= op
+* constant ops
+#+name: op.c
+#+begin_src b4a
+  > c0 c1 c2 n1 c4 ?d %q
+  ds: [0 1 2 -1 4]
+#+end_src
+
+These ops push small constants onto =ds=.
+
+* ALU / stack operations
+** =ad= op
 #+name: op.ad
 #+begin_src b4a
 > 01 02 ad ?d %q
 ds: [3]
-= ad: add top two items on the stack
-: result is pushed back to stack
+= ad: adds the top two items on the stack
+: The result is pushed back to the stack.
 #+end_src
-** DONE =ml= op
+** =ml= op
 #+name: op.ml
 #+begin_src b4a
 > 03 03 ml ?d %q
 ds: [9]
 #+end_src
-** DONE =sb= op
+** =sb= op
 #+name: io.math
 #+begin_src b4a
 > 0A 05 sb ?d %q
 ds: [5]
 #+end_src
 
-** DONE =dv= op
+** =dv= op
 #+name: math.dv
 #+begin_src b4a
 > 0A 05 dv ?d %q
 ds: [2]
 #+end_src
-** DONE =md= op
+** =md= op
 #+name: math.md
 #+begin_src b4a
 > 0A 05 md ?d
@@ -137,7 +156,7 @@ ds: [0]
 > zp 0A 03 md ?d %q
 ds: [1]
 #+end_src
-** DONE =sh= op
+** =sh= op
 #+name: math.sh
 #+begin_src b4a
   > : c4 c1 sh rt
@@ -156,74 +175,74 @@ ds: [1]
   : When the TOS is negative, we shift the NOS to the right.
 #+end_src
 
-** DONE =an= op
+** =an= op
 #+name: math.an
 #+begin_src b4a
 > 12 35 an ?d %q
 ds: [10]
 #+end_src
 
-** DONE =or= op
+** =or= op
 #+name: math.or
 #+begin_src b4a
 > 12 35 or ?d %q
 ds: [37]
 #+end_src
 
-** DONE =xr= op
+** =xr= op
 #+name: math.xr
 #+begin_src b4a
 > 12 35 xr ?d %q
 ds: [27]
 #+end_src
 
-** DONE =nt= op
+** =nt= op
 #+name: math.nt
 #+begin_src b4a
 > 12 nt ?d %q
 ds: [-13]
 #+end_src
 
-** DONE =eq= op
+** =eq= op
 #+name: math.eq
 #+begin_src b4a
 > AA BB eq CC CC eq ?d %q
 ds: [0 -1]
 #+end_src
 
-** DONE =lt= op
+** =lt= op
 #+name: op.lt
 #+begin_src b4a
 > AA BB lt DD CC lt EE EE lt ?d %q
 ds: [-1 0 0]
 #+end_src
 
-** DONE =du= op
+** =du= op
 #+name: op.du
 #+begin_src b4a
 > 0A du ?d %q
 ds: [A A]
 #+end_src b4a
-** DONE =zp= op
+** =zp= op
 #+name: op.zp
 #+begin_src b4a
 > 0A ?d zp ?d %q
 ds: [A]
 ds: []
 #+end_src
-** DONE =sw= op
+** =sw= op
 #+name: io.sw
 #+begin_src b4a
 > 0A 0B sw ?d %q
 ds: [B A]
 #+end_src
-** DONE =ov= op
+** =ov= op
 #+name: op.ov
 #+begin_src b4a
 > 0A 0B ov ?d %q
 ds: [A B A]
 #+end_src
-** DONE =cd= and =dc= ops
+** =cd= and =dc= ops
 #+name: op.cd-dc
 #+begin_src b4a
 > 0A dc ?d ?c
@@ -234,14 +253,14 @@ ds: [A]
 cs: []
 #+end_src
 
-* DONE [2/2] batch memory access from debugger
-** DONE inspect ram
+* batch memory access from debugger
+** =?<addr>= inspect memory at address
 #+name: b4i.mem-show
 #+begin_src b4a
 > ?100 %q
 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
-** DONE write to ram
+** =:<addr>= assemble to memory at address
 #+name: b4i.mem-write
 #+begin_src b4a
 > ?100
@@ -252,13 +271,12 @@ cs: []
 #+end_src
 
 
-* DONE [4/8] memory operations
+* memory operations
 
-** TODO: test that %C clears memory and stacks
+** TODO test that %C clears memory and stacks
+** =wi= : write int32 to address
 
-** DONE =wi=
-
-=wi= writes a 32-bit integer.
+=wi= writes a 32-bit integer to memory.
 
 #+name: io.wi
 #+begin_src b4a
@@ -268,7 +286,7 @@ cs: []
 DD CC BB AA .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
 
-** DONE =wb=
+** =wb= : write byte to address
 
 =wb= writes a single byte:
 
@@ -280,7 +298,17 @@ DD CC BB AA .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 DD .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
 
-** DONE =rb= op : read a value from address
+** =ri= : read int32 from address
+
+#+name: op.ri
+#+begin_src b4a
+> :100 AA BB CC 00
+> ?100
+AA BB CC .. .. .. .. .. .. .. .. .. .. .. .. ..
+> 0100 ri ?d %q
+ds: [CCBBAA]
+#+end_src
+** =rb= : read byte from address
 
 =rb= reads a byte
 
@@ -293,34 +321,7 @@ AA BB .. +W .. .. .. .. .. .. .. .. .. .. .. ..
 ds: [7700BBAA]
 #+end_src
 
-** DONE =ri= writes a 32-bit integer
-
-#+name: op.ri
-#+begin_src b4a
-> :100 AA BB CC 00
-> ?100
-AA BB CC .. .. .. .. .. .. .. .. .. .. .. .. ..
-> 0100 ri ?d %q
-ds: [CCBBAA]
-#+end_src
-
-** TODO lb : load a byte
-#+name: op.lb
-#+begin_src b4a
-  > :L lb 7F lb FF rt
-  > ^L ?d %q
-  ds: [7F FF]
-#+end_src
-
-** TODO ls : load signed byte
-#+name: op.ls
-#+begin_src b4a
-  > :L ls 7F ls FF rt
-  > ^L ?d %q
-  ds: [7F -1]
-#+end_src
-
-** =rs= : read signed bytes
+** =rs= : read signed byte from address
 #+name: op.rs
 #+begin_src b4a
   > :A 7F :B FF
@@ -330,26 +331,12 @@ ds: [CCBBAA]
 #+end_src
 
 
-** TODO test the display of negative numbers
 
-which of these should it be?
 
-: ds: [CC00BBAA]
-: ds: [-33FF4456]
+* register ops
 
-* TODO registers
-
-** TODO read and write from shell
-#+name: op.rr-wr
-#+begin_src b4a
-> 12345678 !X ?d
-ds: []
-> @X ?d %q
-ds: [12345678]
-#+end_src
-
-** TODO read and write while executing
-
+** =@R= and =!R= : read and write registers
+*** assembler:
 #+name: op.rr-wr.runtime
 #+begin_src b4a
   > :100 lb 12 !X @X c1 +X @X
@@ -370,12 +357,20 @@ ds: [12345678]
   > %q
 #+end_src
 
+*** interactively:
+#+name: op.rr-wr
+#+begin_src b4a
+> 12345678 !X ?d
+ds: []
+> @X ?d %q
+ds: [12345678]
+#+end_src
 
-** DONE =+x= ops
+** =+R= : stream via register
 
-The "+" ops take a value off the stack and add it to a register,
-leaving the original value of the register. You can use this to
-treat the register as a cursor through a string or array of values.
+The =+= ops take a value off the stack and add it to a register,
+pushing the value of the register *before* the addition onto the data stack.
+You can use this to treat the register as a cursor through a string or array of values.
 
 #+name: op.plus-x
 #+begin_src b4a
@@ -384,35 +379,43 @@ treat the register as a cursor through a string or array of values.
 ds: [11223344 11223348 1122334A]
 #+end_src
 
-* the constant ops
 
-#+name: op.c
-#+begin_src b4a
-  > c0 c1 c2 n1 c4 ?d %q
-  ds: [0 1 2 -1 4]
-#+end_src
+* debugger commands: stepping
+** =?i= : query instruction pointer
 
+=?i= queries the instruction pointer. it should print in hex
 
-* DONE [2/2] debugger/stepper
-** DONE query instruction pointer
 #+name: dbg.?i
 #+begin_src b4a
 > ?i %q
 ip: 100
-= ?i : query instruction pointer
-: it should print in hex
 #+end_src
-** DONE %s step command
+** =%s= : step command
+
+Stepping increments the instruction pointer.
+
 #+name: dbg.%s
 #+begin_src b4a
 > ?i %s ?i %q
 ip: 100
 ip: 101
-= %s : step
-: step and execute a no-op
 #+end_src
-* DONE [2/2] sequences
-** DONE =lb= op
+
+* sequence ops
+** TODO =..= (zero) is no-op
+** load ops
+
+The following operations load values into ram from the bytes following the
+instruction pointer.
+
+*** =li= op
+#+name: op.li
+#+begin_src b4a
+  > :100 li 44 33 22 11 li FF FF FF FF rt
+  > %s %s ?d %q
+  ds: [11223344 -1]
+#+end_src
+*** =lb= op
 #+name: op.seq.lb
 #+begin_src b4a
 > :100 lb AB
@@ -428,21 +431,25 @@ ip: 102
 : we never needed it before because our debug shell
 : is pushing numbers directly to the stack
 #+end_src
-
-** DONE =li= op
-#+name: op.li
+*** =lb= : load a byte
+#+name: op.lb
 #+begin_src b4a
-  > :100 li 44 33 22 11 li FF FF FF FF rt
-  > %s %s ?d %q
-  ds: [11223344 -1]
+  > :L lb 7F lb FF rt
+  > ^L ?d %q
+  ds: [7F FF]
+#+end_src
+*** =ls= : load signed byte
+#+name: op.ls
+#+begin_src b4a
+  > :L ls 7F ls FF rt
+  > ^L ?d %q
+  ds: [7F -1]
 #+end_src
 
-* TODO [1/8] control flow
-** DONE =..= (zero) is no-op
-** TODO =hp= hop
+** =hp= : hop
 Hop is a small relative jump. It takes a signed 8-bit int as a parameter, and can thus move the instruction pointer forward up to 127 bytes, or backwards up to 128 bytes.
 
-*** TODO forward
+*** forward
 #+name: op.hp.forward
 #+begin_src b4a
 > :100 hp 05
@@ -450,14 +457,14 @@ Hop is a small relative jump. It takes a signed 8-bit int as a parameter, and ca
 ip: 100
 ip: 105
 #+end_src
-*** TODO forward max
+*** forward max
 #+name: op.hp.forward-max
 #+begin_src b4a
 > :100 hp 7F
 > %s ?i %q
 ip: 17F
 #+end_src
-*** TODO forward wrap
+*** forward wrap
 here we set the high bit so it's the same as negative 1.
 (but then that puts us at address 00FF, which is too small so we clamp to 0100 and then we have an infinite loop)
 #+name: op.hp.forward-wrap
@@ -467,7 +474,7 @@ here we set the high bit so it's the same as negative 1.
 ip: 100
 #+end_src
 
-*** TODO backward
+*** backward
 #+name: op.hp.backward
 #+begin_src b4a
 > :100 .. .. .. hp -3
@@ -475,14 +482,14 @@ ip: 100
 ip: 103
 ip: 100
 #+end_src
-*** TODO backward (and out of bounds)
+*** backward (and out of bounds)
 #+name: op.hp.backward-oob
 #+begin_src b4a
 > :100 hp -5
 > %s ?i %q
 ip: 100
 #+end_src
-*** TODO zero?
+*** zero?
 This causes an infinite loop.
 #+name: op.hp.zero
 #+begin_src b4a
@@ -490,13 +497,13 @@ This causes an infinite loop.
 > %s ?i %q
 ip: 100
 #+end_src
-** TODO =h0= hop if 0
+** =h0= hop if 0
 
 =h0= is the same as =hp= but conditional.
 
 It pops a value off the data stack, and only hops if the value is 0.
 
-*** TODO when 0
+*** when 0
 We push 0 to the stack and then step, so we should jump to address $0123
 #+name: op.h0.when0
 #+begin_src b4a
@@ -504,8 +511,8 @@ We push 0 to the stack and then step, so we should jump to address $0123
 > 00 %s ?i %q
 ip: 123
 #+end_src
-*** TODO when 1
-Here the hop is not taken, but we still hop over the argument.
+*** when 1
+Here the hop is not taken, but we still skip over the argument.
 #+name: op.h0.when1
 #+begin_src b4a
 > :100 h0 23
@@ -513,7 +520,7 @@ Here the hop is not taken, but we still hop over the argument.
 ip: 102
 #+end_src
 
-** TODO =jm= jump
+** =jm= jump
 
 =jm= is an unconditional jump to a 4-byte address.
 
@@ -524,7 +531,7 @@ ip: 102
 ip: 12345678
 #+end_src
 
-** TODO =cl= call
+** =cl= call
 
 =cl= is the same as =jm= but also pushes a return address to the control stack.
 
@@ -538,11 +545,11 @@ ip: 12345678
 cs: [105]
 #+end_src
 
-** TODO =rt= return
+** =rt= return
 
 In general, =rt= is used to return control from a called function.
 
-The actual mechanic is a jump to an address popped from the control stack.
+The actual mechanism is a jump to an address popped from the control stack.
 
 To simplify this test, we simply push the address we want to the control stack ourselves.
 
@@ -556,18 +563,18 @@ ip: 1234
 cs: []
 #+end_src
 
-** TODO =rt= dynamic call caveat
+** =rt= dynamic call caveat
 
 Here's a small catch for the "dynamic call" technique used in the previous test.
 
 It =only= comes into play when using the "calculator mode".
 
 Note that in the previous test, we used =%s= to trigger a step. This
-reads an instruction from ram[ip] and then causes the instruction pointer to increment.
+reads an instruction from RAM[ip] and then causes the instruction pointer to increment.
 
-If we had simply invoked =rt= directly using the "calculator", no "step" has occured, and so the address would be off by one.
+If we had simply invoked =rt= directly using the "calculator", no "step" has occurred, and so the address would be off by one.
 
-In general, it probably just doesn't make sense to use contrtol flow ops from the "calculator" outside of testing.
+In general, it probably just doesn't make sense to use control flow ops from the "calculator" outside of testing.
 
 #+name: op.rt.b4i
 #+begin_src b4a
@@ -578,7 +585,7 @@ ip: 1233
 cs: []
 #+end_src
 
-** TODO =nx= next
+** =nx= next
 
 This is probably the most complicated operation.
 
@@ -611,7 +618,7 @@ ip: 103
 > %q
 #+end_src
 
-* TODO =io= op
+* =io= op
 
 ** 'e for emit
 
@@ -625,8 +632,18 @@ While running in the b4i interpreter, it should buffer the output until the end 
 hi
 #+end_src
 
-* TODO defining the ctrl registers
+* debugger commands: registers
 
+** =:R= : point register at current assembly address
+#+name: ctrl.e
+#+begin_src b4a
+  > :E lb 'e io rt
+  > 'o ^E 'k ^E
+  ok
+  > %q
+#+end_src
+
+** =?R= : show contents of register R
 #+name: here
 #+begin_src b4a
   > ?E                # by default, most registers are blank
@@ -640,19 +657,22 @@ hi
   00000104
 #+end_src
 
-
-#+name: ctrl.e
+* assembler macros
+** =@lbl= and =!lbl= : get/set address (b4a)
+#+name: b4a.getset
 #+begin_src b4a
-  > :E lb 'e io rt
-  > 'o ^E 'k ^E
-  ok
-  > %q
+  > :int 04 03 02 01
+  > :get @int rt
+  > :set !int rt
+  > get ?d
+  ds: [1020304]
+  > 5 set get ?d %q
+  ds: [1020304 5]
 #+end_src
 
+These are macros. They emit a =li= op, followed by the address, then either =ri= or =wi=.
 
 
-* TODO host language
-* TODO virtual hardware
 * TODO [0/2] system ops (how to test these?)
 ** TODO =db=  triggers the debugger
 ** TODO =hl=  halts the virtual machine
