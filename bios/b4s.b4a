@@ -38,11 +38,18 @@
 
 # --- numbers --------------------------
 
-:cnum nxtc sw ov                        # cnum: (n-c) construct b4s number from raw b4 [n-nc-cn-cnc]
-   cdr! nil ov car! ntag rt             # [cnc-c-c0-c0c-c]
-
-:pnum cdr putn rt
+:encl nxtc sw ov cdr! nil ov car! rt    # encl: (n-c) enclose a b4 value in a cell (store in cdr)
+:cnum encl ntag rt                      # cnum: (n-c) construct b4s number from raw b4 [n-nc-cn-cnc]
+:pnum cdr putn rt                       # pnum: (c- ) print b4s number
 
 # --- symbols --------------------------
+
+:glu lb 03 .f lb 08 sh ad .n rt         # glu: (abcd-4) glue up to 4 chars together. ex: 'a 'b 'c 0 m4c
+:o4c c4 .f                              # o4c: (4-) output a 4-char symbol. loop 4 times:
+     du lb FF an du .i ^O .e zp .t      #   loop and print non-0 char
+     ls -8 sh .n zp rt                  #   then shift over one char
+:csym encl stag rt                      # csym: (4-c) construct symbol from 4-char
+:psym cdr o4c rt                        # psym: (c- ) print symbol
+
 # --- lists ----------------------------
 # (todo)

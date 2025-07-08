@@ -7,24 +7,19 @@
 #+end_src
 
 * ensure BIOS is loaded
-
-Assuming the bios is loaded, the following line clears
-the internal video screen and prints 'ok B4'.
-
-The `\0` word prints out the first line of video memory.
-See [[file:bios-tests.org][bios-tests.org]] for more info.
-
 #+name: b4s.bios
 #+begin_src b4a
   > cscr 'o ^O 'k ^O sp B4 putn \0 %q
   ok B4
 #+end_src
 
+Assuming the bios is loaded, the above line clears
+the internal video screen and prints 'ok B4'.
+
+The `\0` word prints out the first line of video memory.
+See [[file:bios-tests.org][bios-tests.org]] for more info.
+
 * nil
-
-Nil is a special cell that marks the end of the list,
-and is also used to indcate false.
-
 #+name: b4s.cells
 #+begin_src b4a
   > inic
@@ -40,18 +35,10 @@ and is also used to indcate false.
   > %q
 #+end_src
 
-
-* TODO mention wipe/tag?/type codes
+Nil is a special cell that marks the end of the list,
+and is also used to indcate false.
 
 * car and cdr (nil)
-
-Every cell is a pair of values.
-
-Traditionally, the first of the pair is called the "car"
-and the second is called the "cdr" (rhymes with 'footer').
-
-Nil's car and cdr both point back to nil.
-
 #+name: b4s.nil-parts
 #+begin_src b4a
   > inic
@@ -61,13 +48,14 @@ Nil's car and cdr both point back to nil.
   ds: [-1 -1]
 #+end_src
 
+Every cell is a pair of values.
+
+Traditionally, the first of the pair is called the "car"
+and the second is called the "cdr" (rhymes with 'footer').
+
+Nil's car and cdr both point back to nil.
 
 * celn
-
-The function =celn= can be used to map a cell back to its number.
-This is only intended for use by these tests, so that we can test
-cell adddresses without refering to exact memory locations.
-
 #+name: celn
 #+begin_src b4a
   > inic
@@ -81,17 +69,11 @@ cell adddresses without refering to exact memory locations.
   ds: [-1]
 #+end_src
 
+The function =celn= can be used to map a cell back to its number.
+This is only intended for use by these tests, so that we can test
+cell adddresses without refering to exact memory locations.
 
-* nxt^ : pointer to next free cell
-
-The =inic= routine's last job is to link the allocated
-cells together into a list of free cells, storing the
-address of the first free cell in @nxtc.
-
-At start, the first free cell should be the first cell,
-and its car should point to the next cell (which is the
-address 8 bytes ahead).
-
+* =inic= and =nxt^= : pointer to next free cell
 #+name: b4s.nxt^
 #+begin_src b4a
   > inic
@@ -106,12 +88,15 @@ address 8 bytes ahead).
   ds: [-1]
 #+end_src
 
-* nxtc : take next cell from free list
+The =inic= routine's last job is to link the allocated
+cells together into a list of free cells, storing the
+address of the first free cell in @nxtc.
 
-We can take the next cell from the free list with =nxtc=,
-which will put the current value of =nxt^= on the stack, and
-cause the =nxt^= to move to the next cell in the list.
+At start, the first free cell should be the first cell,
+and its car should point to the next cell (which is the
+address 8 bytes ahead).
 
+* =nxtc= : take next cell from free list
 #+name: b4s.nxtc
 #+begin_src b4a
   > inic
@@ -123,13 +108,12 @@ cause the =nxt^= to move to the next cell in the list.
   ds: [0 1]
 #+end_src
 
+We can take the next cell from the free list with =nxtc=,
+which will put the current value of =nxt^= on the stack, and
+cause the =nxt^= to move to the next cell in the list.
 
-* numbers: create and print a number
 
-=cnum= wraps a plain b4 number in a cell.
-
-=pnum= prints the numeric cell (depends on =putn= from the bios).
-
+* =cnum= / =pnum= : construct and print a lisp number
 #+name: b4s.nums
 #+begin_src b4a
   > inic
@@ -138,6 +122,41 @@ cause the =nxt^= to move to the next cell in the list.
   > celn ?d %q
   ds: [0]
 #+end_src
+
+We have to wrap plain b4 numbers in cells in order to use them in b4s.
+
+=cnum= encloses a plain b4 number in a cell.
+
+=pnum= prints the numeric cell (depends on =putn= from the bios).
+
+* =glu= and =o4c= : symbol helpers
+#+name: b4s.sym-helpers
+#+begin_src b4a
+  > 's 'y 'm '! ?d        # four ascii characters
+  ds: [73 79 6D 21]
+  > glu ?d                # glue together as symbol
+  ds: [216D7973]
+  > o4c ?d \0 %q          # o4c calls ^O on each non-zero char
+  ds: []
+  sym!
+#+end_src
+
+For now, symbols are limited to 4 ascii characters, which are packed
+together into a standard int32.
+
+* =csym= / =psym= : construct and print symbols
+#+name: b4s.syms
+#+begin_src b4a
+  > inic
+  > 't 'a 'c 'o ?d
+  ds: [74 61 63 6F]
+  > glu csym du psym \0 cdr ?d
+  ds: [6F636174]
+  taco
+#+end_src
+
+Symbols are stored in the cdr of a cell, just like a b4s number.
+
 
 
 
@@ -167,3 +186,4 @@ cause the =nxt^= to move to the next cell in the list.
 ** TODO eval
 - start here because syms, nums, and nil eval to themselves
 ** TODO elis
+* TODO mention wipe/tag?/type codes
