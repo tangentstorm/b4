@@ -6,10 +6,8 @@
 
 # TODO: the assembler needs :|8 to allign and :+<size> to allocate
 
-:fst^ 00 10 .. ..                       # ptr to first normal cell
-:end^ 00 30 .. ..                       # ptr to end of cell memory
-:nil^ .. .. .. ..                       # address of nil
-:nxt^ .. .. .. ..                       # ptr to next free cell (init=same as fst^)
+:fst^ 00 10 .. ..   :end^ 00 30 .. ..   # addrs of start and (just past) end of cell memory
+:nil^ .. .. .. ..   :nxt^ .. .. .. ..   # addrs of nil and next free cell
 :numc .. .. .. ..                       # total number of cells. 'inic' makes this
 
 :ctyp lb 06 an rt                       # ctyp: (c-t) return the cell's type code
@@ -36,7 +34,8 @@
    .e @fst^ sb lb 8 dv .t rt            # otherwise find offset and div by 8
 
 :nxtc @nxt^ du ri !nxt^ rt              # (-c) claim next free cell
-:encl nxtc sw ov cdr! nil ov car! rt    # encl: (n-c) enclose a b4 value in a cell (store in cdr)
+:cons nxtc sw ov cdr! sw ov car! rt     # (ad-c) construct cell with car:a cdr:d
+:encl nil sw cons rt                    # encl: (-c) enclose a b4 value in a cell (nil . x)
 
 # --- numbers --------------------------
 :cnum encl ntag rt                      # cnum: (n-c) construct b4s number from raw b4 [n-nc-cn-cnc]
@@ -50,5 +49,23 @@
 :csym encl stag rt                      # csym: (4-c) construct symbol from 4-char
 :psym cdr o4c rt                        # psym: (c- ) print symbol
 
-# --- lists ----------------------------
-# (todo)
+# --- lists and values -----------------
+
+:ptl du nil? .i zp rt                   # (c-) helper for plis. if nil, we're at the end, so stop.
+  .e sp du ctyp                         # else emit space, then either '. x' or 'x'
+     .i lb '. ^O sp ^P rt               # ctyp doubles as "atom?" if so, dotted pair. ^P=pval, below
+     .e du car ^P                       # else print the car and recurse on cdr
+        cdr jm `ptl .t .t               # optimized tail call (no 'rt')
+
+:plis                                   # (c-) print a list
+  lb '( ^O
+  du nil? nt .i
+     du car ^P
+     cdr ptl
+  .t lb ') ^O rt
+
+:P
+:pval du ctyp                           # (c-) print any cell
+   du c4 eq .i zp psym rt .t
+   du c2 eq .i zp pnum rt .t
+   zp plis rt

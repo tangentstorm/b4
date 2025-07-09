@@ -1,4 +1,8 @@
-#+title: b4s: a lisp-like language in b4a
+#+title: b4s: b4vm symbolic scaffolding
+
+* Intro
+
+=b4s= ("beforce") is a tiny lisp-like language written in =b4a= assembly language.
 
 * TODO tanco skips first test
 #+name: skip
@@ -112,6 +116,21 @@ We can take the next cell from the free list with =nxtc=,
 which will put the current value of =nxt^= on the stack, and
 cause the =nxt^= to move to the next cell in the list.
 
+* =cons= : construct a cell
+#+name: b4s.cons
+#+begin_src b4a
+  > inic
+  > ABCD 1234 cons !C
+  > # 1. it allocates a new cell
+  > @C celn ?d zp
+  ds: [0]
+  > # 2. it sets cdr to TOS
+  > @C cdr ?d zp
+  ds: [1234]
+  > # 3. it sets car to NOS
+  > @C car ?d zp %q
+  ds: [ABCD]
+#+end_src
 
 * =cnum= / =pnum= : construct and print a lisp number
 #+name: b4s.nums
@@ -168,7 +187,7 @@ Symbols are stored in the cdr of a cell, just like a b4s number.
   > 12345 cnum ctyp ?d zp
   ds: [2]
   > # symbols are type 0b100=4
-  > 's 'i 'm 'i glu csym ctyp ?d zp
+  > 's 'i 'm 'i glu csym ctyp ?d zp %q
   ds: [4]
 #+end_src
 
@@ -195,6 +214,52 @@ running on the vm.)
 
 Note that once you implement =ctyp=, you will probably need to mask out
 the type code in the implementation of =car= and =cdr=.
+
+* =pval= : print arbitrary cells
+
+** printing numbers and symbols
+#+name: b4s.pval-num-sym
+#+begin_src b4a
+  > inic
+  > 's 'y 'm 00 glu csym pval \0 cscr
+  sym
+  > 's 'y 'm 00 glu cnum pval \0 %q
+  6D7973
+#+end_src
+
+Now that we have =ctyp= we can start to implement pval.
+It should inspect the type code and then call =pnum= or =psym= accordingly.
+
+** printing nil
+#+name: b4s.pval-nil
+#+begin_src b4a
+  > inic
+  > nil pval \0 %q
+  ()
+#+end_src
+
+=nil= is a special value and should have type code 00, since it's the name for the empty list.
+However, if we print it on its own, we should print the value '()'
+
+** printing a dotted pair
+#+name: b4s.pval-pair
+#+begin_src b4a
+  > inic
+  > c1 cnum c2 cnum cons pval \0 %q
+  (1 . 2)
+#+end_src
+
+** printing a list
+#+name: b4s.pval-list
+#+begin_src b4a
+  > inic
+  > 03 cnum nil cons du pval \0 cscr
+  (3)
+  > 02 cnum sw cons du pval \0 cscr
+  (2 3)
+  > 01 cnum sw cons du pval \0 %q
+  (1 2 3)
+#+end_src
 
 
 * TODO [0/7] the printer
