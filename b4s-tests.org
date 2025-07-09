@@ -163,6 +163,14 @@ We have to wrap plain b4 numbers in cells in order to use them in b4s.
 For now, symbols are limited to 4 ascii characters, which are packed
 together into a standard int32.
 
+We could use base 36 numbers to pack 6 alphanumeric characters into a
+symbol, but we'd be limited to all uppecase (or lowercase). But one
+byte per character opens the door to using utf-8 later.
+
+The idea is to use the =car= to chain multiple 4-character symbol fragments
+together to make longer strings. But for now, 4 characters symbols are enough.
+
+
 * =csym= / =psym= : construct and print symbols
 #+name: b4s.syms
 #+begin_src b4a
@@ -263,22 +271,6 @@ However, if we print it on its own, we should print the value '()'
   ((1 2 3) 4)
 #+end_src
 
-
-* TODO [0/7] the printer
-** TODO pnum: print a lisp number from a cell
-** TODO put4: print a raw symbol (4 bytes)
-- we could come up with fancy encoding to pack 5 letters (no uppercase)
-- but easier to just chain them together later
-- also 8-bit ascii works much nicer with the assembler and memory view
-** TODO p4ch: print 4 chars of a symbol
-** TODO pval (=^P=): print an arbitrary value
-** TODO plis: print a list
-** TODO vtyp: type code extractor
-
-* TODO [0/3] the allocator (cons)
-** TODO cels
-** TODO ncel
-** TODO cons
 
 * TODO [0/4] the reader
 ** TODO rnum
