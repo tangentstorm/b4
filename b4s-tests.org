@@ -249,7 +249,7 @@ However, if we print it on its own, we should print the value '()'
   (1 . 2)
 #+end_src
 
-** printing a list
+** printing lists
 #+name: b4s.pval-list
 #+begin_src b4a
   > inic
@@ -257,8 +257,10 @@ However, if we print it on its own, we should print the value '()'
   (3)
   > 02 cnum sw cons du pval \0 cscr
   (2 3)
-  > 01 cnum sw cons du pval \0 %q
+  > 01 cnum sw cons du pval \0 cscr
   (1 2 3)
+  > 04 cnum nil cons cons pval \0 %q
+  ((1 2 3) 4)
 #+end_src
 
 
