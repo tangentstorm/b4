@@ -217,17 +217,19 @@ B4 will eventually have an official spec for color terminal i/o, but it will jus
 
 These are not opcodes, but macros built into the assembler (at least in the pascal and lil versions):
 
-| macro | runtime meaning                                                                         |
-|-------+-----------------------------------------------------------------------------------------|
-| =.f=    | "for" begins a for/next loop. pushes counter to =cs=. loops until counter is 0            |
-| =.n=    | "next" ends a for/next loop. decrements counter and loops, or breaks if counter is 0.   |
-| =.i=    | "ifso" consumes top of =ds= and if non-zero, proceeds, else jumps to next .e or .t          |
-| =.e=    | "else" starts an "else" section to take place between .i and .t if TOS=0                    |
-| =.t=    | "then" marks end of .i or .e sections                                                   |
-| =.w=    | "while" marks start of a while loop. unlike =.i=, the condition follows the =.w=.           |
-| =.d=    | "do" marks end of while condition and start of loop body. jumps to =.o= if condition is 0 |
-| =.o=    | "od" marks end of while loop. jumps back to =.w=                                          |
-| =.^=    | "linked list" saves current assembly address and emits the previously saved address.    |
+| macro   | runtime meaning                                                                         |
+|---------+-----------------------------------------------------------------------------------------|
+| =.f=      | "for" begins a for/next loop. pushes counter to =cs=. loops until counter is 0            |
+| =.n=      | "next" ends a for/next loop. decrements counter and loops, or breaks if counter is 0.   |
+| =.i=      | "ifso" consumes top of =ds= and if non-zero, proceeds, else jumps to next .e or .t          |
+| =.e=      | "else" starts an "else" section to take place between .i and .t if TOS=0                    |
+| =.t=      | "then" marks end of .i or .e sections                                                   |
+| =.w=      | "while" marks start of a while loop. unlike =.i=, the condition follows the =.w=.           |
+| =.d=      | "do" marks end of while condition and start of loop body. jumps to =.o= if condition is 0 |
+| =.o=      | "od" marks end of while loop. jumps back to =.w=                                          |
+| =.^=      | "linked list" saves current assembly address and emits the previously saved address.    |
+| `."abc"` | lays down a string with a length prefix.                                                |
+| `"abc"`   | lays down a string character by character.                                              |
 
 
 * letter mnemonics

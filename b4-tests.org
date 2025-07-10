@@ -672,6 +672,22 @@ hi
 
 These are macros. They emit a =li= op, followed by the address, then either =ri= or =wi=.
 
+** string literals
+*** ="abc"= : raw string
+#+name: b4a.string.raw
+#+begin_src b4a
+> :100 "abc"
+> ?100 %q
++A +B +C .. .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+*** =."abc"= : length-prefixed string
+#+name: b4a.string.len-prefixed
+#+begin_src b4a
+> :100 ."abc"
+> ?100 %q
+^C +A +B +C .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
 
 * TODO [0/2] system ops (how to test these?)
 ** TODO =db=  triggers the debugger

@@ -73,7 +73,7 @@ function b4opc(code:opstring) : byte;
 
 type
   tokentag = ( wsp, cmt, hex, chr, def, ref, ivk, adr, get, put, ink, fwd,
-              _if, _th, _el, _wh, _do, _od, _fr, _nx, _lp );
+              _if, _th, _el, _wh, _do, _od, _fr, _nx, _lp, _rs, _cs );
   token = record tag : tokentag; str : string; end;
 
 function readnext( var ch : char ) : char;
@@ -122,6 +122,13 @@ procedure clear_dict;
 
 function next( var tok : token; var ch : char ) : boolean;
   procedure keep; begin tok.str := tok.str + ch end;
+  procedure rdstr(var tok: token; var ch: char);
+  begin
+    tok.str := '';
+    while (not atEnd) and (nextchar(ch) <> '"') do keep;
+    if atEnd then begin writeln('unterminated string literal'); halt end;
+    ch := nextchar(ch); // consume closing quote
+  end;
   procedure rest(t:tokentag);
     begin tok.tag := t; tok.str := ''; while (not atEnd) and (nextchar(ch) > #32) do keep end;
   begin tok.str := ch; next := true;
@@ -146,23 +153,24 @@ function next( var tok : token; var ch : char ) : boolean;
       '>' : rest(fwd);
       'a'..'z' : begin tok.tag := ref; while (not atEnd) and (nextchar(ch) > #32) do keep end;
       '+' : rest(ink);
-      '.' :
-        begin
-          case nextchar(ch) of
-            '.': begin tok.tag := hex; tok.str := '0'; ch := nextchar(ch); end;
-            '^': tok.tag := _lp;
-            'i': tok.tag := _if;
-            'e': tok.tag := _el;
-            't': tok.tag := _th;
-            'w': tok.tag := _wh;
-            'd': tok.tag := _do;
-            'o': tok.tag := _od;
-            'f': tok.tag := _fr;
-            'n': tok.tag := _nx;
-            otherwise begin writeln('unknown macro: .',ch); halt end;
-          end;
-          ch:=nextchar(ch);
-        end
+      '"' : begin tok.tag := _rs; rdstr(tok, ch) end;
+      '.' : begin
+              case nextchar(ch) of
+                '.': begin tok.tag := hex; tok.str := '0'; ch := nextchar(ch); end;
+                '^' : tok.tag := _lp;
+                'i' : tok.tag := _if;
+                'e' : tok.tag := _el;
+                't' : tok.tag := _th;
+                'w' : tok.tag := _wh;
+                'd' : tok.tag := _do;
+                'o' : tok.tag := _od;
+                'f' : tok.tag := _fr;
+                'n' : tok.tag := _nx;
+                '"' : begin tok.tag := _cs; rdstr(tok, ch) end;
+                otherwise begin writeln('unknown macro: .',ch); halt end
+              end;
+              ch:=nextchar(ch);
+            end
       otherwise begin writeln('unknown word:', tok.str); halt end
     end;
   end;
@@ -256,6 +264,11 @@ procedure b4as_core;
         _fr : begin emit(b4opc('dc')); dput(here) end;
         _nx : begin emit(b4opc('nx')); hop_back end;
         _lp : begin emitv(rg[RLP]); rg[RLP]:=here-4 end;
+        _rs : for op := 1 to length(tok.str) do emit(ord(tok.str[op]));
+        _cs : begin
+                emit(length(tok.str));
+                for op := 1 to length(tok.str) do emit(ord(tok.str[op]));
+              end;
       end end;
   begin
     SetLength(fwds, 0);
