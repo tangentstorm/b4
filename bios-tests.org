@@ -92,13 +92,40 @@ this gets skipped :/
 
 * base
 Base allows you to =putn= in different bases (up to base 16 unless you extend the string)
-#+name: base
-#+begin_src base
+#+name: bios.base
+#+begin_src b4a
   > 0A `base wb 0F putn \0 cscr # decimal
   15
-  > 10 `base wb 0F putn \0 cscr # hex
+  > 10 `base wb 0F putn \0 %q # hex
   F
 #+end_src
+
+
+
+* =@K= : character pointer
+
+** =ch/nc= : current and next character
+#+name: b4s.ch/nc
+#+begin_src b4a
+  > :K 'a 'b 'c
+  > ch ?d zp
+  ds: [61]
+  > nc ch nc ?d zp %q
+  ds: [62 62 63]
+#+end_src
+
+The BIOS uses register =K= as an input pointer. think: "K"aracter.
+
+The word =ch= simply retrieves the byte at that value.
+
+** =la= : look ahead
+#+name: b4s.la
+#+begin_src b4a
+  > :K 'a 'b 'c
+  > ch c2 la c1 la ?d %q
+  ds: [61 63 62]
+#+end_src
+=la= is for lookahead
 
 
 * TODO send keys to the keyboard buffer
