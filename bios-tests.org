@@ -8,27 +8,28 @@ These tests use b4i to test the bios.
 this gets skipped :/
 #+end_src
 
+* TODO remove hard references to term buffer address from the tests
 
 * cscr : fill screen with spaces
 #+name: cscr
 #+begin_src b4a
   > # the terminal buffer is set to address 400
   > @tmb ?d
-  ds: [400]
+  ds: [600]
   > # by default, that memory should be zeroed out
-  > ?400
+  > ?600
   .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
   > # but 'cscr' fills it with spaces
-  > cscr ?400
+  > cscr ?600
   @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
   > # the output buffer ends at address 800
   > @tmb @tmw @tmh ml ad ?d
-  ds: [400 800]
+  ds: [600 A00]
   > # so that memory should still be clear:
-  > ?800
+  > ?A00
   .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
   > # but the cscr should have filled the 16 previous bytes:
-  > ?7F0 %q
+  > ?9F0 %q
   @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
@@ -51,14 +52,14 @@ this gets skipped :/
 * emit
 #+name: emit
 #+begin_src b4a
-  > cscr 'h emit 'i emit ?400 %q
+  > cscr 'h emit 'i emit ?600 %q
   +H +I @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
 * goxy
 #+name: goxy-emit
 #+begin_src b4a
-  > cscr 4 0 goxy 'h emit 'i emit ?400 %q
+  > cscr 4 0 goxy 'h emit 'i emit ?600 %q
   @@ @@ @@ @@ +H +I @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
@@ -66,7 +67,7 @@ this gets skipped :/
 #+name: puts
 #+begin_src b4a
   > :S 0D 'h 'e 'l 'l 'o ', 20 'w 'o 'r 'l 'd '!
-  > @S puts ?400 %q
+  > @S puts ?600 %q
   +H +E +L +L +O @L @@ +W +O +R +L +D @A .. .. ..
 #+end_src
 

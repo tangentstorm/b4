@@ -14,10 +14,10 @@
 
 # -- terminal buffer ------------------------------------------
 
-:tmb 00 04 00 00        # address of terminal buffer
+:tmb 00 06 00 00        # address of terminal buffer
 :tmw 40 .. .. ..        # terminal width
 :tmh 10 .. .. ..        # terminal height
-:cur 00 00 ^[ ^]       # cursor position (8 bits each x y)
+:cur 00 00 .. ..        # cursor position (8 bits each x y)
 
 
 :cscr
@@ -61,8 +61,7 @@
 
 #-- data printers ---------------------------------------------
 
-:P                     # assign ^P to print string
-:puts @S dc !S         # write counted string at address s
+:puts @S dc !S         # output counted string from address s
    c1 +S rb .f c1 +S rb ^O .n
    cd !S rt
 
@@ -84,3 +83,6 @@
    zp                               # (kn-k|k$c) k copies of c are now on stack
    .f cd cd ^O dc .n                # (|ic-ic|) loop through chars. (have to pop/push loop counter)
    rt
+
+#-- input buffer -----------------------------------------------
+
