@@ -73,7 +73,7 @@ function b4opc(code:opstring) : byte;
 
 type
   tokentag = ( wsp, cmt, hex, chr, def, ref, ivk, adr, get, put, ink, fwd,
-              _if, _th, _el, _wh, _do, _od, _fr, _nx, _lp, _rs, _cs );
+              _if, _th, _el, _wh, _do, _od, _fr, _nx, _lp, _rs, _cs, _ob, _cb );
   token = record tag : tokentag; str : string; end;
 
 function readnext( var ch : char ) : char;
@@ -167,6 +167,8 @@ function next( var tok : token; var ch : char ) : boolean;
                 'f' : tok.tag := _fr;
                 'n' : tok.tag := _nx;
                 '"' : begin tok.tag := _cs; rdstr(tok, ch) end;
+                '[': tok.tag := _ob;
+                ']': tok.tag := _cb;
                 otherwise begin writeln('unknown macro: .',ch); halt end
               end;
               ch:=nextchar(ch);
@@ -269,6 +271,8 @@ procedure b4as_core;
                 emit(length(tok.str));
                 for op := 1 to length(tok.str) do emit(ord(tok.str[op]));
               end;
+        _ob : hop_slot('hp');
+        _cb : begin dput(tos); hop_here; emit(b4opc('li')); emitv(dpop+1); end;
       end end;
   begin
     SetLength(fwds, 0);
