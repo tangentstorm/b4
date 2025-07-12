@@ -10,32 +10,46 @@
 # num   := '-' ? hexit + ;
 
 # -- these three copied from bios
-:ch @K rb rt                        # current character
-:nc @K c1 ad du !K rb rt            # next character
-:la @K ad rb rt                     # look ahead n chars
-# -- end copy
+:ch @K rb rt                    # current character
+:nc @K c1 ad du !K rb rt        # next character
+:la @K ad rb rt                 # look ahead n chars
+# -- end bios copy
 
-# seq is just normal b4 execution, but we prep by
-# saving the character pointer, and we always
-# exit if the match bit is 0. we will wrap every rule with
-# o( .. o)
+:fw nc zp rt
+:fwd .f fw .n rt
 
-# if @m, save @k else exit caller
-:o( @M .i @K dc .e cd zp .t rt
-# end sequence. if @m, discard saved @k else zap.
-:o) cd @M .i zp .e !K .t rt
+:m0 c0 !M rt     :m1 n1 !M rt   # m0/m1 set match bit
+:mln @K @S sb rt
+:m! @M nt .i zp cd zp .t rt     # zap arg + exit if m0
 
-# alt is early exit.
-:o| @M .i cd zp .t rt  # alt (-) match bit is stored in @M
+:k( @K rt                       # save @K on data stack
+:k) @M .i zp .e !K .t rt        # drop or restore saved @K
 
-:chr ch eq du !M .i c1 +K zp .t rt  # (c-) match char, @K++
-:chs rt
-:o? rt # opt ("?")
-:o+ rt # rep ("+")
-:o* rt # orp ("*")
+:chr m! ch eq du !M             # (c-) match char, @K++
+   .i c1 +K zp .t rt
+
+:s> c1 +S rb rt                 # inc s and read byte
+:brkf cd cd zp c0 dc dc rt      # break .f loop (set ctr=0)
+
+:chs m! @S dc !S m0             # chs(s-) match any char in s
+   s> .f s> ch eq .i            # if any char matches:
+      m1 nc zp brkf .t          #    match it and break
+   .n cd !S rt
+
+:lit m! @S dc !S                # lit(s-) match all chars in s
+   k( s> .f                     # (s-Kc) for length of str
+      ch s> eq nt               # if any char DOESN'T match:
+      .i m0 brkf                #    fail and break
+      .e nc zp .t
+   .n cd !S k) rt
+
+:m| @M .i cd zp .t rt  # alt (-) match bit is stored in @M
+
+:opt rt # opt ("?")
+:rep rt # rep ("+")
+:orp rt # orp ("*")
 
 # -- code I want to write, to match a hex number
-:digit o( .[ ."0123456789" .] chs o) rt
-:hexit o( digit o| .[ ."ABCDEF" .] chs o) rt
-:num   o( .[ .[ '- .] chr .] o? .[ hexit  .] o+ o) rt
-
+:digit k( .[ ."0123456789" .] chs k) rt
+:hexit k( digit m| .[ ."ABCDEF" .] chs k) rt
+:num   k( .[ .[ '- .] chr .] opt .[ hexit .] rep k) rt

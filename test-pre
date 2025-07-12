@@ -1,0 +1,3 @@
+#!/bin/sh
+#(cd pas; make b4i) && \
+tanco run -t pre-tests.org -c 'pas/b4i -a bios/pre.b4a'

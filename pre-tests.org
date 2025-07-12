@@ -6,58 +6,140 @@
 THIS GETS SKIPPED
 #+end_src
 
-* =chr= : match exact character
+
+* =m0 (-)= and =m1 (-)= set the match bit.
+#+name: pre.m
+#+begin_src b4a
+  > m1 @M ?d zp
+  ds: [-1]
+  > m0 @M ?d zp
+  ds: [0]
+#+end_src
+
+We will use the =@M= register to track whether
+or not a pattern match has succeeded.
+
+For brevity, the words =m0= and =m1= set this flag.
+
+=m1= also doubles as the command to match an empty
+string.
+
+* =mln (-n)= : match length
+#+name: pre.ml
+#+begin_src b4a
+  > :S :K .. .. ..
+  > mln ?d zp
+  ds: [0]
+  > :S .. .. .. :K
+  > mln ?d %q
+  ds: [3]
+#+end_src
+
+@S marks the start of the current token,
+and @K points to the current input character.
+Subtracting @S from @K gives us the match length.
+
+* =m! (x-x?)= : the match guard
+#+name: pre.m!
+#+begin_src b4a
+  > :A m! c4 rt
+  > m0 c2 ^A ds
+  ds: []
+  > m1 c2 ^A ds
+  ds: [2 4]
+#+end_src
+
+The word =m!= causes a word to drop its argument and exit early
+if @M is 0. (it works by popping one return value off
+the control stack and then returning).
+
+
+* =chr (c-)= : match exact character
 #+name: pre.chr
 #+begin_src b4a
-  > :ln @K @S sb rt
   > :S :K "hello"
-  > :Y lb 'h chr rt # should match and inc @K
-  > ^Y @M ln ?d zp zp
+  > :Y lb 'h chr rt # should match and increment k
+  > # first test the match guard:
+  > m0 ^Y @M mln ?d zp zp
+  ds: [0 0]
+  > m1 ^Y @M mln ?d zp zp
   ds: [-1 1]
-  > @S !K  # reset
-  > :N lb 'x chr rt # should not
-  > ^N @M ln ?d zp zp
+  > @S !K           # reset pointer
+  > :N lb 'x chr rt # should not match
+  > ^N @M mln ?d zp zp
   ds: [0 0]
 #+end_src
 
-* TODO =lit= : match literal string
+=chr= sets the match bit according to whether or not the
+current character =ch= matches the value on the stack.
+
+=chr= should use =m!= internally and match only if @M is set.
+
+If so, it increments @K by one position by calling =nc=.
+
+* =chs (s-)= : choose from character set
+#+name: pre.chs
+#+begin_src b4a
+  > :S :K "54go"
+  > :digits ."0123456789"
+  > :G li `digits chs rt
+  > # remember the match guard!
+  > m0 ^G @M mln ?d zp zp
+  ds: [0 0]
+  > m1 ^G @M mln ?d zp zp
+  ds: [-1 1]
+  > m1 ^G @M mln ?d zp zp
+  ds: [-1 2]
+  > ^G @M mln ?d zp zp
+  ds: [0 2]
+#+end_src
+
+=chs= takes the address of a string of acceptable characters,
+and succeeds if any of the charecters match.
+
+=chs= should call the match guard
+
+* =lit (s-)= : match literal string
 #+name: pre.lit
 #+begin_src b4a
-  > :ln @S @K sb rt
   > :S :K "hello"
   > :Y .[ ."he" .] lit rt
-  > ^Y @M ln ?d zp
+  > m0 ^Y @M mln ?d zp zp
+  ds: [0 0]
+  > m1 ^Y @M mln ?d zp zp
   ds: [-1 2]
-
-
-  > :N .[ ."nope" .] lit rt
-  > ^N @M ?d zp
-  ds: [0]
-
-#+end_src
-This is to save you from having to write a sequence of
-"chr" operations.
-
-* sequences =o( .. o)=
-#+begin_src b4a
-#+begin_src b4a
-  > :K "hello"      # @K points to the h
-  > :G lb 'a chr lb 'b chr lb 'c chr
-  ds: [-1]
-  > ^B @M ?d zp
-  ds: [0]
+  > @S !K
+  > # if only partial match, we have to roll @K back
+  > :N .[ ."help" .] lit rt
+  > ^N @M mln ?d zp
+  ds: [0 0]
 #+end_src
 
+=lit= takes a string to match and succeeds if every
+character in the input matches exactly.
+
+It's there to save you from having to write a long
+sequence of =chr= operations.
+
+Note that if lit succeeds, @K advances by the length
+of the match, but if it fails, @K must go back
+where it started.
 
 
-* alt ( =o|= operator)
+* TODO general backtracking : =k( .. k)=
+#+name: pre.seq
+#+begin_src b4a
+
+#+end_src
+
+
+* alt ( =m|= operator)
 #+name: pre.alt
 #+begin_src b4a
-  > :G c0 !M c2 o| c4 rt
+  > :G c0 !M c2 m| c4 rt
   > ^G ?d %R
   ds: [2 4]
-  > :G c1 !M c2 o| c4 rt
+  > :G c1 !M c2 m| c4 rt
   > ^G ?d
   ds: [2]
 #+end_src
-
