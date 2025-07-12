@@ -1,4 +1,4 @@
-# -- bios/term: terminal
+# -- bios.b4a : basic input/output system + utilities
 
 # -- general memory routines ----------------------------------
 
