@@ -195,3 +195,54 @@ So in addition to the above:
 
 - if =@M= is true, =zp= the old copy of =@K= off the data stack
 - otherwise, keep it on the stack but also reset =@K=.
+
+* =opt (p-)= : optional match (regex =?=)
+#+name: pre.opt
+#+begin_src b4a
+  > :G  .[ lb 'c chr rt .] opt rt
+  > :S 'c  # ^G should match and advance 1
+  > pre ^G @M ln ?d %R
+  ds: [-1 1]
+  > :S 'x  # ^G should match but not advance
+  > pre ^G @M ln ?d %R
+  ds: [-1 0]
+#+end_src
+
+The =p= in the stack comment indicates that =opt= takes another
+parser as an argument. =opt= always succeeds but doesn't
+consume any characters unless the underlying parser matches.
+
+* =rep (p-)= : repeat one or more times (regex =+=)
+#+name: pre.rep
+#+begin_src b4a
+  > :G  .[ lb 'a chr rt .] rep rt
+  > :S 'c  # ^G should fail
+  > pre ^G @M ln ?d %R
+  ds: [0 0]
+  > :S "abc"  # ^G should match 1 char
+  > pre ^G @M ln ?d %R
+  ds: [-1 1]
+  > :S "aardvark"  # ^G should match 2
+  > pre ^G @M ln ?d %R
+  ds: [-1 2]
+#+end_src
+
+=rep= is the =+= operator in regular expressions. It must match
+at least once, then as many times as possible.
+
+* =orp (p-)= : optional repetition (regex =*=)
+#+name: pre.orp
+#+begin_src b4a
+  > :G  .[ lb 'a chr rt .] orp rt
+  > :S 'c  # ^G should succeed but match 0 chars
+  > pre ^G @M ln ?d %R
+  ds: [-1 0]
+  > :S "abc"  # ^G should match 1 char (same as before)
+  > pre ^G @M ln ?d %R
+  ds: [-1 1]
+  > :S "aardvark"  # ^G should match 2 (same as before)
+  > pre ^G @M ln ?d %R
+  ds: [-1 2]
+#+end_src
+
+=orp= is the combination of =opt= and =rep=. It matches its pattern 0 or more times.

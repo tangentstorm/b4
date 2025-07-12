@@ -6,13 +6,13 @@
 # -- these three copied from bios
 :ch @K rb rt                    # current character
 :nc @K c1 ad du !K rb rt        # next character
-:la @K ad rb rt                 # look ahead n chars
+:ev dc rt                       # eval quotation
 # -- end bios copy
 
 :pre @S !K n1 !M rt             # set k=s, m=-1
 :fw @K ad !K rt                 # (n-) inc ^K by n
 
-:m0 c0 !M rt     :m1 n1 !M rt   # m0/m1 set match bit
+:m0 c0 !M rt   :m1 n1 !M rt     # m0/m1 set match bit
 :ln @K @S sb rt                 # ln(-n) match length
 :m! @M nt .i zp cd zp .t rt     # zap arg + exit if m0
 
@@ -40,11 +40,15 @@
       .e nc zp .t
    .n cd !S k) rt
 
-:opt rt # opt ("?")
-:rep rt # rep ("+")
-:orp rt # orp ("*")
+:rep m! du ev                   # rep(p-) regex '+'
+   @M .i                        # if the pattern matches, then:
+      .w du ev @M .d .o m1      #    repeat til it doesn't (but keep m1)
+   .t zp rt
+
+:opt m! ev m1 rt                # opt(p-) regex '?'
+:orp m! rep m1 rt               # orp(p-) regex '*'
 
 # -- code I want to write, to match a hex number
-:digit k( .[ ."0123456789" .] chs k) rt
-:hexit k( digit m| .[ ."ABCDEF" .] chs k) rt
-:num   k( .[ .[ '- .] chr .] opt .[ hexit .] rep k) rt
+:digit .[ ."0123456789" .] chs rt
+:hexit  m! k( digit m| .[ ."ABCDEF" .] chs k) rt
+:hexnum m! k( .[ .[ '- .] chr .] opt .[ hexit .] rep k) rt
