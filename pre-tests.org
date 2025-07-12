@@ -1,0 +1,63 @@
+
+
+* TODO fix this dumb bug
+#+name: tanco.bug
+#+begin_src b4a
+THIS GETS SKIPPED
+#+end_src
+
+* =chr= : match exact character
+#+name: pre.chr
+#+begin_src b4a
+  > :ln @K @S sb rt
+  > :S :K "hello"
+  > :Y lb 'h chr rt # should match and inc @K
+  > ^Y @M ln ?d zp zp
+  ds: [-1 1]
+  > @S !K  # reset
+  > :N lb 'x chr rt # should not
+  > ^N @M ln ?d zp zp
+  ds: [0 0]
+#+end_src
+
+* TODO =lit= : match literal string
+#+name: pre.lit
+#+begin_src b4a
+  > :ln @S @K sb rt
+  > :S :K "hello"
+  > :Y .[ ."he" .] lit rt
+  > ^Y @M ln ?d zp
+  ds: [-1 2]
+
+
+  > :N .[ ."nope" .] lit rt
+  > ^N @M ?d zp
+  ds: [0]
+
+#+end_src
+This is to save you from having to write a sequence of
+"chr" operations.
+
+* sequences =o( .. o)=
+#+begin_src b4a
+#+begin_src b4a
+  > :K "hello"      # @K points to the h
+  > :G lb 'a chr lb 'b chr lb 'c chr
+  ds: [-1]
+  > ^B @M ?d zp
+  ds: [0]
+#+end_src
+
+
+
+* alt ( =o|= operator)
+#+name: pre.alt
+#+begin_src b4a
+  > :G c0 !M c2 o| c4 rt
+  > ^G ?d %R
+  ds: [2 4]
+  > :G c1 !M c2 o| c4 rt
+  > ^G ?d
+  ds: [2]
+#+end_src
+

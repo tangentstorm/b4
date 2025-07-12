@@ -1,0 +1,41 @@
+# pre: parsing and regular expressions
+# inspired by
+# https://tinlizzie.org/VPRIPapers/tr2008003_experimenting.pdf
+# https://www.bradrodriguez.com/papers/bnfparse.htm
+
+# ebnf grammar for a hex number
+
+# digit := '0'..'9' ;
+# hexit := digit | 'A'..'F' ;
+# num   := '-' ? hexit + ;
+
+# -- these three copied from bios
+:ch @K rb rt                        # current character
+:nc @K c1 ad du !K rb rt            # next character
+:la @K ad rb rt                     # look ahead n chars
+# -- end copy
+
+# seq is just normal b4 execution, but we prep by
+# saving the character pointer, and we always
+# exit if the match bit is 0. we will wrap every rule with
+# o( .. o)
+
+# if @m, save @k else exit caller
+:o( @M .i @K dc .e cd zp .t rt
+# end sequence. if @m, discard saved @k else zap.
+:o) cd @M .i zp .e !K .t rt
+
+# alt is early exit.
+:o| @M .i cd zp .t rt  # alt (-) match bit is stored in @M
+
+:chr ch eq du !M .i c1 +K zp .t rt  # (c-) match char, @K++
+:chs rt
+:o? rt # opt ("?")
+:o+ rt # rep ("+")
+:o* rt # orp ("*")
+
+# -- code I want to write, to match a hex number
+:digit o( .[ ."0123456789" .] chs o) rt
+:hexit o( digit o| .[ ."ABCDEF" .] chs o) rt
+:num   o( .[ .[ '- .] chr .] o? .[ hexit  .] o+ o) rt
+
