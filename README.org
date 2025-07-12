@@ -12,10 +12,9 @@ There are currently five implementations:
 - [[./js/]], implemented in javascript.
 - [[https://github.com/tangentstorm/b4-gd][b4-gd]], implemented in GDScript for [[https://docs.godotengine.org/en/stable/][Godot 4]].
 
-The implementations are kept in sync
-through the tests in [[./b4-tests.org]]
+The implementations are kept in sync through the tests in [[./b4-tests.org]]
 
-See [[./bios/bios.b4a.org]] for an example of b4 assembly language.
+See [[./bios/bios.b4a]] for an example of b4 assembly language.
 
 * Links
 
@@ -25,7 +24,7 @@ See [[./bios/bios.b4a.org]] for an example of b4 assembly language.
 
 * Background
 
-B4 is a forth-like language. Quick *intros to forth* (free and online):
+B4 is a forth-like virtual machine. Quick *intros to forth* (free and online):
 
  - [[http://www.colorforth.com/POL.htm][Programming a Problem-Oriented Language]]
  - [[http://www.forth.com/starting-forth/][Starting Forth]]
