@@ -44,6 +44,15 @@ string.
 and =@K= points to the current input character.
 Subtracting =@S= from =@K= gives us the match length.
 
+* =fw (n-)= : move =@K= forward n characters
+#+name: pre.fw
+#+begin_src b4a
+ > pre ln ?d zp
+ ds: [0]
+ > c4 fw ln ?d %q
+ ds: [4]
+#+end_src
+
 * =pre (-)= : initialize parsing and regular expressions
 #+name: pre.pre
 #+begin_src b4a
@@ -246,3 +255,27 @@ at least once, then as many times as possible.
 #+end_src
 
 =orp= is the combination of =opt= and =rep=. It matches its pattern 0 or more times.
+
+* =mhex= : match an uppercase hex number
+#+name: pre.mhex
+#+begin_src b4a
+  > :S "-123" ..
+  > pre mhex @M ln ?d %R
+  ds: [-1 4]
+  > :S "123" ..
+  > pre mhex @M ln ?d %R
+  ds: [-1 3]
+  > :S "-ABCDEF0123456789" ..
+  > pre mhex @M ln ?d %R
+  ds: [-1 11]
+  > # do not match lowercase!
+  > :S "abcedef01234567890" ..
+  > pre mhex @M ln ?d %R
+  ds: [0 0]
+  > :S "-no" ..
+  > pre mhex @M ln ?d %R
+  ds: [0 0]
+#+end_src
+
+Putting the pieces together, =mhex= matches an uppercase hex number,
+followed by  hex number.

@@ -19,8 +19,8 @@
 :k( @K rt                       # save @K on data stack
 :k) @M .i zp .e !K .t rt        # drop or restore saved @K
 
-:m| @M .i zp cd zp              # m|(k-?k) alt guard
-       .e du !K .t rt           # must use btween k( .. k)
+:m| @M .i zp cd zp              # m|(k-?k) alt guard (zap old k if match)
+       .e du !K m1 .t rt        # must use btween k( .. k)
 
 :chr m! ch eq du !M             # (c-) match char, @K++
    .i c1 +K zp .t rt
@@ -48,7 +48,7 @@
 :opt m! ev m1 rt                # opt(p-) regex '?'
 :orp m! rep m1 rt               # orp(p-) regex '*'
 
-# -- code I want to write, to match a hex number
+# -- matcher for uppercase hex
 :digit .[ ."0123456789" .] chs rt
-:hexit  m! k( digit m| .[ ."ABCDEF" .] chs k) rt
-:hexnum m! k( .[ .[ '- .] chr .] opt .[ hexit .] rep k) rt
+:hexit m! k( digit m| .[ ."ABCDEF" .] chs k) rt
+:mhex  m! k( .[ lb '- chr rt .] opt  li `hexit rep k) rt
