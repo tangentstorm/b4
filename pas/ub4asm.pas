@@ -151,7 +151,6 @@ function next( var tok : token; var ch : char ) : boolean;
       '@' : rest(get);
       '!' : rest(put);
       '>' : rest(fwd);
-      'a'..'z' : begin tok.tag := ref; while (not atEnd) and (nextchar(ch) > #32) do keep end;
       '+' : rest(ink);
       '"' : begin tok.tag := _rs; rdstr(tok, ch) end;
       '.' : begin
@@ -173,7 +172,8 @@ function next( var tok : token; var ch : char ) : boolean;
               end;
               ch:=nextchar(ch);
             end
-      otherwise begin writeln('unknown word:', tok.str); halt end
+      otherwise begin
+        tok.tag := ref; while (not atEnd) and (nextchar(ch) > #32) do keep end;
     end;
   end;
 
