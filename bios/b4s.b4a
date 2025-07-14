@@ -53,18 +53,17 @@
 
 :ptl du nil? .i zp rt                   # (c-) helper for plis. if nil, we're at the end, so stop.
   .e sp du ctyp                         # else emit space, then either '. x' or 'x'
-     .i lb '. ^O sp ^P rt               # ctyp doubles as "atom?" if so, dotted pair. ^P=pval, below
-     .e du car ^P                       # else print the car and recurse on cdr
+     .i lb '. ^O sp cl >pval rt         # ctyp=="atom?" if so, dotted pair.
+     .e du car cl >pval                 # else print the car and recurse on cdr
         cdr jm `ptl .t .t               # optimized tail call (no 'rt')
 
 :plis                                   # (c-) print a list
   lb '( ^O
   du nil? nt .i
-     du car ^P
+     du car cl >pval
      cdr ptl
   .t lb ') ^O rt
 
-:P
 :pval du ctyp                           # (c-) print any cell
    du c4 eq .i zp psym rt .t
    du c2 eq .i zp pnum rt .t
