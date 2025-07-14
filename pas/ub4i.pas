@@ -258,7 +258,7 @@ begin
       '\o', '-o' : ShowOpcodes;
       '\p', '%p' : PrintWords;
       '\R', '%R' : reset_vm;
-      '\f' : for fw in fwds do writeln(fw.key, '@', hexstr(fw.at, 4));
+      '\f' : for fw in fwds do writeln(hexstr(fw.at, 4), '>', fw.key);
       '\g' : logging_enabled := not logging_enabled;
       '?d' : begin WriteStack('ds: ', ds, rg^[RDS]); WriteLn end;
       '?c' : begin WriteStack('cs: ', cs, rg^[RCS]); WriteLn end;
