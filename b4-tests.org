@@ -689,6 +689,26 @@ These are macros. They emit a =li= op, followed by the address, then either =ri=
 ^C +A +B +C .. .. .. .. .. .. .. .. .. .. .. ..
 #+end_src
 
+** Using =>= for forward references
+#+name: b4a.fwd
+#+begin_src b4a
+  > :A cl >foo rt
+  > \f
+  foo@0101
+  > :foo c2 n1 rt
+  > \f
+  > ^A ?d %q
+  ds: [2 -1]
+#+end_src
+
+Inside the assembler, you can use the =>= prefix to indicate a word
+that is to be defined later. Note that unlike a bare word, this does
+not assemble an implicit =cl= so you must write it manually.
+
+Meanwhile, the =\f= command can be used to inspect forward references
+that have not yet been filled in.
+
+
 * TODO [0/2] system ops (how to test these?)
 ** TODO =db=  triggers the debugger
 ** TODO =hl=  halts the virtual machine

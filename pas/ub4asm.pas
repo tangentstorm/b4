@@ -5,6 +5,8 @@ interface uses ub4ops, ub4, classes, sysutils, strutils;
   type ident = string[16];
   type entry = record id: ident; adr: ub4.address end;
   var dict: array[0..128] of entry; ents : byte;
+  type TFwd = record key: string; at: value end;
+  var fwds : array of TFwd; fw:TFwd;
 
   function b4op(code : opstring; out op:byte) : boolean;
   function b4opc(code:opstring) : byte;
@@ -193,6 +195,7 @@ begin
   end;
 end;
 
+
 procedure b4as_core;
   var here: value; err: integer; tok: token; ch: char;
   procedure emit(v:value); begin mem[here] := v; inc(here); end;
@@ -224,10 +227,8 @@ procedure b4as_core;
       if dist < -128 then begin writeln('hop too big: ',here, ' -> ',dest); halt end;
       emit(byte(dist+1))
     end;
-  type TFwd = record key: string; at: value end;
-  var fwds : array of TFwd; fw:TFwd;
   procedure compile;
-    var op : byte;
+    var op,i : byte;
     begin
       case tok.tag of
         wsp, cmt : ok; { do nothing }
@@ -236,7 +237,14 @@ procedure b4as_core;
               else emit(ord(tok.str[1]));
         def : if isreg(tok.str) then rg[regn(tok.str[1])]:=here
               else if ents=high(dict) then begin writeln('too many :defs'); halt end
-              else begin dict[ents].id:=tok.str; dict[ents].adr:=here; inc(ents) end;
+              else begin
+                dict[ents].id:=tok.str; dict[ents].adr:=here; inc(ents); i:=0;
+                if length(fwds)>0 then while i < length(fwds) do begin
+                  fw := fwds[i]; if fw.key=tok.str then
+                  begin wrval(fw.at, here);  delete(fwds,i,1) end
+                  else inc(i)
+                end
+              end;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
         ivk : if isreg(tok.str) then emit(b4opc('^'+tok.str[1]))
               else begin writeln('bad word: ^',tok.str); halt end;
@@ -275,12 +283,10 @@ procedure b4as_core;
         _cb : begin dput(tos); hop_here; emit(b4opc('li')); emitv(dpop+1); end;
       end end;
   begin
-    SetLength(fwds, 0);
     err := 0; here := rg[RHP];
     ch := nextchar(ch);
     while (err = 0) and not atEnd do if next(tok, ch) then compile;
     if err <> 0 then dput(err) else rg[RHP] := here;
-    for fw in fwds do wrval(fw.at, find_addr(fw.key));
   end;
 
 procedure b4as;
