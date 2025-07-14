@@ -222,44 +222,24 @@ begin
     inc(i); tok := toks[i]; if tok='' then continue;
     // skip comments, but note ':' has its own comment handler :/
     if tok[1] = '#' then st:=st_cmt; if st=st_cmt then continue;
-    if tok = '\d' then begin { inspect/change working directory }
-      if (i < High(toks)) and (toks[i+1] <> '')
-        and (toks[i+1][1] <> '') and (toks[i+1][1] <> '%')
-      then
-        begin
-          inc(i); ChDir(toks[i]);
-          if IoResult <> 0
-          then writeln('error changing directory to ', toks[i]);
-        end;
-      writeln(GetCurrentDir);
-      continue;
-    end;
-    if tok = '\a' then begin
-      if i < High(toks) then begin
-        inc(i);
-        ub4asm.b4a_file(toks[i]);
-      end else
-        writeln('usage: \a <filename>');
-      continue;
-    end;
-    if tok = '\i' then begin
-      if i < High(toks) then begin
-        inc(i);
-        b4i_file(toks[i]);
-      end else
-        writeln('usage: \i <filename>');
-      continue;
-    end;
     case tok of
+      '\a' : if i < High(toks) then begin inc(i); ub4asm.b4a_file(toks[i]) end
+             else writeln('usage: \a <filename>');
       '\C', '%C' : begin boot; ub4asm.clear_dict; end;
-      '\q', '%q' : done := true;
-      '\s', '%s' : ub4.step;
-      '\h', '%h' : help;
-      '\o', '-o' : ShowOpcodes;
-      '\p', '%p' : PrintWords;
-      '\R', '%R' : reset_vm;
+      '\d' : if (i < High(toks)) then begin
+               inc(i); ChDir(toks[i]); if IoResult<>0
+                 then writeln('error changing directory to ', toks[i]) end
+             else writeln(GetCurrentDir);
       '\f' : for fw in fwds do writeln(hexstr(fw.at, 4), '>', fw.key);
       '\g' : logging_enabled := not logging_enabled;
+      '\h', '%h' : help;
+      '\i' : if i < High(toks) then begin inc(i); ub4i.b4i_file(toks[i]) end
+             else writeln('usage: \i <filename>');
+      '\o', '-o' : ShowOpcodes;
+      '\p', '%p' : PrintWords;
+      '\q', '%q' : done := true;
+      '\R', '%R' : reset_vm;
+      '\s', '%s' : ub4.step;
       '?d' : begin WriteStack('ds: ', ds, rg^[RDS]); WriteLn end;
       '?c' : begin WriteStack('cs: ', cs, rg^[RCS]); WriteLn end;
       '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
