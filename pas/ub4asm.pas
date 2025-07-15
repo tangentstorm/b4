@@ -4,7 +4,7 @@ interface uses ub4ops, ub4, classes, sysutils, strutils, character;
 
   type ident = string[16];
   type entry = record id: ident; adr: ub4.address end;
-  var dict: array[0..128] of entry; ents : byte;
+  var dict: array[0..4096] of entry; ents : word;
   type TFwd = record key: string; at: value end;
   var fwds : array of TFwd; fw:TFwd;
 
@@ -35,7 +35,7 @@ implementation
 
 function unhex(tok:string): integer;
 begin
-  if length(tok) = 0 then raise EConvertError.Create('unhex of empty string?');
+  if length(tok) = 0 then raise EConvertError.Create('unhex of empty string');
   if tok[1]='-' then result := -Hex2Dec(copy(tok,2,length(tok)-1))
   else result := Hex2Dec(tok);
 end;
@@ -113,7 +113,7 @@ function find_ident(adr:ub4.address; out id:ident): boolean;
   end;
 
 procedure clear_dict;
-  var i : byte;
+  var i : word;
   begin
     for i := 0 to high(dict) do begin
       dict[i].id := ''; dict[i].adr := 0
@@ -182,18 +182,17 @@ function next( var tok : token; var ch : char ) : boolean;
 
 
 function find(s:string; out a:ub4.address):boolean;
-var op:byte = 0;
+var i:word = 0;
 begin
-  result := false;
-  while (op < ents) and not result do
-  begin
-    if dict[op].id = s then
+  result := false; i := ents;
+  if ents = 0 then exit
+  else repeat dec(i);
+    if dict[i].id = s then
     begin
-      a := dict[op].adr;
+      a := dict[i].adr;
       result := true;
-    end;
-    inc(op);
-  end;
+    end
+  until i = 0
 end;
 
 function tryHex(tok:string; out i:integer):boolean;
@@ -216,12 +215,9 @@ procedure b4as_core;
   function find_addr(s:string): value; { return address of label }
     var a: ub4.address;
     begin
-      if find(s, a) then
-        result := a
-      else if isreg(s) then
-        result := rega(s[1])
-      else
-        unknown(s);
+      if find(s, a) then result := a
+      else if isreg(s) then result := rega(s[1])
+      else unknown(s);
     end;
   procedure hop_slot(op:string); begin emit(b4opc(op)); dput(here); emit(0); end;
   procedure hop_here(); var slot,dist:value;
