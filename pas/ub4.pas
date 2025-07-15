@@ -12,7 +12,7 @@ const
   stacksize = 256;
   cellsize = sizeof(value);
   {-- memory layout --}
-  maxcell = 4095;
+  maxcell = 16383; // * 4 = 64kb total
   maxbyte = ((maxcell+1) * cellsize)-1;
   { ctrl stack }
   ctrlsize = stacksize;
