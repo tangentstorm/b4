@@ -1,1 +1,6 @@
-(cd pas && make b4ix) && pas/b4ix $1 $2 $3 $4 $5 $6 $7 $8 $9
+(cd pas && make b4ix) && \
+pas/b4ix \
+  -a bios/bios.b4a \
+  -a bios/pre.b4a \
+  -a bios/b4s.b4a \
+  $1 $2 $3 $4 $5 $6 $7 $8 $9
