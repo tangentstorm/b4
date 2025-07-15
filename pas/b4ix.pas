@@ -116,8 +116,9 @@ begin
 end;
 
 var line: string; done:boolean=false; histPath:string;
+const START = $2000;
 begin
-  rg^[RIP] := $1000; rg^[regn('_')] := $1000; StartView := $1000;
+  rg^[RIP] := START; rg^[regn('_')] := START; StartView := START;
   histPath := GetUserDir + '/' + '.b4ix'; uled.loadHist(histPath);
   ScreenMaxX := WindMaxX; ScreenMaxY := WindMaxY;
   ClrScr; DrawHeadings; InitTerm;
