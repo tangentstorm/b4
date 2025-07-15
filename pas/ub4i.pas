@@ -15,11 +15,16 @@ var
 implementation
 
 procedure LogState(op_str: string);
+  var a:integer; ident: string;
 begin
   if logging_enabled then begin
-    Write(format('| IP: %s, OP: %s', [ub4.b4mat(ub4.rg^[ub4.RIP]), op_str]));
+    a:=ub4.rg^[ub4.RIP];
+    Write(format('| IP: %s ', [ub4.b4mat(a)]));
+    if ub4asm.find_ident(a, ident) then write('{ ', ident, ' } ');
+    Write('OP: ',op_str);
     WriteStack('  ds: ', ub4.ds, ub4.rg^[ub4.RDS]);
-    WriteStack('  cs: ', ub4.cs, ub4.rg^[ub4.RCS]); WriteLn;
+    WriteStack('  cs: ', ub4.cs, ub4.rg^[ub4.RCS]);
+    WriteLn;
   end;
 end;
 
