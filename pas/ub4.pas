@@ -52,19 +52,19 @@ const {-- these are all offsets into the mem array --}
   RLP = ord('^') creg; { ^^ list pointer }
   RHP = ord('_') creg; { ^_ heap/'here' pointer }
   { potential private registers go from $20 (32) to $3F (63) }
-  RMZ = $20; {memory size}
+//RMZ = $20; {memory size}
   RIP = $21; {instruction pointer}
-  RDA = $22; {ds address}
+//RDA = $22; {ds address}
   RDS = $23; {ds height}
   RDZ = $24; {ds size (max height)}
-  RCA = $25; {cs address}
+//RCA = $25; {cs address}
   RCS = $26; {cs height}
-  RCZ = $27; {cs size (max height)}
+//RCZ = $27; {cs size (max height)}
   RST = $28; {state flag}
   RDB = $29; {debug flag}
-  RVW = $30; {value width (1=byte 4=int)}
   RED = $31; {used by the debugger's editor}
   RBP = $32; {internal breakpoint}
+//  RTB = $3C; {address of term buffer}
 {$TYPEDADDRESS OFF}
   rg: ^regs = @mem[0];
   ds : ^stack = @mem[mindata];
