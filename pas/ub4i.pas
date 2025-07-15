@@ -31,7 +31,12 @@ end;
 
 function step_wrapped : value;
 begin
-  wrapOp(ub4.mem[ub4.rg^[ub4.RIP]]);
+  try wrapOp(ub4.mem[ub4.rg^[ub4.RIP]]);
+  except on e: EAccessViolation do begin
+    writeln('IP:', hexstr(ub4.rg^[ub4.RIP], 8), ' ',
+            'is outside ram. (max: ', hexstr(high(ub4.mem), 8), ')');
+    halt end;
+  end;
   inc(ub4.rg^[ub4.RIP]);
   step_wrapped := ub4.rg^[ub4.RIP];
 end;
