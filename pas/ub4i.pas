@@ -229,6 +229,9 @@ begin
              else writeln(GetCurrentDir);
       '\f' : for fw in fwds do writeln(hexstr(fw.at, 4), '>', fw.key);
       '\g' : logging_enabled := not logging_enabled;
+      '\j' : if i < High(toks) then begin inc(i);
+               if tryhex(toks[i], a) then ub4.rg^[ub4.RIP]:=a end
+             else writeln('usage: \j <address>');
       '\h', '%h' : help;
       '\i' : if i < High(toks) then begin inc(i); ub4i.b4i_file(toks[i]) end
              else writeln('usage: \i <filename>');
