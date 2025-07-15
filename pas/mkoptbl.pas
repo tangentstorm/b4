@@ -14,7 +14,7 @@ const
 
 var
  line  : string;
- optbl : array[$80..$FF] of string[2];
+ optbl : array[$00..$FF] of string[2];
 
 function match(have, want:string) : boolean;
   var i : byte; sofar : boolean;
@@ -65,9 +65,19 @@ procedure readops;
     until match(line, '  end');
 end;
 
+function r(i:byte):char;
+begin
+  result:=chr(i+ ord('@'));
+end;
+
 var i : byte; out : text;
 begin
   readops;
+  optbl[$00] := '..';
+  for i:=$01 to $1F do optbl[i] := '^'+r(i mod 32);
+  for i:=$20 to $3F do optbl[i] := '@'+r(i mod 32);
+  for i:=$40 to $5F do optbl[i] := '!'+r(i mod 32);
+  for i:=$60 to $7F do optbl[i] := '+'+r(i mod 32);
   assign(out, opath);
   rewrite(out);
   writeln(out, '{-- do not edit! regenerate with mkoptbl.pas --}');
@@ -75,11 +85,11 @@ begin
   writeln(out, 'interface');
   // we make it string[3] just so we can test for trailing characters
   writeln(out, '  type opstring = string[3];');
-  writeln(out, '  var optbl : array[ $80 .. $FF ] of opstring;');
+  writeln(out, '  var optbl : array[ $00 .. $FF ] of opstring;');
   writeln(out, 'implementation');
   writeln(out, 'begin');
-  for i := $80 to $FF do
-    writeln(out, '  optbl[', i:2, '] := ''', optbl[ i ], ''';');
+  for i:=$00 to $FF do
+    writeln(out, '  optbl[$',hexstr(i,2),'] := ''',optbl[i],''';');
   writeln(out, 'end.');
   close(out);
 end.
