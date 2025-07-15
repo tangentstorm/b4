@@ -1,4 +1,87 @@
 # -- bios.b4a : basic input/output system + utilities
+#
+# This is a bios for B4 instances. A b4 instance does
+# *not* need to use this bios, but this is the usual
+# setup for interactive use.
+#
+# -- memory layout ---------------------------------------------
+#
+#    first 256 bytes are common to all b4 instances:
+# 0000..007F 32 named registers (4 bytes each)
+# 0080..00FF 32 system variables (defined here)
+#
+#    conventions used by the bios:
+# 0100..04FF 64x16 default character buffer (screen text)
+# 0500..09FF 64x16 default attribute buffer (screen colors)
+# 0A00..0AFF 256-byte string input buffer (inc 1 len byte)
+# 0B00..0B3F 64 byte config block
+# 0B40..FFFF programmable memory
+# --------------------------------------------------------------
+
+:0000 40 0B .. ..       # set @@ to specify where ip starts
+
+
+# -- system registers ------------------------------------------
+:0080  # RMZ = $20; {memory size}
+:0084  # RIP = $21; {instruction pointer}
+:0088  # RDA = $22; {ds address}
+:008C  # RDS = $23; {ds height}
+:0090  # RDZ = $24; {ds size (max height)}
+:0094  # RCA = $25; {cs address}
+:0098  # RCS = $26; {cs height}
+:009C  # RCZ = $27; {cs size (max height)}
+:00A0  # RST = $28; {state flag}
+:00A4  # RDB = $29; {debug flag}
+:00A8  # RED = $2A; {used by the debugger's editor}
+:00AC  # RBP = $2B; {internal breakpoint}
+:00B0  # $2C
+:00B4  # $2D
+:00B8  # $2E
+:00BC  # $2F
+:00C0  # $30
+:00C4  # $31
+:00C8  # $32
+:00CC  # $33
+:00D0  # $34
+:00D4  # $35
+:00D8  # $36
+:00DC  # $37
+:00E0  # $38
+:00E4  # $39
+:00E8  # $3A
+:00EC  # $3B
+:00F0 :tmb 00 01 .. ..        # $3C raddress of terminal buffer
+:00F4 :tmw 40 .. .. ..        # $3D terminal width
+:00F8 :tmh 10 .. .. ..        # $3E terminal height
+:00FC :cur 00 00 .. ..        # $3F cursor position (8 bits each x y)
+
+:0100 # --- video memory (splash screen) ------------------------
+
+"                                                                " # 0
+"  | ##         ## |                                             " # 1
+"__| ##     ##  ## |_____________________________________________" # 2
+"__| ##     ##  ## |_____________________________________________" # 3
+"__| #####  ###### |_____________________________________________" # 4
+"__| ##  ##     ## |_____________________________________________" # 5
+"  | #####      ## |                                             " # 6
+"                                                                " # 7
+"                                                                " # 8
+"                                                                " # 9
+"                                                                " # A
+"                                                                " # B
+"                                                                " # C
+"                                                                " # D
+"                                                                " # E
+"                                                                " # F
+
+:0A00 :inb^ :K          # input buffer
+
+:0B00                   # config block
+
+:0B40                   # start of code
+
+jm >main                # pointer to main (to be defined by user code)
+jm 40 0B .. ..          # loop if main is not defined
 
 # -- general memory routines ----------------------------------
 
@@ -13,12 +96,6 @@
 
 
 # -- terminal buffer ------------------------------------------
-
-:tmb 00 06 00 00        # address of terminal buffer
-:tmw 40 .. .. ..        # terminal width
-:tmh 10 .. .. ..        # terminal height
-:cur 00 00 .. ..        # cursor position (8 bits each x y)
-
 
 :cscr
    li '  '  '  '        # fill pattern
@@ -65,7 +142,6 @@
    c1 +S rb .f c1 +S rb ^O .n
    cd !S rt
 
-
 :base 10 :digits  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
 
 :dvm ov ov md dc dv cd rt           # (x y - q r) divmod
@@ -86,27 +162,8 @@
 
 #-- tokenizer -------------------------------------------------
 
-:K    # K register points to start or next character
-:inb^ # a counted string (length byte + up to 255 chars)
-# +0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F
-  00 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 0
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 1
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 2
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 3
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 4
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 5
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 6
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 7
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 8
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # 9
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # A
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # B
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # C
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # D
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # E
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. # F
 :inb `inb^                          # @inb is the input buffer address
 :ch @K rb rt                        # current character
 :nc @K c1 ad du !K rb rt            # next character
 :la @K ad rb rt                     # look ahead n chars
-:k0 lb `inb^ !K rt                  # set K back to start
+:k0 @inb !K rt                      # set K back to start
