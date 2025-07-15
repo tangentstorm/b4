@@ -13,23 +13,20 @@ this gets skipped :/
 * cscr : fill screen with spaces
 #+name: cscr
 #+begin_src b4a
-  > # the terminal buffer is set to address 400
+  > # the terminal buffer is set to address 100
   > @tmb ?d
-  ds: [600]
-  > # by default, that memory should be zeroed out
-  > ?600
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
-  > # but 'cscr' fills it with spaces
-  > cscr ?600
+  ds: [100]
+  > # 'cscr' fills it with spaces
+  > cscr ?100
   @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
   > # the output buffer ends at address 800
   > @tmb @tmw @tmh ml ad ?d
-  ds: [600 A00]
+  ds: [100 500]
   > # so that memory should still be clear:
-  > ?A00
+  > ?500
   .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
   > # but the cscr should have filled the 16 previous bytes:
-  > ?9F0 %q
+  > ?4F0 %q
   @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
@@ -52,14 +49,14 @@ this gets skipped :/
 * emit
 #+name: emit
 #+begin_src b4a
-  > cscr 'h emit 'i emit ?600 %q
+  > cscr 'h emit 'i emit ?100 %q
   +H +I @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
 * goxy
 #+name: goxy-emit
 #+begin_src b4a
-  > cscr 4 0 goxy 'h emit 'i emit ?600 %q
+  > cscr 4 0 goxy 'h emit 'i emit ?100 %q
   @@ @@ @@ @@ +H +I @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
@@ -67,8 +64,8 @@ this gets skipped :/
 #+name: puts
 #+begin_src b4a
   > :S 0D 'h 'e 'l 'l 'o ', 20 'w 'o 'r 'l 'd '!
-  > @S puts ?600 %q
-  +H +E +L +L +O @L @@ +W +O +R +L +D @A .. .. ..
+  > @S puts ?100 %q
+  +H +E +L +L +O @L @@ +W +O +R +L +D @A @@ @@ @@
 #+end_src
 
 * \0 to show first line
