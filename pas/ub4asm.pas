@@ -1,6 +1,6 @@
 {$mode delphi}
 unit ub4asm;
-interface uses ub4ops, ub4, classes, sysutils, strutils;
+interface uses ub4ops, ub4, classes, sysutils, strutils, character;
 
   type ident = string[16];
   type entry = record id: ident; adr: ub4.address end;
@@ -19,6 +19,7 @@ interface uses ub4ops, ub4, classes, sysutils, strutils;
   procedure b4a(s:string);
   function unhex(tok:string): integer;
   procedure clear_dict;
+  function tryHex(tok:string; out i:integer):boolean;
 
 
 implementation
@@ -195,7 +196,15 @@ begin
   end;
 end;
 
+function tryHex(tok:string; out i:integer):boolean;
+  var c:char;
+begin
+  for c in tok do if not (isdigit(c) or isUpper(c)) then exit(false);
+  try i := unhex(tok); result := true;
+  except on EConvertError do result := false end
+end;
 
+
 procedure b4as_core;
   var here: value; err: integer; tok: token; ch: char;
   procedure emit(v:value); begin mem[here] := v; inc(here); end;
@@ -228,7 +237,7 @@ procedure b4as_core;
       emit(byte(dist+1))
     end;
   procedure compile;
-    var op,i : byte;
+    var op,i : byte; a:integer;
     begin
       case tok.tag of
         wsp, cmt : ok; { do nothing }
@@ -236,6 +245,7 @@ procedure b4as_core;
         chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
               else emit(ord(tok.str[1]));
         def : if isreg(tok.str) then rg[regn(tok.str[1])]:=here
+              else if tryHex(tok.str,a) then here:=a
               else if ents=high(dict) then begin writeln('too many :defs'); halt end
               else begin
                 dict[ents].id:=tok.str; dict[ents].adr:=here; inc(ents); i:=0;
