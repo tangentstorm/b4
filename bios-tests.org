@@ -19,12 +19,12 @@ this gets skipped :/
   > # 'cscr' fills it with spaces
   > cscr ?100
   @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
-  > # the output buffer ends at address 800
+  > # the output buffer ends at address 500
   > @tmb @tmw @tmh ml ad ?d
   ds: [100 500]
-  > # so that memory should still be clear:
+  > # and that should hold the colors: (^G is 07)
   > ?500
-  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+  ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G
   > # but the cscr should have filled the 16 previous bytes:
   > ?4F0 %q
   @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
