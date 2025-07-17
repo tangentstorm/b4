@@ -3,18 +3,19 @@
 # https://tinlizzie.org/VPRIPapers/tr2008003_experimenting.pdf
 # https://www.bradrodriguez.com/papers/bnfparse.htm
 
-# -- these three copied from bios
+# -- these two copied from bios
 :ch @K rb rt                    # current character
 :nc @K c1 ad du !K rb rt        # next character
-:ev dc rt                       # eval quotation
 # -- end bios copy
+:ev dc rt                       # ev: eval quotation
 
 :pre @S !K n1 !M rt             # set k=s, m=-1
 :fw @K ad !K rt                 # (n-) inc ^K by n
 
 :m0 c0 !M rt   :m1 n1 !M rt     # m0/m1 set match bit
 :ln @K @S sb rt                 # ln(-n) match length
-:m! @M nt .i zp cd zp .t rt     # zap arg + exit if m0
+:m! @M nt .i zp cd zp .t rt     # zap arg + exit if m0 (common case)
+:m\ @M nt .i    cd zp .t rt     # like m! but no arg to zap
 
 :k( @K rt                       # save @K on data stack
 :k) @M .i zp .e !K .t rt        # drop or restore saved @K
@@ -24,6 +25,10 @@
 
 :chr m! ch eq du !M             # (c-) match char, @K++
    .i c1 +K zp .t rt
+
+:lte m! c1 ad ch sw lt !M rt    # (x-) match if ch<=arg, consume nothing
+:gte m! ch sw lt nt !M rt       # (x-) match if ch>=arg, consume nothing
+:mf1 m\ c1 fw rt                # move forward 1 char if match
 
 :s> c1 +S rb rt                 # inc s and read byte
 :brkf cd cd zp c0 dc dc rt      # break .f loop (set ctr=0)
@@ -49,6 +54,7 @@
 :orp m! rep m1 rt               # orp(p-) regex '*'
 
 # -- matcher for uppercase hex
+
 :digit .[ ."0123456789" .] chs rt
 :hexit m! k( digit m| .[ ."ABCDEF" .] chs k) rt
-:mhex  m! k( .[ lb '- chr rt .] opt  li `hexit rep k) rt
+:mhex  m! k( .[ lb '- chr rt .] opt li `hexit rep k) rt
