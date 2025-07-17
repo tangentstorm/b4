@@ -1,5 +1,5 @@
-(cd pas && make b4ix) && \
-pas/b4ix \
+(cd pas && make b4i) && \
+pas/b4i \
   -a bios/bios.b4a \
   -a bios/pre.b4a \
   -a bios/b4s.b4a \
