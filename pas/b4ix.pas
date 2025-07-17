@@ -41,17 +41,19 @@ begin
   TermWindow; TextAttr := $07; ClrScr;
 end;
 
-const ScreenAddr : ub4.address = $0100;
+const TermAddr : ub4.address = $0100;
+const AttrAddr : ub4.address = $0500;
 const hexit = '0123456789ABCDEF';
 procedure DrawTerm;
-  var x,y: word;
-      c  : char;
+  var x,y: word; a:byte; c:char;
 begin
   TermWindow; TextAttr := $07;
   for y := 0 to 15 do begin
     GotoXY(1,y+1);
     for x := 0 to 63 do begin
-      c := char(mem[ScreenAddr + y*64+x]);
+      a := mem[AttrAddr + y*64+x];
+      textColor(lo(a)); textBackground(hi(a));
+      c := char(mem[TermAddr + y*64+x]);
       if c < ' ' then c := ' ';
       write(c);
     end;
