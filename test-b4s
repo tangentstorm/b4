@@ -1,3 +1,3 @@
 #!/bin/sh
-#(cd pas; make b4i) && \
-tanco run -t b4s-tests.org pas/b4i -a bios/bios.b4a -a bios/b4s.b4a
+(cd pas; make b4i) && \
+tanco run -t b4s-tests.org pas/b4i -a bios/bios.b4a -a bios/pre.b4a -a bios/b4s.b4a
