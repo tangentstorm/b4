@@ -342,6 +342,24 @@ item =x= as =(quo . x)= , where =quo= is just a symbol.
 
 all of these should also be printed by the printer.
 
+* TODO list reader
+#+name: b4s.rlis
+#+begin_src b4a
+  > inic
+  > newc du !L !R 1 cnum apc! 2 cnum apc!
+  > @R pval \0 cscr go00
+  (1 2 ())
+  > end!
+  > @R pval \0 cscr go00
+  (1 2)
+#+end_src
+
+-apc! appends to the end of the list and creates a new cell
+-end! ends the list and removes the final wrapper
+- final result stays in @R
+- must preserve @R when entering nested lists
+- helper tools seem to be working (since this test passes)
+- but the actual parser is not quite there yet.
 
 
 * TODO [0/2] eval
