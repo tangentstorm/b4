@@ -3,4 +3,5 @@ pas/b4ix \
   -a bios/bios.b4a \
   -a bios/pre.b4a \
   -a bios/b4s.b4a \
+  -i init.b4i
   $@
