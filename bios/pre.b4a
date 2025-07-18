@@ -67,9 +67,16 @@
    k( digit
       lc lb '0 sb          n<
    m| hexit
-      lc lb 'A sb lb 10 ad n<
+      lc lb 'A sb lb 0A ad n<
    k) rt
 :mhex  m! c0 !N                 # match a hex number. @N is value
    k( .[ lb '- chr rt .] opt
       li `hexn rep
    k) rt
+
+# TODO: move whitespace stuff upward
+:ws m\ '  lte mf1 rt
+:ws~ m\ '! gte mf1 rt
+:ws* li `ws orp rt
+:not @M nt !M rt
+:any m\ m1 fw rt

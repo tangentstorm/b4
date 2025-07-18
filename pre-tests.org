@@ -417,8 +417,11 @@ followed by  hex number.
 #+name: pre.mhex-@n
 #+begin_src b4a
   > :S "1234" ..
-  > pre mhex @M ln 1234 ?d %R
-  ds: [-1 4 1234]
+  > C0 pre mhex @M ln @N ?d %R
+  ds: [C0 -1 4 1234]
+  > :S "ABCD" ..
+  > C1 pre mhex @M ln @N ?d %R
+  ds: [C1 -1 4 ABCD]
 #+end_src
 
 In addtion to /recognizing/ that the string is a hex number, it would
