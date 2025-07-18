@@ -6,8 +6,8 @@
 
 # TODO: the assembler needs :|8 to allign and :+<size> to allocate
 
-:fst^ 00 10 .. ..   :end^ 00 30 .. ..   # addrs of start and (just past) end of cell memory
-:nil^ .. .. .. ..   :nxt^ .. .. .. ..   # addrs of nil and next free cell
+:fst^ 00 C0 .. ..   :end^ 00 E0 .. ..   # addrs: start & just past end of cells
+:nil^ .. .. .. ..   :nxt^ .. .. .. ..   # addrs: nil and next free cell
 :numc .. .. .. ..                       # total number of cells. 'inic' makes this
 
 :ctyp lb 06 an rt                       # ctyp: (c-t) return the cell's type code
@@ -37,6 +37,7 @@
 :cons nxtc sw ov cdr! sw ov car! rt     # (ad-c) construct cell with car:a cdr:d
 :encl nil sw cons rt                    # encl: (-c) enclose a b4 value in a cell (nil . x)
 
+
 # --- numbers --------------------------
 :cnum encl ntag rt                      # cnum: (n-c) construct b4s number from raw b4 [n-nc-cn-cnc]
 :pnum cdr putn rt                       # pnum: (c- ) print b4s number
@@ -68,3 +69,60 @@
    du c4 eq .i zp psym rt .t
    du c2 eq .i zp pnum rt .t
    zp plis rt
+
+
+#-- reader -----------------------------
+
+:symw glu csym sw cons rt               # wrap with symbol
+:wquo m! li 'q 'u 'o .. symw rt
+:wdnq m! li 'u 'p 'q .. symw rt
+:wupq m! li 'd 'n 'q .. symw rt
+
+:do     dc rt
+:mdo m! dc rt
+:end m\ c0 ch eq !M rt
+:any m\ end nt rt
+:err m! m0 puts rt
+
+#-- these read between @S and @L
+
+:between?        # (xlh-?)
+  dc ov dc lt nt                         # -?:xh  x
+  cd cd lt                               # -?:xh    -??         -?
+  an rt
+
+:gte m! ch lt nt !M rt
+:lte m! ch sw c1 ad lt !M rt
+:ddgt m! lb '0 gte lb '9 lte lb
+      m! @A lb 10 rt
+:hdgt rt
+
+:digit?                                 # (c-d1) or (c-0)
+   du lb '0 lb ': between?
+   .i lb '0 sb c1 rt .t
+   du lb 'A lb 'G between?
+   .i lb 'A sb lb 0A ad c1 rt .t
+   zp c0 rt
+
+:to-n @S dc
+   !S c0 !R
+   c1 +S rb .f
+      c1 +S rb digit?
+      .i @R li `base rb ml ad !R
+      .e brkf .t
+   .n
+   cd !S @R rt                         # (pr-r)
+
+:rnum m! to-n rt
+:rsym m! rt
+
+:rlis m! rt #@L dc nxcl !L
+
+:rval k( lb '( chr rlis
+      m| lb '' chr rval wquo
+      m| lb '` chr rval wupq
+      m| lb ', chr rval wdnq
+      m| li `mhex rnum
+      m| li `any rep rsym
+      m| .[ ."bad syntax" .]  err
+      k) rt
