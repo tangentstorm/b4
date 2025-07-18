@@ -59,6 +59,7 @@ and the second is called the "cdr" (rhymes with 'footer').
 
 Nil's car and cdr both point back to nil.
 
+* TODO =!car= and =!cdr=
 * celn
 #+name: celn
 #+begin_src b4a
@@ -272,11 +273,28 @@ However, if we print it on its own, we should print the value '()'
 #+end_src
 
 
-* TODO [0/4] the reader
-** TODO rnum
-** TODO rsym
-** TODO rlis
-** TODO rval (=^R=)
+* the reader
+The reader reads a lisp value and places it in @R.
+
+* =rnum=: read a number
+#+name: b4s.rnum
+#+begin_src b4a
+  > nil !R  # clear R
+  > 12B456 !N
+  > # if m0 do nothing
+  > C0 m0 rnum @R pval \0 cscr
+  ()
+  > # if m1 @R := cnum(@N)
+  > C1 m1 rnum @R pval \0
+  12B456
+#+end_src
+
+=mhex= already stores a matched number in =@N=. Rnum is a helper
+that reads the number out of N, wraps it, and places it in @R.
+
+
+
+* TODO =rsym=
 
 * TODO [0/2] eval
 ** TODO eval

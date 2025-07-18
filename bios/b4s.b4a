@@ -113,16 +113,19 @@
    .n
    cd !S @R rt                         # (pr-r)
 
-:rnum m! to-n rt
+:rnum m! @N cnum !R rt
 :rsym m! rt
 
 :rlis m! rt #@L dc nxcl !L
+
+:ws m\ '  lte mf1 rt
+:ws* li `ws orp rt
 
 :rval k( lb '( chr rlis
       m| lb '' chr rval wquo
       m| lb '` chr rval wupq
       m| lb ', chr rval wdnq
-      m| li `mhex rnum
+      m| mhex ws* rnum          # leave cnum in !P
       m| li `any rep rsym
       m| .[ ."bad syntax" .]  err
       k) rt
