@@ -14,6 +14,9 @@
 :wipe lb 06 nt an rt                    # wipe: (c-c) remove type code
 :ntag wipe c2 xr rt                     # ntag: tag cell as number
 :stag wipe c4 xr rt                     # ntag: tag cell as symbol
+:sym? ctyp c4 eq rt                     # sym?: (c-?)
+:num? ctyp c2 eq rt                     # num?: (c-?)
+:lis? ctyp c0 eq rt                     # lis?: (c-?)
 
 :car  wipe ri rt :cdr  wipe c4 ad ri rt # get car, cdr (c - c)
 :car! wipe wi rt :cdr! wipe c4 ad wi rt # set car, cdr (x c -)
@@ -58,7 +61,21 @@
      .e du car cl >pval                 # else print the car and recurse on cdr
         cdr jm `ptl .t .t               # optimized tail call (no 'rt')
 
+:wrp? dc car du sym?                    # (xs-?) is x a wrapped with symbol s?
+   .i cdr cd eq
+   .e zp cd zp c0 .t rt
+
+:quo? li 'q 'u 'o .. wrp? rt           # (x-?) is x a quoted value?
+:qdn? li 'q 'd 'n .. wrp? rt
+:qup? li 'q 'u 'p .. wrp? rt
+
 :plis                                   # (c-) print a list
+  du quo?
+     .i lb '' ^O cdr cl >pval rt .t
+  du qdn?
+     .i lb ', ^O cdr cl >pval rt .t
+  du qup?
+     .i lb '` ^O cdr cl >pval rt .t
   lb '( ^O
   du nil? nt .i
      du car cl >pval
@@ -73,10 +90,10 @@
 
 #-- reader -----------------------------
 
-:symw glu csym sw cons rt               # wrap with symbol
+:symw m! csym sw cons rt                      # wrap with symbol
 :wquo m! li 'q 'u 'o .. symw rt
-:wdnq m! li 'u 'p 'q .. symw rt
-:wupq m! li 'd 'n 'q .. symw rt
+:wqup m! li 'q 'u 'p .. symw rt
+:wqdn m! li 'q 'd 'n .. symw rt
 
 :do     dc rt
 :mdo m! dc rt
@@ -84,48 +101,25 @@
 :any m\ end nt rt
 :err m! m0 puts rt
 
-#-- these read between @S and @L
-
-:between?        # (xlh-?)
-  dc ov dc lt nt                         # -?:xh  x
-  cd cd lt                               # -?:xh    -??         -?
-  an rt
-
-:gte m! ch lt nt !M rt
-:lte m! ch sw c1 ad lt !M rt
-:ddgt m! lb '0 gte lb '9 lte lb
-      m! @A lb 10 rt
-:hdgt rt
-
-:digit?                                 # (c-d1) or (c-0)
-   du lb '0 lb ': between?
-   .i lb '0 sb c1 rt .t
-   du lb 'A lb 'G between?
-   .i lb 'A sb lb 0A ad c1 rt .t
-   zp c0 rt
-
-:to-n @S dc
-   !S c0 !R
-   c1 +S rb .f
-      c1 +S rb digit?
-      .i @R li `base rb ml ad !R
-      .e brkf .t
-   .n
-   cd !S @R rt                         # (pr-r)
-
 :rnum m! @N cnum !R rt
-:rsym m! rt
+:rsym m! @N csym !R rt
 
-:rlis m! rt #@L dc nxcl !L
+:ch< lb 18 sh @N lb 8 n1 ml sh ad !N rt      # ch<(c-n) append char to symbol @N. lossy if >4 chars
+:sym-char m\                            # match anything but specal chars or whitespace
+   ws~
+   .[ ."()'`," .] chs not
+   any lc ch< rt
+:msym m! c0 !N                          # match a symbol, store in @N
+   k( li `sym-char rep k) rt
 
-:ws m\ '  lte mf1 rt
-:ws* li `ws orp rt
+:rlis rt
 
-:rval k( lb '( chr rlis
-      m| lb '' chr rval wquo
-      m| lb '` chr rval wupq
-      m| lb ', chr rval wdnq
-      m| mhex ws* rnum          # leave cnum in !P
-      m| li `any rep rsym
-      m| .[ ."bad syntax" .]  err
-      k) rt
+:rval m\ #ws*
+   k( lb '( chr rlis
+   m| lb '' chr rval @M .i @R wquo !R .t
+   m| lb '` chr rval @M .i @R wqup !R .t
+   m| lb ', chr rval @M .i @R wqdn !R .t
+   m| mhex rnum          # leaves cnum in @R
+   m| msym rsym          # leaves csym in @R
+   m| .[ ."bad syntax" .]  err
+   k) rt

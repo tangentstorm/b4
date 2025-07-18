@@ -292,9 +292,57 @@ The reader reads a lisp value and places it in @R.
 =mhex= already stores a matched number in =@N=. Rnum is a helper
 that reads the number out of N, wraps it, and places it in @R.
 
-
-
 * TODO =rsym=
+#+name: b4s.rsym
+#+begin_src b4a
+  > nil !R  # clear R
+  > # reverse order from glu
+  > 00 !N 'a ch< 'b ch< 'c ch< 'd ch< 'e ch<
+  > # if m0 do nothing
+  > C0 m0 rsym @R pval \0 cscr
+  ()
+  > # if m1 @R := cnum(@N)
+  > C1 m1 rsym @R pval \0
+  bcde
+#+end_src
+
+=msym= turns the last 4 matched characters into a symbol.
+but it's backwards, so =rsym= flips the bytes in @N
+and calls =glu csym=.
+
+see the implementation for how to flip the bytes.
+
+TODO: improve this test and explain what's going on.
+
+
+* quotes
+#+name: b4s.quo
+#+begin_src b4a
+  > :S :K "'ABC123" ..
+  > inic pre rval @R pval \0 cscr go00
+  'ABC123
+  > @R car pval \0 cscr go00
+  quo
+  > :S :K "`ABC123" ..
+  > inic pre rval @R pval \0 cscr go00
+  `ABC123
+  > @R car pval \0 cscr go00
+  qup
+  > :S :K ",ABC123" ..
+  > inic pre rval @R pval \0 cscr go00
+  ,ABC123
+  > @R car pval \0 cscr go00
+  qdn
+#+end_src
+
+- the reader should treat ='= as a macro that wraps the following
+item =x= as =(quo . x)= , where =quo= is just a symbol.
+- likewise, =`= wraps with the symbol =qup=
+- and =,= wraps with =qdn=
+
+all of these should also be printed by the printer.
+
+
 
 * TODO [0/2] eval
 ** TODO eval
