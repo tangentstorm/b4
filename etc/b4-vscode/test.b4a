@@ -1,0 +1,36 @@
+# This is a test B4 assembler file
+# Demonstrating syntax highlighting
+
+:main
+    c0      # push 0
+    c1      # push 1
+    ad      # add
+    du      # duplicate top of stack
+    'a 'A '   # single character literals
+    "string"
+    %R %C %s  # assembler directives
+    \p \o     # interpreter directives
+    .f .n ..  # macros
+    `@ `A `B `C `X `Y `Z  # names without cl
+    `[ `\ `] `^ `_        # more names without cl
+    @A !A +A ^A           # register ops
+    @B !B +B ^B           # more register ops
+    @X !X +X ^X           # register ops with X
+    :function_name
+    function_ref
+    01      # hex constant
+    AB      # another hex constant
+    ABCD    # 4-digit hex
+    1234    # more hex digits
+    FF CC   # multiple hex numbers
+    ad sb ml dv  # arithmetic ops
+    an or xr nt  # logic ops
+    eq lt du sw  # comparison and stack ops
+    ov zp dc cd  # more stack ops
+    rb ri wb wi  # memory read/write ops
+    lb li rs ls  # more memory ops
+    jm hp h0 cl  # control flow ops
+    rt nx c0 c1  # return, next, constants
+    c2 n1 c4 wl  # more constants and ops
+    ds hx tm io  # scaffolding and I/O ops
+    db hl        # debug and halt ops

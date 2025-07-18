@@ -1,0 +1,125 @@
+{
+  "name": "b4-syntax",
+  "displayName": "B4 Syntax Highlighting",
+  "description": "Syntax highlighting for B4 assembler language",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "b4a",
+        "aliases": [
+          "B4 Assembler",
+          "b4a"
+        ],
+        "extensions": [
+          ".b4a"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "b4a",
+        "scopeName": "source.b4a",
+        "path": "./syntaxes/b4a.tmLanguage.json"
+      }
+    ],
+    "themes": [
+      {
+        "label": "B4 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/b4-dark.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[b4a]": {
+        "editor.tokenColorCustomizations": {
+          "textMateRules": [
+            {
+              "name": "B4 Opcodes",
+              "scope": "keyword.control.b4a",
+              "settings": {
+                "foreground": "#569CD6"
+              }
+            },
+            {
+              "name": "B4 Macros",
+              "scope": "keyword.control.macro.b4a",
+              "settings": {
+                "foreground": "#4EC9B0"
+              }
+            },
+            {
+              "name": "B4 Register Operations",
+              "scope": "keyword.control.register-op.b4a",
+              "settings": {
+                "foreground": "#DCDCAA"
+              }
+            },
+            {
+              "name": "B4 Names without call",
+              "scope": "constant.other.b4a",
+              "settings": {
+                "foreground": "#DCDCAA"
+              }
+            },
+            {
+              "name": "B4 Character Literals",
+              "scope": "constant.character.b4a",
+              "settings": {
+                "foreground": "#CE9178"
+              }
+            },
+            {
+              "name": "B4 Hex Constants",
+              "scope": "constant.numeric.hex.b4a",
+              "settings": {
+                "foreground": "#B5CEA8"
+              }
+            },
+            {
+              "name": "B4 Function Names",
+              "scope": "entity.name.function.b4a",
+              "settings": {
+                "foreground": "#DCDCAA"
+              }
+            },
+            {
+              "name": "B4 Escape Sequences",
+              "scope": "constant.character.escape.b4a",
+              "settings": {
+                "foreground": "#D7BA7D"
+              }
+            },
+            {
+              "name": "B4 Preprocessor Directives",
+              "scope": "keyword.preprocessor.b4a",
+              "settings": {
+                "foreground": "#C586C0"
+              }
+            },
+            {
+              "name": "B4 Strings",
+              "scope": "string.quoted.double.b4a",
+              "settings": {
+                "foreground": "#CE9178"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "publisher": "b4",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-repo/b4-syntax"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,48 @@
+{
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "name": "B4 Opcodes",
+        "scope": "keyword.control.b4a",
+        "settings": {
+          "foreground": "#4EC9B0"
+        }
+      },
+      {
+        "name": "B4 Macros",
+        "scope": "keyword.control.macro.b4a",
+        "settings": {
+          "foreground": "#FF8C00"
+        }
+      },
+      {
+        "name": "B4 Register Operations",
+        "scope": "keyword.control.register-op.b4a",
+        "settings": {
+          "foreground": "#569CD6"
+        }
+      },
+      {
+        "name": "B4 Names without call",
+        "scope": "constant.other.b4a",
+        "settings": {
+          "foreground": "#DCDCAA"
+        }
+      },
+      {
+        "name": "B4 Character Literals",
+        "scope": "constant.character.b4a",
+        "settings": {
+          "foreground": "#CE9178"
+        }
+      },
+      {
+        "name": "B4 Hex Constants",
+        "scope": "constant.numeric.hex.b4a",
+        "settings": {
+          "foreground": "#B5CEA8"
+        }
+      }
+    ]
+  }
+}

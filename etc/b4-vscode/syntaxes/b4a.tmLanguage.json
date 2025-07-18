@@ -1,0 +1,61 @@
+{
+  "scopeName": "source.b4a",
+  "patterns": [
+    {
+      "name": "comment.line.number-sign.b4a",
+      "match": "#.*$"
+    },
+    {
+      "name": "constant.character.b4a",
+      "match": "'[a-zA-Z0-9 ]"
+    },
+    {
+      "name": "constant.other.b4a",
+      "match": "`[a-zA-Z0-9_]+"
+    },
+    {
+      "name": "constant.character.escape.b4a",
+      "match": "\\\\[a-zA-Z0-9]"
+    },
+    {
+      "name": "keyword.control.register-op.b4a",
+      "match": "[@!+^][ABCDEFGHIJKLMNOPQRSTUVWXYZ]"
+    },
+    {
+      "name": "entity.name.function.b4a",
+      "match": ":[^ ]+"
+    },
+    {
+      "name": "keyword.control.macro.b4a",
+      "begin": "\\.\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "string.quoted.double.b4a",
+          "match": "."
+        }
+      ]
+    },
+    {
+      "name": "string.quoted.double.b4a",
+      "begin": "\"",
+      "end": "\""
+    },
+    {
+      "name": "keyword.control.macro.b4a",
+      "match": "\\.[^#\\s]"
+    },
+    {
+      "name": "keyword.preprocessor.b4a",
+      "match": "%[^#]*"
+    },
+    {
+      "name": "constant.numeric.hex.b4a",
+      "match": "\\b[A-F0-9]{2,}\\b"
+    },
+    {
+      "name": "keyword.control.b4a",
+      "match": "\\b(ad|sb|ml|dv|md|sh|an|or|xr|nt|eq|lt|du|sw|ov|zp|dc|cd|rb|ri|wb|wi|lb|li|rs|ls|jm|hp|h0|cl|rt|nx|c0|c1|c2|n1|c4|wl|ds|hx|tm|io|db|hl)\\b"
+    }
+  ]
+}
