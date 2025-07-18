@@ -34,6 +34,11 @@
 :s> c1 +S rb rt                 # inc s and read byte
 :brkf cd cd zp c0 dc dc rt      # break .f loop (set ctr=0)
 
+:mdo m! dc rt
+:end m\ c0 chr rt
+:not @M nt !M rt
+:any m\ c0 ch eq nt !M mf1 rt
+
 :chs m! @S dc !S m0             # chs(s-) match any char in s
    s> .f s> ch eq .i            # if any char matches:
       m1 nc zp brkf .t          #    match it and break
@@ -78,5 +83,3 @@
 :ws m\ lb '  lte mf1 rt
 :ws~ m\ lb '! gte mf1 rt
 :ws* m\ li `ws orp rt
-:not @M nt !M rt
-:any m\ m1 fw rt

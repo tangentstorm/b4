@@ -94,9 +94,6 @@
 #-- reader -----------------------------
 
 :do     dc rt
-:mdo m! dc rt
-:end m\ c0 ch eq !M rt
-:any m\ end nt rt
 :err m! m0 puts rt
 
 :rnum m! @N cnum !R rt
@@ -106,7 +103,7 @@
 :sym-char m\                            # match anything but specal chars or whitespace
    .[ ."()'`," .] chs not
    any @M .i lc ch< .t rt
-:msym m\ c0 !N                          # match a symbol, store in @N
+:msym lb '? ^O  m\ c0 !N                          # match a symbol, store in @N
    k( li `sym-char rep k) rt
 
 :cdar cdr car rt
