@@ -65,17 +65,20 @@
    .i cdr cd eq
    .e zp cd zp c0 .t rt
 
+:symw csym sw cons rt                      # wrap with symbol
+:wquo li 'q 'u 'o .. symw rt
+:wqup li 'q 'u 'p .. symw rt
+:wqdn li 'q 'd 'n .. symw rt
+
 :quo? li 'q 'u 'o .. wrp? rt           # (x-?) is x a quoted value?
 :qdn? li 'q 'd 'n .. wrp? rt
 :qup? li 'q 'u 'p .. wrp? rt
+:pfix ^O cdr cl >pval rt
 
 :plis                                   # (c-) print a list
-  du quo?
-     .i lb '' ^O cdr cl >pval rt .t
-  du qdn?
-     .i lb ', ^O cdr cl >pval rt .t
-  du qup?
-     .i lb '` ^O cdr cl >pval rt .t
+  du quo? .i lb '' pfix rt .t
+  du qdn? .i lb ', pfix rt .t
+  du qup? .i lb '` pfix rt .t
   lb '( ^O
   du nil? nt .i
      du car cl >pval
@@ -89,11 +92,6 @@
 
 
 #-- reader -----------------------------
-
-:symw m! csym sw cons rt                      # wrap with symbol
-:wquo m! li 'q 'u 'o .. symw rt
-:wqup m! li 'q 'u 'p .. symw rt
-:wqdn m! li 'q 'd 'n .. symw rt
 
 :do     dc rt
 :mdo m! dc rt
