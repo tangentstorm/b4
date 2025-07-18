@@ -292,7 +292,7 @@ The reader reads a lisp value and places it in @R.
 =mhex= already stores a matched number in =@N=. Rnum is a helper
 that reads the number out of N, wraps it, and places it in @R.
 
-* TODO =rsym=
+* =rsym=
 #+name: b4s.rsym
 #+begin_src b4a
   > nil !R  # clear R
@@ -314,6 +314,13 @@ see the implementation for how to flip the bytes.
 
 TODO: improve this test and explain what's going on.
 
+* TODO =msym=
+#+name: b4s.msym
+#+begin_src b4a
+  > :S 'x 'y ..
+  > inic pre msym @M @N ?d
+  what?! is msym halting the vm?
+#+end_src
 
 * quotes
 #+name: b4s.quo
@@ -342,7 +349,7 @@ item =x= as =(quo . x)= , where =quo= is just a symbol.
 
 all of these should also be printed by the printer.
 
-* TODO list reader
+* list builder
 #+name: b4s.rlis
 #+begin_src b4a
   > inic
@@ -360,6 +367,42 @@ all of these should also be printed by the printer.
 - must preserve @R when entering nested lists
 - helper tools seem to be working (since this test passes)
 - but the actual parser is not quite there yet.
+
+
+
+* TODO reader
+#+name: b4s.rval
+#+begin_src b4a
+  > inic
+  > :S '0 ..
+  > C0 pre rval @R pval \0 cscr %R
+  0
+  > :S 'x ..
+  > C1 pre rval @R pval \0 cscr %R
+  x
+  > :S '' '0 ..
+  > C2 pre rval @R pval \0 cscr %R
+  '0
+  > :S '( ') ..
+  > C3 pre rval @R pval \0 cscr %R
+  ()
+  > :S '( '0 ') ..
+  > C4 pre rval @R pval \0 cscr %R
+  (0)
+  > :S '( 'x ') ..
+  > C5 pre rval @R pval \0 cscr %R
+  (x)
+  > :S '( '  '0 '  ') ..
+  > C6 pre rval @R pval \0 cscr %R
+  (0)
+  > :S '( '0 ' '1 ') ..
+  > C7 pre rval @R pval \0 cscr %R
+  (0 1)
+  > :S '( 'i 'c 'e ' '9 ') ..
+  > C8 pre rval @R pval \0 cscr %R
+  (ice 9)
+#+end_src
+
 
 
 * TODO [0/2] eval

@@ -104,10 +104,9 @@
 
 :ch< lb 18 sh @N lb 8 n1 ml sh ad !N rt      # ch<(c-n) append char to symbol @N. lossy if >4 chars
 :sym-char m\                            # match anything but specal chars or whitespace
-   ws~
    .[ ."()'`," .] chs not
-   any lc ch< rt
-:msym m! c0 !N                          # match a symbol, store in @N
+   any @M .i lc ch< .t rt
+:msym m\ c0 !N                          # match a symbol, store in @N
    k( li `sym-char rep k) rt
 
 :cdar cdr car rt
@@ -117,16 +116,21 @@
         ov cddr nil? nt an .d cdr .o rt # next to last cell
 
 :newc nil nil cons rt
-:apc!  # append value to list we are building
-  @L car!
-  newc du @L cdr! !L rt
-:end!
-  @R ntl @L cdr sw cdr! rt
+:apc! @L car!                           # (v-) append value to list we are building
+   newc du @L cdr! !L rt
+:end! @R ntl @L cdr sw cdr! rt
 
+:hex-or-sym m\ k( msym rsym m| mhex rnum k) rt
 :rlis m\ @R dc
-   k( .[            ws* cl >rval m\ apc! rt .] orp
-      .[  lb '. chr ws* cl >rval m\ @L cdr! rt .] opt
-      ws* lb ') chr
+   k( ws*
+      .[ ws*
+         #cl >rval
+         #mhex rnum
+         hex-or-sym
+         @M .i @R apc! .t rt .] orp
+      # .[  lb '. chr ws* cl >rval m\ @L cdr! rt .] opt
+      ws*
+      lb ') chr
    k) cd !R rt
 
 :rval m\ ws*
@@ -134,6 +138,7 @@
       newc du !R !L rlis # read the list
       # @R is root, @L tracks last cell
       # now we have to clean up @L
+      m\
       @L @R eq
          .i nil !R  # no car, so just return nil
          .e end! .t # else replace @L with its cdr

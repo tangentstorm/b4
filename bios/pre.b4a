@@ -77,6 +77,6 @@
 # TODO: move whitespace stuff upward
 :ws m\ lb '  lte mf1 rt
 :ws~ m\ lb '! gte mf1 rt
-:ws* li `ws orp rt
+:ws* m\ li `ws orp rt
 :not @M nt !M rt
 :any m\ m1 fw rt
