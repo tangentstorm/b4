@@ -14,8 +14,9 @@
 
 :m0 c0 !M rt   :m1 n1 !M rt     # m0/m1 set match bit
 :ln @K @S sb rt                 # ln(-n) match length
-:m! @M nt .i zp cd zp .t rt     # zap arg + exit if m0 (common case)
-:m\ @M nt .i    cd zp .t rt     # like m! but no arg to zap
+:m\  @M nt .i       cd zp .t rt # like m! but no arg to zap
+:m!  @M nt .i    zp cd zp .t rt # zap arg + exit if m0 (common case)
+:m!! @M nt .i zp zp cd zp .t rt # zap 2 args + exit if m0
 
 :k( @K rt                       # save @K on data stack
 :k) @M .i zp .e !K .t rt        # drop or restore saved @K
@@ -55,6 +56,20 @@
 
 # -- matcher for uppercase hex
 
-:digit .[ ."0123456789" .] chs rt
-:hexit m! k( digit m| .[ ."ABCDEF" .] chs k) rt
-:mhex  m! k( .[ lb '- chr rt .] opt li `hexit rep k) rt
+:btw m!! lte gte mf1 rt          # btw(lh-) match if l<=arg<=h
+:digit lb '0 lb '9 btw rt        # matches 0..9
+:hexit lb 'A lb 'F btw rt        # matches A..F
+:lc @K c1 sb rb rt               # (xy-c) last matched char
+
+:n< m! @N lb 10 ml ad !N rt      # n<(x-n) if match, n*=10 n+=x
+
+:hexn  m!                        # if match, N += hex digit
+   k( digit
+      lc lb '0 sb          n<
+   m| hexit
+      lc lb 'A sb lb 10 ad n<
+   k) rt
+:mhex  m! c0 !N                 # match a hex number. @N is value
+   k( .[ lb '- chr rt .] opt
+      li `hexn rep
+   k) rt

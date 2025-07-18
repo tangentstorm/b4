@@ -201,6 +201,32 @@ If you'd like to combine this into a "char-in-range" test that takes two
 arguments, you might define a dyadic (two-argument) version of =m!=
 (called =m!!= perhaps).
 
+in fact, let's just do that.
+
+* =btw= to test a character between two ends of a range
+#+name: pre.btw
+#+begin_src b4a
+ > :S '5 ..
+ > # case 0 it won't match if m0
+ > C0 pre m0 '0 '9 btw @M ln ?d %R
+ ds: [C0 0 0]
+ > # case 1 it's in range
+ > C1 pre m1 '0 '9 btw @M ln ?d %R
+ ds: [C1 -1 1]
+ > # case 2 it's above the range
+ > C2 pre m1 '0 '4 btw @M ln ?d %R
+ ds: [C2 0 0]
+ > # case 3 it's below the range
+ > C3 pre m1 '6 '9 btw @M ln ?d %R
+ ds: [C3 0 0]
+ > # case 4 it's the low end of range
+ > C4 pre m1 '5 '9 btw @M ln ?d %R
+ ds: [C4 -1 1]
+ > # case 5 it's the high end of range
+ > C5 pre m1 '0 '5 btw @M ln ?d %R
+ ds: [C5 -1 1]
+#+end_src
+
 
 * =chs (s-)= : choose from character set
 #+name: pre.chs
@@ -386,3 +412,18 @@ at least once, then as many times as possible.
 
 Putting the pieces together, =mhex= matches an uppercase hex number,
 followed by  hex number.
+
+* =mhex= should populate @N
+#+name: pre.mhex-@n
+#+begin_src b4a
+  > :S "1234" ..
+  > pre mhex @M ln 1234 ?d %R
+  ds: [-1 4 1234]
+#+end_src
+
+In addtion to /recognizing/ that the string is a hex number, it would
+be nice if we could know what the actual number is.
+
+We will accumulate it in register @N. This register is reserved by the
+bios for this exact purpose, and so we do not need to preserve any
+previous value that was stored there.
