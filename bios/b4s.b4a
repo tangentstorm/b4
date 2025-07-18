@@ -114,8 +114,8 @@
 
 :rlis rt
 
-:rval m\ #ws*
-   k( lb '( chr rlis
+:rval m\ ws*
+   k( lb '( chr @M .i nil nil cons du !R !L rlis .t  # @R is root, @L tracks current cell
    m| lb '' chr rval @M .i @R wquo !R .t
    m| lb '` chr rval @M .i @R wqup !R .t
    m| lb ', chr rval @M .i @R wqdn !R .t
