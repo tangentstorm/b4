@@ -242,7 +242,8 @@ It should inspect the type code and then call =pnum= or =psym= accordingly.
 #+name: b4s.pval-nil
 #+begin_src b4a
   > inic
-  > nil pval \0 %q
+  > nil pval ?d \0 %q
+  ds: []
   ()
 #+end_src
 

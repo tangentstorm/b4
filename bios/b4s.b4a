@@ -80,8 +80,9 @@
   du qdn? .i lb ', pfix rt .t
   du qup? .i lb '` pfix rt .t
   lb '( ^O
-  du nil? nt .i
-     du car cl >pval
+  du nil?
+  .i zp
+  .e du car cl >pval
      cdr ptl
   .t lb ') ^O rt
 
@@ -94,7 +95,7 @@
 #-- list building ---------------------
 
 :newc nil nil cons rt
-:node @L newc du !L du !P du !Q rt      # node :: (-o) @LPQ=new cell. keep old L on stack
+:node @L newc du !L du !P !Q rt         # node :: (-o) @LPQ=new cell. keep old L on stack
 :acq! @Q car!                           # acq! :: (c-) add cell to list whose tail is in @Q
    @Q !P newc !Q                        #    (c-c) last cell @L is (nil). P=L, L=new
    @Q @P cdr! rt                        #    (c-c) set last cell's cdr to new cell
@@ -120,7 +121,7 @@
       # .[  lb '. chr ws* cl >rval
       #     m\ @L cdr! rt .] opt
       ws* lb ') chr rt
-   .] done rt
+   .] try done rt
 
 :rval m\ ws*                             # rval :: m?(-):(-c?)
    .[ lb '( chr rlis
