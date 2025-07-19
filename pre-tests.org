@@ -97,6 +97,22 @@ but it also drops a single argument.
 
 "Monadic" here means "taking one argument".
 
+
+* end/any (probably this should be in pre)
+#+name: b4s.end/any
+#+begin_src b4a
+ > :S 'x 'y ..
+ > pre
+ > C0 any @M ln ?d %R
+ ds: [C0 -1 1]
+ > C1 any @M ln ?d %R
+ ds: [C1 -1 2]
+ > C2 any @M ln ?d %R
+ ds: [C2 0 2]
+ > m1 C3 end @M ln ?d %R
+ ds: [C3 -1 2]
+#+end_src
+
 * =chr (c-)= : match exact character
 #+name: pre.chr
 #+begin_src b4a

@@ -35,7 +35,7 @@
 :brkf cd cd zp c0 dc dc rt      # break .f loop (set ctr=0)
 
 :mdo m! dc rt
-:end m\ c0 chr rt
+:end m\ c0 ch eq !M rt
 :not @M nt !M rt
 :any m\ c0 ch eq nt !M mf1 rt
 

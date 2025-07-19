@@ -292,6 +292,14 @@ The reader reads a lisp value and places it in @R.
 =mhex= already stores a matched number in =@N=. Rnum is a helper
 that reads the number out of N, wraps it, and places it in @R.
 
+* TODO =msym=
+#+name: b4s.msym
+#+begin_src b4a
+  > :S 'x 'y ..
+  > inic pre msym @M @N ?d zp zp
+  ds: [-1 79780000]
+#+end_src
+
 * =rsym=
 #+name: b4s.rsym
 #+begin_src b4a
@@ -314,26 +322,7 @@ see the implementation for how to flip the bytes.
 
 TODO: improve this test and explain what's going on.
 
-* TODO end/any (probably this should be in pre)
-#+name: b4s.end
-#+begin_src b4a
- > :S 'x 'y ..
- > pre any @M ln ?d %R
- ds: [-1 1]
-#+end_src
- > any @M ln ?d %R
- ds: [-1 2]
- > any @M ln ?d %R
- ds: [0 2]
 
-
-* TODO =msym=
-#+name: b4s.msym
-#+begin_src b4a
-  > :S 'x 'y ..
-  > inic pre msym @M @N ?d zp zp
-  ds: [-1 79780000]
-#+end_src
 
 * quotes
 #+name: b4s.quo
