@@ -412,6 +412,9 @@ all of these should also be printed by the printer.
   > :S '( 'i 'c 'e ' '9 ') ..
   > C8 pre rval @R pval \0 cscr %R
   (ice 9)
+  > :S '( '0 '( 'x ') ') ..
+  > C9 pre rval @R pval \0 cscr %R
+  (0 (x))
 #+end_src
 
 * TODO [0/2] eval

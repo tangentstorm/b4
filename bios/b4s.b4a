@@ -65,12 +65,12 @@
    .i cdr cd eq
    .e zp cd zp c0 .t rt
 
-:symw csym sw cons rt                      # wrap with symbol
+:symw csym sw cons rt                   # wrap with symbol
 :wquo li 'q 'u 'o .. symw rt
 :wqup li 'q 'u 'p .. symw rt
 :wqdn li 'q 'd 'n .. symw rt
 
-:quo? li 'q 'u 'o .. wrp? rt           # (x-?) is x a quoted value?
+:quo? li 'q 'u 'o .. wrp? rt            # (x-?) is x a quoted value?
 :qdn? li 'q 'd 'n .. wrp? rt
 :qup? li 'q 'u 'p .. wrp? rt
 :pfix ^O cdr cl >pval rt
@@ -91,51 +91,53 @@
    zp plis rt
 
 
+#-- list building ---------------------
+
+:newc nil nil cons rt
+:node newc du !R du !L du !P rt
+:acr! @L car!                           # (c-) add cell as list value
+   @L !P newc !L                        # (c-c) last cell @L is (nil). P=L, L=new
+   @L @P cdr! rt                        # (c-c) set last cell's cdr to new cell
+:done @L cdr @P cdr! rt
+
+
 #-- reader -----------------------------
 
-:do     dc rt
-:err m! m0 puts rt
+:ch< lb 18 sh @N ls -8 sh ad !N rt      # ch<(c-n) append char to symbol @N. lossy if >4 chars
+:sym-char m\                            # match anything but specal chars or whitespace
+   .[ ."()'`," .] chs not
+   lb 20 lb 7F btw
+   @M .i lc ch< .t rt
+:msym m\ c0 !N                          # match a symbol, store in @N
+   k( li `sym-char rep k) rt
 
 :rnum m\ @N cnum !R rt
 :rsym m\ @N csym !R rt
 
-:ch< lb 18 sh @N lb 8 n1 ml sh ad !N rt      # ch<(c-n) append char to symbol @N. lossy if >4 chars
-:sym-char m\                            # match anything but specal chars or whitespace
-   .[ ."()'`," .] chs not
-   lb 20 gte
-   lb 7F lte
-   mf1 @M .i lb '+ ^Z lc ch< .t rt
-:msym m\ c0 !N                          # match a symbol, store in @N
-   k( li `sym-char rep k) rt
+:rlis m\ @L dc @P dc @R dc
+   k( .[ ws* cl >rval
+         m\ @R acr! rt .] orp
+      # .[  lb '. chr ws* cl >rval
+      #     m\ @L cdr! rt .] opt
+      ws* lb ') chr
+   k) cd !R
+   @L @R eq .i nil !R .e done .t
+   cd !P cd !L rt
+
+:rval m\ ws*
+   k( lb '( chr @M .i node rlis .t
+   m| lb '' chr rval @M .i @R wquo !R .t
+   m| lb '` chr rval @M .i @R wqup !R .t
+   m| lb ', chr rval @M .i @R wqdn !R .t
+   m| mhex rnum
+   m| msym rsym
+   k) rt
+
+
+#-- list navigation ---------------------
 
 :cdar cdr car rt
 :cddr cdr cdr rt
-:ntl .w du lis?
-        ov cdr lis? an
-        ov cddr nil? nt an .d cdr .o rt # next to last cell
-
-:newc nil nil cons rt
-:node newc du !R du !L du !P rt
-:acr! @L car!                                 # (c-) append cell to r
-   @L !P                                      # (c-c) last cell @L is (nil). copy to @P
-   newc !L                                    # (c-c) make a new (nil)
-   @L @P cdr! rt                              # (c-c) set last cell's cdr to new cell
-:done @L cdr @P cdr! rt
-
-:rlis m\ @R dc
-   k( .[ ws* cl >rval m\ @R acr! rt .] orp
-      # .[  lb '. chr ws* cl >rval m\ @L cdr! rt .] opt
-      ws*
-      lb ') chr
-   k) cd !R rt
-
-:Z zp rt
-:rval m\ ws* lb '! ^Z
-   k( lb '( du ^Z chr @M .i node rlis @L @R eq .i nil !R .e done .t .t
-   m| lb '' du ^Z chr rval @M .i @R wquo !R .t
-   m| lb '` du ^Z chr rval @M .i @R wqup !R .t
-   m| lb ', du ^Z chr rval @M .i @R wqdn !R .t
-   m| lb 'H ^Z mhex rnum          # leaves cnum in @R
-   m| lb 'S ^Z msym rsym          # leaves csym in @R
-   #m| .[ ."bad syntax" .]  err
-   k) rt
+:ntl .w du lis?                         # (l-c) next to last cell of list
+   ov cdr lis? an
+   ov cddr nil? nt an .d cdr .o rt
