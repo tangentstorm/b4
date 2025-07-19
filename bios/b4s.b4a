@@ -102,7 +102,9 @@
 :ch< lb 18 sh @N lb 8 n1 ml sh ad !N rt      # ch<(c-n) append char to symbol @N. lossy if >4 chars
 :sym-char m\                            # match anything but specal chars or whitespace
    .[ ."()'`," .] chs not
-   any @M .i lb '+ ^Z lc ch< .t rt
+   lb 20 gte
+   lb 7F lte
+   mf1 @M .i lb '+ ^Z lc ch< .t rt
 :msym m\ c0 !N                          # match a symbol, store in @N
    k( li `sym-char rep k) rt
 
@@ -129,18 +131,11 @@
 
 :Z zp rt
 :rval m\ ws* lb '! ^Z
-   k( lb '( du ^Z chr @M .i
-      node rlis # read the list
-      # @R is root, @L tracks last cell, @P tracks previous cell
-      # now we have to clean up @L
-      @L @R eq
-         .i nil !R  # no car, so just return nil
-         .e done .t # else replace @L with its cdr
-      .t
+   k( lb '( du ^Z chr @M .i node rlis @L @R eq .i nil !R .e done .t .t
    m| lb '' du ^Z chr rval @M .i @R wquo !R .t
    m| lb '` du ^Z chr rval @M .i @R wqup !R .t
    m| lb ', du ^Z chr rval @M .i @R wqdn !R .t
    m| lb 'H ^Z mhex rnum          # leaves cnum in @R
-   m| lb 'S ^Z msym rsym   #.[ ."symbol matched!" .] err      # leaves csym in @R
+   m| lb 'S ^Z msym rsym          # leaves csym in @R
    #m| .[ ."bad syntax" .]  err
    k) rt

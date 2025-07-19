@@ -37,7 +37,7 @@
 :mdo m! dc rt
 :end m\ c0 ch eq !M rt
 :not @M nt !M rt
-:any m\ c0 ch eq nt !M mf1 rt
+:any m\ c0 ch eq nt !M mf1 rt   # WARNING: this matches any byte, not just ASCII
 
 :chs m! @S dc !S m0             # chs(s-) match any char in s
    s> .f s> ch eq .i            # if any char matches:
