@@ -297,12 +297,12 @@ Note that if lit succeeds, =@K= advances by the length
 of the match, but if it fails, =@K= must go back
 where it started.
 
-* =k(= and =k)= : backtracking wrappers
-#+name: pre.seq
+* =try= : backtracking sequence matcher
+#+name: pre.try
 #+begin_src b4a
   > :S :K .. ..
-  > :A k( m0 c4 +K zp k) rt
-  > :B k( m1 c4 +K zp k) rt
+  > :A m0 .[ c4 +K zp rt .] try rt
+  > :B m1 .[ c4 +K zp rt .] try rt
   > ^A ln ?d zp
   ds: [0]
   > @S !K
@@ -313,27 +313,29 @@ where it started.
 We will need =lit='s ability to save and restore the
 character pointer =@K= from here on out.
 
-We can organize it into two words:
+=try= takes a quotation (the address of a word, usually
+assembled either with =li `name= or using =.[= ... =.]=.
 
-- =k(= starts a sequence, pushing =@K= to the stack.
-- =k)= ends the sequence, and either zaps or restores
-  the old value of =@K=, depending on the match bit.
+While the word is running, it backs up =@K= to the control stack.
+After the run, if the match failed, =try= restores the old =@K=,
+otherwise it discards the backed up value.
 
-* =m| (k-k?)=: alt operator
+
+* =m|= : alt operator
 #+name: pre.alt
 #+begin_src b4a
-  > :A k( c2 fw m0 m| c4 fw m0 k) rt
-  > :B k( c2 fw m0 m| c4 fw m1 k) rt
-  > :C k( c2 fw m1 m| c4 fw m0 k) rt
-  > :D k( c2 fw m1 m| c4 fw m1 k) rt
-  > pre ^A @M ln ?d %R
-  ds: [0 0]
-  > pre ^B @M ln ?d %R
-  ds: [-1 4]
-  > pre ^C @M ln ?d %R
-  ds: [-1 2]
-  > pre ^D @M ln ?d %q
-  ds: [-1 2]
+  > :A .[ c2 fw m0 m| c4 fw m0 rt .] try rt
+  > :B .[ c2 fw m0 m| c4 fw m1 rt .] try rt
+  > :C .[ c2 fw m1 m| c4 fw m0 rt .] try rt
+  > :D .[ c2 fw m1 m| c4 fw m1 rt .] try rt
+  > CA pre ^A @M ln ?d %R
+  > CB pre ^B @M ln ?d %R
+  > CC pre ^C @M ln ?d %R
+  > CD pre ^D @M ln ?d %q
+  ds: [CA 0 0]
+  ds: [CB -1 4]
+  ds: [CC -1 2]
+  ds: [CD -1 2]
 #+end_src
 
 We want to create patterns with multiple rules, so we'll
@@ -344,15 +346,15 @@ The logic is similar to the reverse of the match guard =m!=:
   alternatives if we already have a match)
 - otherwise, call =m1= to prep the next alternative.
 
-If we call =m|= between =(k= and =k)= , then we also need to
-handle the old copy of =@K= on the stack. To simplify things,
-we'll follow the rule to ONLY call =m|= between these
-other words.
+In addition, we need to handle the possibility that we
+matched the start of a sequence and then failed to
+match the rest. In that case, =@K= will have moved forward,
+so we need to restore the original value.
 
-So in addition to the above:
-
-- if =@M= is true, =zp= the old copy of =@K= off the data stack
-- otherwise, keep it on the stack but also reset =@K=.
+Since =try= stores the old value of =@K= is on the control stack,
+this means =m|= has to modify the control stack, and therefore
+it is only ever safe to call =m|= inside a quotation followed
+by =try=.
 
 * =opt (p-)= : optional match (regex =?=)
 #+name: pre.opt
