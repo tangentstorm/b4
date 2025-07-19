@@ -94,44 +94,44 @@
 #-- list building ---------------------
 
 :newc nil nil cons rt
-:node newc du !R du !L du !P rt
-:acl! @L car!                           # (c-) add cell to list whose tail is in @L
-   @L !P newc !L                        # (c-c) last cell @L is (nil). P=L, L=new
-   @L @P cdr! rt                        # (c-c) set last cell's cdr to new cell
-:done @L cdr @P cdr! rt
+:node @L newc du !L du !P du !Q rt      # node :: (-o) @LPQ=new cell. keep old L on stack
+:acq! @Q car!                           # acq! :: (c-) add cell to list whose tail is in @Q
+   @Q !P newc !Q                        #    (c-c) last cell @L is (nil). P=L, L=new
+   @Q @P cdr! rt                        #    (c-c) set last cell's cdr to new cell
+:done @Q @L eq                          # done :: (o-L) : cap @L, leave on stack, restore old @L
+   .i nil !L
+   .e @Q cdr @P cdr! .t
+   @L sw !L rt
 
 
 #-- reader -----------------------------
 
-:ch< lb 18 sh @N ls -8 sh ad !N rt      # ch<(c-n) append char to symbol @N. lossy if >4 chars
-:sym-char m\                            # match anything but specal chars or whitespace
+:ch< lb 18 sh @N ls -8 sh ad !N rt      # ch< :: (c-n) append char to symbol @N. lossy if >4 chars
+:smch m\                                # smch ::(-) match valid symbol chars
    .[ ."()'`," .] chs not
    lb 20 lb 7F btw
    @M .i lc ch< .t rt
-:msym m\ c0 !N                          # match a symbol, store in @N
-   k( li `sym-char rep k) rt
+:msym m\ c0 !N                          # msym :: (-) match a symbol, store in @N
+   .[ li `smch rep rt .] try rt
 
-:rnum m\ @N cnum !R rt
-:rsym m\ @N csym !R rt
-
-:rlis m\ node
-   k( .[ ws* @R @L @P cl >rval !P !L
-         @M .i @R acl! .t !R rt .] orp
+:rlis m\ node                           # rlis :: m?(-):(-l) read a list if matching
+   .[ .[ ws* cl >rval
+         .i acq! .t rt .] orp
       # .[  lb '. chr ws* cl >rval
       #     m\ @L cdr! rt .] opt
-      ws* lb ') chr
-   k)
-   @L @R eq .i nil !R .e done .t
-   rt
+      ws* lb ') chr rt
+   .] done rt
 
-:rval m\ ws*
-   k( lb '( chr rlis
-   m| lb '' chr rval @M .i @R wquo !R .t
-   m| lb '` chr rval @M .i @R wqup !R .t
-   m| lb ', chr rval @M .i @R wqdn !R .t
-   m| mhex rnum
-   m| msym rsym
-   k) rt
+:rval m\ ws*                             # rval :: m?(-):(-c?)
+   .[ lb '( chr rlis
+   m| lb '' chr @M .i rval .i wquo .t .t
+   m| mhex @M .i @N cnum .t
+   m| msym @M .i @N csym .t
+   # m| lb '` chr rval .i wqup .t
+   # m| lb ', chr rval .i wqdn .t
+   # m|
+   rt
+   .] try @M rt
 
 
 #-- list navigation ---------------------

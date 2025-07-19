@@ -59,7 +59,7 @@ and the second is called the "cdr" (rhymes with 'footer').
 
 Nil's car and cdr both point back to nil.
 
-* TODO =!car= and =!cdr=
+* TODO =car!= and =cdr!=
 * celn
 #+name: celn
 #+begin_src b4a
@@ -171,7 +171,6 @@ byte per character opens the door to using utf-8 later.
 The idea is to use the =car= to chain multiple 4-character symbol fragments
 together to make longer strings. But for now, 4 characters symbols are enough.
 
-
 * =csym= / =psym= : construct and print symbols
 #+name: b4s.syms
 #+begin_src b4a
@@ -272,27 +271,35 @@ However, if we print it on its own, we should print the value '()'
   ((1 2 3) 4)
 #+end_src
 
-
-* the reader
-The reader reads a lisp value and places it in @R.
-
-* =rnum=: read a number
-#+name: b4s.rnum
+* =wquo=, =wqup=, =wqdn=: quotation builders
+#+name: b4s.pval-quotes
 #+begin_src b4a
-  > nil !R  # clear R
-  > 12B456 !N
-  > # if m0 do nothing
-  > C0 m0 rnum @R pval \0 cscr
-  ()
-  > # if m1 @R := cnum(@N)
-  > C1 m1 rnum @R pval \0
-  12B456
+  > inic
+  > CA cnum wquo pval \0 cscr
+  > CB cnum wqup pval \0 cscr
+  > CC cnum wqdn pval \0 cscr
+  'CA
+  `CB
+  ,CC
 #+end_src
 
-=mhex= already stores a matched number in =@N=. Rnum is a helper
-that reads the number out of N, wraps it, and places it in @R.
+Like most lisps, b4s has a special syntax for quoting and
+unquoting values.
 
-* TODO =msym=
+The b4a words =wquo=, =wqup=, and =wqdn= each store their argument in
+the cdr of a new cell whose car is a symbol.
+
+=pval= needs to recognize when any of these symbols appear
+in the =car= of a cell, and instead of printing it as a list,
+print the special character corresponding to the symbol, and
+then print the =cdr=.
+
+- =(quo . x)= prints as ='x=
+- =(qup . x)= prints as =`x=
+- =(qdn . x)= prints as =,x=
+
+* reader utilities
+** =msym=
 #+name: b4s.msym
 #+begin_src b4a
   > :S 'x 'y ..
@@ -303,124 +310,121 @@ that reads the number out of N, wraps it, and places it in @R.
   ds: [C1 -1 78000000]
 #+end_src
 
-* =rsym=
-#+name: b4s.rsym
-#+begin_src b4a
-  > nil !R  # clear R
-  > # reverse order from glu
-  > 00 !N 'a ch< 'b ch< 'c ch< 'd ch< 'e ch<
-  > # if m0 do nothing
-  > C0 m0 rsym @R pval \0 cscr
-  ()
-  > # if m1 @R := cnum(@N)
-  > C1 m1 rsym @R pval \0 cscr
-  bcde
-  > :S 'x ') ..
-  > C2 inic pre msym rsym @R pval \0
-  x
-#+end_src
+=msym= matches a symbol and stores its corresponding number in =@N=.
 
-=msym= turns the last 4 matched characters into a symbol.
-but it's backwards, so =rsym= flips the bytes in @N
-and calls =glu csym=.
-
-see the implementation for how to flip the bytes.
-
-TODO: improve this test and explain what's going on.
-
-
-
-* quotes
-#+name: b4s.quo
-#+begin_src b4a
-  > :S :K "'ABC123" ..
-  > inic pre rval @R pval \0 cscr go00
-  'ABC123
-  > @R car pval \0 cscr go00
-  quo
-  > :S :K "`ABC123" ..
-  > inic pre rval @R pval \0 cscr go00
-  `ABC123
-  > @R car pval \0 cscr go00
-  qup
-  > :S :K ",ABC123" ..
-  > inic pre rval @R pval \0 cscr go00
-  ,ABC123
-  > @R car pval \0 cscr go00
-  qdn
-#+end_src
-
-- the reader should treat ='= as a macro that wraps the following
-item =x= as =(quo . x)= , where =quo= is just a symbol.
-- likewise, =`= wraps with the symbol =qup=
-- and =,= wraps with =qdn=
-
-all of these should also be printed by the printer.
-
-* =node=, =newc=, =acl!=, and =done= : imperative list builder
+** =node=, =newc=, =acq!=, and =done= : imperative list builder
 #+name: b4s.rlis
 #+begin_src b4a
   > inic
-  > node @R pval \0 cscr
-  (())
-  > c1 cnum acl! @R pval \0 cscr
-  (1 ())
-  > c2 cnum acl! @R pval \0 cscr
-  (1 2 ())
-  > done
-  > @R pval \0 cscr go00
-  (1 2)
+  > C0 putn sp node @L pval \0 cscr
+  C0 (())
+  > C1 putn sp c1 cnum acq! @L pval \0 cscr
+  C1 (1 ())
+  > C2 putn sp c2 cnum acq! @L pval \0 cscr
+  C2 (1 2 ())
+  > C3 putn sp done pval \0 cscr go00
+  C3 (1 2)
 #+end_src
 
-- @R holds the list we're building
-- @L holds the last cell in the list
+- @L holds the list we're building
+- @Q holds the last cell in the list
 - @P is the previous cell
--acl! appends to the end of the list
-  - the list always has an extra (()) at the end (that's @L)
-  - when we append, we set its car, set P=L, and set L to a new cel in P's cdr
--end! ends the list by replacing P's link to L with its cdr
-- final result stays in @R
-- must preserve @R, @P, and @L when entering nested lists
+-acq! appends to the end of the list
+  - the list always has an extra (()) at the end (that's @Q)
+  - when we append, we set Q.car, set P=Q, and set Q to a new cel in P's cdr
+-end! ends the list by replacing P's link to Q with its cdr
+- final result stays in @LR
+- must preserve @L, @P, and @Q when entering nested lists
 - helper tools seem to be working (since this test passes)
 - but the actual parser is not quite there yet.
 
-
-
-* TODO reader
-#+name: b4s.rval
+* =rval= part 1: atoms
+#+name: b4s.rval-atoms
 #+begin_src b4a
   > inic
+  > :S ..
+  > C0 pre rval ?d %R
+  ds: [C0 0]
   > :S '0 ..
-  > C0 pre rval @R pval \0 cscr %R
+  > C1 pre rval sw pval ?d \0 cscr %R
+  ds: [C1 -1]
   0
   > :S 'x ..
-  > C1 pre rval @R pval \0 cscr %R
+  > C2 pre rval sw pval ?d \0 cscr %R
+  ds: [C2 -1]
   x
+  > # use same string again, but set m0 first
+  > C3 pre m0 rval ?d  # exit early with nothing on stack
+  ds: [C3]
+#+end_src
+
+=rval= is attempts to read a b4s value from the input.
+
+It is /also/ matcher, so if the match flag is initally 0,
+it does nothing (leaving the stack unchanged).
+
+If @M is set, then rval tries to match a value.
+  - on success, it leaves the value and -1 on the stack.
+  - on failure, it leaves only 0 on the stack.
+
+This is the first of several tests for =rval=.
+
+Here, we're making sure it can parse both symbols and hex numbers.
+
+Recall that the matchers =mhex= and =msym= both populate =@N= so
+the trick is to call those matchers and (on success) call
+either =cnum= or =csym= to build the cell.
+
+* =rval= part 2: quoted atoms
+#+name: b4s.rval-quoted
+#+begin_src b4a
+  > inic
   > :S '' '0 ..
-  > C2 pre rval @R pval \0 cscr %R
+  > C0 pre rval sw pval ?d \0 cscr %R
+  ds: [C0 -1]
   '0
+  > :S '' 'x ..
+  > C1 pre rval sw pval ?d \0 cscr %R
+  ds: [C1 -1]
+  'x
+#+end_src
+
+
+
+* TODO =rval= part 3: lists
+#+name: b4s.rval-list
+#+begin_src b4a
+  > inic
   > :S '( ') ..
-  > C3 pre rval @R pval \0 cscr %R
+  > C0 pre rval sw pval ?d \0 cscr %R
+  ds: [C0 -1]
   ()
   > :S '( '0 ') ..
-  > C4 pre rval @R pval \0 cscr %R
+  > C1 pre rval sw pval ?d \0 cscr %R
+  ds: [C1 -1]
   (0)
   > :S '( '  '0 '  ') ..
-  > C5 pre rval @R pval \0 cscr %R
+  > C2 pre rval sw pval ?d \0 cscr %R
+  ds: [C2 -1]
   (0)
   > :S '( '0 ' '1 ') ..
-  > C6 pre rval @R pval \0 cscr %R
+  > C3 pre rval sw pval ?d \0 cscr %R
+  ds: [C3 -1]
   (0 1)
   > :S '( 'x ') ..
-  > C7 pre rval @R pval \0 cscr %R
+  > C4 pre rval sw pval ?d \0 cscr %R
+  ds: [C4 -1]
   (x)
   > :S '( 'i 'c 'e ' '9 ') ..
-  > C8 pre rval @R pval \0 cscr %R
+  > C5 pre rval sw pval ?d \0 cscr %R
+  ds: [C5 -1]
   (ice 9)
   > :S '( '0 '( 'x ') ') ..
-  > C9 pre rval @R pval \0 cscr %R
+  > C6 pre rval sw pval ?d \0 cscr %R
+  ds: [C6 -1]
   (0 (x))
 #+end_src
+
 
 * TODO [0/2] eval
 ** TODO eval
