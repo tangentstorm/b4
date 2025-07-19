@@ -391,22 +391,51 @@ either =cnum= or =csym= to build the cell.
 #+end_src
 
 
-
-* TODO =rval= part 3: lists
-#+name: b4s.rval-list
+* =rval= part 3: the empty list
+#+name: b4s.rval-nil
 #+begin_src b4a
   > inic
   > :S '( ') ..
+  > C0 pre rval sw !A ?d %R
+  ds: [C0 -1]
+  > C1 @A nil? ?d %R
+  ds: [C1 -1]
+  > C2 putn sp @A pval \0 %q
+  C2 ()
+#+end_src
+
+There should only ever be one empty list, called =nil= internally
+and written as =()=.
+
+* =rval= part 4: lists with atoms
+#+name: b4s.rval-lists
+#+begin_src b4a
+  > inic
+  > :S '( '0 ') ..
   > C0 pre rval sw pval ?d \0 cscr %R
   ds: [C0 -1]
-  ()
-  > :S '( '0 ') ..
+  (0)
+  > :S '( 'C '1 ') ..
   > C1 pre rval sw pval ?d \0 cscr %R
   ds: [C1 -1]
-  (0)
-  > :S '( '  '0 '  ') ..
+  (C1)
+  > # same thing but with a space after
+  > :S '( 'C '2 '  ') ..
   > C2 pre rval sw pval ?d \0 cscr %R
   ds: [C2 -1]
+  (C2)
+#+end_src
+
+  > # ... or in front
+  > :S '( '  'C '3 ') ..
+  > C3 pre rval sw pval ?d \0 cscr %R
+  ds: [C3 -1]
+  (C3)
+
+
+
+In order to parse the input =(x)=, =rval= will need to be called
+recursively.
   (0)
   > :S '( '0 ' '1 ') ..
   > C3 pre rval sw pval ?d \0 cscr %R
@@ -424,7 +453,6 @@ either =cnum= or =csym= to build the cell.
   > C6 pre rval sw pval ?d \0 cscr %R
   ds: [C6 -1]
   (0 (x))
-#+end_src
 
 
 * TODO [0/2] eval
