@@ -21,6 +21,9 @@
 :try m! @K dc do cd             # try(p-) run p with @K backed up on cs
    @M .i zp .e !K .t rt         #   afterward, restore or discard saved @K
 
+:lka m! @K dc do cd !K rt       # lka(p-) lookahead. like try, but always backtrack
+:neg m! lka @M nt !M rt         # neg(p-) negative lookahead. (lka but invert match)
+
 :m| @M                          # m| (-) alt guard inside `.[ .. .] try`
    .i cd zp                     #   if match, early exit from the try quotation
    .e cd cd cd                  #   if no match, cs is [^m| ^[] @K ...]  (where ^ is rt addr)
@@ -41,7 +44,6 @@
 
 :mdo m! dc rt
 :end m\ c0 ch eq !M rt
-:not @M nt !M rt
 :any m\ c0 ch eq nt !M mf1 rt   # WARNING: this matches any byte, not just ASCII
 
 :chs m! @S dc !S m0             # chs(s-) match any char in s

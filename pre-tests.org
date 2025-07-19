@@ -315,6 +315,28 @@ While the word is running, it backs up =@K= to the control stack.
 After the run, if the match failed, =try= restores the old =@K=,
 otherwise it discards the backed up value.
 
+* =lka (p-)= : look ahead match but do not consume
+#+name: pre.lka
+#+begin_src b4a
+  > :S 'a 'b ..
+  > :A lb 'a chr rt
+  > C0 pre ^A @M ln ?d %R  # normal matching, nothing new
+  ds: [C0 -1 1]
+  > C1 pre @A lka @M ln ?d %R  # should match but not consume
+  ds: [C1 -1 0]
+#+end_src
+* =neg (p-)= : negative lookahead
+#+name: pre.not
+#+begin_src b4a
+  > :S 'a 'b ..
+  > :A lb 'a chr rt
+  > :B lb 'b chr rt
+  > C0 pre @A neg @M ln ?d %R  # `^A` would match, so `@A neg` should fail
+  ds: [C0 0 0]
+  > C1 pre @B neg @M ln ?d %R  # `@B neg` should match but consumes nothing.
+  ds: [C1 -1 0]
+#+end_src
+
 * =m|= : alt operator
 #+name: pre.alt
 #+begin_src b4a
@@ -348,7 +370,8 @@ so we need to restore the original value.
 Since =try= stores the old value of =@K= is on the control stack,
 this means =m|= has to modify the control stack, and therefore
 it is only ever safe to call =m|= inside a quotation followed
-by =try=.
+by =try=, =lka=, or =not=.
+
 
 * =opt (p-)= : optional match (regex =?=)
 #+name: pre.opt
@@ -389,17 +412,20 @@ at least once, then as many times as possible.
 #+begin_src b4a
   > :G  .[ lb 'a chr rt .] orp rt
   > :S 'c  # ^G should succeed but match 0 chars
-  > pre ^G @M ln ?d %R
-  ds: [-1 0]
+  > C0 pre ^G @M ln ?d %R
+  ds: [C0 -1 0]
   > :S "abc"  # ^G should match 1 char (same as before)
-  > pre ^G @M ln ?d %R
-  ds: [-1 1]
+  > C1 pre ^G @M ln ?d %R
+  ds: [C1 -1 1]
   > :S "aardvark"  # ^G should match 2 (same as before)
-  > pre ^G @M ln ?d %R
-  ds: [-1 2]
+  > C2 pre ^G @M ln ?d %R
+  ds: [C2 -1 2]
+  > C3 pre m0 ^G @M ln ?d %R # no match because m0
+  ds: [C3 0 0]
 #+end_src
 
 =orp= is the combination of =opt= and =rep=. It matches its pattern 0 or more times.
+Note that =orp= can never fail to match, so it should always leave =@M= unchanged.
 
 * =ws= and =ws*= match whitespace
 #+name: b4s.ws*
