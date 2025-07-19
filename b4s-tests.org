@@ -357,25 +357,30 @@ item =x= as =(quo . x)= , where =quo= is just a symbol.
 
 all of these should also be printed by the printer.
 
-* =node=, =newc=, =acr!=, and =done= : imperative list builder
+* =node=, =newc=, =acl!=, and =done= : imperative list builder
 #+name: b4s.rlis
 #+begin_src b4a
   > inic
   > node @R pval \0 cscr
   (())
-  > c1 cnum acr! @R pval \0 cscr
+  > c1 cnum acl! @R pval \0 cscr
   (1 ())
-  > c2 cnum acr! @R pval \0 cscr
+  > c2 cnum acl! @R pval \0 cscr
   (1 2 ())
   > done
   > @R pval \0 cscr go00
   (1 2)
 #+end_src
 
--acr! appends to the end of the list held in R and creates a new cell
--end! ends the list and removes the final wrapper
+- @R holds the list we're building
+- @L holds the last cell in the list
+- @P is the previous cell
+-acl! appends to the end of the list
+  - the list always has an extra (()) at the end (that's @L)
+  - when we append, we set its car, set P=L, and set L to a new cel in P's cdr
+-end! ends the list by replacing P's link to L with its cdr
 - final result stays in @R
-- must preserve @R when entering nested lists
+- must preserve @R, @P, and @L when entering nested lists
 - helper tools seem to be working (since this test passes)
 - but the actual parser is not quite there yet.
 

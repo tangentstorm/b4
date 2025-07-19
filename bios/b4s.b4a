@@ -95,7 +95,7 @@
 
 :newc nil nil cons rt
 :node newc du !R du !L du !P rt
-:acr! @L car!                           # (c-) add cell as list value
+:acl! @L car!                           # (c-) add cell to list whose tail is in @L
    @L !P newc !L                        # (c-c) last cell @L is (nil). P=L, L=new
    @L @P cdr! rt                        # (c-c) set last cell's cdr to new cell
 :done @L cdr @P cdr! rt
@@ -114,15 +114,15 @@
 :rnum m\ @N cnum !R rt
 :rsym m\ @N csym !R rt
 
-:rlis m\ node @L dc @P dc @R dc
-   k( .[ ws* cl >rval
-         m\ @R acr! rt .] orp
+:rlis m\ node
+   k( .[ ws* @R @L @P cl >rval !P !L
+         @M .i @R acl! .t !R rt .] orp
       # .[  lb '. chr ws* cl >rval
       #     m\ @L cdr! rt .] opt
       ws* lb ') chr
-   k) cd !R
+   k)
    @L @R eq .i nil !R .e done .t
-   cd !P cd !L rt
+   rt
 
 :rval m\ ws*
    k( lb '( chr rlis
