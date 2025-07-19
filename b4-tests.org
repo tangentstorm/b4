@@ -676,17 +676,17 @@ These are macros. They emit a =li= op, followed by the address, then either =ri=
 *** ="abc"= : raw string
 #+name: b4a.string.raw
 #+begin_src b4a
-> :100 "abc"
+> :100 "abc def"
 > ?100 %q
-+A +B +C .. .. .. .. .. .. .. .. .. .. .. .. ..
++A +B +C @@ +D +E +F .. .. .. .. .. .. .. .. ..
 #+end_src
 
 *** =."abc"= : length-prefixed string
 #+name: b4a.string.len-prefixed
 #+begin_src b4a
-> :100 ."abc"
+> :100 ."abc def"
 > ?100 %q
-^C +A +B +C .. .. .. .. .. .. .. .. .. .. .. ..
+^G +A +B +C @@ +D +E +F .. .. .. .. .. .. .. ..
 #+end_src
 
 ** Using =>= for forward references

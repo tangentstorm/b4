@@ -1,7 +1,7 @@
 { b4 debugger/interpreter }
 {$mode objfpc}
 unit ub4i;
-interface uses sysutils, strutils, ub4, ub4asm, ub4ops;
+interface uses sysutils, strutils, ub4, ub4asm, ub4ops, classes;
 
   procedure ShowMem(addr:integer);
   procedure ShowOpcodes;
@@ -100,6 +100,52 @@ begin
   rg^[RIP] := rg^[RHP];
 end;
 
+function tokenize(const line: string): TStringArray;
+var
+  Tokens          : TStringList;
+  CurrentToken    : string = '';
+  i               : Integer = 1;
+  InString        : Boolean = False;
+  InCountedString : Boolean = False;
+begin
+  Tokens := TStringList.Create;
+  while i <= Length(line) do begin
+    if (line[i] = '#') and not InString and not InCountedString then break;
+    if InString then begin
+      CurrentToken := CurrentToken + line[i];
+      if line[i] = '"' then begin
+        Tokens.Add(CurrentToken);
+        CurrentToken := ''; InString := False end end
+    else if InCountedString then begin
+      CurrentToken := CurrentToken + line[i];
+      if line[i] = '"' then begin
+        Tokens.Add(CurrentToken);
+        CurrentToken := ''; InCountedString := False end end
+    else begin // Not in any string
+      case line[i] of
+        ' ', #9, #13, #10: begin // Whitespace
+          if Length(CurrentToken) > 0 then Tokens.Add(CurrentToken);
+          CurrentToken := '' end;
+        '.': begin
+               if (i < Length(line)) and (line[i+1] = '"') then begin
+                 if Length(CurrentToken) > 0 then Tokens.Add(CurrentToken);
+                 CurrentToken := '."';
+                 InCountedString := True;
+                 Inc(i) end  // Skip the quote
+               else CurrentToken := CurrentToken + '.' end;
+        '"' : begin
+               if Length(CurrentToken) > 0 then Tokens.Add(CurrentToken);
+               CurrentToken := '"'; InString := True; end
+        else CurrentToken := CurrentToken + line[i] end
+    end;
+    Inc(i);
+  end;
+  if Length(CurrentToken) > 0 then Tokens.Add(CurrentToken);
+  SetLength(Result, Tokens.Count);
+  for i := 0 to Tokens.Count - 1 do Result[i] := Tokens[i];
+  Tokens.Free;
+end;
+
 procedure PutMem(str:string);
   var r: byte; tok, w_tok : string; a : integer;
       toks : TStringArray;
@@ -107,7 +153,7 @@ procedure PutMem(str:string);
 begin
   cmt_pos := Pos('#', str);
   if cmt_pos > 0 then str := copy(str, 1, cmt_pos - 1);
-  toks := SplitString(trim(str), ' ');
+  toks := tokenize(trim(str));
   for tok in toks do begin
     if length(tok) = 0 then continue;
     if tok[1] = ':' then begin
@@ -219,7 +265,7 @@ begin
   st:=st_imm;
   if length(line)=0 then exit(false);
   if line[1] = ':' then begin PutMem(line); exit(false); end;
-  toks := SplitString(line, ' ');
+  toks := tokenize(line);
   while i < High(toks) do begin
     inc(i); tok := toks[i]; if tok='' then continue;
     // skip comments, but note ':' has its own comment handler :/
