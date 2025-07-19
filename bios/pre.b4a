@@ -34,6 +34,7 @@
 :lte m! c1 ad ch sw lt !M rt    # (x-) match if ch<=arg, consume nothing
 :gte m! ch sw lt nt !M rt       # (x-) match if ch>=arg, consume nothing
 :mf1 m\ c1 fw rt                # move forward 1 char if match
+:btw m!! lte gte mf1 rt         # btw(lh-) match if l<=arg<=h
 
 :s> c1 +S rb rt                 # inc s and read byte
 :brkf cd cd zp c0 dc dc rt      # break .f loop (set ctr=0)
@@ -63,16 +64,18 @@
 :opt m! do m1 rt                # opt(p-) regex '?'
 :orp m! rep m1 rt               # orp(p-) regex '*'
 
+:ws m\ c1 lb '  btw rt
+:ws* m\ li `ws orp rt
+
 # -- matcher for uppercase hex
 
-:btw m!! lte gte mf1 rt          # btw(lh-) match if l<=arg<=h
-:digit lb '0 lb '9 btw rt        # matches 0..9
-:hexit lb 'A lb 'F btw rt        # matches A..F
-:lc @K c1 sb rb rt               # (xy-c) last matched char
+:digit lb '0 lb '9 btw rt       # matches 0..9
+:hexit lb 'A lb 'F btw rt       # matches A..F
+:lc @K c1 sb rb rt              # (xy-c) last matched char
 
-:n< m! @N lb 10 ml ad !N rt      # n<(x-n) if match, n*=10 n+=x
+:n< m! @N lb 10 ml ad !N rt     # n<(x-n) if match, n*=10 n+=x
 
-:hexn  m!                        # if match, N += hex digit
+:hexn  m!                       # if match, N += hex digit
    .[ digit
       lc lb '0 sb          n<
    m| hexit
@@ -82,8 +85,3 @@
    .[ .[ lb '- chr rt .] opt
       li `hexn rep rt
    .] try rt
-
-# TODO: move whitespace stuff upward
-:ws m\ lb '  lte mf1 rt
-:ws~ m\ lb '! gte mf1 rt
-:ws* m\ li `ws orp rt

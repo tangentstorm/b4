@@ -80,7 +80,6 @@ stack and then using the =rt= opcode.
 
 Niladic here means that it doesn't expect any arguments.
 
-
 * =m! (x-x?)= : monadic match guard
 #+name: pre.m!
 #+begin_src b4a
@@ -97,8 +96,7 @@ but it also drops a single argument.
 
 "Monadic" here means "taking one argument".
 
-
-* end/any (probably this should be in pre)
+* =any= and =end=
 #+name: b4s.end/any
 #+begin_src b4a
  > :S 'x 'y ..
@@ -182,7 +180,6 @@ add one to  calling =lt=.
 There is no "greater than or equal" opcode in b4, but you can write
 it as "not less than": =lt nt=
 
-
 * =mf1= advance if match
 #+name: pre.mf1
 #+begin_src b4a
@@ -219,7 +216,7 @@ arguments, you might define a dyadic (two-argument) version of =m!=
 
 in fact, let's just do that.
 
-* =btw= to test a character between two ends of a range
+* =btw= to test whether the character is between two ends of the range
 #+name: pre.btw
 #+begin_src b4a
  > :S '5 ..
@@ -242,7 +239,6 @@ in fact, let's just do that.
  > C5 pre m1 '0 '5 btw @M ln ?d %R
  ds: [C5 -1 1]
 #+end_src
-
 
 * =chs (s-)= : choose from character set
 #+name: pre.chs
@@ -269,7 +265,6 @@ Since it takes one argument, =chs= should call =m!=.
 Note that in this case, the character set to match is a sequential
 range, so we could have used the range idiom here as well (and in
 fact, it's probably faster to do so, since =gte= and =lte= don't have to loop)
-
 
 * =lit (s-)= : match literal string
 #+name: pre.lit
@@ -319,7 +314,6 @@ assembled either with =li `name= or using =.[= ... =.]=.
 While the word is running, it backs up =@K= to the control stack.
 After the run, if the match failed, =try= restores the old =@K=,
 otherwise it discards the backed up value.
-
 
 * =m|= : alt operator
 #+name: pre.alt
@@ -406,6 +400,19 @@ at least once, then as many times as possible.
 #+end_src
 
 =orp= is the combination of =opt= and =rep=. It matches its pattern 0 or more times.
+
+* =ws= and =ws*= match whitespace
+#+name: b4s.ws*
+#+begin_src b4a
+ > :S 20 20 20 ..
+ > pre ws @M ln ?d %R
+ ds: [-1 1]
+ > ws* @M ln ?d
+ ds: [-1 3]
+#+end_src
+
+Whitespace is any character between 01 and 20 inclusive.
+=ws*= is just =li `ws orp=
 
 * =mhex= : match an uppercase hex number
 #+name: pre.mhex
