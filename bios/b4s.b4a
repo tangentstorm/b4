@@ -114,7 +114,7 @@
 :rnum m\ @N cnum !R rt
 :rsym m\ @N csym !R rt
 
-:rlis m\ @L dc @P dc @R dc
+:rlis m\ node @L dc @P dc @R dc
    k( .[ ws* cl >rval
          m\ @R acr! rt .] orp
       # .[  lb '. chr ws* cl >rval
@@ -125,7 +125,7 @@
    cd !P cd !L rt
 
 :rval m\ ws*
-   k( lb '( chr @M .i node rlis .t
+   k( lb '( chr rlis
    m| lb '' chr rval @M .i @R wquo !R .t
    m| lb '` chr rval @M .i @R wqup !R .t
    m| lb ', chr rval @M .i @R wqdn !R .t
