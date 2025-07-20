@@ -6,7 +6,7 @@
 // area to display the 64/16 b4 terminal.
 
 program b4ix(input,output);
-uses ub4i, ub4, crt, sysutils, uled;
+uses ub4i, ub4, crt, sysutils, uled, ub4dbg;
 
 var
   ScreenMaxX, ScreenMaxY : dword;
@@ -68,16 +68,14 @@ end;
 
 procedure StateWindow;
 begin
-  Window(1,ScreenMaxY-StateHeight,
-         ScreenMaxX, ScreenMaxY);
+  Window(1,ScreenMaxY-StateHeight, ScreenMaxX, ScreenMaxY);
   TextBackground(Blue);
 end;
 
 var oldX, oldY : dword;
 procedure StoreXY;
 begin
-  OldX := WhereX;
-  OldY := WhereY;
+  OldX := WhereX; OldY := WhereY;
 end;
 
 procedure LoadXY;
@@ -89,18 +87,7 @@ procedure ShowState;
   var i, a : word;
 begin
   StateWindow;
-  TextColor(White);
-  WriteStack('ds: ', ds, rg^[RDS]); ClrEol; WriteLn;
-  WriteStack('cs: ', cs, rg^[RCS]); ClrEol; WriteLn;
-  TextBackground(Blue);
-  TextAttr := $70;
-  Write('addr +0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F ');
-  WriteLn;
-  for i := 0 to 9 do begin
-    a := StartView + i * $10;
-    TextAttr := $70; Write(HexStr(a,4));
-    TextAttr := $07; Write(' '); ShowMem(a);
-  end;
+  ub4dbg.draw_state;
 end;
 
 procedure DrawPrompt;
@@ -120,7 +107,8 @@ end;
 var line: string; done:boolean=false; histPath:string;
 const START = $2000;
 begin
-  rg^[RIP] := START; rg^[regn('_')] := START; StartView := START;
+  rg^[ub4.RIP] := START; rg^[regn('_')] := START; StartView := START;
+  rg^[ub4.RED] := rg^[ub4.RIP];
   histPath := GetUserDir + '/' + '.b4ix'; uled.loadHist(histPath);
   ScreenMaxX := WindMaxX; ScreenMaxY := WindMaxY;
   ClrScr; DrawHeadings; InitTerm;

@@ -291,6 +291,10 @@ begin
       '\q', '%q' : done := true;
       '\R', '%R' : reset_vm;
       '\s', '%s' : ub4.step;
+      '\v' : if i < High(toks) then begin inc(i);
+               if tryhex(toks[i], a) then ub4.rg^[ub4.RED]:=a
+               else writeln('usage: \v <address>') end
+             else ub4.rg^[ub4.RED] := rg^[ub4.RIP];
       '?d' : begin WriteStack('ds: ', ds, rg^[RDS]); WriteLn end;
       '?c' : begin WriteStack('cs: ', cs, rg^[RCS]); WriteLn end;
       '?i' : WriteLn('ip: ', b4mat(rg^[RIP]));
