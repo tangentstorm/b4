@@ -133,6 +133,18 @@ cause the =nxt^= to move to the next cell in the list.
   ds: [ABCD]
 #+end_src
 
+* =nlst= : combine n values into a list
+
+#+name: b4s.nlst
+#+begin_src b4a
+ > inic
+ > # construct the list: (AB CD efgh)
+ > AB cnum CD cnum 'e 'f 'g 'h glu csym 3 nlst !L
+ > @L celn ?d zp
+ ds: [5]
+#+end_src
+
+
 * =cnum= / =pnum= : construct and print a lisp number
 #+name: b4s.nums
 #+begin_src b4a
@@ -223,9 +235,7 @@ running on the vm.)
 Note that once you implement =ctyp=, you will probably need to mask out
 the type code in the implementation of =car= and =cdr=.
 
-* =pval= : print arbitrary cells
-
-** printing numbers and symbols
+* =pval= part 1 : atoms
 #+name: b4s.pval-num-sym
 #+begin_src b4a
   > inic
@@ -238,7 +248,7 @@ the type code in the implementation of =car= and =cdr=.
 Now that we have =ctyp= we can start to implement pval.
 It should inspect the type code and then call =pnum= or =psym= accordingly.
 
-** printing nil
+* =pval= part 2 : nil
 #+name: b4s.pval-nil
 #+begin_src b4a
   > inic
@@ -250,7 +260,7 @@ It should inspect the type code and then call =pnum= or =psym= accordingly.
 =nil= is a special value and should have type code 00, since it's the name for the empty list.
 However, if we print it on its own, we should print the value '()'
 
-** printing a dotted pair
+* =pval= part 3 : dotted pairs
 #+name: b4s.pval-pair
 #+begin_src b4a
   > inic
@@ -258,18 +268,35 @@ However, if we print it on its own, we should print the value '()'
   (1 . 2)
 #+end_src
 
-** printing lists
+* =pval= part 4 : lists of atoms
 #+name: b4s.pval-list
 #+begin_src b4a
   > inic
-  > 03 cnum nil cons du pval \0 cscr
-  (3)
-  > 02 cnum sw cons du pval \0 cscr
-  (2 3)
-  > 01 cnum sw cons du pval \0 cscr
-  (1 2 3)
-  > 04 cnum nil cons cons pval \0 %q
-  ((1 2 3) 4)
+  > C0 cnum nil cons du pval \0 cscr
+  (C0)
+  > C1 cnum sw cons du pval \0 cscr
+  (C1 C0)
+  > C2 cnum sw cons du pval \0 cscr
+  (C2 C1 C0)
+#+end_src
+
+* =pval= part 5 : nested lists
+#+name: b4s.pval-nested
+#+begin_src b4a
+  > inic
+  > C0 putn sp   nil nil cons pval \0 cscr
+  C0 (())
+  > 1 cnum nil cons !A
+  > 2 cnum 3 cnum nil cons cons !B
+  > A putn sp @A pval \0 cscr
+  A (1)
+  > B putn sp @B pval \0 cscr
+  B (2 3)
+  > C3 putn sp   @A @B cons \g pval %q du \g \0 cscr
+  C3 ((1) 2 3)
+  > C4 putn sp   @B @A cons  pval du \0 cscr
+  C4 ((2 3) 4)
+
 #+end_src
 
 * =wquo=, =wqup=, =wqdn=: quotation builders
@@ -390,7 +417,6 @@ either =cnum= or =csym= to build the cell.
   'x
 #+end_src
 
-
 * =rval= part 3: the empty list
 #+name: b4s.rval-nil
 #+begin_src b4a
@@ -407,52 +433,99 @@ either =cnum= or =csym= to build the cell.
 There should only ever be one empty list, called =nil= internally
 and written as =()=.
 
-* =rval= part 4: lists with atoms
-#+name: b4s.rval-lists
+* =rval= part 4: lists with one atom
+#+name: b4s.rval-atom-lists
 #+begin_src b4a
   > inic
-  > :S '( '0 ') ..
+  > :S "(0)" ..
   > C0 pre rval sw pval ?d \0 cscr %R
   ds: [C0 -1]
   (0)
-  > :S '( 'C '1 ') ..
+  > :S "(C1)" ..
   > C1 pre rval sw pval ?d \0 cscr %R
   ds: [C1 -1]
   (C1)
   > # same thing but with a space after
-  > :S '( 'C '2 '  ') ..
+  > :S "(C2 )" ..
   > C2 pre rval sw pval ?d \0 cscr %R
   ds: [C2 -1]
   (C2)
-#+end_src
-
   > # ... or in front
-  > :S '( '  'C '3 ') ..
+  > :S "( C3)" ..
   > C3 pre rval sw pval ?d \0 cscr %R
   ds: [C3 -1]
   (C3)
-
-
-
-In order to parse the input =(x)=, =rval= will need to be called
-recursively.
-  (0)
-  > :S '( '0 ' '1 ') ..
-  > C3 pre rval sw pval ?d \0 cscr %R
-  ds: [C3 -1]
-  (0 1)
-  > :S '( 'x ') ..
+  > # ... or everywhere
+  > :S "  (  C4  )  " ..
   > C4 pre rval sw pval ?d \0 cscr %R
   ds: [C4 -1]
-  (x)
-  > :S '( 'i 'c 'e ' '9 ') ..
-  > C5 pre rval sw pval ?d \0 cscr %R
-  ds: [C5 -1]
-  (ice 9)
-  > :S '( '0 '( 'x ') ') ..
-  > C6 pre rval sw pval ?d \0 cscr %R
-  ds: [C6 -1]
-  (0 (x))
+  (C4)
+#+end_src
+
+In order to parse the input =(x)=, =rval= will need to be called
+recursively. Here we parse some lists containing single atoms.
+There can be any amount of whitespace around the values or
+parentheses in a list.
+
+* =rval= part 5: longer lists
+
+#+name: rval-longer-lists
+#+begin_src b4a
+  > inic
+  > :S "(0 1)"
+  > C0 pre rval sw pval ?d \0 cscr %R
+  ds: [C0 -1]
+  (0 1)
+  > :S "(nice ice)" ..
+  > C1 pre rval sw pval ?d \0 cscr %R
+  ds: [C1 -1]
+  (nice ice)
+  > :S "(one two 3 4 5 six 7 8 9)" ..
+  > C2 pre rval sw pval ?d \0 cscr %R
+  ds: [C2 -1]
+  (one two 3 4 5 six 7 8 9)
+#+end_src
+
+* =rval= part 6: nested lists
+#+name: rval-nested
+#+begin_src b4a
+  > inic
+  > :S "(())" ..
+  > C0 pre rval sw pval ?d \0 cscr %R
+  ds: [C0 -1]
+  (())
+  > :S "((C1))" ..
+  > C1 pre rval sw pval ?d \0 cscr %R
+  ds: [C1 -1]
+  ((C1))
+  > :S "(1 (C2) 3)" ..
+  > C2 pre rval sw pval ?d \0 cscr %R
+  ds: [C2 -1]
+  (1 (C2) 3)
+  > :S "(one (two 3) 4 (5 6 7 8 (9)))" ..
+  > C4 pre rval sw pval ?d \0 cscr %R
+  ds: [C4 -1]
+  (one (two 3) 4 (5 6 7 8 (9)))
+#+end_src
+
+* =rval= part 7: nested nils
+#+name: b4s.rval-nested-nils
+#+begin_src b4a
+  > :S "( () () )" ..
+  > C1 pre rval sw pval ?d \0 cscr %R
+  ds: [C1 -1]
+  (())
+  > # the last () is never printed
+  > :S "( () () () )" ..
+  > C2 pre rval sw pval ?d \0 cscr %R
+  ds: [C2 -1]
+  (()())
+  > :S "( (() ()) )" ..
+  > C2 pre rval sw pval ?d \0 cscr %R
+  ds: [C2 -1]
+  ((()()))
+#+end_src
+
 
 
 * TODO [0/2] eval
