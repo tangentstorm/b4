@@ -438,5 +438,6 @@ begin
 end;
 
 begin
+  boot;
   term := TB4Device.create;
 end.
