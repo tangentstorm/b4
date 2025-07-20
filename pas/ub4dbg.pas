@@ -1,0 +1,158 @@
+{$mode delphi}
+unit ub4dbg; { visual debugger }
+interface uses ub4;
+
+  procedure debug_step;
+  var paused : boolean = false;
+
+
+implementation
+uses crt, sysutils, ub4asm, uhw_vt, ub4ops;
+
+const pgsz = 16 * 8; { should be multiple of 8 to come out even }
+var opli, oplb, opjm, opcl, opnx, ophp, oph0 : value;
+
+procedure wv(k: string; v:value); { write value }
+  begin fg('w'); write(k); fg('k'); write(': ');
+    fg('W'); write(hexstr(v,4)); write(' ')
+  end;
+
+procedure draw_stack(x,y : byte; id:char; var s:stack; n:value);
+  var i : value;
+begin
+  goxy(x,y); bg('k'); clreol; fg('w'); write(id,':');
+  fg('Y'); write(' <'); fg('y'); write(n); fg('Y');
+  write('> '); fg('y');
+  for i := 0 to n-1 do write(hexstr(s[i],1),' ');
+end;
+
+procedure draw_help(x,y : byte);
+begin goxy(x,y); write('keys: (0)top, i(p), (s)tep (o)ver, (r)un, to (c)ursor, (q)uit, b4(i)')
+end;
+
+
+function step_over: boolean;
+  { what this does is fast-forward the editor pointer.
+    result = true if stepping over a call }
+  var skip : byte = 0;
+begin
+  result := mem[rg[RED]] = opcl;
+  if mem[rg[RED]] in [opcl,opjm,opli,opnx] then skip := 4
+  else if mem[rg[RED]] in [oplb,ophp,oph0] then skip := 1;
+  inc(rg[RED]);
+  inc(rg[RED], skip);
+end;
+
+
+procedure dump;
+  { this displays the visual debugger }
+  var x, y, oldattr: word; i, pg: value; skip: byte=0;
+      literal, target: boolean; id: ub4asm.ident;
+begin
+  x := wherex; y := wherey; oldattr := getTextAttr;
+  id := 'call';
+  { draw the data and return stacks }
+  draw_stack(0, 13, 'd', ds^, rg[RDS]);
+  draw_stack(0, 14, 'c', cs^, rg[RCS]);
+
+  { draw some important registers }
+  goxy(0, 15); clreol;
+  wv('ip', rg[RIP]); wv('@_', rg[RHP]); wv('ep',rg[RED]);
+
+  { draw memory }
+  goxy(0,16); pg := pgsz * (rg[RED] div pgsz);
+  literal := false; target := false; { next cell is literal or jump target }
+  for i := pg to pg + pgsz-1 do begin
+    if (i mod 16 = 0) then begin
+      bg('k'); if (i>pg) then writeln; clreol;
+      fg('m'); write(hexstr(i,4));
+    end;
+    { color cell based on ip / editor cursor positions }
+    if (i=rg[RIP]) and (i=rg[RED]) then bg('m')
+    else if i=rg[RIP] then bg('c')
+    else if i=rg[RED] then bg('r')
+    else bg('k');
+    { literal numbers (after si/li) }
+    if skip>0 then begin dec(skip); target := false; literal := false end
+    else if literal or (i < 32) then begin fg('y'); write(hexstr(mem[i],2):4); literal := false end
+    else if target then { target adress for jump/etc }
+    begin if i = rg[RED] then fg('k') else fg('r');
+      write(hexstr(mem[i],2):4); target := false
+    end
+    { past end of memory }
+    else if i > high(mem) then begin fg('K'); write('xx') end
+    { opcodes }
+    else if mem[i] in [$80 .. $BF] then
+    begin
+      if mem[i] in [opli,oplb] then literal := true;
+      if mem[i] in [opjm,opcl] then target := true;
+      if (mem[i] = opli) or ((mem[i] in [opcl]) and (rdval(i+1) < high(address))) then
+      begin
+        if mem[i] = opcl
+          then begin skip := 4; find_ident(rdval(i+1), id) end
+        else begin skip := 1; find_ident(mem[i+1], id) end;
+        write('  ');
+        if mem[i] = opcl then fg('W') else begin fg('K'); write('$') end;
+        write(format('%-6s',[id]))
+      end
+      else begin fg('C'); write(optbl[byte(mem[i])] :4) end;
+    end
+    { ascii characters }
+    else if (mem[i] >= 32) and (mem[i] < 128) then
+    begin fg('g'); write('  '''); write(chr(mem[i])) end
+    { anything else }
+    else begin fg('b'); write(hexstr(mem[i],2):4) end
+  end;
+  // { for ui debugging, draw line numbers on the right: }
+  for i := 0 to 24 do begin goxy(xMax-2,i); write(i:2) end;
+  { help text }
+  draw_help(0, 24); clreol;
+  { restore cursor position and color so we don't break the vm }
+  goxy(x,y); setTextAttr(oldattr);
+end; { dump }
+
+procedure dump_dict;
+  var i : byte;
+begin
+  for i := 0 to ub4asm.ents do begin
+    write(dict[i].id:8, ': ', hexstr(dict[i].adr,4) );
+    if (i>0) and (i mod 4 = 0) then writeln;
+  end;
+  repeat until keypressed;
+end; { dump_dict }
+
+procedure debug_step;
+  var ch: ansichar;
+begin
+  if not paused then rg[RED] := rg[RIP];
+  paused := true;
+  dump;
+  ch := readkey;
+  case upcase(ch) of
+    ^N  : inc(rg[RED],8);
+    ^P  : if rg[RED] >= 8 then dec(rg[RED],8);
+    ^F  : inc(rg[RED]);
+    ^B  : dec(rg[RED]);
+    ^V  : inc(rg[RED], pgsz);
+    // ^I : b4i_loop;
+    'P' : rg[RED] := rg[RIP];
+    'S' : paused := false;
+    'C' : begin paused := false; rg[RBP] := rg[RED] end;
+    'O' : begin paused := false;
+           if step_over then begin rg[RDB]:=0; rg[RBP] := rg[RED] end
+         end;
+    'R' : rg[RDB] := 0;
+    'Q' : halt;
+    '0' : rg[RED] := 0;
+    'D' : dump_dict;
+  end;
+  if rg[RED] < 0 then rg[RED] := maxcell;
+  if rg[RED] > maxcell then rg[RED] := 0;
+end; { debug }
+
+begin
+  opli := b4opc('li'); oplb := b4opc('lb');
+  opjm := b4opc('jm');
+  ophp := b4opc('hp'); oph0 := b4opc('h0');
+  opcl := b4opc('cl'); opnx := b4opc('nx');
+end.
