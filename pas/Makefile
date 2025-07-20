@@ -1,20 +1,40 @@
 # XPL is http://github.com/tangentstorm/xpl
 
 FPC = fpc -gl -Mobjfpc
+ARGS ?= # specify ARGS="..." on make command line
 
 main:
-	@echo 'make targets:'
+	@echo 'usage : make <target> ARGS="..."'
+	@echo ''
+	@echo 'targets:'
 	@echo '   b4 : compile main program'
 	@echo 'clean : remove fpc residue'
-	@echo '  run : run b4'
+	@echo '  run : build/run b4'
+	@echo ' runf : build/run b4f (b4 $ARGS -a ../bios/b4f.b4a)'
+	@echo ' runi : build/run b4i (plain interpreter)'
+	@echo ' runx : build/run b4ix (fancy interpreter)'
+	@echo ' runa : build/run b4a (batch assembler)'
+	@echo ' rund : build/run b4d (disassembler)'
 
 always:
 
 run: always b4
-	./b4
+	./b4 $(ARGS)
+
+runf: b4
+	./b4 $(ARGS) -a ../bios/b4f.b4a
 
 runi: b4i
-	./b4i
+	./b4i $(ARGS)
+
+runx: b4ix
+	./b4ix $(ARGS)
+
+runa: b4a
+	./b4a $(ARGS)
+
+rund: b4d
+	./b4d $(ARGS)
 
 b4i: b4 b4i.pas ub4i.pas
 	$(FPC) -B b4i.pas
@@ -43,4 +63,4 @@ colortest: uhw_vt.pas colortest.pas
 	./colortest
 
 clean:
-	@rm -f *.o *.ppu b4 b4.exe *~
+	@rm -f *.o *.ppu *.exe *~
