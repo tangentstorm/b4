@@ -11,7 +11,7 @@ implementation
 uses crt, sysutils, ub4asm, uhw_vt, ub4ops;
 
 var pgsz : dword = 16 * 10; { should be multiple of 8 to come out even }
-    opli, oplb, opjm, opcl, opnx, ophp, oph0 : value;
+    opli, oplb, opls, opjm, opcl, opnx, ophp, oph0 : value;
     ScreenMaxX, ScreenMaxY : dword;
 
 procedure wv(fgc,bgc:char; k: string; v:value); { write value in 'special regs' line }
@@ -37,7 +37,7 @@ function step_over: boolean;
 begin
   result := mem[rg[ub4.RED]] = opcl;
   if mem[rg[ub4.RED]] in [opcl,opjm,opli,opnx] then skip := 4
-  else if mem[rg[ub4.RED]] in [oplb,ophp,oph0] then skip := 1;
+  else if mem[rg[ub4.RED]] in [oplb,opls,ophp,oph0] then skip := 1;
   inc(rg[ub4.RED]);
   inc(rg[ub4.RED], skip);
 end;
@@ -64,8 +64,9 @@ end;
 
 procedure draw_state;
   { this displays the visual debugger }
-  var i, pg: value; skip: byte=0;
-      literal, target: boolean; id: ub4asm.ident;
+  var i, pg, a: value; skip: byte=0;
+      literal, target, ishop, found: boolean;
+      id: ub4asm.ident;
 begin
   id := 'call';
 
@@ -82,48 +83,57 @@ begin
   { draw memory }
   goxy(0,3); pg := pgsz * (rg[ub4.RED] div pgsz);
   bg('b'); fg('W'); writeln('addr +0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F ');
-  literal := false; target := false; { next cell is literal or jump target }
-  for i := pg to pg + pgsz-1 do begin
-    if (i mod 16 = 0) then begin
+  literal := false; target := false; ishop := false; { next cell is literal or jump target }
+  i := pg;
+  while i < pg + pgsz-1 do begin
+    if (i mod 16 = 0) then begin { line headers }
       bg('k'); if (i>pg) then writeln; clreol;
-      fg('k'); bg('w'); write(hexstr(i,4)); bg('k');
+      fg('k'); bg('w'); write(hexstr(i,4)); bg('k'); fg('K');
+      if skip>0 then for a := 0 to skip-1 do write(' ~~');
     end;
+    { skip one at a time so we always hit the newlines }
+    if skip>0 then begin
+      dec(skip); target := false; literal := false; inc(i);continue
+    end;
+    bg('k'); write(' ');
     { color cell based on ip / editor cursor positions }
     if (i=rg[ub4.RIP]) and (i=rg[ub4.RED]) then bg('m')
-    else if i=rg[ub4.RIP] then bg('c')
-    else if i=rg[ub4.RED] then bg('r')
-    else bg('k');
-    { literal numbers (after si/li) }
-    if skip>0 then begin dec(skip); target := false; literal := false end
+    else if i=rg[ub4.RIP] then begin fg('k'); bg('c') end
+    else if i=rg[ub4.RED] then begin fg('k'); bg('r') end
+    else begin fg('C'); bg('k') end;
+
     { literals but also first 32*4=128 bytes are the registers }
-    else if literal or (i < 128) then begin fg('y'); write(hexstr(mem[i],2):3); literal := false end
-    else if target then { target adress for jump/etc }
-    begin if i = rg[ub4.RED] then fg('k') else fg('r');
-      write(hexstr(mem[i],2):4); target := false
-    end
+    if literal or (i < 128) then begin
+      fg('y'); write(hexstr(mem[i],2)); literal := false end
+    else if target then begin { target adress for jump/etc }
+      if i = rg[ub4.RED] then fg('k') else fg('r');
+      write(hexstr(mem[i],2)); target := false end
+    else if ishop then begin { hop to next instruction }
+      if i = rg[ub4.RED] then fg('k') else fg('r');
+      write(b4mat(mem[i]):2); ishop := false end
     { past end of memory }
     else if i > high(mem) then begin fg('K'); write('xx') end
     { opcodes }
-    else if mem[i] in [$80 .. $BF] then
-    begin
-      if mem[i] in [opli,oplb] then literal := true;
+    else begin //if mem[i] in [$0, $80 .. $FF] then begin
+      if mem[i] in [opli,oplb,opls] then literal := true;
       if mem[i] in [opjm,opcl] then target := true;
-      if (mem[i] = opli) or ((mem[i] in [opcl]) and (rdval(i+1) < high(address))) then
-      begin
-        if mem[i] = opcl
-          then begin skip := 4; find_ident(rdval(i+1), id) end
-        else begin skip := 1; find_ident(mem[i+1], id) end;
-        write(' ');
-        if mem[i] = opcl then fg('W') else begin fg('K'); write('$') end;
-        write(format('%-6s',[id]))
+      if mem[i] in [ophp,oph0] then ishop := true;
+      write(optbl[byte(mem[i])]);
+      if (mem[i] in [opcl,opli,opjm]) then begin
+        a := rdval(i+1);
+        skip := 4; found := find_ident(rdval(i+1), id);
+        if found then if literal then fg('Y') else fg('W')
+        else begin id := hexstr(a,8) + '   '; fg('K') end;
+        if length(id) > 11 then id := LeftStr(id, 11);
+        Write(' ', format('%-11s',[id])); // 4*2 + 3 spaces
       end
-      else begin fg('C'); write(optbl[byte(mem[i])] :3) end;
-    end
-    { ascii characters }
-    else if (mem[i] >= 32) and (mem[i] < 128) then
-    begin fg('g'); write(' '''); write(chr(mem[i])) end
-    { anything else }
-    else begin fg('B'); write(hexstr(mem[i],2):3) end
+    end;
+    // { ascii characters }
+    // else if (mem[i] >= 32) and (mem[i] < 128) then begin
+    //   fg('g'); write(''''); write(chr(mem[i])) end
+    // { anything else }
+    // else begin fg('B'); write(hexstr(mem[i],2)) end;
+    inc(i);
   end;
 end; { draw_state }
 
@@ -173,7 +183,7 @@ end; { debug }
 
 begin
   ScreenMaxX := WindMaxX; ScreenMaxY := WindMaxY;
-  opli := b4opc('li'); oplb := b4opc('lb');
+  opli := b4opc('li'); oplb := b4opc('lb'); opls := b4opc('ls');
   opjm := b4opc('jm');
   ophp := b4opc('hp'); oph0 := b4opc('h0');
   opcl := b4opc('cl'); opnx := b4opc('nx');
