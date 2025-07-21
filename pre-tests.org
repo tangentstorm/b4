@@ -5,13 +5,6 @@
 This is a test suite for [[bios/pre.b4a]], a parsing and
 regular expression toolkit for the b4 virtual machine.
 
-* TODO fix this dumb bug
-#+name: tanco.bug
-#+begin_src b4a
-first test gets skipped due to bug in the test runner
-#+end_src
-
-
 * =m0 (-)= and =m1 (-)= set the match bit.
 #+name: pre.m
 #+begin_src b4a

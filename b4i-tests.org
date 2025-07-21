@@ -6,13 +6,6 @@ Currently these interactive features are present only in
 the lil implementation (`mb4.deck`). The macros are also
 available in the pascal version's assembler.
 
-* TODO tanco bug: first test is not running?!?
-#+name: insta.fail
-#+begin_src src
-THIS WILL FAIL.
-#+end_src
-
-
 * TODO bug: b4i treated first two chars as opcode
 #+name: b4i.bug.mlatu
 #+begin_src b4a

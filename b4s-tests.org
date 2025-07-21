@@ -4,12 +4,6 @@
 
 =b4s= ("beforce") is a tiny lisp-like language written in =b4a= assembly language.
 
-* TODO tanco skips first test
-#+name: skip
-#+begin_src b4a
-(tanco bug makes this skip)
-#+end_src
-
 * ensure BIOS is loaded
 #+name: b4s.bios
 #+begin_src b4a
@@ -134,7 +128,6 @@ cause the =nxt^= to move to the next cell in the list.
 #+end_src
 
 * =nlst= : combine n values into a list
-
 #+name: b4s.nlst
 #+begin_src b4a
  > inic
@@ -143,7 +136,6 @@ cause the =nxt^= to move to the next cell in the list.
  > @L celn ?d zp
  ds: [5]
 #+end_src
-
 
 * =cnum= / =pnum= : construct and print a lisp number
 #+name: b4s.nums
@@ -325,8 +317,7 @@ then print the =cdr=.
 - =(qup . x)= prints as =`x=
 - =(qdn . x)= prints as =,x=
 
-* reader utilities
-** =msym=
+* =msym=
 #+name: b4s.msym
 #+begin_src b4a
   > :S 'x 'y ..
@@ -339,7 +330,7 @@ then print the =cdr=.
 
 =msym= matches a symbol and stores its corresponding number in =@N=.
 
-** =node=, =newc=, =acq!=, and =done= : imperative list builder
+* =node=, =newc=, =acq!=, and =done= : imperative list builder
 #+name: b4s.rlis
 #+begin_src b4a
   > inic
@@ -364,6 +355,8 @@ then print the =cdr=.
 - must preserve @L, @P, and @Q when entering nested lists
 - helper tools seem to be working (since this test passes)
 - but the actual parser is not quite there yet.
+
+* TODO test that @P, @L, and @Q are preserved (for nested builds)
 
 * =rval= part 1: atoms
 #+name: b4s.rval-atoms
@@ -532,8 +525,7 @@ parentheses in a list.
 
 
 
-* TODO [0/2] eval
-** TODO eval
-- start here because syms, nums, and nil eval to themselves
-** TODO elis
-* TODO mention wipe/tag?/type codes
+* =eval=
+* TODO eval
+ start here because syms, nums, and nil eval to themselves
+* TODO elis

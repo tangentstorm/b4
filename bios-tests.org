@@ -2,12 +2,6 @@
 
 These tests use b4i to test the bios.
 
-* TODO fix tanco skipping first test
-#+name: skip
-#+begin_src b4a
-this gets skipped :/
-#+end_src
-
 * TODO remove hard references to term buffer address from the tests
 
 * cscr : fill screen with spaces

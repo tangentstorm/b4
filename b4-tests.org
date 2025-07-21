@@ -29,15 +29,6 @@ interactive assembler) in some host language.
 
 See the =test-b4-*= scripts in this repository for examples.
 
-
-* TODO fix skipped first test
-#+name: shouldfail
-#+begin_src b4a
-  this should fail but will be skipped
-  because of a bug in tanco.
-#+end_src
-
-
 * debugger interface
 ** =%q= : quit
 

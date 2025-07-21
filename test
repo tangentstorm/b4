@@ -1,7 +1,12 @@
 #!/bin/sh
 (cd pas; make b4i) \
+&& echo "== b4-tests.org ================" \
 && tanco run -t b4-tests.org    pas/b4i \
+&& echo "== b4i-tests.org ===============" \
 && tanco run -t b4i-tests.org   pas/b4i \
+&& echo "== bios-tests.org ==============" \
 && tanco run -t bios-tests.org  pas/b4i -a bios/bios.b4a \
+&& echo "== pre-tests.org ===============" \
 && tanco run -t pre-tests.org   pas/b4i -a bios/bios.b4a -a bios/pre.b4a \
+&& echo "== b4s-tests.org ===============" \
 && tanco run -t b4s-tests.org   pas/b4i -a bios/bios.b4a -a bios/pre.b4a -a bios/b4s.b4a
