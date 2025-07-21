@@ -633,7 +633,7 @@ hi
 #+end_src
 
 
-* debugger op
+* =db= opcode: pause for debugger
 #+name: b4a.db
 #+begin_src b4a
   > :A c0 c1 db c2 c4 rt
@@ -645,6 +645,25 @@ hi
   > %s %s ?d
   ds: [0 1 2 4]
 #+end_src
+
+=db= is an opcode that causes the system to pause for inspection.
+
+
+* debugger command: =\g= (go) to resume execution
+#+name: b4a.%g
+#+begin_src b4a
+  > :A c0 c1 db c2 c4 rt
+  > ?i
+  ip: 100
+  > ^A ?d ?i
+  ds: [0 1]
+  ip: 103
+  > \g ?d
+  ds: [0 1 2 4]
+#+end_src
+
+=\g= resumes operation.
+
 
 * debugger commands: registers
 

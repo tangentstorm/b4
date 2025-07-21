@@ -280,7 +280,7 @@ begin
                  then writeln('error changing directory to ', toks[i]) end
              else writeln(GetCurrentDir);
       '\f' : for fw in fwds do writeln(hexstr(fw.at, 4), '>', fw.key);
-      '\g' : logging_enabled := not logging_enabled;
+      '\g' : run_wrapped;
       '\j' : if i < High(toks) then begin inc(i);
                if tryhex(toks[i], a) then ub4.rg^[ub4.RIP]:=a end
              else writeln('usage: \j <address>');
@@ -292,6 +292,7 @@ begin
       '\q', '%q' : done := true;
       '\R', '%R' : reset_vm;
       '\s', '%s' : ub4.step;
+      '\t' : logging_enabled := not logging_enabled;
       '\v' : if i < High(toks) then begin inc(i);
                if tryhex(toks[i], a) then ub4.rg^[ub4.RED]:=a
                else writeln('usage: \v <address>') end
