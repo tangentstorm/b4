@@ -510,19 +510,24 @@ parentheses in a list.
 * =rval= part 7: nested nils
 #+name: b4s.rval-nested-nils
 #+begin_src b4a
+  > inic
+  > :S "(())" ..
+  > C0 pre rval sw pval ?d \0 cscr %R
+  ds: [C0 -1]
+  (())
   > :S "( () () )" ..
   > C1 pre rval sw pval ?d \0 cscr %R
   ds: [C1 -1]
-  (())
+  (() ())
   > # the last () is never printed
   > :S "( () () () )" ..
   > C2 pre rval sw pval ?d \0 cscr %R
   ds: [C2 -1]
-  (()())
+  (() () ())
   > :S "( (() ()) )" ..
   > C2 pre rval sw pval ?d \0 cscr %R
   ds: [C2 -1]
-  ((()()))
+  ((() ()))
 #+end_src
 
 
