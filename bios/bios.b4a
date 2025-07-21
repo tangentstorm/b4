@@ -192,26 +192,28 @@ jm 40 0B .. ..          # loop if main is not defined
 :hi ls -8 sh            # (n-x) return bits 8-F of n (FALLS THROUGH)
 :lo lb FF an rt         # (n-x) return bits 0-7 of n
 
-:mfil # (xna-) fill memory: set n ints to x, starting at address a
-   @A dc !A .f          # (ina-i|na)  for n := n downto 0
-      du c4 +A wi       # (i|na-i|na) copy x to @A and increment @A
-   .n zp cd !A rt       # (i|n-|)  restore old @A and clear stack
+:mfil                   # (fna-) fill n ints with f, starting at a
+   @A dc !A .f          # (-f|n)  for n := n downto 0
+      du c4 +A wi       # (-i|n) copy f to mem[@A] and increment @A
+   .n zp cd !A rt       # (-|)  restore old @A and clear stack
 
 
 # -- terminal buffer ------------------------------------------
-
-:cscr
-   li '  '  '  '        # fill pattern
-   @tmw @tmh ml         # number chars on screen
-   c4 dv                # divide by 4 to get num of ints
-   @tmb mfil rt         # fill screen with pattern
-
 
 :cury @cur hi rt        # (-y) cursor y position
 :curx @cur lo rt        # (-x) cursor x position
 :go00 c0 !cur rt
 :goxy li `cur sw ov     # (x y -)
    c1 ad wb wb rt
+
+:cscr
+   @tmw @tmh ml c4 dv   # (-n) number chars on screen/4 = num ints
+   li '  '  '  '        # (-nf) fill pattern for text
+   ov @tmb mfil         # (-n) fill tmb with pattern
+   li 07 07 07 07 sw    # (-fn) fill pattern for attrs
+   du c4 ml @tmb ad     # (-fna) address of text attrs
+   mfil go00 rt         # (-) clear bg, reset cursor, return
+
 
 :wrap                  # ( - ) wrap cursor if x >= width
    curx @tmw lt nt     # ( - f) x >: width?
