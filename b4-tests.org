@@ -632,6 +632,20 @@ While running in the b4i interpreter, it should buffer the output until the end 
 hi
 #+end_src
 
+
+* debugger op
+#+name: b4a.db
+#+begin_src b4a
+  > :A c0 c1 db c2 c4 rt
+  > ?i
+  ip: 100
+  > ^A ?d ?i
+  ds: [0 1]
+  ip: 103
+  > %s %s ?d
+  ds: [0 1 2 4]
+#+end_src
+
 * debugger commands: registers
 
 ** =:R= : point register at current assembly address
@@ -710,5 +724,4 @@ that have not yet been filled in.
 
 
 * TODO [0/2] system ops (how to test these?)
-** TODO =db=  triggers the debugger
 ** TODO =hl=  halts the virtual machine

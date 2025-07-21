@@ -48,7 +48,8 @@ end;
 
 procedure run_wrapped;
 begin
-  ub4.rg^[ub4.RST]:=1; while ub4.rg^[ub4.RST]=1 do step_wrapped
+  ub4.rg^[ub4.RST]:=1; ub4.rg^[ub4.RDB]:=0;
+  while (ub4.rg^[ub4.RST]=1) and (ub4.rg^[ub4.RDB]=0) do step_wrapped
 end;
 
 procedure wrapCall(addr: ub4.address);
@@ -57,7 +58,7 @@ begin
   ub4.cput(0);
   ub4.go(addr+1);
   run_wrapped;
-  ub4.rg^[ub4.RIP]:=ub4.cpop;
+  if rg^[ub4.RDB]=0 then ub4.rg^[ub4.RIP]:=ub4.cpop;
 end;
 
 procedure ShowMem(addr :integer );
