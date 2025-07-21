@@ -292,11 +292,10 @@ However, if we print it on its own, we should print the value '()'
   A (1)
   > B putn sp @B pval \0 cscr
   B (2 3)
-  > C3 putn sp   @A @B cons \g pval %q du \g \0 cscr
+  > C3 putn sp   @A @B cons pval \0 cscr
   C3 ((1) 2 3)
-  > C4 putn sp   @B @A cons  pval du \0 cscr
-  C4 ((2 3) 4)
-
+  > C4 putn sp   @B @A cons pval \0 cscr
+  C4 ((2 3) 1)
 #+end_src
 
 * =wquo=, =wqup=, =wqdn=: quotation builders
