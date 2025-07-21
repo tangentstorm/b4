@@ -94,14 +94,14 @@
 #-- list building ---------------------
 
 :newc nil nil cons rt
-:node @L newc du !L du !P !Q rt         # node :: (-o) @LPQ=new cell. keep old L on stack
+:node @Q @L newc du !L du !P !Q rt         # node :: (-ql) @LPQ=new cell. keep old LQ on stack
 :acq! @Q car!                           # acq! :: (c-) add cell to list whose tail is in @Q
    @Q !P newc !Q                        #    (c-c) last cell @L is (nil). P=L, L=new
    @Q @P cdr! rt                        #    (c-c) set last cell's cdr to new cell
-:done @Q @L eq                          # done :: (o-L) : cap @L, leave on stack, restore old @L
+:done @Q @L eq                          # done :: (ql-L) : cap @L, leave on stack, restore old @L
    .i nil !L                            #   every empty list is nil
    .e @Q cdr @P cdr! .t
-   @L sw !L rt
+   @L sw !L sw !Q rt
 
 
 #-- reader -----------------------------
