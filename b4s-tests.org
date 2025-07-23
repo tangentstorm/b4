@@ -523,9 +523,20 @@ parentheses in a list.
   ((() ()))
 #+end_src
 
+* =rval= part 8: dotted pairs
+#+name: b4s.rval-dotted
+#+begin_src b4a
+  > inic
+  > :S "(a . 1)" ..
+  > C0 pre rval sw pval ?d \0 cscr %R
+  ds: [C0 -1]
+  (a . 1)
+  > :S "((a . 1) (b . 2) . c))" ..
+  > C1 pre rval sw pval ?d \0 cscr %R
+  ds: [C1 -1]
+  ((a . 1) (b . 2) . c)
+#+end_src
 
 
 * =eval=
-* TODO eval
  start here because syms, nums, and nil eval to themselves
-* TODO elis

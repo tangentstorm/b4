@@ -113,24 +113,26 @@
    @M .i lc ch< .t rt
 :msym m\ c0 !N  li `smch rep rt         # msym :: (-) match a symbol, store in @N
 
+
 :rlis m\ node                           # rlis :: m?(-):(-l) read a list if matching
-   .[ .[ cl >rval                       #   note: rval does ws*
+   .[ .[ cl >rval
          .i acq! .t rt .] orp
-      # .[  lb '. chr ws* cl >rval
-      #     m\ @L cdr! rt .] opt
+      .[ lb '. chr  cl >rval
+         m\ @L cdr! rt .] opt
       ws* lb ') chr rt
    .] try done rt                       #   (o-L)
 
-:rval m\ ws*                            # rval :: m?(-):(-c?)
-   .[ lb '( chr rlis
-   m| lb '' chr @M .i rval .i wquo .t .t
+:rval0                                  # main body of rval (got too long for .[ .])
+   m\ lb '( chr rlis
+   m| lb '` chr @M .i cl >rval .i wqup .t .t
+   m| lb ', chr @M .i cl >rval .i wqdn .t .t
+   m| lb '' chr @M .i cl >rval .i wquo .t .t
    m| mhex @M .i @N cnum .t
    m| msym @M .i @N csym .t
-   # m| lb '` chr rval .i wqup .t
-   # m| lb ', chr rval .i wqdn .t
-   # m|
    rt
-   .] try @M rt
+
+:rval m\ ws*                            # rval :: m?(-):(-c?)
+   li `rval0 try @M rt
 
 
 #-- list navigation ---------------------
