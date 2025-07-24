@@ -605,6 +605,29 @@ tree using a single hex number whose digits describe
 a path.
 
 * =eq?=  (=eq= is a b4 opcode)
+#+name: b4s.eq?
+#+begin_src b4a
+> inic
+> C0 c1 cnum c1 cnum eq? ?d %R
+ds: [C0 -1]
+> C1 c1 cnum c2 cnum eq? ?d %R
+ds: [C1 0]
+> C2 'a 'b 'c 'd glu csym 'a 'b 'c 'd glu csym eq? ?d %R
+ds: [C2 -1]
+> C3 'a 'b 'c 'd glu csym 'w 'x 'y 'z glu csym eq? ?d %R
+ds: [C3 0]
+> C4 nil nil eq? ?d %R
+ds: [C4 -1]
+> # last one is structurally equal, but eq? doesn't know this
+> C5 c1 cnum nil cons c1 cnum nil cons eq? ?d %R
+ds: [C5 0]
+#+end_src
+
+=eq?= is a shallow test for whether two cells are the "same".
+If the cells are atoms (symbols or numbers), then we compare
+their values. Otherwise, we do a direct pointer comparison.
+
+
 * =aply= (f args)
 * =eval=
 * =appq=

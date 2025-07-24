@@ -154,3 +154,11 @@
 :ntl .w du lis?                         # (l-c) next to last cell of list
    ov cdr lis? an
    ov cddr nil? nt an .d cdr .o rt
+
+:eq? @A dc @B dc !B !A
+   @A ctyp @B ctyp eq
+   .i @A ctyp
+      .i @A cdr @B cdr eq
+      .e @A @B eq .t
+   .e c0 .t
+   cd !B cd !A rt
