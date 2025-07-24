@@ -94,6 +94,10 @@
 #-- list building ---------------------
 
 :newc nil nil cons rt
+
+# for these, @L is the start of list
+# @Q is final item in list, (nil . nil), a placeholder cell for the next item.
+# @P is the previous item, so we can replace (nil . x) -> x when calling 'done'.
 :node @Q @P @L newc du !L du !P !Q rt   # node :: (-qpl) @LPQ=new cell. keep old LQ on stack
 :acq! @Q car!                           # acq! :: (c-) add cell to list whose tail is in @Q
    @Q !P newc !Q                        #    (c-c) last cell @L is (nil). P=L, L=new
@@ -108,7 +112,7 @@
 
 :ch< lb 18 sh @N ls -8 sh ad !N rt      # ch< :: (c-n) append char to symbol @N. lossy if >4 chars
 :smch m\                                # smch ::(-) match valid symbol chars
-   .[ .[ ."( )'`," .] chs rt .] neg
+   .[ .[ ."( )'`,." .] chs rt .] neg
    lb 20 lb 7F btw
    @M .i lc ch< .t rt
 :msym m\ c0 !N  li `smch rep rt         # msym :: (-) match a symbol, store in @N
@@ -118,7 +122,7 @@
    .[ .[ cl >rval
          .i acq! .t rt .] orp
       .[ lb '. chr  cl >rval
-         m\ @L cdr! rt .] opt
+         @M .i zp @Q cdr! rt .t .] opt
       ws* lb ') chr rt
    .] try done rt                       #   (o-L)
 

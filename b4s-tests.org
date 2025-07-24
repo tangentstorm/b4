@@ -531,6 +531,11 @@ parentheses in a list.
   > C0 pre rval sw pval ?d \0 cscr %R
   ds: [C0 -1]
   (a . 1)
+  > pre rval zp du
+  > car pval \0 cscr
+  > cdr pval \0 cscr
+  a
+  1
   > :S "((a . 1) (b . 2) . c))" ..
   > C1 pre rval sw pval ?d \0 cscr %R
   ds: [C1 -1]
