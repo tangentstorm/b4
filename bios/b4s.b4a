@@ -183,3 +183,9 @@
      .i sw zp cdr cd !A rt              # (ep?-c)
      .e zp cdr .t                       # (ep-e')
   .o cd !A rt                           # (0-0) return nil
+
+:link                                   # (xy-c) append y to list x
+  sw du nil?                            # (xy-yx?) is x empty?
+  .i zp rt                              # (yx?-y) if so, return y
+  .e du car sw cdr rot link cons        # (yx-ady) else ((car x) . (link y (cdr x)))
+  .t rt

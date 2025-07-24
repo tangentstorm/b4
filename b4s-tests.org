@@ -686,10 +686,18 @@ symbols in the =car= and associated values in the =cdr=. If a pair
 with the target symbol is found, its cdr is returned.
 Otherwise, =asoc= returns =nil=.
 
+* =link= : append one list to another
+#+name: b4s.apnd
+#+begin_src b4a
+  > :S "(1 2 3) (a b c)"
+  > inic
+  > pre rval zp rval zp link pval \0 cscr
+  (1 2 3 a b c)
+#+end_src
+
 * =eval=
 * =econ=
 * =elis=
-* =apnd=
 
 * =aply= (f args)
 
