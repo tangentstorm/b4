@@ -124,3 +124,10 @@ The word =ch= simply retrieves the byte at that value.
 ** '\> ' syntax
 
 * TODO test moving/resizing the screen buffer
+
+* =rot=
+#+name: b4a.rot
+#+begin_src b4a
+> 1 2 3 rot ?d
+ds: [2 3 1]
+#+end_src

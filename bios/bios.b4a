@@ -186,6 +186,10 @@
 jm >main                # pointer to main (to be defined by user code)
 jm 40 0B .. ..          # loop if main is not defined
 
+# -- core routines --------------------------------------------
+
+:rot dc sw cd sw rt                     # (xyz-yzx) move 3rd item on stack to top
+
 # -- general memory routines ----------------------------------
 
 :ng c0 sw sb rt         # (n--n) negate
