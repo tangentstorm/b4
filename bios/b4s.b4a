@@ -62,7 +62,7 @@
      .e du car cl >pval                 # else print the car and recurse on cdr
            cdr jm `ptl .t .t            # optimized tail call (no 'rt')
 
-:symw csym sw cons rt                   # wrap with symbol
+:symw csym sw cons rt                   # (cs-c) wrap cell c with symbol
 :wquo li 'q 'u 'o .. symw rt
 :wqup li 'q 'u 'p .. symw rt
 :wqdn li 'q 'd 'n .. symw rt
@@ -155,10 +155,20 @@
    ov cdr lis? an
    ov cddr nil? nt an .d cdr .o rt
 
-:eq? @A dc @B dc !B !A
-   @A ctyp @B ctyp eq
-   .i @A ctyp
-      .i @A cdr @B cdr eq
-      .e @A @B eq .t
-   .e c0 .t
-   cd !B cd !A rt
+
+#-- eval helpers ------------------------
+
+:eq? @A dc @B dc !B !A                  # (xy-?) are two cells "equal"?
+   @A ctyp @B ctyp eq                   # are the types the same?
+   .i @A ctyp                           # ifso: are they atoms?
+      .i @A cdr @B cdr eq               #    ifso: compare values
+      .e @A @B eq .t                    #    else: compare pointers
+   .e c0 .t                             # else: not "eq?"
+   cd !B cd !A rt                       # restore + return
+
+:mapf                                   # (l-l) apply ^F to each cell in l
+   du nil? .i rt .t
+   du car ^F sw cdr mapf cons rt
+:map @F dc !F mapf cd !F rt             # (lf-l) map f over list l
+
+:appq li `wquo map rt                   # (l-l) apply wquo to each item

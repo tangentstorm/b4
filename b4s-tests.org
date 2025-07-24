@@ -627,15 +627,41 @@ ds: [C5 0]
 If the cells are atoms (symbols or numbers), then we compare
 their values. Otherwise, we do a direct pointer comparison.
 
+* =map=
+#+name: b4s.map
+#+begin_src b4a
+ > :S "(0 1 2)" ..
+ > :F cdr c2 ml c1 ad cnum rt
+ > inic pre rval zp du @F map pval \0 cscr
+ (1 3 5)
+ > pval \0
+ (0 1 2)
+#+end_src
 
-* =aply= (f args)
-* =eval=
+=map= applies a b4 word to every item in a list.
+The standard implementation stores the function in =@F=
+and uses a helper word named =mapf= to call it
+on each item.
+
+Note that the original list is not modified in place.
+
 * =appq=
+#+name: b4s.appq
+#+begin_src b4a
+  > :S "(a 1 (b 2))" ..
+  > inic pre rval zp appq pval \0
+  ('a '1 '(b 2))
+#+end_src
+
+=appq= wraps each item of a list with the symbol =quo=.
+
 * =asoc=
+* =eval=
 * =econ=
 * =elis=
 * =apnd=
 
+* =aply= (f args)
 
 * =eval= : numbers eval to themselves
 * =eval= : symbols eval to values
