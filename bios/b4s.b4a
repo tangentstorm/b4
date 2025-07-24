@@ -169,6 +169,17 @@
 :mapf                                   # (l-l) apply ^F to each cell in l
    du nil? .i rt .t
    du car ^F sw cdr mapf cons rt
+
 :map @F dc !F mapf cd !F rt             # (lf-l) map f over list l
 
 :appq li `wquo map rt                   # (l-l) apply wquo to each item
+
+:symc li 00 00 00 01 ml csym rt         # symbol from char
+
+:asoc                                   # (ae-c) lookup symbol a in env e
+  @A dc sw !A                           # (ae-e)
+  .w du nil? nt .d                      # (e-e?)
+     du car du car @A eq?               # (ep-ep?)
+     .i sw zp cdr cd !A rt              # (ep?-c)
+     .e zp cdr .t                       # (ep-e')
+  .o cd !A rt                           # (0-0) return nil

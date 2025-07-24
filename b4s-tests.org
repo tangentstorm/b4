@@ -655,7 +655,37 @@ Note that the original list is not modified in place.
 
 =appq= wraps each item of a list with the symbol =quo=.
 
+* =symc= - symbol from char
+#+name: b4s.csym1
+#+begin_src b4a
+  > :S 'a  .. rt
+  > inic
+  > pre rval zp cdr 'a symc cdr ?d %R
+  ds: [61000000 61000000]
+  > pre rval zp 'a symc eq? ?d
+  ds: [-1]
+
+#+end_src
+
 * =asoc=
+#+name: b4s.asoc
+#+begin_src b4a
+  > :S "((a . 123) (b . xyz))" ..
+  > inic pre rval zp
+  > 'a symc ov asoc pval \0 cscr
+  123
+  > 'b symc ov asoc pval \0 cscr
+  xyz
+  > 'c symc ov asoc pval \0 cscr
+  ()
+#+end_src
+
+=asoc= (sym env - cell) looks up a symbol in an association list
+(environment). The environment is a list of dotted pairs, with
+symbols in the =car= and associated values in the =cdr=. If a pair
+with the target symbol is found, its cdr is returned.
+Otherwise, =asoc= returns =nil=.
+
 * =eval=
 * =econ=
 * =elis=
