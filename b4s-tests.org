@@ -227,7 +227,7 @@ running on the vm.)
 Note that once you implement =ctyp=, you will probably need to mask out
 the type code in the implementation of =car= and =cdr=.
 
-* =pval= part 1 : atoms
+* =pval= 1 : atoms
 #+name: b4s.pval-num-sym
 #+begin_src b4a
   > inic
@@ -240,7 +240,7 @@ the type code in the implementation of =car= and =cdr=.
 Now that we have =ctyp= we can start to implement pval.
 It should inspect the type code and then call =pnum= or =psym= accordingly.
 
-* =pval= part 2 : nil
+* =pval= 2 : nil
 #+name: b4s.pval-nil
 #+begin_src b4a
   > inic
@@ -252,7 +252,7 @@ It should inspect the type code and then call =pnum= or =psym= accordingly.
 =nil= is a special value and should have type code 00, since it's the name for the empty list.
 However, if we print it on its own, we should print the value '()'
 
-* =pval= part 3 : dotted pairs
+* =pval= 3 : dotted pairs
 #+name: b4s.pval-pair
 #+begin_src b4a
   > inic
@@ -260,7 +260,7 @@ However, if we print it on its own, we should print the value '()'
   (1 . 2)
 #+end_src
 
-* =pval= part 4 : lists of atoms
+* =pval= 4 : lists of atoms
 #+name: b4s.pval-list
 #+begin_src b4a
   > inic
@@ -272,7 +272,7 @@ However, if we print it on its own, we should print the value '()'
   (C2 C1 C0)
 #+end_src
 
-* =pval= part 5 : nested lists
+* =pval= 5 : nested lists
 #+name: b4s.pval-nested
 #+begin_src b4a
   > inic
@@ -358,7 +358,7 @@ then print the =cdr=.
 
 * TODO test that @P, @L, and @Q are preserved (for nested builds)
 
-* =rval= part 1: atoms
+* =rval= 1: atoms
 #+name: b4s.rval-atoms
 #+begin_src b4a
   > inic
@@ -395,7 +395,7 @@ Recall that the matchers =mhex= and =msym= both populate =@N= so
 the trick is to call those matchers and (on success) call
 either =cnum= or =csym= to build the cell.
 
-* =rval= part 2: quoted atoms
+* =rval= 2: quoted atoms
 #+name: b4s.rval-quoted
 #+begin_src b4a
   > inic
@@ -409,7 +409,7 @@ either =cnum= or =csym= to build the cell.
   'x
 #+end_src
 
-* =rval= part 3: the empty list
+* =rval= 3: the empty list
 #+name: b4s.rval-nil
 #+begin_src b4a
   > inic
@@ -425,7 +425,7 @@ either =cnum= or =csym= to build the cell.
 There should only ever be one empty list, called =nil= internally
 and written as =()=.
 
-* =rval= part 4: lists with one atom
+* =rval= 4: lists with one atom
 #+name: b4s.rval-atom-lists
 #+begin_src b4a
   > inic
@@ -459,7 +459,7 @@ recursively. Here we parse some lists containing single atoms.
 There can be any amount of whitespace around the values or
 parentheses in a list.
 
-* =rval= part 5: longer lists
+* =rval= 5: longer lists
 
 #+name: rval-longer-lists
 #+begin_src b4a
@@ -478,7 +478,7 @@ parentheses in a list.
   (one two 3 4 5 six 7 8 9)
 #+end_src
 
-* =rval= part 6: nested lists
+* =rval= 6: nested lists
 #+name: rval-nested
 #+begin_src b4a
   > inic
@@ -500,7 +500,7 @@ parentheses in a list.
   (one (two 3) 4 (5 6 7 8 (9)))
 #+end_src
 
-* =rval= part 7: nested nils
+* =rval= 7: nested nils
 #+name: b4s.rval-nested-nils
 #+begin_src b4a
   > inic
@@ -523,7 +523,7 @@ parentheses in a list.
   ((() ()))
 #+end_src
 
-* =rval= part 8: dotted pairs
+* =rval= 8: dotted pairs
 #+name: b4s.rval-dotted
 #+begin_src b4a
   > inic
@@ -542,6 +542,90 @@ parentheses in a list.
   ((a . 1) (b . 2) . c)
 #+end_src
 
+
+* =nlst= (build list from n cells)
+#+name: nlist-print
+#+begin_src b4a
+ > inic
+ > # construct the list: (AB CD efgh)
+ > AB cnum CD cnum 'e 'f 'g 'h glu csym 3 nlst
+ > pval \0
+ (AB CD efgh)
+#+end_src
+
+We saw this before and tested that it allocated 5 cells,
+but didn't verify the resulting structure because
+we didn't have =pval=.
+
+* =cnav= (use hex number as path through cells)
+#+name: nlist-cnav
+#+begin_src b4a
+> :S "(A (B . C) (D E (F)))" ..
+> :T sw putn sp @L sw cnav pval \0 cscr rt
+> inic pre rval zp !L
+> # any hex digit 0..=E is that many cdr calls
+> C0 0 ^T  # 0 cnav is identity
+C0 (A (B . C) (D E (F)))
+> C1 1 ^T  # 1 = cdr
+C1 ((B . C) (D E (F)))
+> C2 2 ^T  # 2 = cdr cdr
+C2 ((D E (F)))
+> C3 3 ^T  # 3 = cdr cdr cdr (here: ())
+C3 ()
+> C4 4 ^T  # 4 = cdr of nil is nil
+C4 ()
+> # hex digit F indicates car
+> C5 F ^T  # F = car
+C5 A
+# hex digits from right to left form a path
+> C6 F1 ^T # (car (cdr x)) -> cadr
+C6 (B . C)
+> C6 FF1 ^T # (car (car (cdr x))) -> caadr
+C6 B
+> C7 1F1 ^T # (cdr (car (cdr x))) -> cdadr
+C7 C
+> C8 F2 ^T # (car (cdr (cdr x))) -> caddr
+C8 (D E (F))
+> C9 FF2 ^T
+> CA 1F2 ^T
+C9 D
+CA (E (F))
+> CB F1F2 ^T
+CB E
+> CC 2F2 ^T
+CC ((F))
+> CD F2F2 ^T
+CD (F)
+> CE FF2F2 ^T
+CE F
+#+end_src
+
+=cnav= is a word that lets you navigate through a =cons=
+tree using a single hex number whose digits describe
+a path.
+
+* =eq?=  (=eq= is a b4 opcode)
+* =aply= (f args)
+* =eval=
+* =appq=
+* =asoc=
+* =econ=
+* =elis=
+* =apnd=
+
+
+* =eval= : numbers eval to themselves
+* =eval= : symbols eval to values
+* =eval= : the symbol =t=
+* =eval= : quote
+* =eval= : (car xy) -> x
+* =eval= : (cdr xy) -> y
+* =eval= : (sym? x)
+* =eval= : (num? x)
+* =eval= : (cons x y)
+* =eval= : (cond)
+* =eval= : (lam)
+* =eval= : (let)
 
 * =eval=
  start here because syms, nums, and nil eval to themselves
