@@ -199,8 +199,10 @@
 :=>t .i lb 't symc .e nil .t rt         # (?-c) convert b4 bool (0/-1) to b4s (()/'t)
 
 :br rot rot rt                          # br (abc-cab) "bury" (undo rot)
-:arg1  sw lb F1 cnav sw ^V rt           # (xe-xe1) eval arg 1 of 1
-:args2 ov lb F2 cnav ov ^V br rt        # (xe-2xe) eval x's arg 2 and store under xe
+:e1 sw lb F1 cnav sw ^V rt              # (xe-xe1) eval arg 1 of 1
+:b2 ov lb F2 cnav ov ^V br rt           # (xe-2xe) eval x's arg 2 and bury under xe
+:a1 ov lb F1 cnav sw rt                 # (xe-x1e) extract arg 1 and swap. do not eval
+:args sw cdr sw rt                      # (xe-de) replace x with its cdr
 
 :debug cd @O dc dc .[ lb 'e io rt .] !O rt
 :nobug cd cd !O dc rt
@@ -212,15 +214,15 @@
   @E link
   cd !E rt
 
-:econ*                                  # (xs-v) inner part of econ. try branches with env in @E
-  du lis? ov nil? nt an .i              # is xs non-empty list? [  xs = ((caar cadar) . cdr) ]
-     du caar @E ^V nil?                 #   ifso. is (eval caar) nil? (meaning false)
-     .i cdr econ*                       #      ifso: move on to next pair
-     .e cadar @E ^V .t                  #      else eval cadar
-   .e                                   #   else: xs was nil or bad input. leave unchanged for now
+:econ*                                  # (d-v) inner part of econ. try branches with env in @E
+  du lis? ov nil? nt an .i              # (d-d?) is d non-empty list? [  d = ((caar cadar) . cdr) ]
+     du caar @E ^V nil?                 # (d-d?) ifso: is (eval caar) nil? (meaning false)
+     .i cdr econ*                       # (d-v)    ifso: move on to next pair
+     .e cadar @E ^V .t                  # (d-v)    else: eval cdar
+   .e                                   # (d-d)  else: d was nil or bad. leave unchanged
    .t rt
 
-:econ @E dc !E econ* cd !E rt           # (xys env - Y')
+:econ @E dc !E econ* cd !E rt           # (de-Y')
 
 :V                                      # ^V = eval, so we can swap evaluator out later.
 :eval                                   # (xe-v) eval expression x in env e
@@ -230,13 +232,13 @@
   ov quo? .i zp cdr rt .t
   @A dc
   ov lb 1F cnav !A                      # (xe-xe) @A: cdar of expr (b4 number of symbol)
-  @A li .. 'e 'q '? eq .i args2 arg1 eq? =>t cd !A rt .t
-  @A li .. 'c 'a 'r eq .i arg1 car           cd !A rt .t
-  @A li .. 'c 'd 'r eq .i arg1 cdr           cd !A rt .t
-  @A li 's 'y 'm '? eq .i arg1 sym? =>t      cd !A rt .t
-  @A li 'n 'u 'm '? eq .i arg1 num? =>t      cd !A rt .t
-  @A li 'c 'o 'n 's eq .i args2 arg1 sw cons cd !A rt .t
-  @A li .. 'l 'e 't eq .i               # ((let d x) e-X) eval x in (link d e)
-     ov lb F1 cnav sw elet args2 zp zp       cd !A rt .t
+  @A li .. 'e 'q '? eq .i b2 e1 eq? =>t    cd !A rt .t
+  @A li .. 'c 'a 'r eq .i e1 car           cd !A rt .t
+  @A li .. 'c 'd 'r eq .i e1 cdr           cd !A rt .t
+  @A li 's 'y 'm '? eq .i e1 sym? =>t      cd !A rt .t
+  @A li 'n 'u 'm '? eq .i e1 num? =>t      cd !A rt .t
+  @A li 'c 'o 'n 's eq .i b2 e1 sw cons    cd !A rt .t
+  @A li .. 'l 'e 't eq .i a1 elet b2 zp zp cd !A rt .t
+  @A li 'c 'o 'n 'd eq .i args econ        cd !A rt .t
   cd !A
   zp rt

@@ -886,8 +886,17 @@ to a lisp boolean. (=()= / =t=)
   > :S "((p . t) (q))"
   > inic pre rval zp !E
   > : "((q 123) (p 'xyz))"
-  > rval zp @E econ pval \0 cscr
-  xyz
+  > C0 putn sp rval zp @E econ pval \0 cscr
+  C0 xyz
+  > : "((p 123) (p 'xyz))"
+  > C1 putn sp rval zp @E econ pval \0 cscr
+  C1 123
+  > : "((q 123) (p p))"
+  > C2 putn sp rval zp @E econ pval \0 cscr
+  C2 t
+  > : "((q 123) (q 456))"
+  > C3 putn sp rval zp @E econ pval \0 cscr
+  C3 ()
 #+end_src
 
 =econ= (xys env - v) goes down the list of xy pairs, evaluating
@@ -895,13 +904,25 @@ each x in turn until it finds an x that evaluates to a non-nil
 value (preferably the symbol =t=). When it does, it evaluates y
 in the same context.
 
-
 * =eval= : (cond)
 #+name: b4s.eval.cond
 #+begin_src b4a
-
+  > :T putn sp rval zp @E eval pval \0 cscr rt
+  > :S "((t . t) (z . FF))"
+  > inic pre rval zp !E
+  > # C0: eval cdr of first pair whose car (evaluated) is non-nil
+  > : "(cond (() BB) ('ok AA))"
+  > C0 ^T
+  C0 AA
+  > # C1: _ not defined so whole answer is nil
+  > : "(cond (_ z))"
+  > C1 ^T
+  C1 ()
+  > # C2: t IS defined (as itself) so eval cdr
+  > : "(cond (t z))"
+  > C2 ^T
+  C2 FF
 #+end_src
-
 
 * =elis=
 * =eval= : (lam)
