@@ -795,12 +795,26 @@ the lisp interpreter. Note that in lisp, =eq?= returns the symbol =t= instead of
 and =()= instead of 0. (I used a helper word =t?= that convert a b4 boolean (=0= / =-1=)
 to a lisp boolean. (=()= / =t=)
 
+* =eval= 5: (car (x y)) -> x
+#+name: b4s.eval.car
+#+begin_src b4a
+  > :S "(car '(a . b))"
+  > inic pre rval zp nil eval pval \0 cscr
+  a
+#+end_src
+
+* =eval= 6: (cdr (x y)) -> y
+#+name: b4s.eval.cdr
+#+begin_src b4a
+  > :S "(cdr '(a . b))"
+  > inic pre rval zp nil eval pval \0 cscr
+  b
+#+end_src
+
 * =econ=
 * =elis=
 * =aply= (f args)
 * =eval= : the symbol =t=
-* =eval= : (car xy) -> x
-* =eval= : (cdr xy) -> y
 * =eval= : (sym? x)
 * =eval= : (num? x)
 * =eval= : (cons x y)

@@ -207,5 +207,11 @@
     .i  ov lb F1 cnav ov eval rot rot  # (xe-1xe) eval arg 1
         ov lb F2 cnav ov eval rot rot  # (1xe-12xe) eval arg 2
         zp zp eq? t? cd !A rt .t
+  @A li .. 'c 'a 'r eq
+     .i sw lb F1 cnav sw eval car
+        cd !A rt .t
+  @A li .. 'c 'd 'r eq
+     .i sw lb F1 cnav sw eval cdr
+        cd !A rt .t
   cd !A
   zp rt
