@@ -542,6 +542,17 @@ parentheses in a list.
   ((a . 1) (b . 2) . c)
 #+end_src
 
+* =rval= 9: explicit quotes
+#+name: b4s.rval-quo
+#+begin_src b4a
+  > inic
+  > :S "(quo . C0)" ..
+  > pre rval zp pval \0 cscr %R
+  'C0
+  > :S "(quo C1)" ..
+  > pre rval zp pval \0 cscr %R
+  '(C1)
+#+end_src
 
 * =nlst= (build list from n cells)
 #+name: nlist-print
@@ -695,16 +706,62 @@ Otherwise, =asoc= returns =nil=.
   (1 2 3 a b c)
 #+end_src
 
-* =eval=
+* =eval= 1: numbers
+#+name: b4s.eval.nums
+#+begin_src b4a
+  > :S "1" ..
+  > inic pre rval zp   nil eval   pval \0 cscr
+  1
+#+end_src
+
+=eval= has signature =(xpr env - val)= ... It evaluates an expression
+given an environ (=asoc=  list) and returns the calculated value.
+
+Here, we pass =nil= as the environment and evaluate the number 1.
+Numbers always evaluate to themselves.
+
+* =eval= : symbols get looked up in the environment
+#+name: b4s.eval.syms
+#+begin_src b4a
+  > :S "((a . 1) (b . B)) a b c" ..
+  > inic pre rval zp !E
+  > rval zp   @E eval   pval \0 cscr
+  1
+  > rval zp   @E eval   pval \0 cscr
+  B
+  > rval zp   @E eval   pval \0 cscr
+  ()
+#+end_src
+
+Here we define a=1, b=B, and then evaluate symbols =a=, =b=, and =c=.
+The first two evaluate to their defined values, and =c= evaluates to =nil=.
+
+* =eval= : quote
+#+name: b4s.eval.quo
+#+begin_src b4a
+  > :S "((a . 1) (b . B)) 'a (quo b) 'c ''d '(e f g)" ..
+  > inic pre rval zp !E
+  > rval zp   @E eval   pval \0 cscr
+  a
+  > rval zp   @E eval   pval \0 cscr
+  (b)
+  > rval zp   @E eval   pval \0 cscr
+  c
+  > rval zp   @E eval   pval \0 cscr
+  'd
+  > rval zp   @E eval   pval \0 cscr
+  (e f g)
+#+end_src
+
+Values quoted with =quo= evaluate to themselves (unquoted).
+
+
 * =econ=
 * =elis=
 
 * =aply= (f args)
 
-* =eval= : numbers eval to themselves
-* =eval= : symbols eval to values
 * =eval= : the symbol =t=
-* =eval= : quote
 * =eval= : (car xy) -> x
 * =eval= : (cdr xy) -> y
 * =eval= : (sym? x)

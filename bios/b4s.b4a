@@ -63,16 +63,16 @@
            cdr jm `ptl .t .t            # optimized tail call (no 'rt')
 
 :symw csym sw cons rt                   # (cs-c) wrap cell c with symbol
-:wquo li 'q 'u 'o .. symw rt
-:wqup li 'q 'u 'p .. symw rt
-:wqdn li 'q 'd 'n .. symw rt
+:wquo li .. 'q 'u 'o symw rt
+:wqup li .. 'q 'u 'p symw rt
+:wqdn li .. 'q 'd 'n symw rt
 
-:wrp? dc car du sym?                    # (xs-?) is x a wrapped with symbol s?
+:wrp? dc car du sym?                    # (xs-?) is x wrapped with symbol s?
    .i cdr cd eq
    .e zp cd zp c0 .t rt
-:quo? li 'q 'u 'o .. wrp? rt            # (x-?) is x a quoted value?
-:qdn? li 'q 'd 'n .. wrp? rt
-:qup? li 'q 'u 'p .. wrp? rt
+:quo? li .. 'q 'u 'o wrp? rt            # (x-?) is x a quoted value?
+:qdn? li .. 'q 'd 'n wrp? rt
+:qup? li .. 'q 'u 'p wrp? rt
 
 :pfix ^O cdr cl >pval rt
 :plis                                   # (c-) print a list
@@ -189,3 +189,12 @@
   .i zp rt                              # (yx?-y) if so, return y
   .e du car sw cdr rot link cons        # (yx-ady) else ((car x) . (link y (cdr x)))
   .t rt
+
+
+#-- eval --------------------------------
+
+:eval                                   # (xe-v) eval expression x in env e
+  ov num? .i zp rt .t
+  ov sym? .i asoc rt .t
+  ov quo? .i zp cdr rt .t
+  zp rt
