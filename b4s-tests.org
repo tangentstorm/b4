@@ -854,7 +854,6 @@ to a lisp boolean. (=()= / =t=)
 #+end_src
 
 * =elet= : eval helper for (let)
-
 #+name: b4s.elet
 #+begin_src b4a
   > :S "((a . 1) (b . b))"
@@ -881,12 +880,30 @@ to a lisp boolean. (=()= / =t=)
   C2 ()
 #+end_src
 
-* =econ=
+* =econ= : eval helper for (cond)
+#+name: b4s.econ
+#+begin_src b4a
+  > :S "((p . t) (q))"
+  > inic pre rval zp !E
+  > : "((q 123) (p 'xyz))"
+  > rval zp @E econ pval \0 cscr
+  xyz
+#+end_src
+
+=econ= (xys env - v) goes down the list of xy pairs, evaluating
+each x in turn until it finds an x that evaluates to a non-nil
+value (preferably the symbol =t=). When it does, it evaluates y
+in the same context.
+
+
+* =eval= : (cond)
+#+name: b4s.eval.cond
+#+begin_src b4a
+
+#+end_src
+
+
 * =elis=
+* =eval= : (lam)
 * =aply= (f args)
 * =eval= : the symbol =t=
-* =eval= : (cons x y)
-* =eval= : (cond)
-* =eval= : (lam)
-* =eval= : (let)
-
