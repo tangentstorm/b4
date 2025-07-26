@@ -1,4 +1,3 @@
-
 # Add .exe for Windows compatibility
 EXE=
 ifeq ($(OS),Windows_NT)
@@ -14,7 +13,6 @@ B4IX = b4ix$(EXE)
 B4A = b4a$(EXE)
 B4D = b4d$(EXE)
 MKOPTBL = mkoptbl$(EXE)
-COLORTEST = colortest$(EXE)
 
 main:
 	@echo 'usage : make <target> ARGS="..."'
@@ -32,7 +30,7 @@ main:
 
 always:
 
-.PHONY: main always run runf runi runx runa rund b4 b4i b4ix b4a b4d colortest clean
+.PHONY: main always run runf runi runx runa rund clean colortest
 
 run: always $(B4)
 	./$(B4) $(ARGS)
@@ -52,11 +50,13 @@ runa: $(B4A)
 rund: $(B4D)
 	./$(B4D) $(ARGS)
 
+ifeq ($(OS),Windows_NT)
 b4: $(B4)
 b4i: $(B4I)
 b4ix: $(B4IX)
 b4a: $(B4A)
 b4d: $(B4D)
+endif
 
 $(B4I): $(B4) b4i.pas ub4i.pas
 	$(FPC) -o$(B4I) -B b4i.pas
@@ -82,11 +82,9 @@ $(B4A): $(B4) b4a.pas
 $(B4D): $(B4) b4d.pas
 	$(FPC) -o$(B4D) -B b4d.pas
 
-colortest: $(COLORTEST)
-	./$(COLORTEST)
-
-$(COLORTEST): uhw_vt.pas colortest.pas
-	$(FPC) -o$(COLORTEST) -B colortest.pas
+colortest: uhw_vt.pas colortest.pas
+	$(FPC) -B colortest.pas
+	./colortest
 
 clean:
 	@rm -f *.o *.ppu *.exe *~
