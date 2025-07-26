@@ -5,6 +5,9 @@
 The opcode table can be generated from the Pascal version
 of =b4i= with the command: =instantfpc -B b4i.pas -o -q=
 
+The version below has been hand-edited to indicate the
+free public (=__=) and private (=##=) opcodes.
+
 #+begin_example
      +0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F
    +------------------------------------------------
@@ -18,12 +21,12 @@ $60| +@ +A +B +C +D +E +F +G +H +I +J +K +L +M +N +O
 $70| +P +Q +R +S +T +U +V +W +X +Y +Z +[ +\ +] +^ +_
 $80| ad sb ml dv md sh an or xr nt eq lt du sw ov zp
 $90| dc cd rb ri wb wi lb li rs ls jm hp h0 cl rt nx
-$A0|
-$B0|                                           tm
-$C0| c0 c1 c2 n1 c4
-$D0|
-$E0|
-$F0|                            wl ds cs hx io db hl
+$A0| __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __
+$B0| __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ tm
+$C0| c0 c1 ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+$D0| ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+$E0| ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
+$F0| ## ## ## ## ## ## c2 n1 c4 wl ds cs hx io db hl
 #+end_example
 
 This document lists the 2-letter opcodes of the b4 virtual machine instructions
@@ -32,6 +35,74 @@ and their meanings.
 See [[file:../b4-tests.org][b4-tests.org]] for examples of each opcode.
 
 The hex numbers after the opcodes indicate the bytecode in the communication protocol (which is not yet stable, so they may change slightly).
+
+* public and private opcodes
+
+NOTE: this top is not actually implemented, but serves as
+an intended direction for the system and how it is meant
+to be used.
+
+B4vm is intended to have /two/ bytecode systems:
+
+- private bytecode, used to run programs
+- public bytecode, used as a communications protocol.
+
+The two bytecodes differ in the meaning of the bytes $00,
+and the ranges $20..$7F and $C2..$F4, inclusive, because
+those byte ranges are used to encode printable characters
+in utf-8.
+
+In utf-8, the range $00..$1F comprises the ASCII control
+characters, inlcuding the familiar tab, carriage return,
+newline, and escape, as well as more esoteric ones like
+the form feed, vertical tab and various others for
+delimiting data and sending instructions to hardware.
+
+In b4, codes $01..$1F are named after these control
+characters, and are used to invoke arbitrary user-defined
+functions in both the public and private bytecodes.
+
+Code $00 is the no-op instruction in the private bytecode,
+and serves as an "end of message" marker in the public
+bytecode.
+
+The correspondig register (=@@=) cannot be invoked directly,
+but instead is used to process each incoming utf-8 codepoint.
+
+
+This is also true of the printable ascii characters. Thus
+the ascii character 'a' pushes the number $61 to the stack,
+and then triggers a call to the codepoint handler, which
+is some arbitrary function whose address is stored in =@@=.
+
+
+In utf-8, codes $C2..$F4 are used as the start of multi-byte
+encoding sequences, and they have the same meaning in the
+public bytecode. That is, any byte sequence that produces
+a valid utf-8 codepoint will, in b4's public bytecode,
+push the corresponding integer to the top of the data stack,
+and then call the codepoint handler.
+
+The remaining byte codes ($01..$1F, $80..$C2, and $F5..FF)
+are either not allowed in or generally do not appear in utf-8
+sequences (other than tabs, newlines, and carriage returns).
+
+Thus, you can think of a b4 machine's public bytecode as a
+calculator with 256 buttons, where each button is triggered
+by sending the corresponding byte to the machine's input
+stream. Most of the buttons simply input text into the
+machine, and the rest either invoke primitive operations
+or call user-defined functions.
+
+* the private bytecode
+
+In the private bytecode, the range $20..$7F (printable ascii
+characters) is overloaded with operations to read, write, and
+increment the 32 registers.
+
+The range $C2..$FF is reserved for custom operations. Of these,
+$C2..$F4 are private and $F5..$FF are public.
+
 
 * terms
 
@@ -166,7 +237,6 @@ to use this register to initialize the instruction pointer on startup
 when using an image file, but this is not yet implemented as of
 this writing.)
 
-
 *** Fetch from register  =( =@@ .. @_ / $20 .. $3F )=
 
 These opcodes read a 32-bit signed integer from the register and store it on =ds=.
@@ -186,11 +256,9 @@ For example, the following b4a code puts the numbers 0 2 4 onto =ds=, leaving
   :F c0 !X c2 +X c2 +X c2 +X rt
 #+end_src
 
-
 ** reserved ops
 
 - io :: reserved for input/output operations
-
 
 ** terminal "ops"
 
@@ -212,7 +280,6 @@ B4 will eventually have an official spec for color terminal i/o, but it will jus
 - tl :: =$B6= clear terminal line. ~( -- )~ (clear from cursor to right side of screen)
 - tc :: =$B7= terminal cursor position ~( -- x y)~ (where x and y are the current coordinates of the cursor)
 
-
 * assembler macros
 
 These are not opcodes, but macros built into the assembler (at least in the pascal and lil versions):
@@ -230,7 +297,6 @@ These are not opcodes, but macros built into the assembler (at least in the pasc
 | =.^=      | "linked list" saves current assembly address and emits the previously saved address.    |
 | `."abc"` | lays down a string with a length prefix.                                                |
 | `"abc"`   | lays down a string character by character.                                              |
-
 
 * letter mnemonics
 
