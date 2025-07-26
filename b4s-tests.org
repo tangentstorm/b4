@@ -720,7 +720,7 @@ given an environ (=asoc=  list) and returns the calculated value.
 Here, we pass =nil= as the environment and evaluate the number 1.
 Numbers always evaluate to themselves.
 
-* =eval= : symbols get looked up in the environment
+* =eval= 2: symbols get looked up in the environment
 #+name: b4s.eval.syms
 #+begin_src b4a
   > :S "((a . 1) (b . B)) a b c" ..
@@ -736,7 +736,7 @@ Numbers always evaluate to themselves.
 Here we define a=1, b=B, and then evaluate symbols =a=, =b=, and =c=.
 The first two evaluate to their defined values, and =c= evaluates to =nil=.
 
-* =eval= : quote
+* =eval= 3: quote
 #+name: b4s.eval.quo
 #+begin_src b4a
   > :S "((a . 1) (b . B)) 'a (quo b) 'c ''d '(e f g)" ..
@@ -755,12 +755,49 @@ The first two evaluate to their defined values, and =c= evaluates to =nil=.
 
 Values quoted with =quo= evaluate to themselves (unquoted).
 
+* =eval= 4: =eq?= and =t=
+#+name: b4s.eval.eq?
+#+begin_src b4a
+  > :S "((a . 1 ) (b . 1) (c . 2))"
+  > inic pre rval zp !E
+  > : "(eq? 1 2)"
+  > C0 putn sp rval zp @E eval pval \0 cscr
+  C0 ()
+  > : "(eq? 1 1)"
+  > C1 putn sp rval zp @E eval pval \0 cscr
+  C1 t
+  > : "(eq? a b)"
+  > # a and b should both eval to 1, so eq? should be true
+  > C2 putn sp rval zp @E eval pval \0 cscr
+  C2 t
+  > : "(eq? 'a 'b)"
+  > C3 putn sp rval zp @E eval pval \0 cscr
+  C3 ()
+  > : "(eq? a c)"
+  > C4 putn sp rval zp @E eval pval \0 cscr
+  C4 ()
+  > : "(eq? (1) (1))"
+  > # for lists, we check pointer equality, so these are not 'eq?'
+  > C5 putn sp rval zp @E eval pval \0 cscr
+  C5 ()
+  > : "(eq? () ())"
+  > # but empty lists (nil) are always the same
+  > C6 putn sp rval zp @E eval pval \0 cscr
+  C6 t
+  > # and undefined values are always nil, so also the same
+  > : "(eq? x y)"
+  > C7 putn sp rval zp @E eval pval \0 cscr
+  C7 t
+#+end_src
+
+We have already defined =eq?= as a b4 word, but now we need to expose it to
+the lisp interpreter. Note that in lisp, =eq?= returns the symbol =t= instead of -1,
+and =()= instead of 0. (I used a helper word =t?= that convert a b4 boolean (=0= / =-1=)
+to a lisp boolean. (=()= / =t=)
 
 * =econ=
 * =elis=
-
 * =aply= (f args)
-
 * =eval= : the symbol =t=
 * =eval= : (car xy) -> x
 * =eval= : (cdr xy) -> y
@@ -771,5 +808,3 @@ Values quoted with =quo= evaluate to themselves (unquoted).
 * =eval= : (lam)
 * =eval= : (let)
 
-* =eval=
- start here because syms, nums, and nil eval to themselves

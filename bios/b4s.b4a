@@ -141,7 +141,7 @@
 
 #-- list navigation ---------------------
 
-:cdar cdr car rt
+:cdar car cdr rt
 :cddr cdr cdr rt
 :cnav                                   # (cn-c) navigate using n as path
    .w du .d                             # (cn-)
@@ -193,8 +193,19 @@
 
 #-- eval --------------------------------
 
+:t? .i lb 't symc .e nil .t rt
+
 :eval                                   # (xe-v) eval expression x in env e
   ov num? .i zp rt .t
   ov sym? .i asoc rt .t
+  ov nil? .i zp rt .t
+  # now we know it's a non-empty list
   ov quo? .i zp cdr rt .t
+  @A dc
+  ov lb 1F cnav !A                     # (xe-xe) @A: cdar of expr (the actual b4 number of the symbol)
+  @A li .. 'e 'q '? eq
+    .i  ov lb F1 cnav ov eval rot rot  # (xe-1xe) eval arg 1
+        ov lb F2 cnav ov eval rot rot  # (1xe-12xe) eval arg 2
+        zp zp eq? t? cd !A rt .t
+  cd !A
   zp rt
