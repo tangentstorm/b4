@@ -1,7 +1,20 @@
-# XPL is http://github.com/tangentstorm/xpl
+
+# Add .exe for Windows compatibility
+EXE=
+ifeq ($(OS),Windows_NT)
+  EXE=.exe
+endif
 
 FPC = fpc -gl -Mobjfpc
 ARGS ?= # specify ARGS="..." on make command line
+
+B4 = b4$(EXE)
+B4I = b4i$(EXE)
+B4IX = b4ix$(EXE)
+B4A = b4a$(EXE)
+B4D = b4d$(EXE)
+MKOPTBL = mkoptbl$(EXE)
+COLORTEST = colortest$(EXE)
 
 main:
 	@echo 'usage : make <target> ARGS="..."'
@@ -15,52 +28,65 @@ main:
 	@echo ' runx : build/run b4ix (fancy interpreter)'
 	@echo ' runa : build/run b4a (batch assembler)'
 	@echo ' rund : build/run b4d (disassembler)'
+	@echo ' colortest: build/run colortest'
 
 always:
 
-run: always b4
-	./b4 $(ARGS)
+.PHONY: main always run runf runi runx runa rund b4 b4i b4ix b4a b4d colortest clean
 
-runf: b4
-	./b4 $(ARGS) -a ../bios/b4f.b4a
+run: always $(B4)
+	./$(B4) $(ARGS)
 
-runi: b4i
-	./b4i $(ARGS)
+runf: $(B4)
+	./$(B4) $(ARGS) -a ../bios/b4f.b4a
 
-runx: b4ix
-	./b4ix $(ARGS)
+runi: $(B4I)
+	./$(B4I) $(ARGS)
 
-runa: b4a
-	./b4a $(ARGS)
+runx: $(B4IX)
+	./$(B4IX) $(ARGS)
 
-rund: b4d
-	./b4d $(ARGS)
+runa: $(B4A)
+	./$(B4A) $(ARGS)
 
-b4i: b4 b4i.pas ub4i.pas
-	$(FPC) -B b4i.pas
+rund: $(B4D)
+	./$(B4D) $(ARGS)
 
-b4ix: b4i b4ix.pas
-	$(FPC) -B b4ix.pas
+b4: $(B4)
+b4i: $(B4I)
+b4ix: $(B4IX)
+b4a: $(B4A)
+b4d: $(B4D)
 
-b4: b4.pas ub4asm.pas ub4.pas ub4ops.pas uhw.pas uhw_vt.pas
-	$(FPC) -B b4.pas
+$(B4I): $(B4) b4i.pas ub4i.pas
+	$(FPC) -o$(B4I) -B b4i.pas
+
+$(B4IX): $(B4I) b4ix.pas
+	$(FPC) -o$(B4IX) -B b4ix.pas
+
+$(B4): b4.pas ub4asm.pas ub4.pas ub4ops.pas uhw.pas uhw_vt.pas
+	$(FPC) -o$(B4) -B b4.pas
 
 ub4.ppu: ub4.pas
 	$(FPC) -B ub4.pas
 
-ub4ops.pas: mkoptbl.pas ub4.pas
-	$(FPC) -B mkoptbl.pas
-	./mkoptbl
+ub4ops.pas: $(MKOPTBL)
+	./$(MKOPTBL)
 
-b4a: b4 b4a.pas
-	$(FPC) -B b4a.pas
+$(MKOPTBL): mkoptbl.pas ub4.pas
+	$(FPC) -o$(MKOPTBL) -B mkoptbl.pas
 
-b4d: b4 b4d.pas
-	$(FPC) -B b4d.pas
+$(B4A): $(B4) b4a.pas
+	$(FPC) -o$(B4A) -B b4a.pas
 
-colortest: uhw_vt.pas colortest.pas
-	$(FPC) -B colortest.pas
-	./colortest
+$(B4D): $(B4) b4d.pas
+	$(FPC) -o$(B4D) -B b4d.pas
+
+colortest: $(COLORTEST)
+	./$(COLORTEST)
+
+$(COLORTEST): uhw_vt.pas colortest.pas
+	$(FPC) -o$(COLORTEST) -B colortest.pas
 
 clean:
 	@rm -f *.o *.ppu *.exe *~
