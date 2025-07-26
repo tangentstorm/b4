@@ -1,0 +1,131 @@
+#+title: log of some design decisions
+
+* using a virtual machine in the first place
+- wanted to write code that could be paused and resumed after days
+- somewhat inspired by my experiences ngaro/retroforth 11
+
+* little endian numbers
+- mostly because intel does this, and arm allows it
+- because I wanted it to be fast on those systems
+
+* use utif-8 as organizing scheme for opcodes
+- definitely inspired by communications in colorforth/greenarrays
+
+* two-character opcodes
+- definitely inspired by muri
+- i liked the idea that a bare bones assembler would only have
+  to look at two characters at a time.
+
+* b3a vs b4a
+- wanted a self-hosting assembler a la edmund grimley evans.
+- also wanted a minimal assembler that anyone could easily write.
+- eventually, b3a + debugger will be all you need to pass the tests
+
+* two-character macros in b4a
+- inspired by the same idea (assembler only has to look at 2 codes)
+- plan was to make them programmable, in registers
+  (probably will still do this with uppercase)
+
+* tanco for tests
+- grew out of my previous experience with learntris (on which the tanco runner is based)
+
+* =nx= as an opcode
+nx is more complicated than the other opcodes. It was mostly
+inspired by the opcode in mako.
+
+* general register ops
+- pretty sure the ctrl ops (=^R=) were there from the beginning because
+  they were part of the ascii / utf8 "protocol"
+- but originally, there was no distinction between public/private, so
+  the range $21..$7F was off-limits, or would just push ascii codes
+  to the stack.
+- also there were originally going to be specific ops tied to registers
+  X,Y,and Z that would allow streaming, but once I added multiple sizes
+  for memory ops (u8/i8/i32) it seemed I wanted more variety.
+- the (=@R=, =!R=, and =+R=) ops came at that point
+- =+R= in particular would have incremented by the 'value size', but
+  that was just too cumbersome. simpler to just have it take an argument
+  saying how far to move it.
+
+* have instructions for i32, u8, and i8
+- previously, there was a setting you could make for the word size
+- you could call opcode 'vi' to use i32 or vb to use bytes
+- then there was just 'lv' 'rv' 'wv' to load, read, and write values
+
+* constant ops (=c0=, =c1=, =c2=, =n1=, =c4=)
+- c0 and c1 were kind of suggested because C0 and C1 were unused in utf-8
+- c2 c4 n1 seemed to be the most used constants after that
+- originally i assigned c2=$C2, n1=$C3, c4=$C4, but eventually remembered
+  these hex codes are used by utf-8.
+- i'm not opposed to adding a c8 op, but you can't read 8 bytes, so there
+  are probably not as many tight loops where you increment by 8. (b4s
+  cells would be one example where you might, but you don't tend to visit
+  them in order outside =inic= or the forthcoming garbage collector)
+
+* ideas under consideration
+
+** probably: return the 'new' value for =+R=
+- both old and new are easy with =@R= before or after
+- but new value is /probably/ the one you actually want
+
+** probably: ops to push/restore registers
+- most likely would push the first n registers to cs, along with count
+- reverse op would read the count off cs and set the registers
+- use is for preserving registers and stack management
+
+current way:
+
+#+begin_src b4a
+  :old-way @A @B @C dc dc dc
+  .. .. ..
+  cd cd cd !C !B !A rt
+#+end_src
+
+proposed way:
+
+#+begin_src b4a
+  :new-way lb 3 pn      # pn: push n registers + literal n to cs
+  .. .. ..
+  rs rt                 # rs: restore registers
+#+end_src
+
+An alternative design is to use a 32-bit mask (or even an 8-bit mask)
+to specify which registers to push and pop. (or, an 8-bit mask)
+but I don't think that's worth it.
+
+The named registers are really meant to be used as function pointers (public commands or programmable ops) or global variables (as in the bios). For compiled code with stack frames, I think limiting arguments to sequential registers is fine.
+
+Since @ is a special register (doesn't have a ^@), should the count start with @A? Maybe. It would make sense for =@= to also serve as the 'self' or 'this' pointer for objects. (An implicit, "hidden" first parameter).
+
+(So then to explicitly push/restore =@=, you could either either do =lb 20 pn=, or (since there are only 32 registers, and thus you only need 5 bits to specify all of them, then you could use the high bits to indicate including up to 3 non-sequential registers. (there's no point in 'pushing 0' so use the 5 bits to represent 1..32 inclusive)
+
+Anway, my current feeling is that I will implement some form of this concept once I start work on retro pascal.
+
+** maybe: 'bunch' syntax in assembler
+- syntax would be sigil + any combination of =@ABC...XYZ[\]^_=
+- would assemble a 32-bit value with those named bits set to 1
+- basically this is the SET type in pascal/oberon
+- APToP calls this a bunch (like sets, but with no containment/nesting)
+
+** maybe: 16-bit addresses for jumps/calls
+- benefit is saving 2 bytes per call
+- all code would live in 1 64k segment
+- data gets the full 32-bit space
+- (if you need more code space, use multiple machines)
+
+
+* discarded ideas
+
+** gone: the "skippy bit" in j version
+this was a way to "jump over" definitions in the old assembler.  there
+would just be one op to turn off execution (but still advance the
+program counter) until a "go" op was encountered.
+
+** gone: the "value size" register
+this was an alternative to separate ops for =li= / =lb= , =ri= / =rb= / =rs=,
+and =wi= / =wb=.  you'd call a =vs= op to set the size of values, then =lv=,
+=rv=, =wv=. I suppose I could have used a size of =-8= to indicate signed
+bytes, but I never got that far. Basically the problem with this idea
+is that the size you want to use changes often, and you'd have to
+either take care to preserve that register in each function call, or
+else set it explicitly every time you used a memory op anyway.
