@@ -1,0 +1,3 @@
+#!/bin/sh
+(cd pas; make b4i) && \
+tanco run -t bios-tests.org pas/b4i -a bios/bios.b4a
