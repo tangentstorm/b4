@@ -199,14 +199,24 @@
 :arg1  sw lb F1 cnav sw ^V rt           # (xe-xe1) eval arg 1 of 1
 :args2 ov lb F2 cnav ov ^V br rt        # (xe-2xe) eval x's arg 2 and store under xe
 
+:debug cd @O dc dc .[ lb 'e io rt .] !O rt
+:nobug cd cd !O dc rt
+:p? debug du pval nobug rt
+
+:elet                                   # (de-E) d=[(k . v)]. v evaled in e. return d',e
+  @E dc !E
+  .[ du car sw cdr @E ^V cons rt .] map
+  @E link
+  cd !E rt
+
 :V                                      # ^V = eval, so we can swap evaluator out later.
 :eval                                   # (xe-v) eval expression x in env e
   ov num? .i zp rt .t
   ov sym? .i asoc rt .t
-  ov nil? .i zp rt .t                   # if we're here after this, we have a non-empty list
+  ov nil? .i zp rt .t                   # if we're here after this, we have non-empty list
   ov quo? .i zp cdr rt .t
   @A dc
-  ov lb 1F cnav !A                      # (xe-xe) @A: cdar of expr (the actual b4 number of the symbol)
+  ov lb 1F cnav !A                      # (xe-xe) @A: cdar of expr (b4 number of symbol)
   @A li .. 'e 'q '? eq .i args2 arg1 eq? t?  cd !A rt .t
   @A li .. 'c 'a 'r eq .i arg1 car           cd !A rt .t
   @A li .. 'c 'd 'r eq .i arg1 cdr           cd !A rt .t
@@ -214,6 +224,6 @@
   @A li 'n 'u 'm '? eq .i arg1 num? t?       cd !A rt .t
   @A li 'c 'o 'n 's eq .i args2 arg1 sw cons cd !A rt .t
   @A li .. 'l 'e 't eq .i               # ((let d x) e-X) eval x in (link d e)
-     ov lb F1 cnav sw link args2 zp zp       cd !A rt .t
+     ov lb F1 cnav sw elet args2 zp zp       cd !A rt .t
   cd !A
   zp rt

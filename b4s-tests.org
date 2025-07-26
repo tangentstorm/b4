@@ -853,16 +853,31 @@ to a lisp boolean. (=()= / =t=)
   C0 (1 . b)
 #+end_src
 
-* =eval= A: (let ((k . va)) x)#+name: b4s.eval.let
+* =elet= : eval helper for (let)
+
+#+name: b4s.elet
 #+begin_src b4a
-  > :S "(let ((a . 1) (b . b)) a)"
-  > C0 putn sp inic pre rval zp nil eval pval \0 cscr
-  C0 1
-  > :S "(let ((a . 1) (b . b)) b)"
-  > C1 putn sp inic pre rval zp nil eval pval \0 cscr
-  C1 b
-  > :S "(let ((a . 1) (b . b)) c)"
-  > C2 putn sp inic pre rval zp nil eval pval \0 cscr
+  > :S "((a . 1) (b . b))"
+  > inic pre rval  zp !E
+  > : "((a . 2) (b . a))"
+  > rval zp !D
+  > @D @E elet pval \0 cscr
+  ((a . 2) (b . 1) (a . 1) (b . b))
+#+end_src
+
+* =eval= A: (let ((k . v)) x)
+#+name: b4s.eval.let
+#+begin_src b4a
+  > :S "((a . 1) (b . b))"
+  > inic pre rval  zp !E
+  > : "(let ((a . 2) (b . a)) a)"
+  > C0 putn sp rval zp @E eval pval \0 cscr
+  C0 2
+  > : "(let ((a . 2) (b . a)) b)"
+  > C1 putn sp rval zp @E eval pval \0 cscr
+  C1 1
+  > : "(let ((a . 2) (b . a)) c)"
+  > C2 putn sp rval zp @E eval pval \0 cscr
   C2 ()
 #+end_src
 
