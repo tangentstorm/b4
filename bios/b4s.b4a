@@ -213,5 +213,7 @@
   @A li 's 'y 'm '? eq .i arg1 sym? t?       cd !A rt .t
   @A li 'n 'u 'm '? eq .i arg1 num? t?       cd !A rt .t
   @A li 'c 'o 'n 's eq .i args2 arg1 sw cons cd !A rt .t
+  @A li .. 'l 'e 't eq .i               # ((let d x) e-X) eval x in (link d e)
+     ov lb F1 cnav sw link args2 zp zp       cd !A rt .t
   cd !A
   zp rt
