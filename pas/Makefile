@@ -1,6 +1,6 @@
 # Add .exe for Windows compatibility
 EXE=
-ifeq ($(OS),Windows_NT)
+ifdef ComSpec
   EXE=.exe
 endif
 
@@ -50,7 +50,7 @@ runa: $(B4A)
 rund: $(B4D)
 	./$(B4D) $(ARGS)
 
-ifeq ($(OS),Windows_NT)
+ifdef ComSpec
 b4: $(B4)
 b4i: $(B4I)
 b4ix: $(B4IX)
