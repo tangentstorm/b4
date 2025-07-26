@@ -1,0 +1,132 @@
+#+title: register map
+
+* register names and numbers
+
+There are 32 general-purpose, named registers avaliable in the b4 sytem,
+named after the labels given to the 32 ASCII "control characters":
+
+: @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+
+A register name can be mapped to its number using the following formula,
+(given in the python programming language):
+
+#+begin_src python
+  def regn(reg:str)->int:
+      """return the ordinal number of a named register"""
+      return ord(reg) - ord('@')
+#+end_src
+
+For example:
+
+#+begin_src python
+  >>> {r:regn(r) for r in '@QRS_'}
+  {'@': 0, 'Q': 17, 'R': 18, 'S': 19, '_': 31}
+#+end_src
+
+* register addresess
+
+The named registers are simply names given to the first 32 4-byte
+cells in memory.
+
+For example, register R spans the four bytes at addresses
+$48 $49 $4A and $4B.
+
+You can calculate the address of a register in python using the
+following formula:
+
+#+begin_src python
+  def rega(reg:str)->str:
+      """return hex addresss of named register"""
+      return hex(4 * regn(reg))
+#+end_src
+
+For example:
+
+#+begin_src python
+  >>> {r:rega(r) for r in '@QRS_'}
+  {'@': '0x0', 'Q': '0x44', 'R': '0x48', 'S': '0x4c', '_': '0x7c'}
+#+end_src
+
+* register opcodes
+
+Each register has four bytecode instructions associated with it,
+except for =@@=, dicussed below.
+
+
+| op | signature | how to say it   | what it does                                       |
+|----+-----------+-----------------+----------------------------------------------------|
+| =^R= | (-???)    | "invoke R"      | call the code whose address is in @R               |
+| =@R= | (-x)      | "fetch from R"  | copy value in @R to the data stack                 |
+| =!R= | (x-)      | "store in R"    | take TOS and store it in @R                        |
+| =+R= | (n-x)     | "stream from R" | increment @R by n, and copy old value to the stack |
+
+
+* the =@@= register
+
+As far as the B4 machine is concerned, all registers are general
+purpose and work exactly the same, with the sole exception that
+=@@= has no corresponding =^@= instruction.
+
+That is because =^@= would have naturally occupy bytecode 00, which
+is instead given the mnemonic =..= and serves as a no-op.
+
+** TODO intended use of =@@=
+
+Once multiple B4 machines can be chained together, the intent is
+that an individual B4 'object' exposes its public interface
+through the registers, and the control codes =^A= through =^_= are
+used as "calculator buttons" to invoke features of the system.
+
+The intent is for @@ to serve
+
+
+
+
+* conventions for using the registers
+
+|    | @ holds ip address to go after =^\= (quit)    |
+|----+---------------------------------------------|
+| =@@= |                                             |
+|----+---------------------------------------------|
+|    | A-J are intended for use as local variables |
+|----+---------------------------------------------|
+| =@A= |                                             |
+| =@B= |                                             |
+| =@C= |                                             |
+| =@D= |                                             |
+| =@E= |                                             |
+| =@F= |                                             |
+| =@G= |                                             |
+| =@H= |                                             |
+| =+I= | I and J are used for loop counters          |
+| =+J= |                                             |
+|----+---------------------------------------------|
+|    | K-T  are used by the bios                   |
+|----+---------------------------------------------|
+| =+K= | ptr to input char                           |
+| =@L= |                                             |
+| =@M= | match bit                                   |
+| =@N= |                                             |
+| =^O= | output char                                 |
+| =^P= | printer                                     |
+| =^Q= | execute quote                               |
+| =^R= | read val                                    |
+| =@S= |                                             |
+| =@T= | start of token                              |
+|----+---------------------------------------------|
+|    | U-Z are user variables                      |
+|----+---------------------------------------------|
+| =@U= |                                             |
+| =@V= |                                             |
+| =@W= |                                             |
+| =@X= |                                             |
+| =@Y= |                                             |
+| =@Z= |                                             |
+|----+---------------------------------------------|
+|    |                                             |
+|----+---------------------------------------------|
+| =^[= |                                             |
+| =^\= | QUIT : clears stack and jumps to @@         |
+| =^]= |                                             |
+| =@^= | LAST : dictionary list ptr                  |
+| =@_= | HERE : top of heap/write head for assembler |
