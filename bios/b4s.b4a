@@ -193,7 +193,6 @@
 
 #-- eval --------------------------------
 
-
 :t? .i lb 't symc .e nil .t rt          # (?-c) convert b4 bool (0/-1) to b4s (()/'t)
 
 :br rot rot rt                          # br (abc-cab) "bury" (undo rot)
@@ -213,5 +212,6 @@
   @A li .. 'c 'd 'r eq .i arg1 cdr           cd !A rt .t
   @A li 's 'y 'm '? eq .i arg1 sym? t?       cd !A rt .t
   @A li 'n 'u 'm '? eq .i arg1 num? t?       cd !A rt .t
+  @A li 'c 'o 'n 's eq .i args2 arg1 sw cons cd !A rt .t
   cd !A
   zp rt

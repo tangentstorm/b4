@@ -828,7 +828,6 @@ to a lisp boolean. (=()= / =t=)
 #+end_src
 
 * =eval= 8: (num? x)
-
 #+name: b4s.eval.num?
 #+begin_src b4a
   > :S "((a . 1) (b . b))"
@@ -843,6 +842,17 @@ to a lisp boolean. (=()= / =t=)
   > C2 putn sp rval zp @E eval pval \0 cscr
   C2 ()
 #+end_src
+
+* =eval= 9: (cons x y)
+#+name: b4s.eval.cons
+#+begin_src b4a
+  > :S "((a . 1) (b . b))"
+  > inic pre rval zp !E
+  > : "(cons a b)"
+  > C0 putn sp rval zp @E eval pval \0 cscr
+  C0 (1 . b)
+#+end_src
+
 
 * =econ=
 * =elis=
