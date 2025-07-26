@@ -193,7 +193,13 @@
 
 #-- eval --------------------------------
 
-:t? .i lb 't symc .e nil .t rt
+:t? .i lb 't symc .e nil .t rt          # (?-c) convert b4 bool (0/-1) to b4s (()/'t)
+
+:arg1  sw lb F1 cnav sw cl >eval rt     # (xe-xe1) eval arg 1 of 1
+:args1 ov lb F1 cnav ov                 # (xe-1xe) eval arg 1 and store under xe
+   cl >eval rot rot rt
+:args2 ov lb F2 cnav ov                 # (xe-2xe) eval arg 2 and store under xe
+   cl >eval rot rot rt
 
 :eval                                   # (xe-v) eval expression x in env e
   ov num? .i zp rt .t
@@ -203,15 +209,10 @@
   ov quo? .i zp cdr rt .t
   @A dc
   ov lb 1F cnav !A                     # (xe-xe) @A: cdar of expr (the actual b4 number of the symbol)
-  @A li .. 'e 'q '? eq
-    .i  ov lb F1 cnav ov eval rot rot  # (xe-1xe) eval arg 1
-        ov lb F2 cnav ov eval rot rot  # (1xe-12xe) eval arg 2
-        zp zp eq? t? cd !A rt .t
-  @A li .. 'c 'a 'r eq
-     .i sw lb F1 cnav sw eval car
-        cd !A rt .t
-  @A li .. 'c 'd 'r eq
-     .i sw lb F1 cnav sw eval cdr
-        cd !A rt .t
+  @A li .. 'e 'q '? eq .i args1 args2 zp zp eq? t?  cd !A rt .t
+  @A li .. 'c 'a 'r eq .i arg1 car                  cd !A rt .t
+  @A li .. 'c 'd 'r eq .i arg1 cdr                  cd !A rt .t
+  @A li 's 'y 'm '? eq .i arg1 sym? t?              cd !A rt .t
+  @A li 'n 'u 'm '? eq .i arg1 num? t?              cd !A rt .t
   cd !A
   zp rt

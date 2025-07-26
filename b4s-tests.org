@@ -811,12 +811,43 @@ to a lisp boolean. (=()= / =t=)
   b
 #+end_src
 
+* =eval= 7: (sym? x)
+#+name: b4s.eval.sym?
+#+begin_src b4a
+  > :S "((a . 1) (b . b))"
+  > inic pre rval zp !E
+  > : "(sym? 'a)"
+  > C0 putn sp rval zp @E eval pval \0 cscr
+  C0 t
+  > : "(sym? a)"
+  > C1 putn sp rval zp @E eval pval \0 cscr
+  C1 ()
+  > : "(sym? b)"
+  > C2 putn sp rval zp @E eval pval \0 cscr
+  C2 t
+#+end_src
+
+* =eval= 8: (num? x)
+
+#+name: b4s.eval.num?
+#+begin_src b4a
+  > :S "((a . 1) (b . b))"
+  > inic pre rval zp !E
+  > : "(num? 'a)"
+  > C0 putn sp rval zp @E eval pval \0 cscr
+  C0 ()
+  > : "(num? a)"
+  > C1 putn sp rval zp @E eval pval \0 cscr
+  C1 t
+  > : "(num? b)"
+  > C2 putn sp rval zp @E eval pval \0 cscr
+  C2 ()
+#+end_src
+
 * =econ=
 * =elis=
 * =aply= (f args)
 * =eval= : the symbol =t=
-* =eval= : (sym? x)
-* =eval= : (num? x)
 * =eval= : (cons x y)
 * =eval= : (cond)
 * =eval= : (lam)
