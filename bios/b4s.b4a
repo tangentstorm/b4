@@ -240,19 +240,16 @@
 
 :V                                      # ^V = eval, so we can swap evaluator out later.
 :eval                                   # (xe-v) eval expression x in env e
-  # -- simple expressions
   ov num? .i zp rt .t                   # (xe-x) a num evals to itself
   ov nil? .i zp rt .t                   # (xe-x) a nil evals to itself
   ov lam? .i zp rt .t                   # (xe-x) a lam evals to itself
   ov quo? .i zp cdr rt .t               # (xe-d) a quo evals to its cdr
   ov sym? .i asoc rt .t                 # (xe-v) a symbol gets looked up in the env
-  # -- lists starting with symbol
   ov car sym? .i                        # (xe-v) (sym ...) evals as symbol application (eaps)
      @A dc
      ov lb 1F cnav !A eaps              # store symbol in @A and call eaps
      cd !A rt .t
-  # -- list starting with lambda
-  ov car lam? .i
+  ov car lam? .i                        # -- ((lam (params) body) args)
      sw du                              # (-exx)
      li $F1F cnav                       # (-exP) fetch the parameter list
      @E dc rot du !E br                 # (-exP|E E:e)
