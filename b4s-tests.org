@@ -14,8 +14,8 @@
 Assuming the bios is loaded, the above line clears
 the internal video screen and prints 'ok B4'.
 
-The `\0` word prints out the first line of video memory.
-See [[file:bios-tests.org][bios-tests.org]] for more info.
+The =\0= word prints out and then clears the first line of video
+memory.  See [[file:bios-tests.org][bios-tests.org]] for more info.
 
 * nil
 #+name: b4s.cells
@@ -141,7 +141,7 @@ cause the =nxt^= to move to the next cell in the list.
 #+name: b4s.nums
 #+begin_src b4a
   > inic
-  > 7C cnum du pnum \0 cscr
+  > 7C cnum du pnum \0
   7C
   > celn ?d %q
   ds: [0]
@@ -231,7 +231,7 @@ the type code in the implementation of =car= and =cdr=.
 #+name: b4s.pval-num-sym
 #+begin_src b4a
   > inic
-  > 's 'y 'm 00 glu csym pval \0 cscr
+  > 's 'y 'm 00 glu csym pval \0
   sym
   > 's 'y 'm 00 glu cnum pval \0 %q
   6D7973
@@ -264,11 +264,11 @@ However, if we print it on its own, we should print the value '()'
 #+name: b4s.pval-list
 #+begin_src b4a
   > inic
-  > C0 cnum nil cons du pval \0 cscr
+  > C0 cnum nil cons du pval \0
   (C0)
-  > C1 cnum sw cons du pval \0 cscr
+  > C1 cnum sw cons du pval \0
   (C1 C0)
-  > C2 cnum sw cons du pval \0 cscr
+  > C2 cnum sw cons du pval \0
   (C2 C1 C0)
 #+end_src
 
@@ -276,17 +276,17 @@ However, if we print it on its own, we should print the value '()'
 #+name: b4s.pval-nested
 #+begin_src b4a
   > inic
-  > C0 putn sp   nil nil cons pval \0 cscr
+  > C0 putn sp   nil nil cons pval \0
   C0 (())
   > 1 cnum nil cons !A
   > 2 cnum 3 cnum nil cons cons !B
-  > A putn sp @A pval \0 cscr
+  > A putn sp @A pval \0
   A (1)
-  > B putn sp @B pval \0 cscr
+  > B putn sp @B pval \0
   B (2 3)
-  > C3 putn sp   @A @B cons pval \0 cscr
+  > C3 putn sp   @A @B cons pval \0
   C3 ((1) 2 3)
-  > C4 putn sp   @B @A cons pval \0 cscr
+  > C4 putn sp   @B @A cons pval \0
   C4 ((2 3) 1)
 #+end_src
 
@@ -294,9 +294,9 @@ However, if we print it on its own, we should print the value '()'
 #+name: b4s.pval-quotes
 #+begin_src b4a
   > inic
-  > CA cnum wquo pval \0 cscr
-  > CB cnum wqup pval \0 cscr
-  > CC cnum wqdn pval \0 cscr
+  > CA cnum wquo pval \0
+  > CB cnum wqup pval \0
+  > CC cnum wqdn pval \0
   'CA
   `CB
   ,CC
@@ -334,13 +334,13 @@ then print the =cdr=.
 #+name: b4s.rlis
 #+begin_src b4a
   > inic
-  > C0 putn sp node @L pval \0 cscr
+  > C0 putn sp node @L pval \0
   C0 (())
-  > C1 putn sp c1 cnum acq! @L pval \0 cscr
+  > C1 putn sp c1 cnum acq! @L pval \0
   C1 (1 ())
-  > C2 putn sp c2 cnum acq! @L pval \0 cscr
+  > C2 putn sp c2 cnum acq! @L pval \0
   C2 (1 2 ())
-  > C3 putn sp done pval \0 cscr go00
+  > C3 putn sp done pval \0 go00
   C3 (1 2)
 #+end_src
 
@@ -366,11 +366,11 @@ then print the =cdr=.
   > C0 pre rval ?d %R
   ds: [C0 0]
   > :S '0 ..
-  > C1 pre rval sw pval ?d \0 cscr %R
+  > C1 pre rval sw pval ?d \0 %R
   ds: [C1 -1]
   0
   > :S 'x ..
-  > C2 pre rval sw pval ?d \0 cscr %R
+  > C2 pre rval sw pval ?d \0 %R
   ds: [C2 -1]
   x
   > # use same string again, but set m0 first
@@ -400,11 +400,11 @@ either =cnum= or =csym= to build the cell.
 #+begin_src b4a
   > inic
   > :S '' '0 ..
-  > C0 pre rval sw pval ?d \0 cscr %R
+  > C0 pre rval sw pval ?d \0 %R
   ds: [C0 -1]
   '0
   > :S '' 'x ..
-  > C1 pre rval sw pval ?d \0 cscr %R
+  > C1 pre rval sw pval ?d \0 %R
   ds: [C1 -1]
   'x
 #+end_src
@@ -430,26 +430,26 @@ and written as =()=.
 #+begin_src b4a
   > inic
   > :S "(0)" ..
-  > C0 pre rval sw pval ?d \0 cscr %R
+  > C0 pre rval sw pval ?d \0 %R
   ds: [C0 -1]
   (0)
   > :S "(C1)" ..
-  > C1 pre rval sw pval ?d \0 cscr %R
+  > C1 pre rval sw pval ?d \0 %R
   ds: [C1 -1]
   (C1)
   > # same thing but with a space after
   > :S "(C2 )" ..
-  > C2 pre rval sw pval ?d \0 cscr %R
+  > C2 pre rval sw pval ?d \0 %R
   ds: [C2 -1]
   (C2)
   > # ... or in front
   > :S "( C3)" ..
-  > C3 pre rval sw pval ?d \0 cscr %R
+  > C3 pre rval sw pval ?d \0 %R
   ds: [C3 -1]
   (C3)
   > # ... or everywhere
   > :S "  (  C4  )  " ..
-  > C4 pre rval sw pval ?d \0 cscr %R
+  > C4 pre rval sw pval ?d \0 %R
   ds: [C4 -1]
   (C4)
 #+end_src
@@ -465,15 +465,15 @@ parentheses in a list.
 #+begin_src b4a
   > inic
   > :S "(0 1)"
-  > C0 pre rval sw pval ?d \0 cscr %R
+  > C0 pre rval sw pval ?d \0 %R
   ds: [C0 -1]
   (0 1)
   > :S "(nice ice)" ..
-  > C1 pre rval sw pval ?d \0 cscr %R
+  > C1 pre rval sw pval ?d \0 %R
   ds: [C1 -1]
   (nice ice)
   > :S "(one two 3 4 5 six 7 8 9)" ..
-  > C2 pre rval sw pval ?d \0 cscr %R
+  > C2 pre rval sw pval ?d \0 %R
   ds: [C2 -1]
   (one two 3 4 5 six 7 8 9)
 #+end_src
@@ -483,19 +483,19 @@ parentheses in a list.
 #+begin_src b4a
   > inic
   > :S "(())" ..
-  > C0 pre rval sw pval ?d \0 cscr %R
+  > C0 pre rval sw pval ?d \0 %R
   ds: [C0 -1]
   (())
   > :S "((C1))" ..
-  > C1 pre rval sw pval ?d \0 cscr %R
+  > C1 pre rval sw pval ?d \0 %R
   ds: [C1 -1]
   ((C1))
   > :S "(1 (C2) 3)" ..
-  > C2 pre rval sw pval ?d \0 cscr %R
+  > C2 pre rval sw pval ?d \0 %R
   ds: [C2 -1]
   (1 (C2) 3)
   > :S "(one (two 3) 4 (5 6 7 8 (9)))" ..
-  > C4 pre rval sw pval ?d \0 cscr %R
+  > C4 pre rval sw pval ?d \0 %R
   ds: [C4 -1]
   (one (two 3) 4 (5 6 7 8 (9)))
 #+end_src
@@ -505,20 +505,20 @@ parentheses in a list.
 #+begin_src b4a
   > inic
   > :S "(())" ..
-  > C0 pre rval sw pval ?d \0 cscr %R
+  > C0 pre rval sw pval ?d \0 %R
   ds: [C0 -1]
   (())
   > :S "( () () )" ..
-  > C1 pre rval sw pval ?d \0 cscr %R
+  > C1 pre rval sw pval ?d \0 %R
   ds: [C1 -1]
   (() ())
   > # the last () is never printed
   > :S "( () () () )" ..
-  > C2 pre rval sw pval ?d \0 cscr %R
+  > C2 pre rval sw pval ?d \0 %R
   ds: [C2 -1]
   (() () ())
   > :S "( (() ()) )" ..
-  > C2 pre rval sw pval ?d \0 cscr %R
+  > C2 pre rval sw pval ?d \0 %R
   ds: [C2 -1]
   ((() ()))
 #+end_src
@@ -528,16 +528,16 @@ parentheses in a list.
 #+begin_src b4a
   > inic
   > :S "(a . 1)" ..
-  > C0 pre rval sw pval ?d \0 cscr %R
+  > C0 pre rval sw pval ?d \0 %R
   ds: [C0 -1]
   (a . 1)
   > pre rval zp du
-  > car pval \0 cscr
-  > cdr pval \0 cscr
+  > car pval \0
+  > cdr pval \0
   a
   1
   > :S "((a . 1) (b . 2) . c))" ..
-  > C1 pre rval sw pval ?d \0 cscr %R
+  > C1 pre rval sw pval ?d \0 %R
   ds: [C1 -1]
   ((a . 1) (b . 2) . c)
 #+end_src
@@ -547,10 +547,10 @@ parentheses in a list.
 #+begin_src b4a
   > inic
   > :S "(quo . C0)" ..
-  > pre rval zp pval \0 cscr %R
+  > pre rval zp pval \0 %R
   'C0
   > :S "(quo C1)" ..
-  > pre rval zp pval \0 cscr %R
+  > pre rval zp pval \0 %R
   '(C1)
 #+end_src
 
@@ -572,7 +572,7 @@ we didn't have =pval=.
 #+name: nlist-cnav
 #+begin_src b4a
 > :S "(A (B . C) (D E (F)))" ..
-> :T sw putn sp @L sw cnav pval \0 cscr rt
+> :T sw putn sp @L sw cnav pval \0 rt
 > inic pre rval zp !L
 > # any hex digit 0..=E is that many cdr calls
 > C0 0 ^T  # 0 cnav is identity
@@ -643,7 +643,7 @@ their values. Otherwise, we do a direct pointer comparison.
 #+begin_src b4a
  > :S "(0 1 2)" ..
  > :F cdr c2 ml c1 ad cnum rt
- > inic pre rval zp du @F map pval \0 cscr
+ > inic pre rval zp du @F map pval \0
  (1 3 5)
  > pval \0
  (0 1 2)
@@ -683,11 +683,11 @@ Note that the original list is not modified in place.
 #+begin_src b4a
   > :S "((a . 123) (b . xyz))" ..
   > inic pre rval zp
-  > 'a symc ov asoc pval \0 cscr
+  > 'a symc ov asoc pval \0
   123
-  > 'b symc ov asoc pval \0 cscr
+  > 'b symc ov asoc pval \0
   xyz
-  > 'c symc ov asoc pval \0 cscr
+  > 'c symc ov asoc pval \0
   ()
 #+end_src
 
@@ -702,7 +702,7 @@ Otherwise, =asoc= returns =nil=.
 #+begin_src b4a
   > :S "(1 2 3) (a b c)"
   > inic
-  > pre rval zp rval zp link pval \0 cscr
+  > pre rval zp rval zp link pval \0
   (1 2 3 a b c)
 #+end_src
 
@@ -710,7 +710,7 @@ Otherwise, =asoc= returns =nil=.
 #+name: b4s.eval.nums
 #+begin_src b4a
   > :S "1" ..
-  > inic pre rval zp   nil eval   pval \0 cscr
+  > inic pre rval zp   nil eval   pval \0
   1
 #+end_src
 
@@ -725,11 +725,11 @@ Numbers always evaluate to themselves.
 #+begin_src b4a
   > :S "((a . 1) (b . B)) a b c" ..
   > inic pre rval zp !E
-  > rval zp   @E eval   pval \0 cscr
+  > rval zp   @E eval   pval \0
   1
-  > rval zp   @E eval   pval \0 cscr
+  > rval zp   @E eval   pval \0
   B
-  > rval zp   @E eval   pval \0 cscr
+  > rval zp   @E eval   pval \0
   ()
 #+end_src
 
@@ -741,15 +741,15 @@ The first two evaluate to their defined values, and =c= evaluates to =nil=.
 #+begin_src b4a
   > :S "((a . 1) (b . B)) 'a (quo b) 'c ''d '(e f g)" ..
   > inic pre rval zp !E
-  > rval zp   @E eval   pval \0 cscr
+  > rval zp   @E eval   pval \0
   a
-  > rval zp   @E eval   pval \0 cscr
+  > rval zp   @E eval   pval \0
   (b)
-  > rval zp   @E eval   pval \0 cscr
+  > rval zp   @E eval   pval \0
   c
-  > rval zp   @E eval   pval \0 cscr
+  > rval zp   @E eval   pval \0
   'd
-  > rval zp   @E eval   pval \0 cscr
+  > rval zp   @E eval   pval \0
   (e f g)
 #+end_src
 
@@ -761,32 +761,32 @@ Values quoted with =quo= evaluate to themselves (unquoted).
   > :S "((a . 1 ) (b . 1) (c . 2))"
   > inic pre rval zp !E
   > : "(eq? 1 2)"
-  > C0 putn sp rval zp @E eval pval \0 cscr
+  > C0 putn sp rval zp @E eval pval \0
   C0 ()
   > : "(eq? 1 1)"
-  > C1 putn sp rval zp @E eval pval \0 cscr
+  > C1 putn sp rval zp @E eval pval \0
   C1 t
   > : "(eq? a b)"
   > # a and b should both eval to 1, so eq? should be true
-  > C2 putn sp rval zp @E eval pval \0 cscr
+  > C2 putn sp rval zp @E eval pval \0
   C2 t
   > : "(eq? 'a 'b)"
-  > C3 putn sp rval zp @E eval pval \0 cscr
+  > C3 putn sp rval zp @E eval pval \0
   C3 ()
   > : "(eq? a c)"
-  > C4 putn sp rval zp @E eval pval \0 cscr
+  > C4 putn sp rval zp @E eval pval \0
   C4 ()
   > : "(eq? (1) (1))"
   > # for lists, we check pointer equality, so these are not 'eq?'
-  > C5 putn sp rval zp @E eval pval \0 cscr
+  > C5 putn sp rval zp @E eval pval \0
   C5 ()
   > : "(eq? () ())"
   > # but empty lists (nil) are always the same
-  > C6 putn sp rval zp @E eval pval \0 cscr
+  > C6 putn sp rval zp @E eval pval \0
   C6 t
   > # and undefined values are always nil, so also the same
   > : "(eq? x y)"
-  > C7 putn sp rval zp @E eval pval \0 cscr
+  > C7 putn sp rval zp @E eval pval \0
   C7 t
 #+end_src
 
@@ -799,7 +799,7 @@ to a lisp boolean. (=()= / =t=)
 #+name: b4s.eval.car
 #+begin_src b4a
   > :S "(car '(a . b))"
-  > inic pre rval zp nil eval pval \0 cscr
+  > inic pre rval zp nil eval pval \0
   a
 #+end_src
 
@@ -807,7 +807,7 @@ to a lisp boolean. (=()= / =t=)
 #+name: b4s.eval.cdr
 #+begin_src b4a
   > :S "(cdr '(a . b))"
-  > inic pre rval zp nil eval pval \0 cscr
+  > inic pre rval zp nil eval pval \0
   b
 #+end_src
 
@@ -817,13 +817,13 @@ to a lisp boolean. (=()= / =t=)
   > :S "((a . 1) (b . b))"
   > inic pre rval zp !E
   > : "(sym? 'a)"
-  > C0 putn sp rval zp @E eval pval \0 cscr
+  > C0 putn sp rval zp @E eval pval \0
   C0 t
   > : "(sym? a)"
-  > C1 putn sp rval zp @E eval pval \0 cscr
+  > C1 putn sp rval zp @E eval pval \0
   C1 ()
   > : "(sym? b)"
-  > C2 putn sp rval zp @E eval pval \0 cscr
+  > C2 putn sp rval zp @E eval pval \0
   C2 t
 #+end_src
 
@@ -833,13 +833,13 @@ to a lisp boolean. (=()= / =t=)
   > :S "((a . 1) (b . b))"
   > inic pre rval zp !E
   > : "(num? 'a)"
-  > C0 putn sp rval zp @E eval pval \0 cscr
+  > C0 putn sp rval zp @E eval pval \0
   C0 ()
   > : "(num? a)"
-  > C1 putn sp rval zp @E eval pval \0 cscr
+  > C1 putn sp rval zp @E eval pval \0
   C1 t
   > : "(num? b)"
-  > C2 putn sp rval zp @E eval pval \0 cscr
+  > C2 putn sp rval zp @E eval pval \0
   C2 ()
 #+end_src
 
@@ -849,7 +849,7 @@ to a lisp boolean. (=()= / =t=)
   > :S "((a . 1) (b . b))"
   > inic pre rval zp !E
   > : "(cons a b)"
-  > C0 putn sp rval zp @E eval pval \0 cscr
+  > C0 putn sp rval zp @E eval pval \0
   C0 (1 . b)
 #+end_src
 
@@ -860,7 +860,7 @@ to a lisp boolean. (=()= / =t=)
   > inic pre rval  zp !E
   > : "((a . 2) (b . a))"
   > rval zp !D
-  > @D @E elet pval \0 cscr
+  > @D @E elet pval \0
   ((a . 2) (b . 1) (a . 1) (b . b))
 #+end_src
 
@@ -870,13 +870,13 @@ to a lisp boolean. (=()= / =t=)
   > :S "((a . 1) (b . b))"
   > inic pre rval  zp !E
   > : "(let ((a . 2) (b . a)) a)"
-  > C0 putn sp rval zp @E eval pval \0 cscr
+  > C0 putn sp rval zp @E eval pval \0
   C0 2
   > : "(let ((a . 2) (b . a)) b)"
-  > C1 putn sp rval zp @E eval pval \0 cscr
+  > C1 putn sp rval zp @E eval pval \0
   C1 1
   > : "(let ((a . 2) (b . a)) c)"
-  > C2 putn sp rval zp @E eval pval \0 cscr
+  > C2 putn sp rval zp @E eval pval \0
   C2 ()
 #+end_src
 
@@ -886,16 +886,16 @@ to a lisp boolean. (=()= / =t=)
   > :S "((p . t) (q))"
   > inic pre rval zp !E
   > : "((q 123) (p 'xyz))"
-  > C0 putn sp rval zp @E econ pval \0 cscr
+  > C0 putn sp rval zp @E econ pval \0
   C0 xyz
   > : "((p 123) (p 'xyz))"
-  > C1 putn sp rval zp @E econ pval \0 cscr
+  > C1 putn sp rval zp @E econ pval \0
   C1 123
   > : "((q 123) (p p))"
-  > C2 putn sp rval zp @E econ pval \0 cscr
+  > C2 putn sp rval zp @E econ pval \0
   C2 t
   > : "((q 123) (q 456))"
-  > C3 putn sp rval zp @E econ pval \0 cscr
+  > C3 putn sp rval zp @E econ pval \0
   C3 ()
 #+end_src
 
@@ -907,7 +907,7 @@ in the same context.
 * =eval= B: (cond)
 #+name: b4s.eval.cond
 #+begin_src b4a
-  > :T putn sp rval zp @E eval pval \0 cscr rt
+  > :T putn sp rval zp @E eval pval \0 rt
   > :S "((t . t) (z . FF))"
   > inic pre rval zp !E
   > # C0: eval cdr of first pair whose car (evaluated) is non-nil
@@ -928,7 +928,7 @@ in the same context.
 #+name: b4s.zip
 #+begin_src b4a
   > :S "(a b c d e) (1 2 3 4)"
-  > inic pre rval zp rval zp zip pval \0 cscr
+  > inic pre rval zp rval zp zip pval \0
   ((a . 1) (b . 2) (c . 3) (d . 4))
 #+end_src
 

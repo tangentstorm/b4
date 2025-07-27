@@ -218,7 +218,6 @@ jm 40 0B .. ..          # loop if main is not defined
    du c4 ml @tmb ad     # (-fna) address of text attrs
    mfil go00 rt         # (-) clear bg, reset cursor, return
 
-
 :wrap                  # ( - ) wrap cursor if x >= width
    curx @tmw lt nt     # ( - f) x >: width?
    .i c0 cury c1 ad    # ( - 0 y' ) ifso, x=0, y+=1
@@ -239,9 +238,15 @@ jm 40 0B .. ..          # loop if main is not defined
 :maxx @tmw c1 sb rt
 :maxy @tmh c1 sb rt
 
+:ceol
+  @cur @tmw cury sb
+  .f lb ' emit .n
+  !cur rt
+
 :\0 # debug assist: print first line of screen using the 'io' op
    @X dc @tmb !X
    @tmw .f c1 +X rb lb 'e io .n
+   go00 ceol
    cd !X rt
 
 

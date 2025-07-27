@@ -62,13 +62,19 @@ These tests use b4i to test the bios.
   +H +E +L +L +O @L @@ +W +O +R +L +D @A @@ @@ @@
 #+end_src
 
-* \0 to show first line
+* \0 to show and clear first line
 #+name: .slash-0
 #+begin_src b4a
   > :S 0D 'h 'e 'l 'l 'o ', 20 'w 'o 'r 'l 'd '!
-  > @S puts \0 %q
-  hello, world!
+  > C0 putn sp @S puts \0
+  C0 hello, world!
+  > C1 putn \0
+  C1
 #+end_src
+
+=\0= copies the first line of the internal buffer to stdout
+(by invoking =lb 'e io= on each character). It then repositions
+the cursor to 0,0 and clears the first line.
 
 * putn
 #+name: putn
