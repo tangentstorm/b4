@@ -20,7 +20,8 @@
     ("%." . 'font-lock-preprocessor-face)
     (":[^ ]+" . 'font-lock-function-name-face)
     ("`[^ ]+" . 'font-lock-constant-face)
-    ("\\(\\<[0-9A-Z][0-9A-Z]\\)+\\>" . 'font-lock-constant-face))
+    ("\\<[$][0-9A-Z]+\\>" . 'font-lock-constant-face)
+    ("\\<\\([0-9A-Z][0-9A-Z]?\\)\\>" . 'font-lock-constant-face))
   '("\\.b4a$")             ; which files
   nil                      ; other functions
   "mode for editing b4a files (b4 assembler")
