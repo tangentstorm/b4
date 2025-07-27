@@ -255,7 +255,9 @@
   ov car lam? .i
      sw du                              # (-exx)
      li $F1F cnav                       # (-exP) fetch the parameter list
-     ov cdr zip rot link sw             # (-xE) zip with the argument and link before env
-     sw lb 2F cnav sw ^V rt .t          # (-v) evaluate body
+     @E dc rot du !E br                 # (-exP|E E:e)
+     ov cdr .[ @E ^V rt .] map cd !E    # (-exPD) fetch/eval args. restore @E
+     zip rot link sw                    # (-Ex) zip with the argument and link before env
+     li $F2F cnav sw ^V rt .t           # (-v) evaluate body
   # TODO: (label) for recursive lambdas
   zp li 00 'e 'r 'r symw rt

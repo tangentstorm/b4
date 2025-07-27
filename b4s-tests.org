@@ -942,11 +942,14 @@ the shorter list.
 #+name: b4s.eval.lam
 #+begin_src b4a
   > :S "((lam () C0))"
-  > inic pre rval zp eval pval \0 cscr
-  (C0)
-  > :S "((lam (a b c) (cons c (cons a b))) 2 '(3) C1)"
-  > rval zp eval pval \0 cscr
-  (C1 2 3)
+  > inic pre rval zp nil eval pval \0
+  C0
+  > :S "((lam (x) x) C1)"
+  > pre rval zp nil eval pval \0
+  C1
+  > : "((lam (a b c) (cons c (cons a b))) C2 '(3) 1)"
+  > rval zp nil eval pval \0
+  (1 C2 3)
 #+end_src
 
 =lam= (short for "lambda") creates an anonymous function taking
