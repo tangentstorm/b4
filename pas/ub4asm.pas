@@ -75,7 +75,7 @@ function b4opc(code:opstring) : byte;
     else begin writeln('invalid op: ', code); halt end end;
 
 type
-  tokentag = ( wsp, cmt, hex, chr, def, ref, ivk, adr, get, put, ink, fwd,
+  tokentag = ( wsp, cmt, hex, u32, chr, def, ref, ivk, adr, get, put, ink, fwd,
               _if, _th, _el, _wh, _do, _od, _fr, _nx, _lp, _rs, _cs, _ob, _cb );
   token = record tag : tokentag; str : string; end;
 
@@ -125,28 +125,25 @@ procedure clear_dict;
 
 function next( var tok : token; var ch : char ) : boolean;
   procedure keep; begin tok.str := tok.str + ch end;
-  procedure rdstr(var tok: token; var ch: char);
-  begin
-    tok.str := '';
-    while (not atEnd) and (nextchar(ch) <> '"') do keep;
-    if atEnd then begin writeln('unterminated string literal'); halt end;
-    ch := nextchar(ch); // consume closing quote
-  end;
+  procedure rdstr;
+    begin
+      tok.str := '';
+      while (not atEnd) and (nextchar(ch) <> '"') do keep;
+      if atEnd then begin writeln('unterminated string literal'); halt end;
+      ch := nextchar(ch); // consume closing quote
+    end; { rdstr }
+  procedure rdhex;
+    begin while (not atEnd) and (nextchar(ch) in ['0'..'9','A'..'F']) do keep end;
   procedure rest(t:tokentag);
     begin tok.tag := t; tok.str := ''; while (not atEnd) and (nextchar(ch) > #32) do keep end;
   begin tok.str := ch; next := true;
     case ch of
-      #0: next := false;
+      #0  : next := false;
       #1..#32: begin tok.tag := wsp; repeat until atEnd or (nextchar(ch) >= #32) end;
       '#' : begin tok.tag := cmt; while (not atEnd) and (ch <> #10) do ch := nextchar(ch); end;
-      '-': begin
-        tok.tag := hex;
-        tok.str := '-';
-        while (not atEnd) and (nextchar(ch) in ['0'..'9','A'..'F']) do keep;
-      end;
-      '0'..'9','A'..'F':
-        begin tok.tag := hex;
-        while (not atEnd) and (nextchar(ch) in ['0'..'9','A'..'F']) do keep end;
+      '$' : begin tok.tag := u32; rdhex end;
+      '-': begin tok.tag := hex; rdhex end;
+      '0'..'9','A'..'F': begin tok.tag := hex; rdhex end;
       '''' : begin tok.tag := chr; tok.str := nextchar(ch); nextchar(ch); end;
       ':' : rest(def);
       '^' : rest(ivk);
@@ -155,7 +152,7 @@ function next( var tok : token; var ch : char ) : boolean;
       '!' : rest(put);
       '>' : rest(fwd);
       '+' : rest(ink);
-      '"' : begin tok.tag := _rs; rdstr(tok, ch) end;
+      '"' : begin tok.tag := _rs; rdstr end;
       '.' : begin
               case nextchar(ch) of
                 '.': begin tok.tag := hex; tok.str := '0'; ch := nextchar(ch); end;
@@ -168,7 +165,7 @@ function next( var tok : token; var ch : char ) : boolean;
                 'o' : tok.tag := _od;
                 'f' : tok.tag := _fr;
                 'n' : tok.tag := _nx;
-                '"' : begin tok.tag := _cs; rdstr(tok, ch) end;
+                '"' : begin tok.tag := _cs; rdstr end;
                 '[': tok.tag := _ob;
                 ']': tok.tag := _cb;
                 otherwise begin writeln('unknown macro: .',ch); halt end
@@ -238,6 +235,7 @@ procedure b4as_core;
       case tok.tag of
         wsp, cmt : ok; { do nothing }
         hex : emit(unhex(tok.str));
+        u32 : emitv(unhex(tok.str));
         chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
               else emit(ord(tok.str[1]));
         def : if isreg(tok.str) then rg[regn(tok.str[1])]:=here
