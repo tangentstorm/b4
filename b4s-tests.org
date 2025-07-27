@@ -924,6 +924,19 @@ in the same context.
   C2 FF
 #+end_src
 
+* =zip= : eval helper for lambdas
+#+name: b4s.zip
+#+begin_src b4a
+  > :S "(a b c d e) (1 2 3 4)"
+  > inic pre rval zp rval zp zip pval \0 cscr
+  ((a . 1) (b . 2) (c . 3) (d . 4))
+#+end_src
+
+=zip= is actually a fairly general routine that can be used outside the interpreter.
+It transforms a pair of lists into a list of pairs.
+
+If one argument is longer than the other, the result is the length of the shorter list.
+
 * =elis=
 * =eval= : (lam)
 * =aply= (f args)

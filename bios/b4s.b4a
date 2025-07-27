@@ -107,6 +107,12 @@
    .e @Q cdr @P cdr! .t
    @L dc !L !P !Q cd rt
 
+:zip                                    # zip (as bs - abs) (a A) (b B) -> ((a . b) (A . B))
+  ov nil? ov nil? or                    # (ab-ab?) either one empty?
+  .i zp zp nil                          # (..-ab-0)   ifso: return nil
+  .e ov cdr ov cdr zip                  # (..-abr) else: recurse on tails
+     dc sw car sw car cons cd cons      # (..-R)then pair the cars and cons onto the result.
+  .t rt
 
 #-- reader -----------------------------
 
