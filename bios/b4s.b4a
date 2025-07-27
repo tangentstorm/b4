@@ -113,6 +113,7 @@
   .e ov cdr ov cdr zip                  # (..-abr) else: recurse on tails
      dc sw car sw car cons cd cons      # (..-R)then pair the cars and cons onto the result.
   .t rt
+
 
 #-- reader -----------------------------
 
@@ -234,18 +235,27 @@
   @A li 'c 'o 'n 's eq .i b2 e1 sw cons    rt .t
   @A li 'c 'o 'n 'd eq .i a* econ          rt .t
   @A li .. 'l 'e 't eq .i a1 elet b2 zp zp rt .t
-  zp rt # return unchanged (TODO: apply)
+  # TODO: look up functions by name
+  zp rt
 
 :V                                      # ^V = eval, so we can swap evaluator out later.
 :eval                                   # (xe-v) eval expression x in env e
+  # -- simple expressions
   ov num? .i zp rt .t                   # (xe-x) a num evals to itself
   ov nil? .i zp rt .t                   # (xe-x) a nil evals to itself
   ov lam? .i zp rt .t                   # (xe-x) a lam evals to itself
   ov quo? .i zp cdr rt .t               # (xe-d) a quo evals to its cdr
   ov sym? .i asoc rt .t                 # (xe-v) a symbol gets looked up in the env
+  # -- lists starting with symbol
   ov car sym? .i                        # (xe-v) (sym ...) evals as symbol application (eaps)
      @A dc
-     ov lb 1F cnav !A eaps              #   store symbol in @A and call eaps
+     ov lb 1F cnav !A eaps              # store symbol in @A and call eaps
      cd !A rt .t
-  # still here: eval @A with args
-  zp rt
+  # -- list starting with lambda
+  ov car lam? .i
+     sw du                              # (-exx)
+     li $F1F cnav                       # (-exP) fetch the parameter list
+     ov cdr zip rot link sw             # (-xE) zip with the argument and link before env
+     sw lb 2F cnav sw ^V rt .t          # (-v) evaluate body
+  # TODO: (label) for recursive lambdas
+  zp li 00 'e 'r 'r symw rt

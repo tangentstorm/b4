@@ -938,6 +938,26 @@ interpreter. It transforms two lists into a list of pairs.
 If one argument is longer than the other, the result is the length of
 the shorter list.
 
+* =eval= C: function applications
+#+name: b4s.eval.lam
+#+begin_src b4a
+  > :S "((lam () C0))"
+  > inic pre rval zp eval pval \0 cscr
+  (C0)
+  > :S "((lam (a b c) (cons c (cons a b))) 2 '(3) C1)"
+  > rval zp eval pval \0 cscr
+  (C1 2 3)
+#+end_src
+
+=lam= (short for "lambda") creates an anonymous function taking
+0 or more arguments. The syntax is =(lam (args) body)=.
+
+When =eval= sees =lam= at the start of a list, it calls the function,
+by using =zip= to pair the remaining items of the list with
+the function arguments, and then evaluating =body= with the zipped
+pairs linked to the start of the current environment.
+
+
 * =elis=
 * =eval= : (lam)
 * =aply= (f args)
