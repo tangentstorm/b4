@@ -4,8 +4,13 @@
 
 [[file:ref/b4ix-rosetta.png]]
 
-The code above is *b4a* assembly language, being entered and run interactively
-in the =b4ix= interactive shell.
+The above screenshot is the =b4ix= enhanced interactive shell. The sceen is broken into three sections:
+
+- on top, a view into the systems video buffer, which is pre-initialized with a logo from the bios.
+- in the middle, an interactive shell for the =b4a= assembly language.
+- at the bottom, a view of stacks and section of the machine's ram
+
+** explanation of the demo code
 
 #+begin_src b4a
 # https://rosettacode.org/wiki/Loops/For
@@ -14,8 +19,6 @@ in the =b4ix= interactive shell.
 :loop du .f du ^I sb c1 ad .f lb '. ^E .n lb '| ^E .n zp rt
 5 loop
 #+end_src
-
-** explanation
 
 The =^E= syntax calls whatever function the =E= register is pointing at, and the assembler assigns it when it sees =:E=.
 
