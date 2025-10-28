@@ -1,6 +1,45 @@
 #+title: The b4 virtual machine
 
-* About
+* Demo
+
+[[file:ref/b4ix-rosetta.png]]
+
+The code above is *b4a* assembly language, being entered and run interactively
+in the =b4ix= interactive shell.
+
+```
+# https://rosettacode.org/wiki/Loops/For
+:E lb 'e io rt            # set up ^E to emit a character
+:I cd cd du dc sw dc rt   # set up ^I to fetch outer loop counter
+:loop du .f du ^I sb c1 ad .f lb '. ^E .n lb '| ^E .n zp rt
+5 loop
+```
+
+** explanation
+
+The =^E= syntax calls whatever function the =E= register is pointing at, and the assembler assigns it when it sees =:E=.
+
+Here, =^E= loads the byte ='e= (quoted ascii char) and sends that as a command to the =io= op, which prints the next character on the stack.
+
+The =^I= definition fetches the outer loop counter in a =.f= ... =.n= ("for/next") loop.
+
+Since it's a function call, we have to dig deep into the control stack (=cd= means copy from control stack to data stack),  (=du=)plicate the counter, and then (=sw=)ap it with the return address so we can push that back onto the control stack (=dc= means data -> control), and then =rt= (return).
+
+Then =:loop= dupes its argument and uses it as an argument to the =.f=/=.n= loop.
+
+During these loops, the loop counter is on the control stack, so =^I= grabs it as explained earlier, but there is also a copy of the original loop length (5 in this case) on the data stack.
+
+so =du ^I sb= duplicates the 5, subtracts the outer loop counter, and leaves the result on the stack.
+
+=c1= is an op that adds the constant 1 to the stack, and =ad= adds the top two values, so  =c1 ad= adds 1 to the previous expression to get the length of the inner loop.
+
+=.f  lb '. ^E .n= prints that many dots.
+
+=lb '| ^E .n= prints the pipe character and ends the outer loop.
+
+then =zp rt= removes that original =5= that's been sitting on the stack the whole time (passed in when we explicitly called =5 loop=) and returns to the calling function (in this case, the interactive "b4ix" shell.)
+
+* About b4
 
 *b4* is a tiny virtual machine, with a forth-like flavor.
 
