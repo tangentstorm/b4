@@ -7,11 +7,13 @@
 The code above is *b4a* assembly language, being entered and run interactively
 in the =b4ix= interactive shell.
 
-    # https://rosettacode.org/wiki/Loops/For
-    :E lb 'e io rt            # set up ^E to emit a character
-    :I cd cd du dc sw dc rt   # set up ^I to fetch outer loop counter
-    :loop du .f du ^I sb c1 ad .f lb '. ^E .n lb '| ^E .n zp rt
-    5 loop
+#+begin_src b4a
+# https://rosettacode.org/wiki/Loops/For
+:E lb 'e io rt            # set up ^E to emit a character
+:I cd cd du dc sw dc rt   # set up ^I to fetch outer loop counter
+:loop du .f du ^I sb c1 ad .f lb '. ^E .n lb '| ^E .n zp rt
+5 loop
+#+end_src
 
 ** explanation
 
