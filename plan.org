@@ -1,13 +1,13 @@
 #+title: b4 implementation plan
 
 * -- roadmap --
-** TODO get screen io working
+** DONE get screen io working
 ** TODO b4s (a tiny lisp-like interface)
 ** TODO finish memory alloctor
 ** TODO implement variants
 
 * -- sprint --
-** DONE [14/14]
+** DONE [28/28]
 *** DONE fill out constant ops c0 c1 c2 n1 c4
 *** DONE use =\d= to change the directory                        :b4i:
 *** DONE use =\a= to assemble a file (b4a)                      :b4i:
@@ -38,53 +38,47 @@ only treat two-character codes as ops
 *** DONE get ./test-b4i-pas working
 *** DONE fix =sh= with negative TOS                              :ub4:
 *** DONE use a line editor with history
-** TODO [14/19] memory-mapped video terminal                   :term:
-*** DONE @tmb : buffer pointer
-*** DONE @tmw : width
-*** DONE @tmh : height
-*** DONE cscr : clear screen
-*** DONE @cur : cursor position
-*** DONE curx : cursor x
-*** DONE cury : cursor y
-*** DONE emit : write char to screen buffer
-*** DONE goxy : set cursor position
-*** DONE sp   : emit space
-*** DONE nl   : emit newline
-*** DONE maxx : screen width-1
-*** DONE maxy : screen height-1
-*** DONE puts : write a string
-*** TODO ceol : clear to end of line
-@cur @tmw curx sb .f sp .n !cur
-*** TODO scup : scroll up
-*** TODO toggle scroll vs wrap
-*** TODO attr : attribute variable
-** TODO [0/4] tools to simulate keyboard input                 :bios:term:
+*** DONE bug %C does not clear dictionary, causing "too many :defs"
+*** DONE [14/14] memory-mapped video terminal                 :term:
+**** DONE @tmb : buffer pointer
+**** DONE @tmw : width
+**** DONE @tmh : height
+**** DONE cscr : clear screen
+**** DONE @cur : cursor position
+**** DONE curx : cursor x
+**** DONE cury : cursor y
+**** DONE emit : write char to screen buffer
+**** DONE goxy : set cursor position
+**** DONE sp   : emit space
+**** DONE nl   : emit newline
+**** DONE maxx : screen width-1
+**** DONE maxy : screen height-1
+**** DONE puts : write a string
+*** DONE bug: \h help text has old ops for :W
+*** DONE bug: b4i assembler fails on '#x y'
+*** DONE separate bios (term.b4a) from b4f (bios.b4a.org)
+- bios has putn, puts, term
+- the rest goes into b4f, the forth-like interpreter
+*** DONE get putn/base under test
+*** DONE \0 command to dump first line of terminal            :b4i:
+(I just did this as a word in the bios)
+*** DONE implement "raw" and ."counted" strings               :b4a:
+
+*** DONE implement 4ch symbol routines
+could use base36 for ~6 chars per symbol, but would only be uppercase, no utf-8.
+*** DONE implement nxcl 'allocator'                           :b4s:
+*** DONE read lists from input buffer                         :b4s:
+*** DONE reader macros for up/dn/qt                           :b4s:
+*** DONE generate 16x16 opcode table for the docs             :doc:
+*** DONE command to list known labels (=\p=)                    :b4i:
+** TODO implement lisp-style 'eval'                            :b4s:
+* -- backlog --
+** TODO [0/5] tools to simulate keyboard input                 :bios:term:
 *** TODO kr readkey
 *** TODO kR put key into buffer
 *** TODO kp get keypressed flag
 *** TODO kP set keypressed flag
-** -- bios tests ---
-** TODO command to dump video text                             :b4i:
-could just be a flag to =\m=
-** -- b4f --
-** TODO separate bios from b4f
-- bios
-  - num : number i/o
-  - trm : terminal commands
-  - str : string i/o
-  - ibf : allocate a 255-byte input buffer (+1 len cel)
-- the rest goes into b4f, the forth-like interpreter
-** -- bugs --
-** TODO bug %C does not clear dictionary, causing "too many :defs"
-** TODO bug: uled sometimes shows stray characters after submit
-** -- b4s --
-** TODO implement 4ch symbol routines
-** TODO implement nxcl 'allocator'                             :b4s:
-** TODO read lists from input buffer                           :b4s:
-** TODO reader macros for up/dn/qt                             :b4s:
-** TODO implement lisp-style 'eval'                            :b4s:
-* -- backlog --
-** TODO generate 16x16 opcode table for the docs                :doc:
+** TODO b4s garbage collector
 ** TODO [0/3] add assembler.org doc for b4a assembler syntax    :doc:
 *** TODO describe label usage: :name name `name @name !name
 *** TODO document character literals with 'x
@@ -100,7 +94,6 @@ could just be a flag to =\m=
 - usable ram starts at 1000
 
 ** TODO describe how b4i interactive assembler is different     :doc:
-** TODO command to list known labels                            :b4i:
 ** TODO command to save a memory image                          :b4i:
 ** TODO command to load a memory image                          :b4i:
 ** TODO command to load a file into the input buffer            :b4i:
@@ -182,6 +175,40 @@ and then 'run to cursor'
 ** TODO wait for input when input buffer exhausted              :b4f:
 ** TODO implement quote                                         :b4f:
 * -- inbox --
+** TODO would be nice to syntax highlight in b4x input
+** TODO bug: if you redefine a label, the old label still gets used.
+I think maybe this should be an error, or at least a warning...
+** TODO bug: uled sometimes shows stray characters after submit
+** TODO =as= op to test assertions?
+** TODO have \0 clear the line by default
+** TODO pas needs to allow :S midline
+** TODO pas needs to allow "string with space"
+** TODO allow parens to act as comments
+** TODO have .] automatically insert =rt=
+** TODO bug: -8 is neither interpreted NOR assembled in pascal
+when fixed, update ch< in pre.b4a
+** TODO bug: cscr does not clear the background
+** TODO bug: can define :| interactively but not assemble it
+** TODO assembling ."hello world" gives "unterminated string literal"
+** TODO dependencies between tests
+It would be kind of cool to document the dependencies between tests,
+and use them to generate pert charts, in the following way:
+
+- the b4vm implementation really doesn't need to be 100% complete
+until you start needing to actually use the opcodes.
+
+You should be able to implement a spike solution that works at
+multiple layers.
+
+You should be able to implement the opcodes in any order you
+like, for the most part... But some of them might require other
+opcodes (like =ad= needs operands to add, so you need =lb= or =c1=
+or similar)
+
+But even as b4 is easy to implement, you shouldn't have to implement
+it ALL before moving on to the next thing.
+
+** TODO decide on '@@int' vs '@byte' macro idea.
 ** TODO scdn : scroll down (?)
 
 ** TODO terminal widgets
@@ -248,6 +275,12 @@ how strings work in words:
 ** TODO "bicameral" aspect
 - some things might be much easier if we can use one machine to program another
 
+** TODO extra terminal stuff
+*** TODO ceol : clear to end of line
+@cur @tmw curx sb .f sp .n !cur
+*** TODO scup : scroll up
+*** TODO toggle scroll vs wrap
+*** TODO attr : attribute variable
 * -- maybe later --
 ** TODO onboard line editor
 ** TODO "calculator mode" (send ascii chars)
