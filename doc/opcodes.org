@@ -26,7 +26,7 @@ $B0| __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ tm
 $C0| c0 c1 ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 $D0| ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 $E0| ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
-$F0| ## ## ## ## ## ## c2 n1 c4 wl ds cs hx io db hl
+$F0| ## ## ## ## ## ## c2 n1 c4 __ __ __ __ io db hl
 #+end_example
 
 This document lists the 2-letter opcodes of the b4 virtual machine instructions

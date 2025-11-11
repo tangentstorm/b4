@@ -211,6 +211,7 @@
 :a1 ov lb F1 cnav sw rt                 # a1 (xe-x1e) extract arg 1 and swap. do not eval
 :a* sw cdr sw rt                        # a* (xe-de) replace x with its cdr
 :lam? li .. 'l 'a 'm wrp? rt            # (x-?) is x a lambda?
+:lbl? li .. 'l 'b 'l wrp? rt            # (x-?) is x a label?
 
 :elet                                   # (de-E) help for (let d=[(k.v)] x) eval each v. rt e'
   @E dc !E
@@ -226,6 +227,8 @@
         .e cadar @E ^V .t               # (d-v)    else: eval cdar
      .e .t rt                           # (d-d)  else: d was nil or bad. leave unchanged
 
+:dy dc sw cdr sw cdr cd do cnum rt
+
 :eaps                                   # (xe-v) eval list x, whose car is symbol in @A
   @A li .. 'e 'q '? eq .i b2 e1 eq? =>t    rt .t
   @A li .. 'c 'a 'r eq .i e1 car           rt .t
@@ -235,6 +238,7 @@
   @A li 'c 'o 'n 's eq .i b2 e1 sw cons    rt .t
   @A li 'c 'o 'n 'd eq .i a* econ          rt .t
   @A li .. 'l 'e 't eq .i a1 elet b2 zp zp rt .t
+  @A li .. .. 'a 'd eq .i .[ ad rt .] dy rt .t
   # TODO: look up functions by name
   zp rt
 
@@ -243,6 +247,7 @@
   ov num? .i zp rt .t                   # (xe-x) a num evals to itself
   ov nil? .i zp rt .t                   # (xe-x) a nil evals to itself
   ov lam? .i zp rt .t                   # (xe-x) a lam evals to itself
+  ov lbl? .i zp rt .t                   # (xe-x) a lbl evals to itself
   ov quo? .i zp cdr rt .t               # (xe-d) a quo evals to its cdr
   ov sym? .i asoc rt .t                 # (xe-v) a symbol gets looked up in the env
   ov car sym? .i                        # (xe-v) (sym ...) evals as symbol application (eaps)

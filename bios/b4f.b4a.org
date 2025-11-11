@@ -186,40 +186,7 @@ At runtime, we need to initialize some variables:
   repl
 #+end_src
 
-* text i/o
-
-#+name: b4-io-words
-#+begin_src b4a
-  :sp lb 20 ^E rt                    # emit space
-  :nl lb 0A ^E lb 0D ^E rt           # emit CRLF
-#+end_src
-
-#+name: puts
-#+begin_src b4a
-  :puts @S dc !S                     # given address of counted string s, write s
-    c1 +S rb .f c1 +S rb ^E .n
-    cd !S rt
-#+end_src
-
 * numerals
-#+name: base/digits
-#+begin_src b4a
-  :base 10 :digits  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
-#+end_src
-
-#+name: putn
-#+begin_src b4a
-  :putn # (n - )
-    du c0 eq .i lb '0 tw rt
-    .e c0 sw                         # ( n-kn) k:digit count=0
-       .w du nz? .d                  # while n!=0 do
-          li `base rb dvm            # (kn-kdm) divmod
-          li `digits ad rb dc        # (kdm-kd|c) push char to retn stack
-          sw inc sw .o               # k++, d is new n
-        zp                           # (kd-k)
-        .f cd cd tw dc .n .t         # loop through the characters
-    rt
-#+end_src
 
 #+name: try-num
 #+begin_src b4a

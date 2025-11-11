@@ -960,8 +960,3 @@ by using =zip= to pair the remaining items of the list with
 the function arguments, and then evaluating =body= with the zipped
 pairs linked to the start of the current environment.
 
-
-* =elis=
-* =eval= : (lam)
-* =aply= (f args)
-* =eval= : the symbol =t=
