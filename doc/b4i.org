@@ -1,66 +1,101 @@
 #+title: The b4i Interactive Interpreter
 
-The =b4i= program is an interactive assembler, debugger, and shell for the b4 virtual machine. It allows for direct execution of b4 assembly mnemonics, inspection of the VM state, and scripting through files.
+Interactive assembler, debugger, and shell for B4. Execute assembly mnemonics directly, inspect VM state, and script operations.
 
-* Table of Contents                                 :TOC:
-- [[#general-syntax][General Syntax]]
-- [[#command-line-arguments][Command-Line Arguments]]
-- [[#commands][Commands]]
-  - [[#file-and-system-commands][File and System Commands]]
-  - [[#vm-control-and-debugging][VM Control and Debugging]]
-- [[#literals-and-memory-access][Literals and Memory Access]]
+* Implementation Comparison
 
-* General Syntax
+(updated 2025-11-13)
 
-Commands are typically prefixed with a special character, like =?=, =\=, or =%=. Standard b4 assembly mnemonics can be typed directly and are executed immediately. Hexadecimal numbers are pushed onto the data stack. Anything following a =#= character is treated as a comment and ignored.
+| Feature               | Pascal | Lil | J  | JS | Godot | Level |
+|-----------------------+--------+-----+----+----+-------+-------|
+| **Core VM State**       |        |     |    |    |       |       |
+| ~?d~ (data stack)       | y      | y   | y  | y  | y     |     0 |
+| ~?c~ (control stack)    | y      | y   | y  | y  | y     |     0 |
+| ~?i~ (IP)               | y      | y   | y  | y  | y     |     0 |
+| ~?R~ (register)         | y      | NO  | y  | y  | NO    |     0 |
+| ~?100~ (mem dump)       | y      | y   | y  | y  | y     |     0 |
+| **VM Control**          |        |     |    |    |       |       |
+| ~%q~ (quit)             | y      | y   | y  | y  | y     |     0 |
+| ~%s~ (step)             | y      | y   | y  | y  | y     |     0 |
+| ~\g~ (go)               | y      | NO  | NO | NO | NO    |     0 |
+| ~\f~ (show fwd refs)    | y      | NO  | NO | NO | NO    |     0 |
+| ~%C~ (clear)            | y      | y   | y  | y  | y     |     0 |
+| ~%R~ (reset VM)         | y      | y   | NO | y  | NO    |     1 |
+| **Assembly**            |        |     |    |    |       |       |
+| ~:100 AA BB~            | y      | y   | y  | y  | y     |     0 |
+| ~:foo ...~              | y      | y   | y  | y  | y     |     0 |
+| Calculator mode       | y      | y   | y  | y  | y     |     0 |
+| **Enhanced Features**   |        |     |    |    |       |       |
+| ~\p~ (print dict)       | y      | NO  | NO | NO | NO    |     1 |
+| ~\a <file>~ (assemble)  | y      | NO  | NO | NO | NO    |     1 |
+| ~\i <file>~ (interpret) | y      | NO  | NO | NO | NO    |     1 |
+| ~\d [path]~ (cd)        | y      | NO  | NO | NO | NO    |     1 |
+| String literals ~"..."~ | y      | NO  | NO | y  | NO    |     1 |
+| Forward refs ~>label~   | y      | NO  | NO | NO | NO    |     1 |
+| Command-line ~-a -i~    | y      | y   | NO | NO | y     |     1 |
+| Control flow ~.i .t .e~ | y      | y   | NO | y  | NO    |     1 |
+| ~.^~ (linked list)      | y      | y   | NO | NO | NO    |     1 |
 
-* Command-Line Arguments
+*Level 0* features are required for =b4-tests.org= compatibility.
+*Level 1* features are optional enhancements, soon to be provided "for free" via =b4i.b4a=.
 
-The =b4i= interpreter can be launched with command-line arguments to automate tasks. After processing all arguments, it will enter the interactive REPL unless the =-q= flag is used.
+* Architecture: Two Levels
 
-- =-a <file>=: Assembles the specified file using the b4a assembler syntax.
-- =-i <file>=: Interprets the specified file, executing the commands as if they were typed in the REPL.
-- =-p=: Prints the assembler's dictionary of defined words.
-- =-q=: Quits the interpreter after processing all other command-line arguments.
+** Level 0: Basic Interactive Assembler
 
-Arguments are processed in the order they appear. For example, to assemble a library and then run an interactive script against it:
+Implemented in each host language (Pascal, JavaScript, J, etc.). Required for =b4-tests.org=.
 
-#+begin_src shell
-b4i -a my_lib.b4a -i my_script.b4i
-#+end_src
+*** Core Commands
 
-* Commands
+*VM State:*
+- =?d= : Data stack
+- =?c= : Control stack
+- =?i= : Instruction pointer
+- =?R= : Register R value (e.g., =?H=)
+- =?100= : Dump 16 bytes at address 0x100
 
-**NOTE:** Many commands have a =\= prefix and a =%= prefix variant (e.g., =\q= and =%q=). They are interchangeable.
+*VM Control:*
+- =%q= : Quit
+- =%s= : Step (execute one instruction)
+- =%g= : Go (run until halt/breakpoint)
+- =%C= : Clear/reboot VM
 
-*** File and System Commands
+*Assembly:*
+- =:100 AA BB CC= : Assemble bytes at address
+- =:foo c0 c1 rt= : Define label and assemble
+- =:R= : Point register R to current address
 
-- =\d=: Shows the current working directory.
-- =\d <path>=: Changes the current working directory to the specified relative path.
-- =\a <file>=: Assembles a file containing standard b4a assembly syntax.
-- =\i <file>=: Interprets a file containing b4i commands, as if they were typed into the REPL.
-- =\p=: Prints the assembler's dictionary of defined words.
+*Calculator Mode:*
+- Hex numbers: =FF 1234= → pushed to stack
+- Chars: ='a 'X= → ASCII values to stack
+- Opcodes: =ad sw du= → execute immediately
+- =^R= : Invoke code at register R
 
-*** VM Control and Debugging
+** Level 1: Enhanced Assembler
 
-- =\q= or =%q=: Quits the b4i session.
-- =\s= or =%s=: Executes the next single instruction (step).
-- =\h= or =%h=: Displays a brief help message.
-- =\C= or =%C=: Re-boots the virtual machine, resetting its state.
-- =?d=: Prints the contents of the data stack.
-- =?c=: Prints the contents of the control (return) stack.
-- =?i=: Prints the current value of the instruction pointer (IP).
-- =?r=: Prints the values of all general-purpose registers.
-- =?X=: Queries and prints the value of a single register =X= (e.g., =?A=).
-- =?addr=: Shows a hexdump of 16 bytes of memory starting at the specified hexadecimal =addr=.
-- =?name=: Looks up =name= in the dictionary and prints its address.
-- =? @name=: Looks up =name=, dereferences its address, and shows a hexdump of the memory at the resulting address.
+Optional features that extend Level 0 functionality.
 
-* Literals and Memory Access
+*Dictionary:*
+- =\p= : Print dictionary
+- =?name= : Lookup address
+- =? @name= : Dereference and dump
 
-- =<hex>=: A hexadecimal number (e.g., =100=, =FF=) is converted to a value and pushed onto the data stack.
-- ='c'=: A character literal (e.g., ='A'=) is pushed onto the data stack as its ASCII value.
-- =`R=: Pushes the address of a control register (e.g., =`A= for =^A=) onto the data stack.
-- =:foo <bytes...>=: Defines a new word =foo= at the current =here= pointer and assembles the following bytes.
-- =:R <bytes...>=: Assembles a sequence of bytes into memory starting at the address currently held in register =R=, and updates =R= to point to the end of the assembled bytes.
-- =:: <bytes...>=: Resumes assembly at the current =here= pointer without creating a new definition.
+*Files:*
+- =\d [path]= : Show/change directory
+- =\a <file>= : Assemble .b4a file
+- =\i <file>= : Interpret .b4i script
+
+*Advanced Assembly:*
+- Forward references: =>label=
+- Strings: ="text"=, =."counted"=
+- Control flow: =.i .t .e .w .f=
+- 32-bit literals: =$12345678=
+
+*Command-Line:*
+: b4i -a lib.b4a -i script.b4i -q
+
+* Usage
+
+Level 0 communicates via stdin/stdout (testable with =tanco= against =b4-tests.org=).
+
+The B4-native implementation (=bios/b4i.b4a=) can run on any VM by spawning a Level 0 implementation as a child process.
