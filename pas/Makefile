@@ -8,6 +8,7 @@ FPC = fpc -gl -Mobjfpc
 ARGS ?= # specify ARGS="..." on make command line
 
 B4 = b4$(EXE)
+B4X = b4x$(EXE)
 B4I = b4i$(EXE)
 B4IX = b4ix$(EXE)
 B4A = b4a$(EXE)
@@ -18,12 +19,14 @@ main:
 	@echo 'usage : make <target> ARGS="..."'
 	@echo ''
 	@echo 'targets:'
-	@echo '   b4 : compile main program'
+	@echo '   b4 : compile stdio runner'
+	@echo '  b4x : compile graphical runner'
 	@echo 'clean : remove fpc residue'
-	@echo '  run : build/run b4'
+	@echo '  run : build/run b4 (stdio)'
+	@echo ' runx : build/run b4x (graphical)'
 	@echo ' runf : build/run b4f (b4 $ARGS -a ../bios/b4f.b4a)'
 	@echo ' runi : build/run b4i (plain interpreter)'
-	@echo ' runx : build/run b4ix (fancy interpreter)'
+	@echo ' runix: build/run b4ix (fancy interpreter)'
 	@echo ' runa : build/run b4a (batch assembler)'
 	@echo ' rund : build/run b4d (disassembler)'
 	@echo ' colortest: build/run colortest'
@@ -36,13 +39,16 @@ always:
 run: always $(B4)
 	./$(B4) $(ARGS)
 
+runx: $(B4X)
+	./$(B4X) $(ARGS)
+
 runf: $(B4)
 	./$(B4) $(ARGS) -a ../bios/b4f.b4a
 
 runi: $(B4I)
 	./$(B4I) $(ARGS)
 
-runx: $(B4IX)
+runix: $(B4IX)
 	./$(B4IX) $(ARGS)
 
 runa: $(B4A)
@@ -53,19 +59,23 @@ rund: $(B4D)
 
 ifeq ($(OS),Windows_NT)
 b4: $(B4)
+b4x: $(B4X)
 b4i: $(B4I)
 b4ix: $(B4IX)
 b4a: $(B4A)
 b4d: $(B4D)
 endif
 
-$(B4I): $(B4) b4i.pas ub4i.pas
+$(B4I): $(B4X) b4i.pas ub4i.pas
 	$(FPC) -o$(B4I) -B b4i.pas
 
 $(B4IX): $(B4I) b4ix.pas
 	$(FPC) -o$(B4IX) -B b4ix.pas
 
-$(B4): b4.pas ub4asm.pas ub4.pas ub4ops.pas uhw.pas uhw_vt.pas
+$(B4X): b4x.pas ub4asm.pas ub4.pas ub4ops.pas uhw.pas uhw_vt.pas
+	$(FPC) -o$(B4X) -B b4x.pas
+
+$(B4): b4.pas ub4.pas ub4ops.pas
 	$(FPC) -o$(B4) -B b4.pas
 
 ub4.ppu: ub4.pas

@@ -1,27 +1,68 @@
 {$mode delphi}
-{ this is the main entry point for b4 }
+{ b4: stdio-only runner for B4 VM }
 program b4;
-uses sysutils, ub4, ub4asm, ub4dbg, uhw_vt, ub4i;
+uses sysutils, ub4;
 
-var oldinput : text; done : boolean;
+var
+  arg: string;
+  i: integer;
+  loadfile: string;
+  f: file of byte;
+  b: byte;
+  addr: integer;
+
 begin
-  done := b4i_args;
-  if done then halt;
-  ub4.term := uhw_vt.TB4KVMTerm.Create;
-  clrscr;
-  rg[RIP]:=$0B40;
-  if rg[RGO]<>0 then rg[RIP] := rg[RGO]; { jump to address in @\ }
-  if paramstr(1)='-d' then rg[RDB] := 1;
+  loadfile := '';
+
+  { Parse command line }
+  i := 1;
+  while i <= ParamCount do begin
+    arg := ParamStr(i);
+    if arg = '-l' then begin
+      inc(i);
+      if i <= ParamCount then
+        loadfile := ParamStr(i);
+    end else if arg = '-d' then
+      rg[RDB] := 1;
+    inc(i);
+  end;
+
+  { Load file if specified }
+  if loadfile <> '' then begin
+    if not FileExists(loadfile) then begin
+      writeln('Error: file not found: ', loadfile);
+      halt(1);
+    end;
+    { Load b4x file - it's a complete memory image including registers }
+    assign(f, loadfile);
+    reset(f);
+    addr := 0;
+    while (not eof(f)) and (addr <= maxcell) do begin
+      read(f, b);
+      mem[addr] := b;
+      inc(addr);
+    end;
+    close(f);
+    { Set entry point: use RGO if set, otherwise default to minheap }
+    if rg[RGO] <> 0 then
+      rg[RIP] := rg[RGO]  { Entry point from @\ register }
+    else
+      rg[RIP] := minheap;  { Default entry point at 0x100 }
+  end else begin
+    { No file loaded - initialize empty VM }
+    boot;
+    rg[RIP] := minheap;
+  end;
+
+  { Main execution loop }
   while rg[RIP] <= maxheap do begin
-    if rg[RIP] = rg[RBP] then begin rg[RDB]:=1; rg[RBP] := high(ub4.address) end;
-    if rg[RDB]=1 then ub4dbg.debug_step;
-    if not (paused and (rg[RDB]=1)) then
-      try ub4.step
-      except on e:EB4Exception do begin
-        rg[RDB]:=1; paused := true end end;
-  end; { while }
-  {$IFDEF pauseafter} { for turbo pascal }
-  writeln('done. press any key to continue');
-  repeat until keypressed;
-  {$ENDIF}
+    try
+      step;
+    except
+      on e: Exception do begin
+        writeln('Exception: ', e.Message);
+        halt(1);
+      end;
+    end;
+  end;
 end.
