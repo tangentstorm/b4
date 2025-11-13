@@ -243,6 +243,8 @@ procedure b4as_core;
               else if ents=high(dict) then begin writeln('too many :defs'); halt end
               else begin
                 dict[ents].id:=tok.str; dict[ents].adr:=here; inc(ents); i:=0;
+                { Set RGO to 'main' entry point if this label is 'main' }
+                if tok.str = 'main' then rg[RGO] := here;
                 if length(fwds)>0 then while i < length(fwds) do begin
                   fw := fwds[i]; if fw.key=tok.str then
                   begin wrval(fw.at, here);  delete(fwds,i,1) end

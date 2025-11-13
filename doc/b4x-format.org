@@ -1,0 +1,42 @@
+#+TITLE: B4X File Format and Entry Points
+
+* File Format
+
+A =.b4x= file is a 16KB binary dump of the B4 VM's complete memory state:
+
+: 0x0000-0x00FF (0-255)     : 64 registers (4 bytes each)
+: 0x0100-0x3FFF (256-16383) : Program code and data
+
+Created by: =pas/b4a.exe input.b4a output.b4x=
+
+* Entry Point Convention
+
+The =RGO= register (=\=, offset 0x70) specifies where execution begins.
+
+- If =RGO= is set: execution starts at =mem[RGO]=
+- If =RGO= is zero: execution defaults to =minheap= (0x0100)
+
+The assembler automatically sets =RGO= when it encounters a =:main= label.
+
+** Examples
+
+Default location:
+: :main
+:   # RGO = 0x0100
+
+BIOS compatibility:
+: :0B40 :main
+:   # RGO = 0x0B40
+
+Custom location:
+: :0200 :main
+:   # RGO = 0x0200
+
+* Running .b4x Files
+
+: pas/b4.exe  -l program.b4x  # stdio runner
+: pas/b4x.exe -l program.b4x  # graphical runner with debugger
+
+Both use the same entry point logic:
+: if rg[RGO] <> 0 then rg[RIP] := rg[RGO]
+: else rg[RIP] := minheap;

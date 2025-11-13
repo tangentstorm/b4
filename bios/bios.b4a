@@ -181,10 +181,10 @@
 
 :0B00                   # config block
 
-:0B40                   # start of code
+:0B40 :main             # start of code (sets RGO to 0x0B40)
 
-jm >main                # pointer to main (to be defined by user code)
-jm 40 0B .. ..          # loop if main is not defined
+# Entry point will jump to :main
+# (user code should define :main, or execution starts here)
 
 # -- core routines --------------------------------------------
 
