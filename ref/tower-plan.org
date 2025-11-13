@@ -23,12 +23,12 @@ garbage collection system.
 
 The other two bits will be used for a type code:
 
-| hex | bits | meaning                                   |
-|-----+------+-------------------------------------------|
-|   0 |  00. | cons cell                                 |
-|   2 |  01. | number                                    |
-|   4 |  10. | symbol                                    |
-|   6 |  11. | (reserved for extended type system later) |
+| hex | bits | meaning    |
+|-----+------+------------|
+|   0 |  00. | cons cell  |
+|   2 |  01. | number     |
+|   4 |  10. | symbol     |
+|   6 |  11. | (reserved) |
 
 In the 'bits' column, the '.' stands for the mark bit. In
 practice it should always be 0, but we mask it out when
@@ -82,29 +82,5 @@ extracting the type code.
 - apply
 - eval
 
-* implementation
 
-** TODO [0/5] print
-*** TODO putn: print a raw number (4 bytes)
-- we could come up with fancy encoding to pack 5 letters (no uppercase)
-- but easier to just chain them together later later
-- also 8-bit ascii works much nicer with the assembler and memory view
-*** TODO pnum: print a lisp number from a cell
-*** TODO put4: print a raw symbol (4 bytes)
-*** TODO psym: print a lisp symbol
-*** TODO pval (=^P=): print an arbitrary value
-*** TODO plis: print a list
 
-*** TODO vtyp: type code extractor
-
-** TODO [0/2] allocator
-*** TODO cels
-*** TODO ncel
-
-** TODO [0/4] reader
-*** TODO rval (=^R=)
-*** TODO rnum
-*** TODO rsym
-*** TODO rlis
-
-** TODO eval
