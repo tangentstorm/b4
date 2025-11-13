@@ -1,11 +1,68 @@
-# b4i.b4a: Interactive B4 assembler/debugger written in B4
-# Goal: Pass b4-tests.org tests one by one
+# -- b4i.b4a : Level 1 Interactive B4 Assembler
+#
+# Acts as a proxy to a Level 0 implementation.
+# Spawns a subprocess (pas/b4i) and forwards stdin/stdout.
+#
+# -- memory layout ---------------------------------------------
+# 0100..01FF  256-byte input buffer (stdin)
+# 0200..02FF  256-byte output buffer (subprocess stdout)
+# 0300..      main code
+# --------------------------------------------------------------
 
-# Test 1: Handle %q command
-# Read from stdin, check if it's "%q", if so halt
+:0100 :INBUF            # Input buffer at 0x100
+:0200 :OUTBUF           # Output buffer at 0x200
 
-# For now, just immediately halt successfully
-# (This passes test 1 which expects no output for just "%q")
+# --- Data -------------------------
+
+:0300
+:D "pas/b4i" 00     # Command to spawn Level 0 interpreter
+
+# --- Main Code -------------------------
 
 :main
-  hl
+  @D lb 'p io !H     # Spawn child process, store handle in @H
+  @H c0 lt .i         # Check if spawn failed (handle < 0)
+    'E 'e io 'R 'e io 'R 'e io 0A 'e io  # Print "Err\n" to stderr
+    lb 01 hl          # Exit with code 1
+  .t
+
+  # --- Main loop: forward stdin to subprocess
+  .w c1 .d            # while true do
+    li `INBUF li 00 01 00 00 lb 'i io !L  # Read line from stdin -> @L = length
+    @L c0 eq .i                           # If EOF (length == 0)
+      @H lb 'k io c0 hl                   # Kill subprocess and exit
+    .t
+
+    # Check for %q command
+    li `INBUF rb lb '% eq .i          # If first char is '%'
+      li `INBUF c1 ad rb lb 'q eq .i  # and second char is 'q'
+        @H lb 'k io c0 hl             # Kill subprocess and exit
+      .t
+    .t
+
+    li `INBUF @H lb 'w io          # Send input to subprocess
+
+    # --- Read subprocess output with retries
+    lb 0A .f                       # for 10 retries
+      li `OUTBUF @H lb 'r io !R    # Read from subprocess -> @R = length
+      @R c0 eq nt .i               # If got data (length != 0)
+        # Print response buffer to stdout
+        li `OUTBUF
+        .w du rb du c0 eq nt .d    # while (*buf != 0) do
+          'o io                    # Output char to stdout
+          c1 ad                    # buf++
+        .o zp                      # od, clean stack
+      .t
+    .n
+  .o
+
+# --- Subprocess IO Functions -----------
+
+:run  lb 'p io rt  # (cmdline-ptr -- pid) Spawn subprocess
+:zpid lb 'k io rt  # (pid --) Kill subprocess
+:wpid lb 'w io rt  # (data-ptr pid --) Write to subprocess
+:rpid lb 'r io rt  # (data-ptr pid -- len) Read from subprocess
+
+# --- Constants -------------------------
+
+:MAXLEN li 00 01 00 00 rt  # (-- n) Max read length: 256 bytes
