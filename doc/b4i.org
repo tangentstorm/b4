@@ -94,6 +94,64 @@ Optional features that extend Level 0 functionality.
 *Command-Line:*
 : b4i -a lib.b4a -i script.b4i -q
 
+* Command Reference
+
+** File Operations
+- =\a <filename>= : Assemble a .b4a file into memory
+- =\i <filename>= : Interpret/execute a .b4i script file
+- =\d [path]= : Change directory (no args shows current directory)
+
+** VM Control
+- =\g= : Go - run until halt or breakpoint
+- =\j <address>= : Jump - set instruction pointer to address
+- =\q= or =%q= : Quit the interpreter
+- =\R= or =%R= : Reset VM (clear stacks, set IP to 0x100)
+- =\C= or =%C= : Clear VM completely (boot + clear dictionary)
+- =\s= or =%s= : Step - execute single instruction
+- =\v [address]= : Set debugger view address (no args uses current IP)
+- =\t= : Toggle logging on/off
+
+** Inspection Commands
+- =?d= : Display data stack
+- =?c= : Display control stack
+- =?i= : Display instruction pointer
+- =?r= : Show all registers
+- =?R= : Show specific register value (e.g., =?H=, =?K=)
+- =?100= : Dump 16 bytes at hex address
+- =?name= : Lookup and dump memory at label
+- =?@R= : Dump memory at address stored in register R
+
+** Dictionary/Debug
+- =\p= or =%p= : Print dictionary (all defined words)
+- =\f= : Show forward references
+- =\o= or =-o= : Show opcodes table
+- =\h= or =%h= : Show help
+
+** Calculator Mode
+
+When not a command, tokens are interpreted as:
+
+- =1234= : Hex number → push to stack
+- ='a= : Character literal → push ASCII value
+- =`label= : Push address of label
+- =`R= : Push address of register R
+- =@label= : Dereference label, push value
+- =@R= : Push value from register R
+- =!label= : Pop stack, store at label address
+- =!R= : Pop stack, store in register R
+- =label= : Call function at label (if defined)
+- =ad=, =sw=, etc. : Execute opcode immediately
+
+** Assembly Mode
+
+- =:100 AA BB CC= : Assemble bytes at hex address
+- =:label c0 c1 rt= : Define label and assemble code
+- =:R= : Point register R to current assembly address
+
+** Comments
+
+- =#= : Line comment (rest of line ignored)
+
 * Usage
 
 Level 0 communicates via stdin/stdout (testable with =tanco= against =b4-tests.org=).
