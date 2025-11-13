@@ -1,6 +1,6 @@
 # Add .exe for Windows compatibility
 EXE=
-ifdef ComSpec
+ifeq ($(OS),Windows_NT)
   EXE=.exe
 endif
 
@@ -30,6 +30,7 @@ main:
 
 always:
 
+.SUFFIXES:
 .PHONY: main always run runf runi runx runa rund clean colortest
 
 run: always $(B4)
@@ -50,7 +51,7 @@ runa: $(B4A)
 rund: $(B4D)
 	./$(B4D) $(ARGS)
 
-ifdef ComSpec
+ifeq ($(OS),Windows_NT)
 b4: $(B4)
 b4i: $(B4I)
 b4ix: $(B4IX)
