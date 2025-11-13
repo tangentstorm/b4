@@ -228,6 +228,21 @@ class B4iServer {
             required: ["register"],
           },
         },
+        {
+          name: "b4i_send_input",
+          description:
+            "Send input directly to the b4i process stdin. Useful for testing interactive programs or sending commands to a running VM.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              input: {
+                type: "string",
+                description: "The input to send to b4i stdin",
+              },
+            },
+            required: ["input"],
+          },
+        },
       ],
     }));
 
@@ -315,6 +330,19 @@ class B4iServer {
               // Read register
               result = await this.executeCommand(`?${args.register}`);
             }
+            break;
+          }
+
+          case "b4i_send_input": {
+            if (!this.b4iProcess) {
+              throw new Error("b4i process is not running");
+            }
+            // Send input directly to stdin
+            this.b4iProcess.stdin.write(args.input + "\n");
+            // Wait a bit for any output
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            result = this.outputBuffer.trim();
+            this.outputBuffer = "";
             break;
           }
 
