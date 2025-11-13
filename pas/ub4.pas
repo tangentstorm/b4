@@ -1,6 +1,6 @@
 {$mode delphi}
 unit ub4; { the b4 virtual machine }
-interface uses uhw,sysutils;
+interface uses uhw,sysutils,process,classes;
 
 type
   value = longint;
@@ -36,12 +36,20 @@ type
   pstack = ^stack;
   regs = array[0..63] of value;
 
+type
+  TB4Process = record
+    proc: TProcess;
+    active: boolean;
+    outbuf: TStringList;  { buffer for reading lines }
+  end;
+
 var
   mem  : array[0..maxcell*cellsize] of byte;
   disk : file of block;
   term : uhw.TB4Device;
   vw   : byte = 4;
   ob   : string = '';
+  procs: array[0..15] of TB4Process;
 
 
 const {-- these are all offsets into the mem array --}
@@ -100,6 +108,7 @@ implementation
 uses math, ub4ops;
 
 procedure boot;
+  var i: integer;
   begin
     fillchar(mem, (maxcell + 1) * cellsize, 0);
     rg[RDS] := 0;
@@ -108,6 +117,9 @@ procedure boot;
     rg[RHP] := minheap;
     rg[RED] := minheap;
     rg[RBP] := maxcell;
+    { initialize process array }
+    for i := 0 to 15 do
+      procs[i].active := false;
   end;
 
 { helpers }
@@ -312,14 +324,177 @@ procedure opir(r:byte); inline;
   var v:value; begin v:=rg[r]; rg[r]+=dpop; dput(v) end; { read+inc register }
 
 procedure opio;
-  var ch: char;
+  var ch: char; cmd: char;
+      fname: string; f: file of byte;
+      fsize, addr, len, i: integer; b: byte;
   begin
-    case chr(dpop) of
-      'e' : begin
+    cmd := chr(dpop);
+    case cmd of
+      'e' : begin  { emit character to output buffer }
               ch := chr(dpop);
               if ch < ' ' then ch := ' ';
               ob:=ob+ch
-            end
+            end;
+      'd' : begin  { delete file: (filename-ptr -- ) }
+              addr := dpop;
+              fname := '';
+              i := addr;
+              while mem[i] <> 0 do begin
+                fname := fname + chr(mem[i]);
+                inc(i);
+              end;
+              if FileExists(fname) then DeleteFile(fname);
+            end;
+      'x' : begin  { file exists: (filename-ptr -- bool) }
+              addr := dpop;
+              fname := '';
+              i := addr;
+              while mem[i] <> 0 do begin
+                fname := fname + chr(mem[i]);
+                inc(i);
+              end;
+              if FileExists(fname) then dput(-1) else dput(0);
+            end;
+      'z' : begin  { file size: (filename-ptr -- size|-1) }
+              addr := dpop;
+              fname := '';
+              i := addr;
+              while mem[i] <> 0 do begin
+                fname := fname + chr(mem[i]);
+                inc(i);
+              end;
+              if FileExists(fname) then begin
+                assign(f, fname); reset(f);
+                fsize := FileSize(f);
+                close(f);
+                dput(fsize);
+              end else dput(-1);
+            end;
+      'm' : begin  { map file to memory: (dest-addr filename-ptr --) }
+              addr := dpop;  { filename pointer }
+              fname := '';
+              i := addr;
+              while mem[i] <> 0 do begin
+                fname := fname + chr(mem[i]);
+                inc(i);
+              end;
+              addr := dpop;  { destination address }
+              if FileExists(fname) then begin
+                assign(f, fname); reset(f);
+                i := addr;
+                while not eof(f) do begin
+                  read(f, b);
+                  mem[i] := b;
+                  inc(i);
+                end;
+                close(f);
+              end;
+            end;
+      's' : begin  { save memory to file: (src-addr len filename-ptr --) }
+              fsize := dpop;  { filename pointer }
+              len := dpop;    { length }
+              addr := dpop;   { source address }
+              fname := '';
+              i := fsize;
+              while mem[i] <> 0 do begin
+                fname := fname + chr(mem[i]);
+                inc(i);
+              end;
+              assign(f, fname); rewrite(f);
+              for i := addr to addr + len - 1 do
+                write(f, mem[i]);
+              close(f);
+            end;
+      'p' : begin  { spawn process: (cmdline-ptr -- handle|-1) }
+              addr := dpop;
+              fname := '';  { reuse fname for command line }
+              i := addr;
+              while mem[i] <> 0 do begin
+                fname := fname + chr(mem[i]);
+                inc(i);
+              end;
+              { find free slot }
+              i := 0;
+              while (i < 16) and procs[i].active do inc(i);
+              if i >= 16 then begin
+                dput(-1);  { no free slots }
+              end else begin
+                procs[i].proc := TProcess.Create(nil);
+                {$IFDEF WINDOWS}
+                procs[i].proc.Executable := 'cmd.exe';
+                procs[i].proc.Parameters.Add('/c');
+                {$ELSE}
+                procs[i].proc.Executable := 'sh';
+                procs[i].proc.Parameters.Add('-c');
+                {$ENDIF}
+                procs[i].proc.Parameters.Add(fname);
+                procs[i].proc.Options := [poUsePipes];
+                procs[i].outbuf := TStringList.Create;
+                procs[i].proc.Execute;
+                procs[i].active := true;
+                dput(i);  { return handle }
+              end;
+            end;
+      'w' : begin  { write line to process: (line-ptr handle --) }
+              i := dpop;  { handle }
+              addr := dpop;  { line pointer }
+              if (i >= 0) and (i < 16) and procs[i].active then begin
+                fname := '';  { reuse fname for line }
+                while mem[addr] <> 0 do begin
+                  fname := fname + chr(mem[addr]);
+                  inc(addr);
+                end;
+                fname := fname + #10;  { add newline }
+                procs[i].proc.Input.Write(fname[1], length(fname));
+              end;
+            end;
+      'r' : begin  { read line from process: (dest-ptr handle -- length|-1) }
+              i := dpop;  { handle }
+              addr := dpop;  { destination pointer }
+              if (i >= 0) and (i < 16) and procs[i].active then begin
+                { check if data available }
+                len := procs[i].proc.Output.NumBytesAvailable;
+                if len > 0 then begin
+                  { read available data into buffer }
+                  SetLength(fname, len);
+                  len := procs[i].proc.Output.Read(fname[1], len);
+                  { copy to memory, stopping at newline or end }
+                  fsize := 0;
+                  for b := 1 to len do begin
+                    if fname[b] = #10 then break;
+                    mem[addr + fsize] := ord(fname[b]);
+                    inc(fsize);
+                  end;
+                  mem[addr + fsize] := 0;  { null terminate }
+                  dput(fsize);  { return length }
+                end else begin
+                  dput(0);  { no data available }
+                end;
+              end else begin
+                dput(-1);  { invalid handle }
+              end;
+            end;
+      'k' : begin  { kill/close process: (handle --) }
+              i := dpop;
+              if (i >= 0) and (i < 16) and procs[i].active then begin
+                procs[i].proc.Terminate(0);
+                procs[i].proc.Free;
+                procs[i].outbuf.Free;
+                procs[i].active := false;
+              end;
+            end;
+      'i' : begin  { read line from stdin: (dest-ptr maxlen -- actual-len) }
+              len := dpop;   { max length }
+              addr := dpop;  { destination }
+              fname := '';
+              readln(fname);  { read line from stdin }
+              fsize := length(fname);
+              if fsize > len then fsize := len;  { cap at maxlen }
+              for i := 0 to fsize - 1 do
+                mem[addr + i] := ord(fname[i + 1]);
+              mem[addr + fsize] := 0;  { null terminate }
+              dput(fsize);  { return actual length }
+            end;
     end
   end;
 
