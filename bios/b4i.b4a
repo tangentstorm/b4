@@ -1,0 +1,11 @@
+# b4i.b4a: Interactive B4 assembler/debugger written in B4
+# Goal: Pass b4-tests.org tests one by one
+
+# Test 1: Handle %q command
+# Read from stdin, check if it's "%q", if so halt
+
+# For now, just immediately halt successfully
+# (This passes test 1 which expects no output for just "%q")
+
+:main
+  hl

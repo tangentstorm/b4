@@ -15,7 +15,7 @@ var
 implementation
 
 procedure LogState(op_str: string);
-  var a:integer; ident: string;
+  var a:integer; ident: ub4asm.ident;
 begin
   if logging_enabled then begin
     a:=ub4.rg^[ub4.RIP];
@@ -344,6 +344,23 @@ begin
   result := done;
 end;
 
+procedure load_b4x(fn: string);
+var
+  f: file of byte;
+  i: integer;
+  b: byte;
+begin
+  assign(f, fn);
+  reset(f);
+  i := 0;
+  while not eof(f) do begin
+    read(f, b);
+    ub4.mem[i] := b;
+    inc(i);
+  end;
+  close(f);
+end;
+
 function b4i_args:boolean;
 var
   i: integer = 1;
@@ -352,6 +369,11 @@ begin
   while (i <= ParamCount) and (not done) do
   begin
     case ParamStr(i) of
+      '-l': begin
+        inc(i);
+        if i <= ParamCount then load_b4x(ParamStr(i))
+        else writeln('error: -l requires a filename');
+      end;
       '-i': begin
         inc(i);
         if i <= ParamCount then b4i_file(ParamStr(i))
