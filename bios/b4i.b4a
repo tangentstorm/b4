@@ -15,7 +15,7 @@
 # --- Data -------------------------
 
 :0300
-:D "pas/b4i" 00     # Command to spawn Level 0 interpreter
+:D "pas/b4i.exe" 00  # Command to spawn Level 0 interpreter
 
 # --- Main Code -------------------------
 
@@ -52,6 +52,9 @@
           'o io                    # Output char to stdout
           c1 ad                    # buf++
         .o zp                      # od, clean stack
+      .e
+        # No data yet, sleep 10ms before retry
+        lb 0A lb 'S io             # Sleep 10 milliseconds
       .t
     .n
   .o

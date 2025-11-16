@@ -335,6 +335,11 @@ procedure opio;
               if ch < ' ' then ch := ' ';
               ob:=ob+ch
             end;
+      'o' : begin  { output character directly to stdout: (ch --) }
+              ch := chr(dpop);
+              write(ch);
+              flush(output);
+            end;
       'd' : begin  { delete file: (filename-ptr -- ) }
               addr := dpop;
               fname := '';
@@ -494,6 +499,44 @@ procedure opio;
                 mem[addr + i] := ord(fname[i + 1]);
               mem[addr + fsize] := 0;  { null terminate }
               dput(fsize);  { return actual length }
+            end;
+      'A' : begin  { get argument count: (-- argc) }
+              dput(ParamCount);
+            end;
+      'a' : begin  { get nth argument: (dest-ptr n --) }
+              i := dpop;     { argument index }
+              addr := dpop;  { destination }
+              if (i >= 0) and (i <= ParamCount) then begin
+                fname := ParamStr(i);
+                fsize := length(fname);
+                if fsize > 255 then fsize := 255;  { cap at 255 }
+                mem[addr] := fsize;  { write length byte }
+                for len := 1 to fsize do
+                  mem[addr + len] := ord(fname[len]);
+              end else begin
+                mem[addr] := 0;  { empty string }
+              end;
+            end;
+      'E' : begin  { get environment variable: (name-ptr dest-ptr --) }
+              addr := dpop;  { destination }
+              i := dpop;     { name pointer }
+              { read null-terminated name }
+              fname := '';
+              while mem[i] <> 0 do begin
+                fname := fname + chr(mem[i]);
+                inc(i);
+              end;
+              { get environment variable }
+              fname := GetEnvironmentVariable(fname);
+              fsize := length(fname);
+              if fsize > 255 then fsize := 255;  { cap at 255 }
+              mem[addr] := fsize;  { write length byte }
+              for i := 1 to fsize do
+                mem[addr + i] := ord(fname[i]);
+            end;
+      'S' : begin  { sleep: (milliseconds --) }
+              i := dpop;
+              if i > 0 then Sleep(i);
             end;
     end
   end;

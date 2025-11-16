@@ -2,7 +2,7 @@
 
 * -- roadmap --
 ** DONE get screen io working
-** TODO b4s (a tiny lisp-like interface)
+** DONE b4s (a tiny lisp-like interface)
 ** TODO finish memory alloctor
 ** TODO implement variants
 
@@ -72,6 +72,21 @@ could use base36 for ~6 chars per symbol, but would only be uppercase, no utf-8.
 *** DONE generate 16x16 opcode table for the docs             :doc:
 *** DONE command to list known labels (=\p=)                    :b4i:
 ** TODO implement lisp-style 'eval'                            :b4s:
+** TODO error code return for assembler                        :b4a:
+Currently b4a uses 'hl' (halt) on errors. Consider adding an io op
+to return error codes, so assembler can leave error code on stack
+and return gracefully for better integration with other tools.
+** DONE file I/O operations                                    :io:
+Added new 'io' operations for file handling:
+- 'd' (delete): (filename-ptr --) deletes file if it exists
+- 'x' (exists): (filename-ptr -- bool) returns -1 if file exists, 0 otherwise
+- 'z' (size): (filename-ptr -- size|-1) returns file size or -1 if not found
+- 'm' (map/load): (dest-addr filename-ptr --) loads file into memory
+- 's' (save): (src-addr len filename-ptr --) saves memory region to file
+
+All operations use null-terminated strings in memory for filenames.
+Tests in io-tests.org verify all operations work correctly.
+Test runner: test-io-pas
 * -- backlog --
 ** TODO [0/5] tools to simulate keyboard input                 :bios:term:
 *** TODO kr readkey
