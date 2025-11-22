@@ -1,12 +1,12 @@
 #+title: pre: parsing and regular expressions
+#+tanco-format: 0.2
 
 * intro
 
 This is a test suite for [[bios/pre.b4a]], a parsing and
 regular expression toolkit for the b4 virtual machine.
 
-* =m0 (-)= and =m1 (-)= set the match bit.
-#+name: pre.m
+* TEST pre.m : =m0 (-)= and =m1 (-)= set the match bit.
 #+begin_src b4a
   > m1 @M ?d zp
   ds: [-1]
@@ -22,8 +22,7 @@ For brevity, the words =m0= and =m1= set this flag.
 =m1= also doubles as the command to match an empty
 string.
 
-* =ln (-n)= : match length
-#+name: pre.ml
+* TEST pre.ml : =ln (-n)= : match length
 #+begin_src b4a
   > :S :K .. .. ..
   > ln ?d zp
@@ -37,8 +36,7 @@ string.
 and =@K= points to the current input character.
 Subtracting =@S= from =@K= gives us the match length.
 
-* =fw (n-)= : move =@K= forward n characters
-#+name: pre.fw
+* TEST pre.fw : =fw (n-)= : move =@K= forward n characters
 #+begin_src b4a
  > pre ln ?d zp
  ds: [0]
@@ -46,8 +44,7 @@ Subtracting =@S= from =@K= gives us the match length.
  ds: [4]
 #+end_src
 
-* =pre (-)= : initialize parsing and regular expressions
-#+name: pre.pre
+* TEST pre.pre : =pre (-)= : initialize parsing and regular expressions
 #+begin_src b4a
   > c4 !S m0       # set values we DON'T want
   > pre @K @M ?d   # init
@@ -56,8 +53,7 @@ Subtracting =@S= from =@K= gives us the match length.
 
 The word =pre= sets =@K= to =@S= and =@M= to -1.
 
-* =m\= : niladic match guard
-#+name: pre.m\
+* TEST pre.m\ : =m\= : niladic match guard
 #+begin_src b4a
   > :A m\ c4 rt
   > m0 ^A ?d
@@ -73,8 +69,7 @@ stack and then using the =rt= opcode.
 
 Niladic here means that it doesn't expect any arguments.
 
-* =m! (x-x?)= : monadic match guard
-#+name: pre.m!
+* TEST pre.m! : =m! (x-x?)= : monadic match guard
 #+begin_src b4a
   > :A m! c4 rt
   > # when m0 the argument gets dropped
@@ -89,8 +84,7 @@ but it also drops a single argument.
 
 "Monadic" here means "taking one argument".
 
-* =any= and =end=
-#+name: b4s.end/any
+* TEST b4s.end/any : =any= and =end=
 #+begin_src b4a
  > :S 'x 'y ..
  > pre
@@ -104,8 +98,7 @@ but it also drops a single argument.
  ds: [C3 -1 2]
 #+end_src
 
-* =chr (c-)= : match exact character
-#+name: pre.chr
+* TEST pre.chr : =chr (c-)= : match exact character
 #+begin_src b4a
   > :S :K "hello"
   > :Y lb 'h chr rt # should match and increment k
@@ -127,8 +120,7 @@ current character =ch= matches the value on the stack.
 
 If so, it increments =@K= by one position by calling =nc=.
 
-* =lte (c-)= : matches if ch<=arg (does not consume)
-#+name: pre.lte
+* TEST pre.lte : =lte (c-)= : matches if ch<=arg (does not consume)
 #+begin_src b4a
   > :S :K 'm ..
   > # if m0, zap arg and do nothing
@@ -152,8 +144,7 @@ lte takes one argument, so must call =m!=
 Note there is no "less than or equal" op in b4, but you can simply
 add one to  calling =lt=.
 
-* =gte (c-)= : matches if ch>=arg (does not consume)
-#+name: pre.gte
+* TEST pre.gte : =gte (c-)= : matches if ch>=arg (does not consume)
 #+begin_src b4a
   > :S :K 'm ..
   > # if m0, zap arg and do nothing
@@ -173,8 +164,7 @@ add one to  calling =lt=.
 There is no "greater than or equal" opcode in b4, but you can write
 it as "not less than": =lt nt=
 
-* =mf1= advance if match
-#+name: pre.mf1
+* TEST pre.mf1 : =mf1= advance if match
 #+begin_src b4a
   > :S :K ..
   > m0 mf1 ln ?d zp
@@ -183,8 +173,7 @@ it as "not less than": =lt nt=
   ds: [1]
 #+end_src
 
-* character range example
-#+name: pre.ranges
+* TEST pre.ranges : character range example
 #+begin_src b4a
   > :H lb 'A gte lb 'F lte mf1 rt  # match on hex digit (range A-F)
   > :S :K 'Q
@@ -209,8 +198,7 @@ arguments, you might define a dyadic (two-argument) version of =m!=
 
 in fact, let's just do that.
 
-* =btw= to test whether the character is between two ends of the range
-#+name: pre.btw
+* TEST pre.btw : =btw= to test whether the character is between two ends of the range
 #+begin_src b4a
  > :S '5 ..
  > # case 0 it won't match if m0
@@ -233,8 +221,7 @@ in fact, let's just do that.
  ds: [C5 -1 1]
 #+end_src
 
-* =chs (s-)= : choose from character set
-#+name: pre.chs
+* TEST pre.chs : =chs (s-)= : choose from character set
 #+begin_src b4a
   > :S :K "54go"
   > :digits ."0123456789"
@@ -259,8 +246,7 @@ Note that in this case, the character set to match is a sequential
 range, so we could have used the range idiom here as well (and in
 fact, it's probably faster to do so, since =gte= and =lte= don't have to loop)
 
-* =lit (s-)= : match literal string
-#+name: pre.lit
+* TEST pre.lit : =lit (s-)= : match literal string
 #+begin_src b4a
   > :S :K "hello"
   > :Y .[ ."he" .] lit rt
@@ -285,8 +271,7 @@ Note that if lit succeeds, =@K= advances by the length
 of the match, but if it fails, =@K= must go back
 where it started.
 
-* =try= : backtracking sequence matcher
-#+name: pre.try
+* TEST pre.try : =try= : backtracking sequence matcher
 #+begin_src b4a
   > :S :K .. ..
   > :A m0 .[ c4 +K zp rt .] try rt
@@ -308,8 +293,7 @@ While the word is running, it backs up =@K= to the control stack.
 After the run, if the match failed, =try= restores the old =@K=,
 otherwise it discards the backed up value.
 
-* =lka (p-)= : look ahead match but do not consume
-#+name: pre.lka
+* TEST pre.lka : =lka (p-)= : look ahead match but do not consume
 #+begin_src b4a
   > :S 'a 'b ..
   > :A lb 'a chr rt
@@ -318,8 +302,7 @@ otherwise it discards the backed up value.
   > C1 pre @A lka @M ln ?d %R  # should match but not consume
   ds: [C1 -1 0]
 #+end_src
-* =neg (p-)= : negative lookahead
-#+name: pre.not
+* TEST pre.not : =neg (p-)= : negative lookahead
 #+begin_src b4a
   > :S 'a 'b ..
   > :A lb 'a chr rt
@@ -330,8 +313,7 @@ otherwise it discards the backed up value.
   ds: [C1 -1 0]
 #+end_src
 
-* =m|= : alt operator
-#+name: pre.alt
+* TEST pre.alt : =m|= : alt operator
 #+begin_src b4a
   > :A .[ c2 fw m0 m| c4 fw m0 rt .] try rt
   > :B .[ c2 fw m0 m| c4 fw m1 rt .] try rt
@@ -366,8 +348,7 @@ it is only ever safe to call =m|= inside a quotation followed
 by =try=, =lka=, or =not=.
 
 
-* =opt (p-)= : optional match (regex =?=)
-#+name: pre.opt
+* TEST pre.opt : =opt (p-)= : optional match (regex =?=)
 #+begin_src b4a
   > :G  .[ lb 'c chr rt .] opt rt
   > :S 'c  # ^G should match and advance 1
@@ -382,8 +363,7 @@ The =p= in the stack comment indicates that =opt= takes another
 parser as an argument. =opt= always succeeds but doesn't
 consume any characters unless the underlying parser matches.
 
-* =rep (p-)= : repeat one or more times (regex =+=)
-#+name: pre.rep
+* TEST pre.rep : =rep (p-)= : repeat one or more times (regex =+=)
 #+begin_src b4a
   > :G  .[ lb 'a chr rt .] rep rt
   > :S 'c  # ^G should fail
@@ -400,8 +380,7 @@ consume any characters unless the underlying parser matches.
 =rep= is the =+= operator in regular expressions. It must match
 at least once, then as many times as possible.
 
-* =orp (p-)= : optional repetition (regex =*=)
-#+name: pre.orp
+* TEST pre.orp : =orp (p-)= : optional repetition (regex =*=)
 #+begin_src b4a
   > :G  .[ lb 'a chr rt .] orp rt
   > :S 'c  # ^G should succeed but match 0 chars
@@ -420,8 +399,7 @@ at least once, then as many times as possible.
 =orp= is the combination of =opt= and =rep=. It matches its pattern 0 or more times.
 Note that =orp= can never fail to match, so it should always leave =@M= unchanged.
 
-* =ws= and =ws*= match whitespace
-#+name: b4s.ws*
+* TEST b4s.ws* : =ws= and =ws*= match whitespace
 #+begin_src b4a
  > :S 20 20 20 ..
  > pre ws @M ln ?d %R
@@ -433,8 +411,7 @@ Note that =orp= can never fail to match, so it should always leave =@M= unchange
 Whitespace is any character between 01 and 20 inclusive.
 =ws*= is just =li `ws orp=
 
-* =mhex= : match an uppercase hex number
-#+name: pre.mhex
+* TEST pre.mhex : =mhex= : match an uppercase hex number
 #+begin_src b4a
   > :S "-123" ..
   > pre mhex @M ln ?d %R
@@ -457,8 +434,7 @@ Whitespace is any character between 01 and 20 inclusive.
 Putting the pieces together, =mhex= matches an uppercase hex number,
 followed by  hex number.
 
-* =mhex= should populate @N
-#+name: pre.mhex-@n
+* TEST pre.mhex-@n : =mhex= should populate @N
 #+begin_src b4a
   > :S "1234" ..
   > C0 pre mhex @M ln @N ?d %R
