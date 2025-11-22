@@ -1,11 +1,11 @@
 #+title: b4s: b4vm symbolic scaffolding
+#+tanco-format: 0.2
 
 * Intro
 
 =b4s= ("beforce") is a tiny lisp-like language written in =b4a= assembly language.
 
-* ensure BIOS is loaded
-#+name: b4s.bios
+* TEST b4s.bios : ensure BIOS is loaded
 #+begin_src b4a
   > cscr 'o ^O 'k ^O sp B4 putn \0 %q
   ok B4
@@ -17,8 +17,7 @@ the internal video screen and prints 'ok B4'.
 The =\0= word prints out and then clears the first line of video
 memory.  See [[file:bios-tests.org][bios-tests.org]] for more info.
 
-* nil
-#+name: b4s.cells
+* TEST b4s.cells : nil
 #+begin_src b4a
   > inic
   > @numc ?d zp
@@ -36,8 +35,7 @@ memory.  See [[file:bios-tests.org][bios-tests.org]] for more info.
 Nil is a special cell that marks the end of the list,
 and is also used to indcate false.
 
-* car and cdr (nil)
-#+name: b4s.nil-parts
+* TEST b4s.nil-parts : car and cdr (nil)
 #+begin_src b4a
   > inic
   > nil car nil?
@@ -54,8 +52,7 @@ and the second is called the "cdr" (rhymes with 'footer').
 Nil's car and cdr both point back to nil.
 
 * TODO =car!= and =cdr!=
-* celn
-#+name: celn
+* TEST celn : celn
 #+begin_src b4a
   > inic
   > nil celn ?d zp  # nil is -1
@@ -72,8 +69,7 @@ The function =celn= can be used to map a cell back to its number.
 This is only intended for use by these tests, so that we can test
 cell adddresses without refering to exact memory locations.
 
-* =inic= and =nxt^= : pointer to next free cell
-#+name: b4s.nxt^
+* TEST b4s.nxt^ : =inic= and =nxt^= : pointer to next free cell
 #+begin_src b4a
   > inic
   > @nxt^ celn ?d zp   # next cell should be cell 0
@@ -95,8 +91,7 @@ At start, the first free cell should be the first cell,
 and its car should point to the next cell (which is the
 address 8 bytes ahead).
 
-* =nxtc= : take next cell from free list
-#+name: b4s.nxtc
+* TEST b4s.nxtc : =nxtc= : take next cell from free list
 #+begin_src b4a
   > inic
   > # next free should be cell 0
@@ -111,8 +106,7 @@ We can take the next cell from the free list with =nxtc=,
 which will put the current value of =nxt^= on the stack, and
 cause the =nxt^= to move to the next cell in the list.
 
-* =cons= : construct a cell
-#+name: b4s.cons
+* TEST b4s.cons : =cons= : construct a cell
 #+begin_src b4a
   > inic
   > ABCD 1234 cons !C
@@ -127,8 +121,7 @@ cause the =nxt^= to move to the next cell in the list.
   ds: [ABCD]
 #+end_src
 
-* =nlst= : combine n values into a list
-#+name: b4s.nlst
+* TEST b4s.nlst : =nlst= : combine n values into a list
 #+begin_src b4a
  > inic
  > # construct the list: (AB CD efgh)
@@ -137,8 +130,7 @@ cause the =nxt^= to move to the next cell in the list.
  ds: [5]
 #+end_src
 
-* =cnum= / =pnum= : construct and print a lisp number
-#+name: b4s.nums
+* TEST b4s.nums : =cnum= / =pnum= : construct and print a lisp number
 #+begin_src b4a
   > inic
   > 7C cnum du pnum \0
@@ -153,8 +145,7 @@ We have to wrap plain b4 numbers in cells in order to use them in b4s.
 
 =pnum= prints the numeric cell (depends on =putn= from the bios).
 
-* =glu= and =o4c= : symbol helpers
-#+name: b4s.sym-helpers
+* TEST b4s.sym-helpers : =glu= and =o4c= : symbol helpers
 #+begin_src b4a
   > 's 'y 'm '! ?d        # four ascii characters
   ds: [73 79 6D 21]
@@ -175,8 +166,7 @@ byte per character opens the door to using utf-8 later.
 The idea is to use the =car= to chain multiple 4-character symbol fragments
 together to make longer strings. But for now, 4 characters symbols are enough.
 
-* =csym= / =psym= : construct and print symbols
-#+name: b4s.syms
+* TEST b4s.syms : =csym= / =psym= : construct and print symbols
 #+begin_src b4a
   > inic
   > 't 'a 'c 'o ?d
@@ -188,8 +178,7 @@ together to make longer strings. But for now, 4 characters symbols are enough.
 
 Symbols are stored in the cdr of a cell, just like a b4s number.
 
-* =ctyp= : distinguish cell types
-#+name: b4s.ctyp
+* TEST b4s.ctyp : =ctyp= : distinguish cell types
 #+begin_src b4a
   > inic
   > # by default, cells are type 0b000=0 (lists)
@@ -227,8 +216,7 @@ running on the vm.)
 Note that once you implement =ctyp=, you will probably need to mask out
 the type code in the implementation of =car= and =cdr=.
 
-* =pval= 1 : atoms
-#+name: b4s.pval-num-sym
+* TEST b4s.pval-num-sym : =pval= 1 : atoms
 #+begin_src b4a
   > inic
   > 's 'y 'm 00 glu csym pval \0
@@ -240,8 +228,7 @@ the type code in the implementation of =car= and =cdr=.
 Now that we have =ctyp= we can start to implement pval.
 It should inspect the type code and then call =pnum= or =psym= accordingly.
 
-* =pval= 2 : nil
-#+name: b4s.pval-nil
+* TEST b4s.pval-nil : =pval= 2 : nil
 #+begin_src b4a
   > inic
   > nil pval ?d \0 %q
@@ -252,16 +239,14 @@ It should inspect the type code and then call =pnum= or =psym= accordingly.
 =nil= is a special value and should have type code 00, since it's the name for the empty list.
 However, if we print it on its own, we should print the value '()'
 
-* =pval= 3 : dotted pairs
-#+name: b4s.pval-pair
+* TEST b4s.pval-pair : =pval= 3 : dotted pairs
 #+begin_src b4a
   > inic
   > c1 cnum c2 cnum cons pval \0 %q
   (1 . 2)
 #+end_src
 
-* =pval= 4 : lists of atoms
-#+name: b4s.pval-list
+* TEST b4s.pval-list : =pval= 4 : lists of atoms
 #+begin_src b4a
   > inic
   > C0 cnum nil cons du pval \0
@@ -272,8 +257,7 @@ However, if we print it on its own, we should print the value '()'
   (C2 C1 C0)
 #+end_src
 
-* =pval= 5 : nested lists
-#+name: b4s.pval-nested
+* TEST b4s.pval-nested : =pval= 5 : nested lists
 #+begin_src b4a
   > inic
   > C0 putn sp   nil nil cons pval \0
@@ -290,8 +274,7 @@ However, if we print it on its own, we should print the value '()'
   C4 ((2 3) 1)
 #+end_src
 
-* =wquo=, =wqup=, =wqdn=: quotation builders
-#+name: b4s.pval-quotes
+* TEST b4s.pval-quotes : =wquo=, =wqup=, =wqdn=: quotation builders
 #+begin_src b4a
   > inic
   > CA cnum wquo pval \0
@@ -317,8 +300,7 @@ then print the =cdr=.
 - =(qup . x)= prints as =`x=
 - =(qdn . x)= prints as =,x=
 
-* =msym=
-#+name: b4s.msym
+* TEST b4s.msym : =msym=
 #+begin_src b4a
   > :S 'x 'y ..
   > C0 inic pre msym @M @N ?d %R
@@ -330,8 +312,7 @@ then print the =cdr=.
 
 =msym= matches a symbol and stores its corresponding number in =@N=.
 
-* =node=, =newc=, =acq!=, and =done= : imperative list builder
-#+name: b4s.rlis
+* TEST b4s.rlis : =node=, =newc=, =acq!=, and =done= : imperative list builder
 #+begin_src b4a
   > inic
   > C0 putn sp node @L pval \0
@@ -358,8 +339,7 @@ then print the =cdr=.
 
 * TODO test that @P, @L, and @Q are preserved (for nested builds)
 
-* =rval= 1: atoms
-#+name: b4s.rval-atoms
+* TEST b4s.rval-atoms : =rval= 1: atoms
 #+begin_src b4a
   > inic
   > :S ..
@@ -395,8 +375,7 @@ Recall that the matchers =mhex= and =msym= both populate =@N= so
 the trick is to call those matchers and (on success) call
 either =cnum= or =csym= to build the cell.
 
-* =rval= 2: quoted atoms
-#+name: b4s.rval-quoted
+* TEST b4s.rval-quoted : =rval= 2: quoted atoms
 #+begin_src b4a
   > inic
   > :S '' '0 ..
@@ -409,8 +388,7 @@ either =cnum= or =csym= to build the cell.
   'x
 #+end_src
 
-* =rval= 3: the empty list
-#+name: b4s.rval-nil
+* TEST b4s.rval-nil : =rval= 3: the empty list
 #+begin_src b4a
   > inic
   > :S '( ') ..
@@ -425,8 +403,7 @@ either =cnum= or =csym= to build the cell.
 There should only ever be one empty list, called =nil= internally
 and written as =()=.
 
-* =rval= 4: lists with one atom
-#+name: b4s.rval-atom-lists
+* TEST b4s.rval-atom-lists : =rval= 4: lists with one atom
 #+begin_src b4a
   > inic
   > :S "(0)" ..
@@ -459,9 +436,8 @@ recursively. Here we parse some lists containing single atoms.
 There can be any amount of whitespace around the values or
 parentheses in a list.
 
-* =rval= 5: longer lists
+* TEST rval-longer-lists : =rval= 5: longer lists
 
-#+name: rval-longer-lists
 #+begin_src b4a
   > inic
   > :S "(0 1)"
@@ -478,8 +454,7 @@ parentheses in a list.
   (one two 3 4 5 six 7 8 9)
 #+end_src
 
-* =rval= 6: nested lists
-#+name: rval-nested
+* TEST rval-nested : =rval= 6: nested lists
 #+begin_src b4a
   > inic
   > :S "(())" ..
@@ -500,8 +475,7 @@ parentheses in a list.
   (one (two 3) 4 (5 6 7 8 (9)))
 #+end_src
 
-* =rval= 7: nested nils
-#+name: b4s.rval-nested-nils
+* TEST b4s.rval-nested-nils : =rval= 7: nested nils
 #+begin_src b4a
   > inic
   > :S "(())" ..
@@ -523,8 +497,7 @@ parentheses in a list.
   ((() ()))
 #+end_src
 
-* =rval= 8: dotted pairs
-#+name: b4s.rval-dotted
+* TEST b4s.rval-dotted : =rval= 8: dotted pairs
 #+begin_src b4a
   > inic
   > :S "(a . 1)" ..
@@ -542,8 +515,7 @@ parentheses in a list.
   ((a . 1) (b . 2) . c)
 #+end_src
 
-* =rval= 9: explicit quotes
-#+name: b4s.rval-quo
+* TEST b4s.rval-quo : =rval= 9: explicit quotes
 #+begin_src b4a
   > inic
   > :S "(quo . C0)" ..
@@ -554,8 +526,7 @@ parentheses in a list.
   '(C1)
 #+end_src
 
-* =nlst= (build list from n cells)
-#+name: nlist-print
+* TEST nlist-print : =nlst= (build list from n cells)
 #+begin_src b4a
  > inic
  > # construct the list: (AB CD efgh)
@@ -568,8 +539,7 @@ We saw this before and tested that it allocated 5 cells,
 but didn't verify the resulting structure because
 we didn't have =pval=.
 
-* =cnav= (use hex number as path through cells)
-#+name: nlist-cnav
+* TEST nlist-cnav : =cnav= (use hex number as path through cells)
 #+begin_src b4a
 > :S "(A (B . C) (D E (F)))" ..
 > :T sw putn sp @L sw cnav pval \0 rt
@@ -615,8 +585,7 @@ CE F
 tree using a single hex number whose digits describe
 a path.
 
-* =eq?=  (=eq= is a b4 opcode)
-#+name: b4s.eq?
+* TEST b4s.eq? : =eq?=  (=eq= is a b4 opcode)
 #+begin_src b4a
 > inic
 > C0 c1 cnum c1 cnum eq? ?d %R
@@ -638,8 +607,7 @@ ds: [C5 0]
 If the cells are atoms (symbols or numbers), then we compare
 their values. Otherwise, we do a direct pointer comparison.
 
-* =map=
-#+name: b4s.map
+* TEST b4s.map : =map=
 #+begin_src b4a
  > :S "(0 1 2)" ..
  > :F cdr c2 ml c1 ad cnum rt
@@ -656,8 +624,7 @@ on each item.
 
 Note that the original list is not modified in place.
 
-* =appq=
-#+name: b4s.appq
+* TEST b4s.appq : =appq=
 #+begin_src b4a
   > :S "(a 1 (b 2))" ..
   > inic pre rval zp appq pval \0
@@ -666,8 +633,7 @@ Note that the original list is not modified in place.
 
 =appq= wraps each item of a list with the symbol =quo=.
 
-* =symc= - symbol from char
-#+name: b4s.csym1
+* TEST b4s.csym1 : =symc= - symbol from char
 #+begin_src b4a
   > :S 'a  .. rt
   > inic
@@ -678,8 +644,7 @@ Note that the original list is not modified in place.
 
 #+end_src
 
-* =asoc=
-#+name: b4s.asoc
+* TEST b4s.asoc : =asoc=
 #+begin_src b4a
   > :S "((a . 123) (b . xyz))" ..
   > inic pre rval zp
@@ -697,8 +662,7 @@ symbols in the =car= and associated values in the =cdr=. If a pair
 with the target symbol is found, its cdr is returned.
 Otherwise, =asoc= returns =nil=.
 
-* =link= : append one list to another
-#+name: b4s.apnd
+* TEST b4s.apnd : =link= : append one list to another
 #+begin_src b4a
   > :S "(1 2 3) (a b c)"
   > inic
@@ -706,8 +670,7 @@ Otherwise, =asoc= returns =nil=.
   (1 2 3 a b c)
 #+end_src
 
-* =eval= 1: numbers
-#+name: b4s.eval.nums
+* TEST b4s.eval.nums : =eval= 1: numbers
 #+begin_src b4a
   > :S "1" ..
   > inic pre rval zp   nil eval   pval \0
@@ -720,8 +683,7 @@ given an environ (=asoc=  list) and returns the calculated value.
 Here, we pass =nil= as the environment and evaluate the number 1.
 Numbers always evaluate to themselves.
 
-* =eval= 2: symbols get looked up in the environment
-#+name: b4s.eval.syms
+* TEST b4s.eval.syms : =eval= 2: symbols get looked up in the environment
 #+begin_src b4a
   > :S "((a . 1) (b . B)) a b c" ..
   > inic pre rval zp !E
@@ -736,8 +698,7 @@ Numbers always evaluate to themselves.
 Here we define a=1, b=B, and then evaluate symbols =a=, =b=, and =c=.
 The first two evaluate to their defined values, and =c= evaluates to =nil=.
 
-* =eval= 3: quote
-#+name: b4s.eval.quo
+* TEST b4s.eval.quo : =eval= 3: quote
 #+begin_src b4a
   > :S "((a . 1) (b . B)) 'a (quo b) 'c ''d '(e f g)" ..
   > inic pre rval zp !E
@@ -755,8 +716,7 @@ The first two evaluate to their defined values, and =c= evaluates to =nil=.
 
 Values quoted with =quo= evaluate to themselves (unquoted).
 
-* =eval= 4: =eq?= and =t=
-#+name: b4s.eval.eq?
+* TEST b4s.eval.eq? : =eval= 4: =eq?= and =t=
 #+begin_src b4a
   > :S "((a . 1 ) (b . 1) (c . 2))"
   > inic pre rval zp !E
@@ -795,24 +755,21 @@ the lisp interpreter. Note that in lisp, =eq?= returns the symbol =t= instead of
 and =()= instead of 0. (I used a helper word =t?= that convert a b4 boolean (=0= / =-1=)
 to a lisp boolean. (=()= / =t=)
 
-* =eval= 5: (car (x y)) -> x
-#+name: b4s.eval.car
+* TEST b4s.eval.car : =eval= 5: (car (x y)) -> x
 #+begin_src b4a
   > :S "(car '(a . b))"
   > inic pre rval zp nil eval pval \0
   a
 #+end_src
 
-* =eval= 6: (cdr (x y)) -> y
-#+name: b4s.eval.cdr
+* TEST b4s.eval.cdr : =eval= 6: (cdr (x y)) -> y
 #+begin_src b4a
   > :S "(cdr '(a . b))"
   > inic pre rval zp nil eval pval \0
   b
 #+end_src
 
-* =eval= 7: (sym? x)
-#+name: b4s.eval.sym?
+* TEST b4s.eval.sym? : =eval= 7: (sym? x)
 #+begin_src b4a
   > :S "((a . 1) (b . b))"
   > inic pre rval zp !E
@@ -827,8 +784,7 @@ to a lisp boolean. (=()= / =t=)
   C2 t
 #+end_src
 
-* =eval= 8: (num? x)
-#+name: b4s.eval.num?
+* TEST b4s.eval.num? : =eval= 8: (num? x)
 #+begin_src b4a
   > :S "((a . 1) (b . b))"
   > inic pre rval zp !E
@@ -843,8 +799,7 @@ to a lisp boolean. (=()= / =t=)
   C2 ()
 #+end_src
 
-* =eval= 9: (cons x y)
-#+name: b4s.eval.cons
+* TEST b4s.eval.cons : =eval= 9: (cons x y)
 #+begin_src b4a
   > :S "((a . 1) (b . b))"
   > inic pre rval zp !E
@@ -853,8 +808,7 @@ to a lisp boolean. (=()= / =t=)
   C0 (1 . b)
 #+end_src
 
-* =elet= : eval helper for (let)
-#+name: b4s.elet
+* TEST b4s.elet : =elet= : eval helper for (let)
 #+begin_src b4a
   > :S "((a . 1) (b . b))"
   > inic pre rval  zp !E
@@ -864,8 +818,7 @@ to a lisp boolean. (=()= / =t=)
   ((a . 2) (b . 1) (a . 1) (b . b))
 #+end_src
 
-* =eval= A: (let ((k . v)) x)
-#+name: b4s.eval.let
+* TEST b4s.eval.let : =eval= A: (let ((k . v)) x)
 #+begin_src b4a
   > :S "((a . 1) (b . b))"
   > inic pre rval  zp !E
@@ -880,8 +833,7 @@ to a lisp boolean. (=()= / =t=)
   C2 ()
 #+end_src
 
-* =econ= : eval helper for (cond)
-#+name: b4s.econ
+* TEST b4s.econ : =econ= : eval helper for (cond)
 #+begin_src b4a
   > :S "((p . t) (q))"
   > inic pre rval zp !E
@@ -904,8 +856,7 @@ each x in turn until it finds an x that evaluates to a non-nil
 value (preferably the symbol =t=). When it does, it evaluates y
 in the same context.
 
-* =eval= B: (cond)
-#+name: b4s.eval.cond
+* TEST b4s.eval.cond : =eval= B: (cond)
 #+begin_src b4a
   > :T putn sp rval zp @E eval pval \0 rt
   > :S "((t . t) (z . FF))"
@@ -924,8 +875,7 @@ in the same context.
   C2 FF
 #+end_src
 
-* =zip= : eval helper for lambdas
-#+name: b4s.zip
+* TEST b4s.zip : =zip= : eval helper for lambdas
 #+begin_src b4a
   > :S "(a b c d e) (1 2 3 4)"
   > inic pre rval zp rval zp zip pval \0
@@ -938,8 +888,7 @@ interpreter. It transforms two lists into a list of pairs.
 If one argument is longer than the other, the result is the length of
 the shorter list.
 
-* =eval= C: function applications
-#+name: b4s.eval.lam
+* TEST b4s.eval.lam : =eval= C: function applications
 #+begin_src b4a
   > :S "((lam () C0))"
   > inic pre rval zp nil eval pval \0

@@ -1,11 +1,11 @@
 #+title: b4 bios tests
+#+tanco-format: 0.2
 
 These tests use b4i to test the bios.
 
 * TODO remove hard references to term buffer address from the tests
 
-* cscr : fill screen with spaces
-#+name: cscr
+* TEST cscr : cscr : fill screen with spaces
 #+begin_src b4a
   > # the terminal buffer is set to address 100
   > @tmb ?d
@@ -24,15 +24,13 @@ These tests use b4i to test the bios.
   @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
-* maxx/maxy
-#+name: maxx/maxy
+* TEST maxx/maxy : maxx/maxy
 #+begin_src b4a
   > @tmw maxx @tmh maxy ?d %q
   ds: [40 3F 10 F]
 #+end_src
 
-* cursor
-#+name: cursor
+* TEST cursor : cursor
 #+begin_src b4a
   > curx cury ?d zp zp
   ds: [0 0]
@@ -40,30 +38,26 @@ These tests use b4i to test the bios.
   ds: [2F C]
 #+end_src
 
-* emit
-#+name: emit
+* TEST emit : emit
 #+begin_src b4a
   > cscr 'h emit 'i emit ?100 %q
   +H +I @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
-* goxy
-#+name: goxy-emit
+* TEST goxy-emit : goxy
 #+begin_src b4a
   > cscr 4 0 goxy 'h emit 'i emit ?100 %q
   @@ @@ @@ @@ +H +I @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
-* puts
-#+name: puts
+* TEST puts : puts
 #+begin_src b4a
   > :S 0D 'h 'e 'l 'l 'o ', 20 'w 'o 'r 'l 'd '!
   > @S puts ?100 %q
   +H +E +L +L +O @L @@ +W +O +R +L +D @A @@ @@ @@
 #+end_src
 
-* \0 to show and clear first line
-#+name: .slash-0
+* TEST .slash-0 : \0 to show and clear first line
 #+begin_src b4a
   > :S 0D 'h 'e 'l 'l 'o ', 20 'w 'o 'r 'l 'd '!
   > C0 putn sp @S puts \0
@@ -76,8 +70,7 @@ These tests use b4i to test the bios.
 (by invoking =lb 'e io= on each character). It then repositions
 the cursor to 0,0 and clears the first line.
 
-* putn
-#+name: putn
+* TEST putn : putn
 #+begin_src b4a
   > c0 putn \0 cscr
   0
@@ -87,9 +80,7 @@ the cursor to 0,0 and clears the first line.
   ABCDEF
 #+end_src
 
-* base
-Base allows you to =putn= in different bases (up to base 16 unless you extend the string)
-#+name: bios.base
+* TEST bios.base : base
 #+begin_src b4a
   > 0A `base wb 0F putn \0 cscr # decimal
   15
@@ -101,8 +92,7 @@ Base allows you to =putn= in different bases (up to base 16 unless you extend th
 
 * =@K= : character pointer
 
-** =ch/nc= : current and next character
-#+name: b4s.ch/nc
+** TEST b4s.ch/nc : =ch/nc= : current and next character
 #+begin_src b4a
   > :K 'a 'b 'c
   > ch ?d zp
@@ -115,8 +105,7 @@ The BIOS uses register =K= as an input pointer. think: "K"aracter.
 
 The word =ch= simply retrieves the byte at that value.
 
-** =la= : look ahead
-#+name: b4s.la
+** TEST b4s.la : =la= : look ahead
 #+begin_src b4a
   > :K 'a 'b 'c
   > ch c2 la c1 la ?d %q
@@ -131,8 +120,7 @@ The word =ch= simply retrieves the byte at that value.
 
 * TODO test moving/resizing the screen buffer
 
-* =rot=
-#+name: b4a.rot
+* TEST b4a.rot : =rot=
 #+begin_src b4a
 > 1 2 3 rot ?d
 ds: [2 3 1]

@@ -1,4 +1,5 @@
 #+title: b4i macro and interactive commands test suite
+#+tanco-format: 0.2
 
 * About this file
 This file demonstrates the macro and interactive commands.
@@ -6,16 +7,14 @@ Currently these interactive features are present only in
 the lil implementation (`mb4.deck`). The macros are also
 available in the pascal version's assembler.
 
-* TODO bug: b4i treated first two chars as opcode
-#+name: b4i.bug.mlatu
+* TEST b4i.bug.mlatu : bug: b4i treated first two chars as opcode
 #+begin_src b4a
   > :mlatu rt
   > 2 3 mlatu ?d %q
   ds: [2 3]
 #+end_src
 
-* Interactive assembler: assemble to any address
-#+name: b4i.addr
+* TEST b4i.addr : Interactive assembler: assemble to any address
 #+begin_src b4a
   > :100 ^A ^B
   > ?100
@@ -30,9 +29,9 @@ available in the pascal version's assembler.
   ^C ^D .. .. .. .. .. .. .. .. .. .. .. .. .. ..
 #+end_src
 
-* invoke word via the "register dictionary"
+* TEST b4i.invoke : invoke register
+# Original headline: invoke word via the "register dictionary"
 
-#+name: b4i.invoke
 #+begin_src b4a
 > :A lb 'a lb 'e io rt
 > :B lb 'b lb 'e io rt
@@ -42,9 +41,9 @@ available in the pascal version's assembler.
 00000106
 > ^A ^B %q
 ab
-= invoke register
-: using ^ with a register name should trigger the register
 #+end_src
+
+using ^ with a register name should trigger the register
 
 
 
@@ -64,61 +63,60 @@ this doesn't work because the old test parser can't andle the "#"
 # #+end_src
 
 * Macros
-** .i .e .t (if/else/then)
-#+name: macro.if-else-then
+** TEST macro.if-else-then : if/else/then macro
+# Original headline: .i .e .t (if/else/then)
 #+begin_src b4a
 > :E lb 'e io rt
 > :T c1 .i lb 'T ^E .e lb 'F ^E .t rt
 > ^T %q
 T
-= if/else/then macro
-: if the top of the stack is non-zero, execute the first block
-: otherwise, execute the second block
 #+end_src
 
-** .w .d .o (while/do)
-#+name: macro.while-do
+if the top of the stack is non-zero, execute the first block
+otherwise, execute the second block
+
+** TEST macro.while-do : while/do macro
+# Original headline: .w .d .o (while/do)
 #+begin_src b4a
 > :E lb 'e io rt
 > :T lb 'a !A lb 03 .w du .d c1 +A ^E c1 sb .o rt
 > ^T %q
 abc
-= while/do macro
-: while the top of the stack is non-zero, execute the block
-: decrement the top of the stack each iteration
 #+end_src
 
-** .f .n (for/next)
-#+name: macro.for-next
+while the top of the stack is non-zero, execute the block
+decrement the top of the stack each iteration
+
+** TEST macro.for-next : for/next macro
+# Original headline: .f .n (for/next)
 #+begin_src b4a
 > :E lb 'e io rt
 > :T lb 03 .f cd du dc lb 'a ad ^E .n rt
 > ^T %q
 dcb
-= for/next macro
-: execute the block a fixed number of times
-: the counter is stored on the control stack
 #+end_src
 
-** .^ (linked list)
-#+name: macro.linked-list
+execute the block a fixed number of times
+the counter is stored on the control stack
+
+** TEST macro.linked-list : .^ : linked list
+# Original headline: .^ (linked list)
 #+begin_src b4a
 > :100 .^ .^ .^ .^
 > ?100 %q
 .. .. .. .. .. ^A .. .. ^D ^A .. .. ^H ^A .. ..
-= .^ : linked list
-: creates a linked list in little endian format
-: each node points to the previous node's address.
-: The first four bytes are the null value `0x00`,
-: then `0x100` (`00 01 00 00` in little endian format).
-: then `0x104` (`04 01 00 00` in little endian format).
-: then `0x108` (`08 01 00 00` in little endian format).
 #+end_src
+
+creates a linked list in little endian format
+each node points to the previous node's address.
+The first four bytes are the null value `0x00`,
+then `0x100` (`00 01 00 00` in little endian format).
+then `0x104` (`04 01 00 00` in little endian format).
+then `0x108` (`08 01 00 00` in little endian format).
 
 * interactive get/set for labels
 
-** get/set (b4i)
-#+name: b4i.getset
+** TEST b4i.getset : get/set (b4i)
 #+begin_src b4a
   > :int 04 03 02 01
   > @int ?d
@@ -131,29 +129,29 @@ dcb
 
 * Interactive Commands
 
-** %R (reset)
-#+name: interactive.reset
+** TEST interactive.reset : %R : reset the virtual machine
+# Original headline: %R (reset)
 #+begin_src b4a
 > 01 02 03 ?d %R ?d %q
 ds: [1 2 3]
 ds: []
-= %R : reset the virtual machine
-: resets the stacks and sets ip to 100.
-: does not clear memory.
 #+end_src
 
-** %C (clear)
-#+name: interactive.clear
+resets the stacks and sets ip to 100.
+does not clear memory.
+
+** TEST interactive.clear : %C : clear the virtual machine
+# Original headline: %C (clear)
 #+begin_src b4a
 > 01 02 03 ?d %R ?d %q
 ds: [1 2 3]
 ds: []
-= %C : clear the virtual machine
-: clears the stacks and resets memory
 #+end_src
 
-** `label (use label)
-#+name: b4i.label
+clears the stacks and resets memory
+
+** TEST b4i.label : `label : use label
+# Original headline: `label (use label)
 #+begin_src b4a
   > :lbl 'a 'b 'c 'd
   > : li `lbl rt
@@ -161,13 +159,11 @@ ds: []
   00000100 +A +B +C +D li .. ^A .. .. rt .. .. .. .. .. ..
   > `lbl ?d %q
   ds: [100]
-  = `label : use label
-  : pushes the address of the label onto the stack
 #+end_src
 
-** edge case: names that are also lowercase hex numbers
-Only uppercase hex should work.
-#+name: b4i.hexname
+pushes the address of the label onto the stack
+
+** TEST b4i.hexname : edge case: names that are also lowercase hex numbers
 #+begin_src b4a
   > :def 'a 'b 'c 'd
   > : li `def rt
@@ -177,18 +173,17 @@ Only uppercase hex should work.
   ds: [100]
 #+end_src
 
-*** ?m (show memory)
-#+name: interactive.show-memory
+*** TEST interactive.show-memory : ?m : show memory
+# Original headline: ?m (show memory)
 #+begin_src b4a
 > :100 01 02 03 04 'h 'e 'l 'l 'o
 > ?100 %q
 ^A ^B ^C ^D +H +E +L +L +O .. .. .. .. .. .. ..
-= ?m : show memory
-: displays the contents of memory starting at the specified address
 #+end_src
 
-* bug: %C should clear the dictionary
-#+name: bug.c.clears.dictionary
+displays the contents of memory starting at the specified address
+
+* TEST bug.c.clears.dictionary : bug: %C should clear the dictionary
 #+begin_src b4a
 > :foo rt
 > \p
