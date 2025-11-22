@@ -1,4 +1,4 @@
-#!/bin/node
+#!/usr/bin/env node
 import * as b4 from './b4.mjs'
 import * as readline from "readline"
 

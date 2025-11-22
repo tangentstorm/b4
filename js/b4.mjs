@@ -14,6 +14,7 @@ RS = 152, LS = 153,
 JM = 154, HP = 155, H0 = 156, CL = 157, RT = 158, NX = 159,
 TM = 190, CV = 191,
 C0 = 192, C1 = 193,
+C2 = 246, N1 = 247, C4 = 248,
 IO = 253, DB = 254, HL = 255
 
 // ", " fuse (list "op[%u]='%s'") format select code code from ops
@@ -27,6 +28,7 @@ op[RS]='rs', op[LS]='ls',
 op[JM]='jm', op[HP]='hp', op[H0]='h0', op[CL]='cl', op[RT]='rt', op[NX]='nx',
 op[TM]='tm', op[CV]='cv',
 op[C0]='c0', op[C1]='c1',
+op[C2]='c2', op[N1]='n1', op[C4]='c4',
 op[IO]='io', op[DB]='db', op[HL]='hl'
 for (let i=1;i<32;i++) {
   let c=String.fromCharCode(64+i);
@@ -52,6 +54,7 @@ export class B4VM {
     this.ds = []
     this.vw = 4
     this.st = 0
+    this.dbg = 0 // debug flag
     this.ram = new Uint8Array(4096).fill(0)
     this.ob = [] // output buffer
     this._wi(rega("_"), 0x100)
@@ -114,16 +117,21 @@ export class B4VM {
 
   wb() { this.ram[this.dpop()]=this.dpop(); return this }
   rb() { return this.dput(this.ram[this.dpop()]) }
+  rs() { let b = this.ram[this.dpop()]; return this.dput((b<<24)>>24) } // read signed byte
   ri() { return this.dput(this._ri(this.dpop())) }
   wi() { this._wi(this.dpop(), this.dpop()); return this}
 
   wv() { return this.wi() } rv(){ return this.ri() }
   c0() { return this.dput(0) }
   c1() { return this.dput(1) }
+  c2() { return this.dput(2) }
+  n1() { return this.dput(-1) }
+  c4() { return this.dput(4) }
 
   // control ops
-  lb() { this.dput(this.ram[this.ip+++1]); }
-  li() { this.dput(this._ri(this.ip++)); this.ip+=3; }
+  lb() { this.dput(this.ram[this.ip+1]); this.ip++; }
+  ls() { let b = this.ram[this.ip+1]; this.dput((b<<24)>>24); this.ip++ } // load signed byte
+  li() { this.dput(this._ri(this.ip+1)); this.ip+=4; }
   _go(a) { this.ip = Math.max(0x100,a)-1 }
   _i8(a) { return (this.ram[a]<<24)>>24 }
   hp() { this._go(this.ip+this._i8(this.ip+1))}
@@ -149,6 +157,9 @@ export class B4VM {
     let op=this._dpopChar();
     // stub emit handler for tests:
     if (op==='e') console.log(this._dpopChar())}
+
+  db() { this.dbg = 1 } // set debug flag to pause execution
+  hl() { this.st = 0 } // halt
 
   addOp(opbyte, opname, opfunc) {
     this._conb[opname]=opbyte
@@ -177,13 +188,17 @@ export class B4VM {
       case AN: this.an(); break; case OR: this.or(); break
       case XR: this.xr(); break; case NT: this.nt(); break
       case EQ: this.eq(); break; case LT: this.lt(); break
-      case RB: this.rb(); break; case RI: this.ri(); break
+      case RB: this.rb(); break; case RS: this.rs(); break
+      case RI: this.ri(); break
       case WB: this.wb(); break; case WI: this.wi(); break
-      case LB: this.lb(); break; case LI: this.li(); break
+      case LB: this.lb(); break; case LS: this.ls(); break
+      case LI: this.li(); break
       case JM: this.jm(); break; case HP: this.hp(); break
       case H0: this.h0(); break; case CL: this.cl(); break
       case RT: this.rt(); break; case NX: this.nx(); break
       case C0: this.c0(); break; case C1: this.c1(); break
+      case C2: this.c2(); break; case N1: this.n1(); break
+      case C4: this.c4(); break
       case TM: this.tm(); break // todo
       case IO: this.io(); break;
       case DB: this.db(); break; case HL: this.hl(); break
@@ -216,9 +231,9 @@ export class B4VM {
   labelHere(s) { return this._labels[s]=this.here() }
 
   imrun(a) {
-    this.st=1; this.cput(this.ip); this.cput(0); this.ip=a;
-    while (this.st) this.step()
-    this.ip = this.cpop()}
+    this.st=1; this.dbg=0; this.cput(this.ip); this.cput(0); this.ip=a;
+    while (this.st && !this.dbg) this.step()
+    if (!this.dbg) this.ip = this.cpop()}
 
   // assemble ops to address a0. return byte count
   assemble(a0, ops) {
@@ -229,6 +244,13 @@ export class B4VM {
   // hp is a "here" pointer (generally HERE or THERE)
   // we write to the address in this pointer, then increment it
   asmVia(hp, ops) { let a=this._ri(hp), n=this.assemble(a, ops); this._wi(hp,a+n)}
+
+  // assembler helper functions for labels
+  asmCall(hp, a) { this.asmVia(hp, `cl`); let addr=this._ri(hp); this._wi(addr, a); this._wi(hp, addr+4) }
+  asmInt(hp, a) { let addr=this._ri(hp); this._wi(addr, a); this._wi(hp, addr+4) }
+  asmGet(hp, a) { this.asmVia(hp, `li`); let addr=this._ri(hp); this._wi(addr, a); this._wi(hp, addr+4); this.asmVia(hp, `ri`) }
+  asmSet(hp, a) { this.asmVia(hp, `li`); let addr=this._ri(hp); this._wi(addr, a); this._wi(hp, addr+4); this.asmVia(hp, `wi`) }
+  asmInc(hp, a) { err(`+label not supported (only +Register works)`) }
 
 
   b4i(line) {
@@ -285,7 +307,7 @@ export class B4VM {
       else if (t===":") {
         state = ASM; let a = tok.slice(1);
         if (tok==="::") {} //  ok. assemble from here
-        else if (tok===":") this.out("no: :")
+        else if (tok===":") {} // just enter ASM mode at current HERE
         else if (isHex(a)) this._wi(hp=THERE, parseInt(a, 16))
         else this.labelHere(a) }
       else if (t==="'") {

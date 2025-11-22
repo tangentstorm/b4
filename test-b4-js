@@ -1,2 +1,2 @@
 #!/bin/sh
-tanco run -t b4-tests.org -c 'node js/b4i.mjs'
+tanco run -t b4-tests.org js/b4i.mjs
