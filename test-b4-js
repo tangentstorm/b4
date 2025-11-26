@@ -1,2 +1,3 @@
 #!/bin/sh
-tanco run -t b4-tests.org js/b4i.mjs
+(cd js && npm run build) && \
+tanco run -t b4-tests.org node js/b4i.mjs

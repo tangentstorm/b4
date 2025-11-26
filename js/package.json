@@ -2,5 +2,16 @@
   "name": "b4",
   "version": "1.0.0",
   "main": "b4.mjs",
-  "type": "module"
+  "type": "module",
+  "types": "b4.d.mts",
+  "scripts": {
+    "build": "tsc && chmod +x b4i.mjs",
+    "watch": "tsc --watch",
+    "clean": "rm -f *.mjs *.d.mts *.js.map *.d.mts.map",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
 }

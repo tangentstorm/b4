@@ -1,42 +1,80 @@
 import { B4VM } from './b4.mjs';
 
-export class B4ElectronIpc {
-  constructor() {
-    this.electron = window.electron;
-    this.out = console.log;
-  }
+interface ElectronAPI {
+  ipcRenderer: {
+    on(channel: string, listener: (...args: any[]) => void): void;
+  };
+  fmtStacks(): { cs: string; ds: string };
+  replInput(input: string): void;
+}
 
-  set out(listener) {
-    this.electron.ipcRenderer.on('repl-output', (...args) => {
-      listener(...args)});
-  }
-
-  fmtStacks() {
-    return this.electron.fmtStacks();
-  }
-
-  b4i(input) {
-    return this.electron.replInput(input);
+declare global {
+  interface Window {
+    electron?: ElectronAPI;
   }
 }
 
-export class B4PromiseWrapper {
+interface B4Interface {
+  out: (msg: string) => void;
+  fmtStacks(): Promise<{ cs: string; ds: string }>;
+  b4i(input: string): Promise<void>;
+}
+
+export class B4ElectronIpc implements B4Interface {
+  private electron: ElectronAPI;
+  private _out: (msg: string) => void;
+
   constructor() {
-    this.vm = new B4VM();
-    this.out = console.log;
+    if (!window.electron) {
+      throw new Error('Electron API not found');
+    }
+    this.electron = window.electron;
+    this._out = console.log;
   }
 
-  set out(listener) {
-    this.vm.out = listener;
-  }
-
-  fmtStacks() {
-    return new Promise((resolve) => {
-      resolve(this.vm.fmtStacks());
+  set out(listener: (msg: string) => void) {
+    this._out = listener;
+    this.electron.ipcRenderer.on('repl-output', (msg: string) => {
+      listener(msg);
     });
   }
 
-  b4i(input) {
+  get out(): (msg: string) => void {
+    return this._out;
+  }
+
+  fmtStacks(): Promise<{ cs: string; ds: string }> {
+    return Promise.resolve(this.electron.fmtStacks());
+  }
+
+  b4i(input: string): Promise<void> {
+    return Promise.resolve(this.electron.replInput(input));
+  }
+}
+
+export class B4PromiseWrapper implements B4Interface {
+  private vm: B4VM;
+  private _out: (msg: string) => void;
+
+  constructor() {
+    this.vm = new B4VM();
+    this._out = console.log;
+  }
+
+  set out(listener: (msg: string) => void) {
+    this._out = listener;
+    this.vm.out = listener;
+  }
+
+  get out(): (msg: string) => void {
+    return this._out;
+  }
+
+  fmtStacks(): Promise<{ cs: string; ds: string }> {
+    return Promise.resolve(this.vm.fmtStacks());
+  }
+
+  b4i(input: string): Promise<void> {
     return new Promise((resolve) => {
       this.vm.b4i(input);
       resolve();
@@ -45,6 +83,10 @@ export class B4PromiseWrapper {
 }
 
 export class B4ReplCmpt extends HTMLElement {
+  private history: string[];
+  private historyIndex: number;
+  private vm: B4Interface | null;
+
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -53,11 +95,11 @@ export class B4ReplCmpt extends HTMLElement {
     this.vm = null;
   }
 
-  connectedCallback() {
+  connectedCallback(): void {
     this.render();
-    this.shadowRoot.getElementById('repl-input').focus();
-    this.shadowRoot.getElementById('repl-submit').addEventListener('click', this.submitCommand.bind(this));
-    this.shadowRoot.getElementById('repl-input').addEventListener('keydown', this.handleKeyDown.bind(this));
+    this.shadowRoot!.getElementById('repl-input')!.focus();
+    this.shadowRoot!.getElementById('repl-submit')!.addEventListener('click', this.submitCommand.bind(this));
+    this.shadowRoot!.getElementById('repl-input')!.addEventListener('keydown', this.handleKeyDown.bind(this));
     if (this.getAttribute('connect') === 'electron') {
       this.vm = new B4ElectronIpc();
     } else {
@@ -69,8 +111,8 @@ export class B4ReplCmpt extends HTMLElement {
     });
   }
 
-  render() {
-    this.shadowRoot.innerHTML = `
+  render(): void {
+    this.shadowRoot!.innerHTML = `
       <style>
         :host {
           display: flex;
@@ -130,54 +172,55 @@ export class B4ReplCmpt extends HTMLElement {
     `;
   }
 
-  updateStacks(cs, ds) {
-    this.shadowRoot.getElementById('data-stack').textContent = ds;
-    this.shadowRoot.getElementById('control-stack').textContent = cs;
+  updateStacks(cs: string, ds: string): void {
+    this.shadowRoot!.getElementById('data-stack')!.textContent = ds;
+    this.shadowRoot!.getElementById('control-stack')!.textContent = cs;
   }
 
-  submitCommand() {
-    const input = this.shadowRoot.getElementById('repl-input').value;
+  submitCommand(): void {
+    const input = (this.shadowRoot!.getElementById('repl-input') as HTMLInputElement).value;
     if (input.trim() === '') return;
     if (this.history.length === 0 || this.history[this.history.length - 1] !== input) {
       this.history.push(input);
       this.historyIndex = this.history.length;
     }
-    const outputArea = this.shadowRoot.getElementById('repl-output');
+    const outputArea = this.shadowRoot!.getElementById('repl-output')!;
     const commandElement = document.createElement('div');
     commandElement.className = 'command';
     commandElement.textContent = `> ${input}`;
     outputArea.appendChild(commandElement);
-    this.vm.b4i(input).then(() => {
-      this.vm.fmtStacks().then(({ cs, ds }) => {
+    this.vm!.b4i(input).then(() => {
+      this.vm!.fmtStacks().then(({ cs, ds }) => {
         this.updateStacks(cs, ds);
       });
     });
-    this.shadowRoot.getElementById('repl-input').value = '';
+    (this.shadowRoot!.getElementById('repl-input') as HTMLInputElement).value = '';
     commandElement.scrollIntoView({ behavior: 'smooth' });
   }
 
-  handleKeyDown(event) {
+  handleKeyDown(event: KeyboardEvent): void {
+    const inputElement = this.shadowRoot!.getElementById('repl-input') as HTMLInputElement;
     if (event.key === 'Enter') {
       this.submitCommand();
       this.historyIndex = this.history.length; // Reset history index to the end
     } else if (event.key === 'ArrowUp') {
       if (this.historyIndex > 0) {
         this.historyIndex--;
-        this.shadowRoot.getElementById('repl-input').value = this.history[this.historyIndex];
+        inputElement.value = this.history[this.historyIndex];
       }
     } else if (event.key === 'ArrowDown') {
       if (this.historyIndex < this.history.length - 1) {
         this.historyIndex++;
-        this.shadowRoot.getElementById('repl-input').value = this.history[this.historyIndex];
+        inputElement.value = this.history[this.historyIndex];
       } else {
         this.historyIndex = this.history.length;
-        this.shadowRoot.getElementById('repl-input').value = this.history[this.historyIndex - 1] || '';
+        inputElement.value = this.history[this.historyIndex - 1] || '';
       }
     }
   }
 
-  handleReplOutput(msg) {
-    const outputArea = this.shadowRoot.getElementById('repl-output');
+  handleReplOutput(msg: string): void {
+    const outputArea = this.shadowRoot!.getElementById('repl-output')!;
     const outputElement = document.createElement('div');
     outputElement.textContent = msg;
     outputArea.appendChild(outputElement);

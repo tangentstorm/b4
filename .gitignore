@@ -25,3 +25,11 @@ GEMINI.md
 # used for gemini key:
 .env
 b4i.b4x
+
+# TypeScript/JavaScript
+js/node_modules/
+js/*.mjs
+js/*.d.mts
+js/*.mjs.map
+js/*.d.mts.map
+*.tsbuildinfo
