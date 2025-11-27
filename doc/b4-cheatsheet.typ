@@ -192,7 +192,7 @@
 #op("^X", "invoke register X as function")
 #op("@X", "fetch from register X  ( — n)")
 #op("!X", "store to register X  (n — )")
-#op("+X", "add to register X  (n — )")
+#op("+X", "add m, return old X (m — n)")
 
 #section[Constants]
 #op("c0", "push 0  ( — 0)")
@@ -255,7 +255,7 @@
 #colbreak()
 
 #section[I/O]
-#text(size: 6pt, style: "italic")[#code[io] op with cmd byte in next position]
+#text(size: 6pt, style: "italic")[#code[io] op with cmd byte taken from stack]
 #v(0.1em)
 #text(size: 6.5pt, weight: "bold")[Universal]
 #smallop("'e", "emit char  (c — )")
