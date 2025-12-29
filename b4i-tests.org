@@ -29,6 +29,24 @@ available in the pascal version's assembler.
   ^C ^D .. .. .. .. .. .. .. .. .. .. .. .. .. ..
 #+end_src
 
+* TEST b4i.continue : Continue assembling from previous position
+#+begin_src b4a
+  > :100 ^A ^B ^C ^D
+  > ?100
+  ^A ^B ^C ^D .. .. .. .. .. .. .. .. .. .. .. ..
+  > : ^E ^F
+  > ?100
+  ^A ^B ^C ^D ^E ^F .. .. .. .. .. .. .. .. .. ..
+  > : ^G ^H
+  > ?100 %q
+  ^A ^B ^C ^D ^E ^F ^G ^H .. .. .. .. .. .. .. ..
+#+end_src
+
+Using =:address= sets the assembly position to a specific address.
+Using just =:= (with no address) continues assembling from where
+the previous line left off. This allows multi-line assembly without
+having to manually track addresses.
+
 * TEST b4i.invoke : invoke register
 # Original headline: invoke word via the "register dictionary"
 
