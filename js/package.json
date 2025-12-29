@@ -1,13 +1,35 @@
 {
-  "name": "b4",
-  "version": "1.0.0",
-  "main": "b4.mjs",
+  "name": "@tangentstorm/b4",
+  "version": "0.1.0",
+  "description": "A stack-based virtual machine with a Forth-like flavor",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tangentstorm/b4"
+  },
+  "keywords": ["forth", "vm", "stack-machine", "assembler", "interpreter"],
+  "main": "dist/b4.mjs",
   "type": "module",
-  "types": "b4.d.mts",
+  "types": "dist/b4.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/b4.d.mts",
+      "default": "./dist/b4.mjs"
+    },
+    "./repl": {
+      "types": "./dist/b4-repl.d.mts",
+      "default": "./dist/b4-repl.mjs"
+    },
+    "./b4i": {
+      "types": "./dist/b4i.d.mts",
+      "default": "./dist/b4i.mjs"
+    }
+  },
+  "files": ["dist"],
   "scripts": {
-    "build": "tsc && chmod +x b4i.mjs",
+    "build": "tsc && chmod +x dist/b4i.mjs",
     "watch": "tsc --watch",
-    "clean": "rm -f *.mjs *.d.mts *.js.map *.d.mts.map",
+    "clean": "rm -rf dist",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
