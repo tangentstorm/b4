@@ -1,2 +1,3 @@
 #!/bin/sh
+(cd js && npm run build) && \
 tanco run -t b4i-tests.org -c 'node js/dist/b4i.mjs'
