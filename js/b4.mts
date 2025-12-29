@@ -32,20 +32,41 @@ op[TM]='tm'; op[CV]='cv'
 op[C0]='c0'; op[C1]='c1'
 op[C2]='c2'; op[N1]='n1'; op[C4]='c4'
 op[IO]='io'; op[DB]='db'; op[HL]='hl'
-for (let i=1;i<32;i++) {
+for (let i=0;i<32;i++) {
   let c=String.fromCharCode(64+i);
-  op[i]=`^${c}`; op[i+32]=`@${c}`; op[i+64]=`!${c}`; op[i+96]=`+${c}` }
+  if (i>0) op[i]=`^${c}`;
+  op[i+32]=`@${c}`; op[i+64]=`!${c}`; op[i+96]=`+${c}` }
 
 const REGS="@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 const rega=(c: string): number => 4*(c.charCodeAt(0)-64)
 const HERE=rega('_')
-const THERE=rega('\\')
 
 // helper routines
 const hex=(b: number): string => b.toString(16).toUpperCase()
 const hexp=(b: number, w: number): string => hex(b).padStart(w,'0')
 const isHex=(s: string): boolean => /^-?[0-9A-F]+$/.test(s)
 const isRegOp=(s: string): boolean => /[+`@:?!^][@A-Z[\\\]^_]/.test(s)
+
+function tokenize(line: string): string[] {
+  const tokens: string[] = [];
+  let i = 0;
+  while (i < line.length) {
+    while (i < line.length && line[i] === ' ') i++;
+    if (i >= line.length) break;
+    if (line[i] === '"' || (line[i] === '.' && line[i+1] === '"')) {
+      let start = i;
+      if (line[i] === '.') i++; // skip the dot prefix
+      i++; // skip opening quote
+      while (i < line.length && line[i] !== '"') i++;
+      tokens.push(line.slice(start, ++i));
+    } else {
+      let start = i;
+      while (i < line.length && line[i] !== ' ') i++;
+      tokens.push(line.slice(start, i));
+    }
+  }
+  return tokens;
+}
 
 interface StacksFormat {
   cs: string;
@@ -66,6 +87,7 @@ export class B4VM {
   private _cobn: Map<number, string>;
   private _cobf: Map<number, () => void>;
   private _labels: Record<string, number>;
+  private _fwds: {key: string, at: number}[];
 
   constructor() {
     this.ip = 0x100
@@ -81,6 +103,7 @@ export class B4VM {
     this._cobn = new Map() // custom op byte -> name
     this._cobf = new Map() // custom op byte -> func
     this._labels = {}
+    this._fwds = []
     this.out = console.log;
   }
 
@@ -270,7 +293,16 @@ export class B4VM {
   isRegLabel(x: string): boolean { return x.length==2 && x[0]==':' && REGS.includes(x[1]) }
   here(): number { return this._gr("_") }
   regHere(x: string): number { let a=this.here(); this._wi(rega(x),a); return a }
-  labelHere(s: string): number { return this._labels[s]=this.here() }
+  labelHere(s: string): number {
+    let a = this.here();
+    this._labels[s] = a;
+    // resolve forward references
+    this._fwds = this._fwds.filter(fw => {
+      if (fw.key === s) { this._wi(fw.at, a); return false; }
+      return true;
+    });
+    return a;
+  }
 
   imrun(a: number): void {
     this.st=1; this.dbg=0; this.cput(this.ip); this.cput(0); this.ip=a;
@@ -311,9 +343,17 @@ export class B4VM {
   b4i(line: string): void {
     const IMM=0, ASM=1, CMT=2, BYE=3;
     let state=IMM, hp=HERE;
-    for (let tok of line.split(' ')) {
+    for (let tok of tokenize(line)) {
       let t = tok[0];
       if (state===CMT || t==="#") state = CMT;
+      else if (t==='"' || (t==='.' && tok[1]==='"')) { // string
+        let a = this.here();
+        let start = t==='"' ? 1 : 2; // skip quote or dot+quote
+        let len = tok.length - start - 1; // exclude closing quote
+        if (t==='.') this.ram[a++] = len; // length prefix
+        for (let i = start; i < tok.length - 1; i++) this.ram[a++] = tok.charCodeAt(i);
+        this._sr("_", a);
+      }
       else if (isRegOp(tok)) {
         let r = rega(tok[1]);
         if (t==="?") this.out(hexp(this._ri(r),8))
@@ -333,18 +373,30 @@ export class B4VM {
         }
       }
       else if (t==="\\") { // set the instruction pointer directly
-        if (state===ASM) err(`can't use ${tok} in asm mode`)
-        let w = tok.slice(1),
-            a = ( Object.hasOwn(this._labels, w) ? this._labels[w]
-                  : isHex(w) ? parseInt(w, 16)
-                  : w.length==1 && REGS.includes(w) ? this._ri(rega(w))
-                  : err(`invalid address for '\\': ${tok}`))
-        this._go(a+1)
+        if (tok==="\\p") { // print all definitions
+          for (let [name, addr] of Object.entries(this._labels)) {
+            this.out(`${hexp(addr, addr <= 0xFFFF ? 4 : 8)}:${name}`)
+          }
+        }
+        else if (tok==="\\f") { // print forward references
+          for (let fw of this._fwds) {
+            this.out(`${hexp(fw.at, 4)}>${fw.key}`)
+          }
+        }
+        else {
+          if (state===ASM) err(`can't use ${tok} in asm mode`)
+          let w = tok.slice(1),
+              a = ( Object.hasOwn(this._labels, w) ? this._labels[w]
+                    : isHex(w) ? parseInt(w, 16)
+                    : w.length==1 && REGS.includes(w) ? this._ri(rega(w))
+                    : err(`invalid address for '\\': ${tok}`))
+          this._go(a+1)
+        }
       }
       else if (t==="%") switch(tok) {
         case '%q': state=BYE; break
         case '%s': this.step(); break
-        case '%C': break; // TODO clear
+        case '%C': this._labels = {}; this._fwds = []; break;
         case '%R': this.reset(); break
         case '%e': break; // TODO run to end
         case '%\\': break; // TODO jump to '\' register
@@ -356,14 +408,24 @@ export class B4VM {
         case '?i': this.out(this.fmtIp()); break;
         default:
           let a = tok.slice(1);
-          if (Object.hasOwn(this._labels, a)) this.out(this.peek(this._labels[a], 16))
+          if (Object.hasOwn(this._labels, a)) this.out(hexp(this._labels[a],8) + ' ' + this.peek(this._labels[a], 16))
           else if (isHex(a)) this.out(this.peek(parseInt(a,16), 16))
           else this.out(`?.no: ${tok}`)
       }
       else if (t==="$") {
-        let a = tok.slice(1); if (Object.hasOwn(this._labels, a)) {
+        let a = tok.slice(1);
+        if (Object.hasOwn(this._labels, a)) {
           if (state===ASM) { } // TODO: assemble the label
           else this.dput(this._labels[a])
+        }
+        else if (isHex(a)) { // u32 hex value
+          let v = parseInt(a, 16);
+          if (state===ASM) {
+            let addr = this._ri(hp);
+            this._wi(addr, v);
+            this._wi(hp, addr + 4);
+          }
+          else this.dput(v)
         }
         else this.out(`\$.no: ${tok}`)
       }
@@ -371,7 +433,7 @@ export class B4VM {
         state = ASM; let a = tok.slice(1);
         if (tok==="::") {} //  ok. assemble from here
         else if (tok===":") {} // just enter ASM mode at current HERE
-        else if (isHex(a)) this._wi(hp=THERE, parseInt(a, 16))
+        else if (isHex(a)) this._wi(hp, parseInt(a, 16))
         else this.labelHere(a)
       }
       else if (t==="'") {
@@ -391,6 +453,14 @@ export class B4VM {
         // TODO: test for error when not in ASM mode
         if (state===ASM) this.macro(hp, tok)
         else this.out(`not in asm mode: ${tok}`)
+      }
+      else if (t===">") { // forward reference
+        if (state!==ASM) err(`forward references only allowed in asm mode: ${tok}`)
+        let label = tok.slice(1);
+        let a = this._ri(hp);
+        this._fwds.push({key: label, at: a});
+        this._wi(a, 0); // placeholder
+        this._wi(hp, a + 4);
       }
       else if (op.includes(tok)) {
         if (state===ASM) this.asmVia(hp, tok)
@@ -454,11 +524,10 @@ export class B4VM {
     case '.i': A("h0"); M("._"); break
     case '.e': A("hp"); M("._"); this.sw(); HH(); break
     case '.t': HH(); break
-    // -- while loops: .w cond .d body .z
+    // -- while loops: .w cond .d body .o
     case '.w': this.dput(HR()); break
     case '.d': A("h0"); M("._"); break
-    case '.z': A("hp");this.sw();BK();HH(); break// hop to .w, tell .d where to exit
-    case '.o': err(`.o is deprecated. use .z instead`)
+    case '.o': A("hp");this.sw();BK();HH(); break// hop to .w, tell .d where to exit
     // -- for/next
     case '.f': A("dc"); this.dput(HR()); break
     case '.n': A("nx"); BK(); break
