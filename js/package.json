@@ -29,9 +29,12 @@
       "default": "./dist/b4i.mjs"
     }
   },
+  "bin": {
+    "b4i": "dist/b4i.mjs"
+  },
   "files": ["dist"],
   "scripts": {
-    "build": "tsc && chmod +x dist/b4i.mjs",
+    "build": "tsc",
     "watch": "tsc --watch",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build"
