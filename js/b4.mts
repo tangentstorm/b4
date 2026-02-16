@@ -112,6 +112,25 @@ export class B4VM {
     this.cs=[]; this.ds=[]; this.ram = new Uint8Array(4096).fill(0)
   }
 
+  snapshot(): unknown {
+    return {
+      ram: new Uint8Array(this.ram),
+      ds: [...this.ds], cs: [...this.cs],
+      ip: this.ip, vw: this.vw,
+      labels: { ...this._labels },
+      fwds: this._fwds.map(f => ({ ...f })) }
+  }
+
+  static fromSnapshot(snap: any): B4VM {
+    const vm = new B4VM()
+    vm.ram = new Uint8Array(snap.ram)
+    vm.ds = [...snap.ds]; vm.cs = [...snap.cs]
+    vm.ip = snap.ip; vm.vw = snap.vw
+    vm._labels = { ...snap.labels }
+    vm._fwds = snap.fwds.map((f: any) => ({ ...f }))
+    return vm
+  }
+
   // microcode
   dtos(): number { return this.ds[this.ds.length-1] }
   dnos(): number { return this.ds[this.ds.length-2] }
