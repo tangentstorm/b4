@@ -1,4 +1,5 @@
 import { B4VM } from './b4.mjs';
+import { b4HlLine } from './b4-hl.mjs'
 
 interface ElectronAPI {
   ipcRenderer: {
@@ -124,7 +125,8 @@ export class B4ReplCmpt extends HTMLElement {
         #repl-output-container {
           flex: 1;
           overflow-y: auto;
-          border: 1px solid lightgray;
+          background:#1e1e1e; color:#ccc;
+          border: 1px solid #555;
           padding: 10px;
           display: flex;
           flex-direction: column;
@@ -137,10 +139,12 @@ export class B4ReplCmpt extends HTMLElement {
           flex-direction: column;
           font-family: monospace;
           white-space: pre;
+          font-size:12.5pt;
         }
         #stack-container {
           display: flex;
           justify-content: space-between;
+          font-family:monospace; color:#ccc; padding:4px 0;
         }
         #repl-input-container {
           display: flex;
@@ -149,13 +153,16 @@ export class B4ReplCmpt extends HTMLElement {
           flex: 1;
           padding: 10px;
           font-family: monospace;
+          background:#1e1e1e; color:#ccc; border:1px solid #555; font-size:12.5pt;
         }
         #repl-submit {
           padding: 10px;
+          background:#2d2d2d; color:#ccc; border:1px solid #555;
         }
         .command {
-          font-weight: bold;
+          color:#569CD6;
         }
+        .error { color:#f44 }
       </style>
       <div id="repl-output-container">
         <div id="spacer"></div>
@@ -187,7 +194,7 @@ export class B4ReplCmpt extends HTMLElement {
     const outputArea = this.shadowRoot!.getElementById('repl-output')!;
     const commandElement = document.createElement('div');
     commandElement.className = 'command';
-    commandElement.textContent = `> ${input}`;
+    commandElement.innerHTML = `<span style="color:#569CD6">&gt;</span> ${b4HlLine(input)}`
     outputArea.appendChild(commandElement);
     this.vm!.b4i(input).then(() => {
       this.vm!.fmtStacks().then(({ cs, ds }) => {
@@ -222,7 +229,10 @@ export class B4ReplCmpt extends HTMLElement {
   handleReplOutput(msg: string): void {
     const outputArea = this.shadowRoot!.getElementById('repl-output')!;
     const outputElement = document.createElement('div');
-    outputElement.textContent = msg;
+    if (/^(\.no:|unknown token:|invalid )/.test(msg)) {
+      outputElement.className = 'error'
+      outputElement.textContent = msg}
+    else outputElement.textContent = msg
     outputArea.appendChild(outputElement);
     outputElement.scrollIntoView({ behavior: 'smooth' });
   }

@@ -43,3 +43,13 @@ export function b4Tokenize(line: string): B4Token[] {
     else result.push({ text: part, kind: b4TokenKind(part) })}
   return result
 }
+
+export function b4Esc(s: string): string {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+export function b4HlLine(text: string): string {
+  return b4Tokenize(text).map(t => {
+    if (t.kind === 'ws') return t.text
+    const c = B4_COLORS[t.kind] ?? B4_COLORS.plain
+    return `<span style="color:#${c.toString(16).padStart(6,'0')}">${b4Esc(t.text)}</span>`
+  }).join('')}
