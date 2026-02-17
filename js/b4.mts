@@ -518,6 +518,15 @@ export class B4VM {
         catch (e) { console.log('tried running op:', tok);
                     console.log(op); console.error(e) }
       }
+      else if (this._conb.has(tok)) {
+        if (state===ASM) this.asmVia(hp, tok)
+        else {
+          let opbyte = this._conb.get(tok)!
+          let cobf = this._cobf.get(opbyte)
+          if (cobf) cobf()
+          else this.out(`custom op has no function: ${tok}`)
+        }
+      }
       else if (isHex(tok)) {
         if (state===ASM) this.asmVia(hp, tok)
         else this.dput(parseInt(tok,16))
