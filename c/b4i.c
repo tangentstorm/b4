@@ -6,6 +6,10 @@
 #include <string.h>
 #include <ctype.h>
 
+/* forward declarations */
+static void load_b4i_file(const char *path);
+static void load_b4a_file(const char *path);
+
 /* --- label dictionary --- */
 #define MAX_LABELS 4096
 typedef struct { char name[17]; int addr; } label_t;
@@ -400,12 +404,12 @@ static int b4i(const char *line) {
           printf("%04X>%s\n", fwds[j].at, fwds[j].name);
       }
       else if (strcmp(tok, "\\a") == 0) {
-        /* assemble file - TODO */
-        if (i+1 < ntoks) i++;
+        if (i+1 < ntoks) { i++; load_b4a_file(tokbuf[i]); }
+        else printf("usage: \\a <filename>\n");
       }
       else if (strcmp(tok, "\\i") == 0) {
-        /* interpret file - TODO */
-        if (i+1 < ntoks) i++;
+        if (i+1 < ntoks) { i++; load_b4i_file(tokbuf[i]); }
+        else printf("usage: \\i <filename>\n");
       }
       continue;
     }
@@ -502,12 +506,62 @@ static int b4i(const char *line) {
   return done;
 }
 
-int main(void) {
+/* load and interpret a .b4i file */
+static void load_b4i_file(const char *path) {
+  FILE *f = fopen(path, "r");
   char line[4096];
+  if (!f) { fprintf(stderr, "file not found: %s\n", path); return; }
+  while (fgets(line, sizeof(line), f)) {
+    int len = strlen(line);
+    while (len > 0 && (line[len-1]=='\n' || line[len-1]=='\r'))
+      line[--len] = 0;
+    if (b4i(line)) break;
+  }
+  fclose(f);
+}
+
+/* load and assemble a .b4a file (assembly mode: each line starts with :) */
+static void load_b4a_file(const char *path) {
+  FILE *f = fopen(path, "r");
+  char line[4096];
+  if (!f) { fprintf(stderr, "file not found: %s\n", path); return; }
+  while (fgets(line, sizeof(line), f)) {
+    int len = strlen(line);
+    while (len > 0 && (line[len-1]=='\n' || line[len-1]=='\r'))
+      line[--len] = 0;
+    if (strlen(line) > 0) b4i(line);
+  }
+  fclose(f);
+}
+
+int main(int argc, char **argv) {
+  char line[4096];
+  int run_main = 0;
   b4boot();
   init_optbl();
+  /* process command-line arguments */
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "-a") == 0 && i+1 < argc) {
+      load_b4a_file(argv[++i]);
+    } else if (strcmp(argv[i], "-i") == 0 && i+1 < argc) {
+      load_b4i_file(argv[++i]);
+    } else if (strcmp(argv[i], "-x") == 0) {
+      run_main = 1;
+    } else if (strcmp(argv[i], "-q") == 0) {
+      return 0;
+    }
+  }
+  if (run_main) {
+    /* run 'main' label or ^\ register */
+    int a = find_label("main");
+    if (a >= 0) wrap_call(a);
+    else if (rg(RGO) != 0) wrap_call(rg(RGO));
+    /* flush output */
+    if (ob_len > 0) { ob[ob_len]=0; printf("%s\n",ob); ob_len=0; }
+    return 0;
+  }
+  /* interactive REPL */
   while (fgets(line, sizeof(line), stdin)) {
-    /* strip trailing newline */
     int len = strlen(line);
     while (len > 0 && (line[len-1]=='\n' || line[len-1]=='\r'))
       line[--len] = 0;

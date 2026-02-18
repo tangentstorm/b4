@@ -1,8 +1,10 @@
 /* b4.c - b4 virtual machine core implementation */
+#define _POSIX_C_SOURCE 200809L
 #include "b4.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 /* global state */
 byte mem[MAXBYTE+1];
@@ -23,8 +25,25 @@ void b4boot(void) {
   ob_len = 0;
 }
 
+/* process table for io 'p'/'w'/'r'/'k' */
+#define MAX_PROCS 16
+static FILE* proc_in[MAX_PROCS];
+static FILE* proc_out[MAX_PROCS];
+static int proc_active[MAX_PROCS];
+
+/* read null-terminated string from memory */
+static void mem_readstr(int addr, char *buf, int maxlen) {
+  int i = 0;
+  while (i < maxlen-1 && mem[addr+i] != 0) {
+    buf[i] = mem[addr+i]; i++;
+  }
+  buf[i] = 0;
+}
+
 static void opio(void) {
   char cmd = (char)dpop();
+  char buf[4096];
+  int addr, len, handle, i;
   switch (cmd) {
   case 'e': {  /* emit character to output buffer */
     char ch = (char)dpop();
@@ -35,6 +54,84 @@ static void opio(void) {
     char ch = (char)dpop();
     putchar(ch);
     fflush(stdout);
+  } break;
+  case 'i': { /* read line from stdin: (dest-ptr maxlen -- actual-len) */
+    len = dpop();
+    addr = dpop();
+    if (fgets(buf, len < (int)sizeof(buf) ? len+1 : (int)sizeof(buf), stdin)) {
+      int slen = strlen(buf);
+      while (slen > 0 && (buf[slen-1]=='\n'||buf[slen-1]=='\r')) slen--;
+      if (slen > len) slen = len;
+      for (i = 0; i < slen; i++) mem[addr+i] = buf[i];
+      mem[addr+slen] = 0;
+      dput(slen);
+    } else {
+      dput(-1); /* EOF */
+    }
+  } break;
+  case 'p': { /* spawn process: (cmdline-ptr -- handle|-1) */
+    addr = dpop();
+    mem_readstr(addr, buf, sizeof(buf));
+    /* find free slot */
+    handle = -1;
+    for (i = 0; i < MAX_PROCS; i++) {
+      if (!proc_active[i]) { handle = i; break; }
+    }
+    if (handle < 0) { dput(-1); break; }
+    /* use popen2-like approach: create two pipes */
+    int to_child[2], from_child[2];
+    if (pipe(to_child) < 0 || pipe(from_child) < 0) { dput(-1); break; }
+    int pid = fork();
+    if (pid < 0) { dput(-1); break; }
+    if (pid == 0) {
+      /* child */
+      close(to_child[1]); close(from_child[0]);
+      dup2(to_child[0], 0);
+      dup2(from_child[1], 1);
+      close(to_child[0]); close(from_child[1]);
+      execl("/bin/sh", "sh", "-c", buf, NULL);
+      _exit(1);
+    }
+    /* parent */
+    close(to_child[0]); close(from_child[1]);
+    proc_in[handle] = fdopen(to_child[1], "w");
+    proc_out[handle] = fdopen(from_child[0], "r");
+    proc_active[handle] = 1;
+    dput(handle);
+  } break;
+  case 'w': { /* write line to process: (line-ptr handle --) */
+    handle = dpop();
+    addr = dpop();
+    if (handle >= 0 && handle < MAX_PROCS && proc_active[handle]) {
+      mem_readstr(addr, buf, sizeof(buf));
+      fprintf(proc_in[handle], "%s\n", buf);
+      fflush(proc_in[handle]);
+    }
+  } break;
+  case 'r': { /* read line from process: (dest-ptr handle -- length|-1) */
+    handle = dpop();
+    addr = dpop();
+    if (handle >= 0 && handle < MAX_PROCS && proc_active[handle]) {
+      if (fgets(buf, sizeof(buf), proc_out[handle])) {
+        len = strlen(buf);
+        while (len > 0 && (buf[len-1]=='\n'||buf[len-1]=='\r')) len--;
+        for (i = 0; i < len; i++) mem[addr+i] = buf[i];
+        mem[addr+len] = 0;
+        dput(len);
+      } else {
+        dput(-1);
+      }
+    } else {
+      dput(-1);
+    }
+  } break;
+  case 'k': { /* kill process: (handle --) */
+    handle = dpop();
+    if (handle >= 0 && handle < MAX_PROCS && proc_active[handle]) {
+      fclose(proc_in[handle]);
+      fclose(proc_out[handle]);
+      proc_active[handle] = 0;
+    }
   } break;
   default: break;
   }
