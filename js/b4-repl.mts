@@ -5,7 +5,7 @@ interface ElectronAPI {
   ipcRenderer: {
     on(channel: string, listener: (...args: any[]) => void): void;
   };
-  fmtStacks(): { cs: string; ds: string };
+  fmtStacks(): { cs: string; ds: string; ip: string };
   replInput(input: string): void;
 }
 
@@ -17,7 +17,7 @@ declare global {
 
 interface B4Interface {
   out: (msg: string) => void;
-  fmtStacks(): Promise<{ cs: string; ds: string }>;
+  fmtStacks(): Promise<{ cs: string; ds: string; ip: string }>;
   b4i(input: string): Promise<void>;
 }
 
@@ -71,8 +71,8 @@ export class B4PromiseWrapper implements B4Interface {
     return this._out;
   }
 
-  fmtStacks(): Promise<{ cs: string; ds: string }> {
-    return Promise.resolve(this.vm.fmtStacks());
+  fmtStacks(): Promise<{ cs: string; ds: string; ip: string }> {
+    return Promise.resolve({ ...this.vm.fmtStacks(), ip: this.vm.fmtIp() });
   }
 
   b4i(input: string): Promise<void> {
@@ -107,8 +107,8 @@ export class B4ReplCmpt extends HTMLElement {
       this.vm = new B4PromiseWrapper();
     }
     this.vm.out = this.handleReplOutput.bind(this);
-    this.vm.fmtStacks().then(({ cs, ds }) => {
-      this.updateStacks(cs, ds);
+    this.vm.fmtStacks().then(({ cs, ds, ip }) => {
+      this.updateStacks(cs, ds, ip);
     });
   }
 
@@ -121,6 +121,17 @@ export class B4ReplCmpt extends HTMLElement {
           height: 100%;
           box-sizing: border-box;
           padding: 10px;
+          font-family: monospace;
+          font-size: 12.5pt;
+        }
+        #state {
+          flex: none;
+          color:#ccc;
+          padding: 2px 4px;
+          line-height: 1.1;
+          border-bottom: 1px solid #555;
+          margin-bottom: 4px;
+          font-size: 11pt;
         }
         #repl-output-container {
           flex: 1;
@@ -137,26 +148,22 @@ export class B4ReplCmpt extends HTMLElement {
         #repl-output {
           display: flex;
           flex-direction: column;
-          font-family: monospace;
           white-space: pre;
-          font-size:12.5pt;
-        }
-        #stack-container {
-          display: flex;
-          justify-content: space-between;
-          font-family:monospace; color:#ccc; padding:4px 0;
         }
         #repl-input-container {
+          flex: none;
           display: flex;
         }
         #repl-input {
           flex: 1;
           padding: 10px;
-          font-family: monospace;
-          background:#1e1e1e; color:#ccc; border:1px solid #555; font-size:12.5pt;
+          font-family: inherit;
+          font-size: inherit;
+          background:#1e1e1e; color:#ccc; border:1px solid #555;
         }
         #repl-submit {
           padding: 10px;
+          font-family: inherit;
           background:#2d2d2d; color:#ccc; border:1px solid #555;
         }
         .command {
@@ -164,13 +171,14 @@ export class B4ReplCmpt extends HTMLElement {
         }
         .error { color:#f44 }
       </style>
+      <div id="state">
+        <div id="data-stack"></div>
+        <div id="control-stack"></div>
+        <div id="ip-display"></div>
+      </div>
       <div id="repl-output-container">
         <div id="spacer"></div>
         <div id="repl-output"></div>
-      </div>
-      <div id="stack-container">
-        <div id="data-stack"></div>
-        <div id="control-stack"></div>
       </div>
       <div id="repl-input-container">
         <input id="repl-input" type="text" />
@@ -179,9 +187,11 @@ export class B4ReplCmpt extends HTMLElement {
     `;
   }
 
-  updateStacks(cs: string, ds: string): void {
+  updateStacks(cs: string, ds: string, ip?: string): void {
     this.shadowRoot!.getElementById('data-stack')!.textContent = ds;
     this.shadowRoot!.getElementById('control-stack')!.textContent = cs;
+    if (ip !== undefined)
+      this.shadowRoot!.getElementById('ip-display')!.textContent = ip;
   }
 
   submitCommand(): void {
