@@ -29,4 +29,8 @@ b4i.b4x
 # TypeScript/JavaScript
 js/node_modules/
 js/dist/
+js/package-lock.json
 *.tsbuildinfo
+
+# C build artifacts
+c/b4i
