@@ -186,28 +186,6 @@ At runtime, we need to initialize some variables:
   repl
 #+end_src
 
-* numerals
-
-#+name: try-num
-#+begin_src b4a
-  :digit?                            # (c-d1) or (c-0)
-     du lb '0 lb ': between? .i
-        lb '0 sb c1 rt .t
-     du lb 'A lb 'G between? .i
-        lb 'A sb lb 0A ad c1 rt .t
-     zp c0 rt
-
-  :try-num                           # (s-n) try to parse string as number
-    !S c0 !R
-    c1 +S rb .f
-       c1 +S rb digit?
-          .i @R li `base rb ml ad !R
-          .e unknown
-             cd zp  # drop loop counter
-             rt .t
-    .n
-    @R rt                         # (pr-r)
-#+end_src
 
 * the repl
 ** main logic
@@ -354,7 +332,6 @@ At runtime, we need to initialize some variables:
   :words$ .^ 05 'w'o'r'd's
     <<words>>
     <<unknown>>
-    <<base/digits>>
   .^ 04 'p'u't'n
     <<putn>>
     <<try-num>>

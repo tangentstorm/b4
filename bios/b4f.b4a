@@ -1,9 +1,9 @@
-# note: bios.b4a is generated from bios.b4a.org
+# note: this file is generated from b4f.b4a.org
 # I'm keeping it in version control until I have
 # a decent command-line build step for tangling
 # the org file, because the pascal code requires it.
 
-#--- begin bios -------------------\
+#--- begin b4f -------------------\
 :tg lb 'g tm rt # (xy-) goto xy
 :ta lb 'a tm rt # (a-) set terminal attribute ((fg << 4) + bg))
 :E :tw lb 'e tm rt # write (emit) char
@@ -68,8 +68,7 @@
 :between?        # (xlh-?)
    # -xl:xh    -?:xh    -??         -?
    dc ov dc     lt nt    cd cd lt   an rt
-  :sp lb 20 ^E rt                    # emit space
-:nl lb 0A ^E lb 0D ^E rt           # emit CRLF
+  
 .^ 03 'b'y'e
   :bye nl lb 01 ta                   # red
   lb 'e tw lb 'n tw lb 'd tw       # echo 'end'
@@ -82,9 +81,7 @@
 .^ 04 'e'm'i't
   
 .^ 04 'p'u't's
-  :puts @S dc !S                     # given address of counted string s, write s
-  c1 +S rb .f c1 +S rb ^E .n
-  cd !S rt
+  
 
 :words$ .^ 05 'w'o'r'd's
   :words @^                          # list known words, starting at last entry.
@@ -95,37 +92,9 @@
   :unkno-s 0D 'u'n'k'n'o'w'n' 'w'o'r'd'.
 :unknown
   lb 08 ta sp li `unkno-s puts nl rt
-  :base 10 :digits  '0'1'2'3'4'5'6'7'8'9'A'B'C'D'E'F
 .^ 04 'p'u't'n
-  :putn # (n - )
-  hx rt
-  du c0 eq .i lb '0 tw rt
-  .e c0 sw                         # ( n-kn) k:digit count=0
-     .w du nz? .d                  # while n!=0 do
-        li `base rb dvm            # (kn-kdm) divmod
-        li `digits ad rb dc        # (kdm-kd|c) push char to retn stack
-        sw inc sw .o               # k++, d is new n
-      zp                           # (kd-k)
-      .f cd cd tw dc .n .t         # loop through the characters
-  rt
-  :digit?                            # (c-d1) or (c-0)
-   du lb '0 lb ': between? .i
-      lb '0 sb c1 rt .t
-   du lb 'A lb 'G between? .i
-      lb 'A sb lb 0A ad c1 rt .t
-   zp c0 rt
-
-:try-num                           # (s-n) try to parse string as number
-  !S c0 !R
-  c1 +S rb .f
-     c1 +S rb digit?
-        .i @R li `base rb ml ad !R
-        .e unknown
-           cd zp  # drop loop counter
-           rt .t
-  .n
-  @R rt                         # (pr-r)
-
+  
+  
 
 :B 00 # length byte, plus 64-byte buffer
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -178,8 +147,8 @@
       tr on-key                     # read char from terminal
    .o
 
-#--- end of bios ------------------/
-'- '- '- 'e 'n 'd '- 'o 'f '- 'b 'i 'o 's '- '- '-
+#--- end of b4f ------------------/
+'- '- '- 'e 'n 'd '- 'o 'f '- 'b '4 'f '-
 :\ # start of execution.
 # show word list and enter repl.
 lb 0E ta li `words$ e-nm puts lb ': tw sp lb 07 ta words nl
