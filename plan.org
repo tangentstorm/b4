@@ -6,6 +6,167 @@
 ** TODO finish memory alloctor
 ** TODO implement variants
 
+* quick lil videos showing tools i made for b4-ui.deck
+- color terminal
+- item list
+- tabstrip
+
+* -- [0/6] rollout plan
+
+** TODO [0/8] make some core apps atop b4vm
+
+*** TODO [[bios]]
+*** TODO [[line editor]]
+*** TODO [[b4f]]
+*** TODO [[b4s]]
+*** TODO [[gridpad]]
+*** TODO [[prex]]
+*** TODO b4tris
+*** TODO mineswpr
+
+** idea mirror decker's ability to save an html page
+- bundle html page with terminal,canvas,b4vm,b4i,etc
+
+** TODO [2/4] make a b4vm website
+*** DONE register domain
+*** DONE setup nginx
+*** TODO find the logo i made
+*** TODO convert bytecode reference to html
+
+** TODO make videos about b4 and /using/ it
+
+*** TODO video: design of a vm
+  - instruction set
+  - goals (teaching, kit, scripting apps & games)
+
+*** TODO video: porting jprez editor
+*** TODO video: colorwrite
+*** TODO video: making a forth
+
+*** TODO video: making a lisp
+
+** TODO get tanco running in-browser for the vm
+
+** TODO "implementing b4 in..." video series
+- implementing in j
+- implementing in (gdscript...)
+
+* [0/8] applications
+** TODO bios
+- list words
+- invoke word
+- try-num
+- core words
+  - putn
+  - puts
+  - show ds, cs
+- words for opcodes
+- help text
+
+** TODO line editor
+** TODO cwio
+** TODO repl
+- use line editor
+- send line buffer to second vm with bios
+- tokenize and syntax highlight
+
+** TODO b4s
+** TODO b4f
+- [ ] cell concept
+- [ ] colon compiler
+
+
+** TODO gridpad
+** TODO prex
+
+* [0/21] other tasks
+** TODO get "readline" bios running across j, lil, and pascal
+- define a flat api so we can invoke b4 code
+- demo: type "words" and see the word list
+
+** TODO get a real debugger working in lil
+
+
+** TODO make some very simple demo apps
+- demo: random number generator
+- demo: life on the canvas
+
+** TODO get numbers, putn and showstack working in the bios
+** TODO use ^@ in the pascal, j bios
+** TODO have lil send a string character by character, and invoke ^@
+** TODO make a register allocation worksheet contraption for decker
+** TODO separate b4h and b4i tests (if possible?)
+** TODO update gd version
+** TODO update js version
+** TODO implement the text editor
+** TODO implement symbol table
+** TODO implement lisp library
+** TODO implement parser combinators
+** TODO implement memory manager
+** TODO think through "macro ops" concept
+** TODO have assembler allocate registers for us
+** TODO implement scene graph atop canvas
+** TODO implement array lib
+** TODO implement implish atop b4
+** TODO implement gridpad
+
+* -- b4vm
+* -- b4i (virtual machine interface)
+** DONE invoke registers with ^X
+** DONE b4i should store current write address ("here") in ^_
+** DONE b4i should store last label address in ^^
+** TODO document the assembler syntax
+| prefix | meaning                |
+|--------+------------------------|
+| =`=      | register address       |
+| =^=      | op to invoke register  |
+| =.=      | invoke macro           |
+| =:=      | label + chain          |
+| =$=      | write address of label |
+
+** TODO provide the built-in b3a macros
+Ideally you could do this by running b4 itself.
+
+** TODO load and save images
+** TODO launch other virtual machines
+
+* -- b3a (bootstrap assembler)
+** TODO get bootstrap assembler working under test
+- provides
+
+* -- b4a assembler
+** assembler plan
+- b4a should extend b3a with:
+  - labels
+  - special control words ( { } | [ ]  .data .code )
+  - call and $addr syntax
+- eventually, write b4a in b3a
+
+** b4a spec [runs on the b4 vm, so has a stack, etc]
+- immediate need: dictionary
+- adds labels
+- allow both decimal and hex numbers
+- =.data= to allow building raw binary data
+  - counted strings
+- =.code= to make it nice to write forth-like code
+  - auto-call functions
+  - add 'si' or 'li' before chars, numbers
+- =.dict= to define a dictionary entry
+- structured programming constructs:
+  - .if .th .el .ef .en
+  - .wh .do .od
+  - .fr .nx
+
+** TODO only show debug messages when given a flag
+
+* -- language-aware debugger
+** DONE show labels in the debugger
+- defs could always be line-aligned (just leave spaces)
+  and we could have a comment on the left
+** DONE read/write individual bytes
+    rb/wb
+    ri/wi
+
 * -- sprint --
 ** DONE [28/28]
 *** DONE fill out constant ops c0 c1 c2 n1 c4
@@ -152,6 +313,25 @@ and then 'run to cursor'
 - counted strings
 - followed immediately by code
 ** TODO document 'word?'                                        :b4f:
+* -- bios
+** DONE get a string match working
+** DONE string compare
+** DONE string write
+** DONE find by name
+** DONE execute name
+** TODO load a b4a file
+** TODO start with a b4x image
+
+** DONE implement number parser
+** DONE implement number printer
+* TODO memory allocator
+* -- interpreter (b4th? b4i?)
+** TODO add dictionary entries for all non-control-flow ops
+** TODO [2/4] implement the forth interpreter
+*** DONE [4/4] implement a forth-style dictionary
+**** DONE implement headers manually
+**** DONE implement 'words'
+**** DONE implement 'word?' (s-a)
 - find definition
   - get last entry address
   - while entry address != 0 do:
@@ -298,6 +478,9 @@ how strings work in words:
 *** TODO attr : attribute variable
 * -- maybe later --
 ** TODO onboard line editor
+** TODO number/base
+** TODO quote
+** TODO repeatedly load tokens from input buffer
 ** TODO "calculator mode" (send ascii chars)
 - copy input bytes to buffer
 - let enter trigger word
@@ -354,6 +537,73 @@ http://www.freepascal.org/docs-html/rtl/sysutils/getenvironmentvariable.html
 *** TODO implement mastermind game                            :demo:big:
 *** TODO port mineswpr from retro                             :demo:big:
 ** WANT standalone org-babel-tangle (preferably native)        :tool:
+*** TODO square : draw a square                               :nga:
+*** TODO color  : draw the palette                            :nga:
+*** TODO click  : click screen to change color                :nga:
+*** TODO keys   : press any key to change color               :nga:
+*** TODO hello  : show the word hello                         :nga:
+*** TODO caps   : letters on screen (uppercase)               :nga:
+*** TODO shift  : captital letters / shift key                :nga:
+*** TODO color  : colored text input                          :nga:
+*** TODO read   : read a file from disk                       :nga:
+*** TODO write  : write a file to disk                        :nga:
+*** TODO port pixel.hex to pixel.nga
+**** NOTE Just use the syntax retro gives when you type =see=
+#+begin_example
+Retro 11.0 (1309798464)
+
+ok  see ok
+1423 nop
+1424 nop
+1425 lit   4
+1427 @
+1428 call  167
+1429 0;
+1430 drop
+1431 call  421
+1432 lit   54
+1434 call  443
+1435 ;
+
+ok
+
+#+end_example
+
+** TODO memory manager to allow sharing pascal and retro data
+:PROPERTIES:
+:TS:       <2012-10-30 04:04AM>
+:ID:       mky1x9405xf0
+:END:
+#+begin_src pascal
+{  todo : custom memmory manager
+  http://www.freepascal.org/docs-html/prog/progsu160.html#x205-2180008.4.4
+}
+
+{ retro's file format conventions ( see image/kernel.rx in retro source ) }
+  type rx_header = class
+         prev, wordclass : int32;
+         docptr : ^ansistring;
+         xt     : ^ansistring; { h.xt = @h.code }
+         token  : ansistring;
+         code   : ansistring;
+       end;
+  const
+    rx_last  = 2;
+    rx_xtofs = ;
+
+#+end_src
+
+* -- ancient wishlist
+** NOTE on contributing to this project
+*** these are things that are off the critical path (for now)
+*** ~[#A]~ is easy, ~[#B]~ medium, ~[#C]~ advanced
+*** i could use help with the [[file:b4.00.tasklist.org][main tasklist]], too, but:
+***** usually discover i need something out of order
+***** probably best to chat on freenode/#b4 if you want to work on main tasklist
+*** licensing issues
+- if you contribute / port something, make sure license is MIT/ [[http://en.wikipedia.org/wiki/ISC_license][ISC]] compatible ([[http://retroforth.org/license.html][retroforth license]] is ISC)
+- [[http://www.freepascal.org/faq.var#general-license][freepascal]] code has a tendency to use MPL/LGPL style. I'm okay with that, too.
+
 ** WANT relational database (b4 has tiny relational database)
 *** [#C] [[http://en.wikipedia.org/wiki/B-tree][b-tree]] or [[http://en.wikipedia.org/wiki/B%2B_tree][b+-tree]] implementation                     :database:
 *** [#A] codd's 8 relational operators                        :database:
@@ -431,7 +681,4 @@ Idea to make block format that's readable with modern tools:
 - loader would just ignore those lines
 - saver would always add those lines
 - use a blkfmt file to enforce/repair the format
-** IDEA use `R in b4i while assembling to run a dynamic macro?
-- template compilation?
-- currently it compiles the address of the register,
-  but why do you need that?
+
