@@ -8,7 +8,7 @@
 - mostly because intel does this, and arm allows it
 - because I wanted it to be fast on those systems
 
-* use utif-8 as organizing scheme for opcodes
+* use utf-8 as organizing scheme for opcodes
 - definitely inspired by communications in colorforth/greenarrays
 
 * two-character opcodes
@@ -53,11 +53,11 @@ inspired by the opcode in mako.
 - then there was just 'lv' 'rv' 'wv' to load, read, and write values
 
 * constant ops (=c0=, =c1=, =c2=, =n1=, =c4=)
-- c0 and c1 were kind of suggested because C0 and C1 were unused in utf-8
-- c2 c4 n1 seemed to be the most used constants after that
-- originally i assigned c2=$C2, n1=$C3, c4=$C4, but eventually remembered
-  these hex codes are used by utf-8.
-- i'm not opposed to adding a c8 op, but you can't read 8 bytes, so there
+- =c0= and =c1= were kind of suggested because C0 and C1 were unused in utf-8
+- =c2= =c4= =n1= seemed to be the most used constants after that
+- originally i assigned =c2= to C2, =n1= to C3, =c4= to C4, but eventually
+  remembered these hex codes are used by utf-8.
+- i'm not opposed to adding a =c8= op, but you can't read 8 bytes, so there
   are probably not as many tight loops where you increment by 8. (b4s
   cells would be one example where you might, but you don't tend to visit
   them in order outside =inic= or the forthcoming garbage collector)
