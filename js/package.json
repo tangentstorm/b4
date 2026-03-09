@@ -20,6 +20,10 @@
       "types": "./dist/b4-repl.d.mts",
       "default": "./dist/b4-repl.mjs"
     },
+    "./native": {
+      "types": "./dist/b4-native.d.mts",
+      "default": "./dist/b4-native.mjs"
+    },
     "./b4i": {
       "types": "./dist/b4i.d.mts",
       "default": "./dist/b4i.mjs"

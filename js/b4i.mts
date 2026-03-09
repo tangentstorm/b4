@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import * as b4 from './b4.mjs'
+import * as b4 from './b4-native.mjs'
 import * as readline from 'readline'
 
 const rl = readline.createInterface({

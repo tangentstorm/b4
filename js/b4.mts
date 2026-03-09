@@ -1,9 +1,7 @@
 // b4 virtual machine - typescript edition
 
-import { spawn, ChildProcess } from 'child_process'
-import * as fs from 'fs'
-
 type OutputFunction = (msg: string) => void;
+type IoHandler = (vm: B4VM) => void;
 
 function todo(s: string): void { console.error(`TODO: ${s}`) }
 function err(s: string): never { throw new Error(s) }
@@ -86,11 +84,13 @@ export class B4VM {
   ram: Uint8Array;
   ob: string[];
   out: OutputFunction;
+  onBye: (() => void) | null;
   private _conb: Map<string, number>;
   private _cobn: Map<number, string>;
   private _cobf: Map<number, () => void>;
   private _labels: Record<string, number>;
   private _fwds: {key: string, at: number}[];
+  private _ioHandlers: Map<string, IoHandler>;
 
   constructor() {
     this.ip = 0x100
@@ -107,7 +107,9 @@ export class B4VM {
     this._cobf = new Map() // custom op byte -> func
     this._labels = {}
     this._fwds = []
+    this._ioHandlers = new Map()
     this.out = console.log;
+    this.onBye = null;
   }
 
   reset(): void {
@@ -218,10 +220,6 @@ export class B4VM {
 
   _dpopChar(): string { return String.fromCharCode(this.dpop()) }
 
-  // process management for io sub-ops
-  private _procs: Map<number, {proc: ChildProcess, inbuf: string}> = new Map()
-  private _nextProcId: number = 0
-
   // helper: read null-terminated string from ram at addr
   _readStr(addr: number): string {
     let s = ''
@@ -235,83 +233,14 @@ export class B4VM {
     this.ram[addr + s.length] = 0
   }
 
+  addIo(c: string, handler: IoHandler): void {
+    this._ioHandlers.set(c, handler)
+  }
+
   io(): void {
     let c=this._dpopChar()
     switch (c) {
     case 'e': this.ob.push(this._dpopChar()); break
-    case 'o': { // output character directly to stdout
-      let ch = this._dpopChar()
-      process.stdout.write(ch)
-    } break
-    case 'i': { // read line from stdin: (dest-ptr maxlen -- actual-len)
-      let maxlen = this.dpop()
-      let dest = this.dpop()
-      try {
-        // synchronous stdin read
-        let buf = Buffer.alloc(maxlen + 1)
-        let n = fs.readSync(0, buf, 0, maxlen, null)
-        let line = buf.toString('utf8', 0, n).replace(/\n$/, '')
-        let len = Math.min(line.length, maxlen)
-        for (let i = 0; i < len; i++) this.ram[dest + i] = line.charCodeAt(i)
-        this.ram[dest + len] = 0
-        this.dput(len)
-      } catch {
-        this.dput(0)
-      }
-    } break
-    case 'p': { // spawn process: (cmdline-ptr -- handle|-1)
-      let cmdAddr = this.dpop()
-      let cmd = this._readStr(cmdAddr)
-      try {
-        let proc = spawn('sh', ['-c', cmd], {
-          stdio: ['pipe', 'pipe', 'pipe']
-        })
-        let id = this._nextProcId++
-        let entry = {proc, inbuf: ''}
-        proc.stdout!.on('data', (data: Buffer) => { entry.inbuf += data.toString() })
-        this._procs.set(id, entry)
-        this.dput(id)
-      } catch {
-        this.dput(-1)
-      }
-    } break
-    case 'w': { // write line to process: (line-ptr handle --)
-      let handle = this.dpop()
-      let lineAddr = this.dpop()
-      let entry = this._procs.get(handle)
-      if (entry && entry.proc.stdin) {
-        let line = this._readStr(lineAddr)
-        entry.proc.stdin.write(line + '\n')
-      }
-    } break
-    case 'r': { // read line from process: (dest-ptr handle -- length|-1)
-      let handle = this.dpop()
-      let dest = this.dpop()
-      let entry = this._procs.get(handle)
-      if (entry) {
-        let nlIdx = entry.inbuf.indexOf('\n')
-        if (nlIdx >= 0) {
-          let line = entry.inbuf.substring(0, nlIdx)
-          entry.inbuf = entry.inbuf.substring(nlIdx + 1)
-          let len = line.length
-          for (let i = 0; i < len; i++) this.ram[dest + i] = line.charCodeAt(i)
-          this.ram[dest + len] = 0
-          this.dput(len)
-        } else {
-          this.dput(0) // no complete line available yet
-        }
-      } else {
-        this.dput(-1)
-      }
-    } break
-    case 'k': { // kill process: (handle --)
-      let handle = this.dpop()
-      let entry = this._procs.get(handle)
-      if (entry) {
-        entry.proc.kill()
-        this._procs.delete(handle)
-      }
-    } break
     case 'S': { // sleep: (milliseconds --)
       let ms = this.dpop()
       if (ms > 0) {
@@ -319,7 +248,10 @@ export class B4VM {
         while (Date.now() - start < ms) { /* busy wait */ }
       }
     } break
-    default: break
+    default: {
+      let handler = this._ioHandlers.get(c)
+      if (handler) handler(this)
+    } break
     }
   }
 
@@ -618,7 +550,7 @@ export class B4VM {
     }
     // done with line, now dump output:
     if (this.ob.length) { this.out(this.ob.join("")); this.ob=[] }
-    if (state==BYE) process.exit(0)
+    if (state==BYE && this.onBye) this.onBye()
   }
 
   macro(hp: number, tok: string): void {
