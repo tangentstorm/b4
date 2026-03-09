@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>b4 - Memory Browser</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; background: #111; color: #ccc; font-family: monospace; }
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #repl-panel {
+      height: 40vh;
+      min-height: 120px;
+      border-bottom: 2px solid #333;
+      display: flex;
+      flex-direction: column;
+    }
+    b4-repl {
+      flex: 1;
+    }
+    b4-mem-browser {
+      flex: 1;
+      min-height: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="repl-panel">
+      <b4-repl></b4-repl>
+    </div>
+    <b4-mem-browser></b4-mem-browser>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

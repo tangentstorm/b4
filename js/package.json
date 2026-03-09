@@ -27,6 +27,10 @@
     "./b4i": {
       "types": "./dist/b4i.d.mts",
       "default": "./dist/b4i.mjs"
+    },
+    "./mem-browser": {
+      "types": "./dist/b4-mem-browser.d.mts",
+      "default": "./dist/b4-mem-browser.mjs"
     }
   },
   "bin": {
