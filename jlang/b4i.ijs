@@ -58,13 +58,13 @@ main =: {{
     else. for_tok. ' 'splitstring line do.
       select. tok=.>tok
       case. ''   do.
-      case. '%q' do. done=:1
-      case. '%s' do. step''
-      case. '%C' do. create__vm'' NB. clear everything
+      case. '/q' do. done=:1
+      case. '/s' do. step''
+      case. '/C' do. create__vm'' NB. clear everything
       case. '?d' do. echo 'ds: [', (stackstr D__vm), ']'
       case. '?c' do. echo 'cs: [', (stackstr C__vm), ']'
       case. '?i' do. echo 'ip: ', hexstr P__vm
-      case. '%j' do.
+      case. '/j' do.
         echo 'Exiting into J. Type "main _" to return' return.
       case. do.
         if. isop tok do. runop tok continue. end.

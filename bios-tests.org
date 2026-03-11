@@ -20,13 +20,13 @@ These tests use b4i to test the bios.
   > ?500
   ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G ^G
   > # but the cscr should have filled the 16 previous bytes:
-  > ?4F0 %q
+  > ?4F0 /q
   @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
 * TEST maxx/maxy : maxx/maxy
 #+begin_src b4a
-  > @tmw maxx @tmh maxy ?d %q
+  > @tmw maxx @tmh maxy ?d /q
   ds: [40 3F 10 F]
 #+end_src
 
@@ -34,26 +34,26 @@ These tests use b4i to test the bios.
 #+begin_src b4a
   > curx cury ?d zp zp
   ds: [0 0]
-  > 2F C goxy curx cury ?d %q
+  > 2F C goxy curx cury ?d /q
   ds: [2F C]
 #+end_src
 
 * TEST emit : emit
 #+begin_src b4a
-  > cscr 'h emit 'i emit ?100 %q
+  > cscr 'h emit 'i emit ?100 /q
   +H +I @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
 * TEST goxy-emit : goxy
 #+begin_src b4a
-  > cscr 4 0 goxy 'h emit 'i emit ?100 %q
+  > cscr 4 0 goxy 'h emit 'i emit ?100 /q
   @@ @@ @@ @@ +H +I @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
 * TEST puts : puts
 #+begin_src b4a
   > :S 0D 'h 'e 'l 'l 'o ', 20 'w 'o 'r 'l 'd '!
-  > @S puts ?100 %q
+  > @S puts ?100 /q
   +H +E +L +L +O @L @@ +W +O +R +L +D @A @@ @@ @@
 #+end_src
 
@@ -84,7 +84,7 @@ the cursor to 0,0 and clears the first line.
 #+begin_src b4a
   > 0A `base wb 0F putn \0 cscr # decimal
   15
-  > 10 `base wb 0F putn \0 %q # hex
+  > 10 `base wb 0F putn \0 /q # hex
   F
 #+end_src
 
@@ -97,7 +97,7 @@ the cursor to 0,0 and clears the first line.
   > :K 'a 'b 'c
   > ch ?d zp
   ds: [61]
-  > nc ch nc ?d zp %q
+  > nc ch nc ?d zp /q
   ds: [62 62 63]
 #+end_src
 
@@ -108,7 +108,7 @@ The word =ch= simply retrieves the byte at that value.
 ** TEST b4s.la : =la= : look ahead
 #+begin_src b4a
   > :K 'a 'b 'c
-  > ch c2 la c1 la ?d %q
+  > ch c2 la c1 la ?d /q
   ds: [61 63 62]
 #+end_src
 =la= is for lookahead

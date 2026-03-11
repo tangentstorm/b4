@@ -272,30 +272,30 @@ begin
     // skip comments, but note ':' has its own comment handler :/
     if tok[1] = '#' then st:=st_cmt; if st=st_cmt then continue;
     case tok of
-      '\a' : if i < High(toks) then begin inc(i); ub4asm.b4a_file(toks[i]) end
-             else writeln('usage: \a <filename>');
-      '\C', '%C' : begin boot; ub4asm.clear_dict; end;
-      '\d' : if (i < High(toks)) then begin
+      '/a' : if i < High(toks) then begin inc(i); ub4asm.b4a_file(toks[i]) end
+             else writeln('usage: /a <filename>');
+      '/C' : begin boot; ub4asm.clear_dict; end;
+      '/d' : if (i < High(toks)) then begin
                inc(i); ChDir(toks[i]); if IoResult<>0
                  then writeln('error changing directory to ', toks[i]) end
              else writeln(GetCurrentDir);
-      '\f' : for fw in fwds do writeln(hexstr(fw.at, 4), '>', fw.key);
-      '\g' : run_wrapped;
-      '\j' : if i < High(toks) then begin inc(i);
+      '/f' : for fw in fwds do writeln(hexstr(fw.at, 4), '>', fw.key);
+      '/g' : run_wrapped;
+      '/j' : if i < High(toks) then begin inc(i);
                if tryhex(toks[i], a) then ub4.rg^[ub4.RIP]:=a end
-             else writeln('usage: \j <address>');
-      '\h', '%h' : help;
-      '\i' : if i < High(toks) then begin inc(i); ub4i.b4i_file(toks[i]) end
-             else writeln('usage: \i <filename>');
-      '\o', '-o' : ShowOpcodes;
-      '\p', '%p' : PrintWords;
-      '\q', '%q' : done := true;
-      '\R', '%R' : reset_vm;
-      '\s', '%s' : ub4.step;
-      '\t' : logging_enabled := not logging_enabled;
-      '\v' : if i < High(toks) then begin inc(i);
+             else writeln('usage: /j <address>');
+      '/h' : help;
+      '/i' : if i < High(toks) then begin inc(i); ub4i.b4i_file(toks[i]) end
+             else writeln('usage: /i <filename>');
+      '/o', '-o' : ShowOpcodes;
+      '/p' : PrintWords;
+      '/q' : done := true;
+      '/R' : reset_vm;
+      '/s' : ub4.step;
+      '/t' : logging_enabled := not logging_enabled;
+      '/v' : if i < High(toks) then begin inc(i);
                if tryhex(toks[i], a) then ub4.rg^[ub4.RED]:=a
-               else writeln('usage: \v <address>') end
+               else writeln('usage: /v <address>') end
              else ub4.rg^[ub4.RED] := rg^[ub4.RIP];
       '?d' : begin WriteStack('ds: ', ds, rg^[RDS]); WriteLn end;
       '?c' : begin WriteStack('cs: ', cs, rg^[RCS]); WriteLn end;

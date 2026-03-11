@@ -173,7 +173,7 @@ If commands seem to hang or timeout:
 
 1. Test the `pas/b4i` executable directly:
    ```bash
-   echo "?d %q" | pas/b4i
+   echo "?d /q" | pas/b4i
    ```
 
 2. Increase the timeout in `index.js` (currently 100ms):

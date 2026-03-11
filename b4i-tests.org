@@ -10,7 +10,7 @@ available in the pascal version's assembler.
 * TEST b4i.bug.mlatu : bug: b4i treated first two chars as opcode
 #+begin_src b4a
   > :mlatu rt
-  > 2 3 mlatu ?d %q
+  > 2 3 mlatu ?d /q
   ds: [2 3]
 #+end_src
 
@@ -38,7 +38,7 @@ available in the pascal version's assembler.
   > ?100
   ^A ^B ^C ^D ^E ^F .. .. .. .. .. .. .. .. .. ..
   > : ^G ^H
-  > ?100 %q
+  > ?100 /q
   ^A ^B ^C ^D ^E ^F ^G ^H .. .. .. .. .. .. .. ..
 #+end_src
 
@@ -57,7 +57,7 @@ having to manually track addresses.
 00000100
 > ?B
 00000106
-> ^A ^B %q
+> ^A ^B /q
 ab
 #+end_src
 
@@ -86,7 +86,7 @@ this doesn't work because the old test parser can't andle the "#"
 #+begin_src b4a
 > :E lb 'e io rt
 > :T c1 .i lb 'T ^E .e lb 'F ^E .t rt
-> ^T %q
+> ^T /q
 T
 #+end_src
 
@@ -98,7 +98,7 @@ otherwise, execute the second block
 #+begin_src b4a
 > :E lb 'e io rt
 > :T lb 'a !A lb 03 .w du .d c1 +A ^E c1 sb .o rt
-> ^T %q
+> ^T /q
 abc
 #+end_src
 
@@ -110,7 +110,7 @@ decrement the top of the stack each iteration
 #+begin_src b4a
 > :E lb 'e io rt
 > :T lb 03 .f cd du dc lb 'a ad ^E .n rt
-> ^T %q
+> ^T /q
 dcb
 #+end_src
 
@@ -121,7 +121,7 @@ the counter is stored on the control stack
 # Original headline: .^ (linked list)
 #+begin_src b4a
 > :100 .^ .^ .^ .^
-> ?100 %q
+> ?100 /q
 .. .. .. .. .. ^A .. .. ^D ^A .. .. ^H ^A .. ..
 #+end_src
 
@@ -141,16 +141,16 @@ then `0x108` (`08 01 00 00` in little endian format).
   ds: [1020304]
   > zp 5 !int ?d
   ds: []
-  > @int ?d %q
+  > @int ?d /q
   ds: [5]
 #+end_src
 
 * Interactive Commands
 
-** TEST interactive.reset : %R : reset the virtual machine
-# Original headline: %R (reset)
+** TEST interactive.reset : /R : reset the virtual machine
+# Original headline: /R (reset)
 #+begin_src b4a
-> 01 02 03 ?d %R ?d %q
+> 01 02 03 ?d /R ?d /q
 ds: [1 2 3]
 ds: []
 #+end_src
@@ -158,10 +158,10 @@ ds: []
 resets the stacks and sets ip to 100.
 does not clear memory.
 
-** TEST interactive.clear : %C : clear the virtual machine
-# Original headline: %C (clear)
+** TEST interactive.clear : /C : clear the virtual machine
+# Original headline: /C (clear)
 #+begin_src b4a
-> 01 02 03 ?d %R ?d %q
+> 01 02 03 ?d /R ?d /q
 ds: [1 2 3]
 ds: []
 #+end_src
@@ -175,7 +175,7 @@ clears the stacks and resets memory
   > : li `lbl rt
   > ?lbl
   00000100 +A +B +C +D li .. ^A .. .. rt .. .. .. .. .. ..
-  > `lbl ?d %q
+  > `lbl ?d /q
   ds: [100]
 #+end_src
 
@@ -195,34 +195,34 @@ pushes the address of the label onto the stack
 # Original headline: ?m (show memory)
 #+begin_src b4a
 > :100 01 02 03 04 'h 'e 'l 'l 'o
-> ?100 %q
+> ?100 /q
 ^A ^B ^C ^D +H +E +L +L +O .. .. .. .. .. .. ..
 #+end_src
 
 displays the contents of memory starting at the specified address
 
-* TEST bug.c.clears.dictionary : bug: %C should clear the dictionary
+* TEST bug.c.clears.dictionary : bug: /C should clear the dictionary
 #+begin_src b4a
 > :foo rt
-> \p
+> /p
 0100:foo
-> %C
-> \p
-> %q
+> /C
+> /p
+> /q
 #+end_src
 
 * TODO: Additional tests for other macros and interactive commands
-** %e (run to end)
+** /e (run to end)
 ##+name: interactive.run-to-end
 ##+begin_src b4a
-= %e : run to end
+= /e : run to end
 : executes instructions until a return is encountered
 ##+end_src
 
-** %\ (goto)
+** // (goto)
 ##+name: interactive.goto
 ##+begin_src b4a
-= %\ : goto
+= // : goto
 : jumps to the address stored in the "@\" register
 ##+end_src
 
@@ -230,25 +230,25 @@ displays the contents of memory starting at the specified address
 *** TEST b4a.string.raw : ="abc"= : raw string
 #+begin_src b4a
 > :100 "abc def"
-> ?100 %q
+> ?100 /q
 +A +B +C @@ +D +E +F .. .. .. .. .. .. .. .. ..
 #+end_src
 
 *** TEST b4a.string.len-prefixed : =."abc"= : length-prefixed string
 #+begin_src b4a
 > :100 ."abc def"
-> ?100 %q
+> ?100 /q
 ^G +A +B +C @@ +D +E +F .. .. .. .. .. .. .. ..
 #+end_src
 
 ** TEST b4a.fwd : Using =>= for forward references
 #+begin_src b4a
   > :A cl >foo rt
-  > \f
+  > /f
   0101>foo
   > :foo c2 n1 rt
-  > \f
-  > ^A ?d %q
+  > /f
+  > ^A ?d /q
   ds: [2 -1]
 #+end_src
 
@@ -256,7 +256,7 @@ Inside the assembler, you can use the =>= prefix to indicate a word
 that is to be defined later. Note that unlike a bare word, this does
 not assemble an implicit =cl= so you must write it manually.
 
-Meanwhile, the =\f= command can be used to inspect forward references
+Meanwhile, the =/f= command can be used to inspect forward references
 that have not yet been filled in.
 
 ** TEST b4a.u32 : =$= for u32 hex values

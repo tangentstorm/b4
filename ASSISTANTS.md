@@ -53,14 +53,14 @@ This document contains my notes on the b4 virtual machine project. I will use th
 This is the primary tool for testing and direct interaction.
 
 - **Commands**:
-  - `%q`: Quit the session.
+  - `/q`: Quit the session.
   - `?d`: Print the data stack.
   - `?c`: Print the control stack.
   - `?i`: Print the instruction pointer (`ip`).
   - `?X`: Query register `X`.
   - `!X`: Store top of stack into register `X`.
   - `@X`: Fetch value from register `X` to stack.
-  - `%s`: Step and execute one instruction.
+  - `/s`: Step and execute one instruction.
   - `?100`: Show 16 bytes of memory starting at address `0x100`.
   - `:100 AA BB`: Write bytes `AA BB` to memory at address `0x100`.
 

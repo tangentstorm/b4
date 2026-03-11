@@ -29,11 +29,11 @@
 ### VM Control
 
 ```
-%s              Step: execute one instruction
-%q              Quit (not needed in MCP context)
-%C              Clear: reset everything
-%R              Reset: clear stacks, keep memory
-\g              Go: run until halt/breakpoint
+/s              Step: execute one instruction
+/q              Quit (not needed in MCP context)
+/C              Clear: reset everything
+/R              Reset: clear stacks, keep memory
+/g              Go: run until halt/breakpoint
 ```
 
 ### Assembly
@@ -59,11 +59,11 @@ ad sw du        Execute opcodes immediately
 ### Files & Dictionary
 
 ```
-\p              Print dictionary (all labels)
-\a file.b4a     Assemble file
-\i file.b4i     Interpret script
-\d [path]       Change directory
-\f              Show forward references
+/p              Print dictionary (all labels)
+/a file.b4a     Assemble file
+/i file.b4i     Interpret script
+/d [path]       Change directory
+/f              Show forward references
 ```
 
 ## B4 Opcodes Quick Reference
@@ -343,10 +343,10 @@ await b4i_query_stack()
 1. **Use `db` opcode** to set breakpoints
 2. **Check stacks after each operation**: `?d ?c`
 3. **Inspect memory before/after**: `?100`
-4. **Use `%s` to step through code**
-5. **Print dictionary to see labels**: `\p`
+4. **Use `/s` to step through code**
+5. **Print dictionary to see labels**: `/p`
 6. **Use registers to save important addresses**
-7. **Reset with `%R` to clear stacks without losing code**
+7. **Reset with `/R` to clear stacks without losing code**
 
 ## Performance Tips
 
@@ -363,7 +363,7 @@ await b4i_query_stack()
 | Infinite loop | `hp 00` or bad `nx` | Use `db` to inspect |
 | Wrong memory | Address calculation error | Print addresses with `?d` |
 | Register not set | Using uninitialized register | Check with `?R` |
-| Label not found | Typo or not yet defined | Use `\p` to list labels |
+| Label not found | Typo or not yet defined | Use `/p` to list labels |
 
 ## File Format Notes
 
@@ -384,7 +384,7 @@ await b4i_query_stack()
 ?d              # Commands to execute
 :100 AA BB      # Assembly
 ^A              # Invocation
-%q              # Quit (optional)
+/q              # Quit (optional)
 ```
 
 ### .b4x (Binary)

@@ -129,12 +129,12 @@ await b4i_assemble({
 })
 
 // Execute until breakpoint
-await b4i_execute({ command: "^@ \\g" })
+await b4i_execute({ command: "^@ /g" })
 // Execution stops at the db instruction
 // Output: ds: [0 1]
 
 // Continue execution
-await b4i_execute({ command: "\\g ?d" })
+await b4i_execute({ command: "/g ?d" })
 // Output: ds: [0 1 2 4]
 ```
 
@@ -147,7 +147,7 @@ await b4i_execute({ command: "\\g ?d" })
 await b4i_load_image({ path: "bios/b4i.b4a" })
 
 // The assembler processes the file and creates labels
-await b4i_execute({ command: "\\p" })  // Print dictionary
+await b4i_execute({ command: "/p" })  // Print dictionary
 // Shows all defined labels
 ```
 
@@ -389,7 +389,7 @@ await b4i_execute({ command: "0A 00 dv ?d" })
 // Depends on VM implementation
 
 // Stack underflow
-await b4i_execute({ command: "%C ad ?d" })
+await b4i_execute({ command: "/C ad ?d" })
 // Tries to add with empty stack
 
 // Invalid memory access

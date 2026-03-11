@@ -424,7 +424,7 @@ class B4iServer {
 
           case "b4i_step": {
             const instance = this.resolveInstance(args);
-            await instance.executeCommand("%s");
+            await instance.executeCommand("/s");
             const ipResult = await instance.executeCommand("?i");
             const dsResult = await instance.executeCommand("?d");
             result = `[${instance.name}]\n${ipResult}\n${dsResult}`;
@@ -433,7 +433,7 @@ class B4iServer {
 
           case "b4i_reset": {
             const instance = this.resolveInstance(args);
-            result = await instance.executeCommand("%R");
+            result = await instance.executeCommand("/R");
             const ipResult = await instance.executeCommand("?i");
             result = `[${instance.name}] Reset complete\n${ipResult}`;
             break;
@@ -441,7 +441,7 @@ class B4iServer {
 
           case "b4i_clear": {
             const instance = this.resolveInstance(args);
-            result = await instance.executeCommand("%C");
+            result = await instance.executeCommand("/C");
             result = `[${instance.name}] VM cleared successfully`;
             break;
           }

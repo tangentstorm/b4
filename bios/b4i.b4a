@@ -33,8 +33,8 @@
       @H lb 'k io c0 hl                   # Kill subprocess and exit
     .t
 
-    # Check for %q command
-    li `INBUF rb lb '% eq .i          # If first char is '%'
+    # Check for /q command
+    li `INBUF rb lb '/ eq .i          # If first char is '/'
       li `INBUF c1 ad rb lb 'q eq .i  # and second char is 'q'
         @H lb 'k io c0 hl             # Kill subprocess and exit
       .t

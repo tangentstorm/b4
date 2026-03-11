@@ -422,13 +422,19 @@ export class B4VM {
           default: console.warn(`Matched Unknown RegOp: ${tok}`)
         }
       }
-      else if (t==="\\") { // set the instruction pointer directly
-        if (tok==="\\p") { // print all definitions
+      else if (t==="/") {
+        if (tok==="/q") state=BYE
+        else if (tok==="/s") this.step()
+        else if (tok==="/C") { this._labels = {}; this._fwds = []; }
+        else if (tok==="/R") this.reset()
+        else if (tok==="/e") {} // TODO run to end
+        else if (tok==="//") {} // TODO jump to '\' register
+        else if (tok==="/p") { // print all definitions
           for (let [name, addr] of Object.entries(this._labels)) {
             this.out(`${hexp(addr, addr <= 0xFFFF ? 4 : 8)}:${name}`)
           }
         }
-        else if (tok==="\\f") { // print forward references
+        else if (tok==="/f") { // print forward references
           for (let fw of this._fwds) {
             this.out(`${hexp(fw.at, 4)}>${fw.key}`)
           }
@@ -439,18 +445,9 @@ export class B4VM {
               a = ( Object.hasOwn(this._labels, w) ? this._labels[w]
                     : isHex(w) ? parseInt(w, 16)
                     : w.length==1 && REGS.includes(w) ? this._ri(rega(w))
-                    : err(`invalid address for '\\': ${tok}`))
+                    : err(`invalid address for '/': ${tok}`))
           this._go(a+1)
         }
-      }
-      else if (t==="%") switch(tok) {
-        case '%q': state=BYE; break
-        case '%s': this.step(); break
-        case '%C': this._labels = {}; this._fwds = []; break;
-        case '%R': this.reset(); break
-        case '%e': break; // TODO run to end
-        case '%\\': break; // TODO jump to '\' register
-        default: this.out(`%.no: ${tok}`)
       }
       else if (t==="?") switch(tok) {
         case '?c': this.out(this.fmtStack('cs')); break;

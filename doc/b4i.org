@@ -4,7 +4,7 @@ Interactive assembler, debugger, and shell for B4. Execute assembly mnemonics di
 
 * Implementation Comparison
 
-(updated 2025-11-13)
+(updated 2026-03-11)
 
 | Feature               | Pascal | Lil | J  | JS | Godot | Level |
 |-----------------------+--------+-----+----+----+-------+-------|
@@ -15,21 +15,21 @@ Interactive assembler, debugger, and shell for B4. Execute assembly mnemonics di
 | ~?R~ (register)         | y      | NO  | y  | y  | NO    |     0 |
 | ~?100~ (mem dump)       | y      | y   | y  | y  | y     |     0 |
 | **VM Control**          |        |     |    |    |       |       |
-| ~%q~ (quit)             | y      | y   | y  | y  | y     |     0 |
-| ~%s~ (step)             | y      | y   | y  | y  | y     |     0 |
-| ~\g~ (go)               | y      | NO  | NO | NO | NO    |     0 |
-| ~\f~ (show fwd refs)    | y      | NO  | NO | NO | NO    |     0 |
-| ~%C~ (clear)            | y      | y   | y  | y  | y     |     0 |
-| ~%R~ (reset VM)         | y      | y   | NO | y  | NO    |     1 |
+| ~/q~ (quit)             | y      | y   | y  | y  | y     |     0 |
+| ~/s~ (step)             | y      | y   | y  | y  | y     |     0 |
+| ~/g~ (go)               | y      | NO  | NO | NO | NO    |     0 |
+| ~/f~ (show fwd refs)    | y      | NO  | NO | NO | NO    |     0 |
+| ~/C~ (clear)            | y      | y   | y  | y  | y     |     0 |
+| ~/R~ (reset VM)         | y      | y   | NO | y  | NO    |     1 |
 | **Assembly**            |        |     |    |    |       |       |
 | ~:100 AA BB~            | y      | y   | y  | y  | y     |     0 |
 | ~:foo ...~              | y      | y   | y  | y  | y     |     0 |
 | Calculator mode       | y      | y   | y  | y  | y     |     0 |
 | **Enhanced Features**   |        |     |    |    |       |       |
-| ~\p~ (print dict)       | y      | NO  | NO | NO | NO    |     1 |
-| ~\a <file>~ (assemble)  | y      | NO  | NO | NO | NO    |     1 |
-| ~\i <file>~ (interpret) | y      | NO  | NO | NO | NO    |     1 |
-| ~\d [path]~ (cd)        | y      | NO  | NO | NO | NO    |     1 |
+| ~/p~ (print dict)       | y      | NO  | NO | NO | NO    |     1 |
+| ~/a <file>~ (assemble)  | y      | NO  | NO | NO | NO    |     1 |
+| ~/i <file>~ (interpret) | y      | NO  | NO | NO | NO    |     1 |
+| ~/d [path]~ (cd)        | y      | NO  | NO | NO | NO    |     1 |
 | String literals ~"..."~ | y      | NO  | NO | y  | NO    |     1 |
 | Forward refs ~>label~   | y      | NO  | NO | NO | NO    |     1 |
 | Command-line ~-a -i~    | y      | y   | NO | NO | y     |     1 |
@@ -55,10 +55,10 @@ Implemented in each host language (Pascal, JavaScript, J, etc.). Required for =b
 - =?100= : Dump 16 bytes at address 0x100
 
 *VM Control:*
-- =%q= : Quit
-- =%s= : Step (execute one instruction)
-- =%g= : Go (run until halt/breakpoint)
-- =%C= : Clear/reboot VM
+- =/q= : Quit
+- =/s= : Step (execute one instruction)
+- =/g= : Go (run until halt/breakpoint)
+- =/C= : Clear/reboot VM
 
 *Assembly:*
 - =:100 AA BB CC= : Assemble bytes at address
@@ -76,14 +76,14 @@ Implemented in each host language (Pascal, JavaScript, J, etc.). Required for =b
 Optional features that extend Level 0 functionality.
 
 *Dictionary:*
-- =\p= : Print dictionary
+- =/p= : Print dictionary
 - =?name= : Lookup address
 - =? @name= : Dereference and dump
 
 *Files:*
-- =\d [path]= : Show/change directory
-- =\a <file>= : Assemble .b4a file
-- =\i <file>= : Interpret .b4i script
+- =/d [path]= : Show/change directory
+- =/a <file>= : Assemble .b4a file
+- =/i <file>= : Interpret .b4i script
 
 *Advanced Assembly:*
 - Forward references: =>label=
@@ -97,19 +97,19 @@ Optional features that extend Level 0 functionality.
 * Command Reference
 
 ** File Operations
-- =\a <filename>= : Assemble a .b4a file into memory
-- =\i <filename>= : Interpret/execute a .b4i script file
-- =\d [path]= : Change directory (no args shows current directory)
+- =/a <filename>= : Assemble a .b4a file into memory
+- =/i <filename>= : Interpret/execute a .b4i script file
+- =/d [path]= : Change directory (no args shows current directory)
 
 ** VM Control
-- =\g= : Go - run until halt or breakpoint
-- =\j <address>= : Jump - set instruction pointer to address
-- =\q= or =%q= : Quit the interpreter
-- =\R= or =%R= : Reset VM (clear stacks, set IP to 0x100)
-- =\C= or =%C= : Clear VM completely (boot + clear dictionary)
-- =\s= or =%s= : Step - execute single instruction
-- =\v [address]= : Set debugger view address (no args uses current IP)
-- =\t= : Toggle logging on/off
+- =/g= : Go - run until halt or breakpoint
+- =/j <address>= : Jump - set instruction pointer to address
+- =/q= : Quit the interpreter
+- =/R= : Reset VM (clear stacks, set IP to 0x100)
+- =/C= : Clear VM completely (boot + clear dictionary)
+- =/s= : Step - execute single instruction
+- =/v [address]= : Set debugger view address (no args uses current IP)
+- =/t= : Toggle logging on/off
 
 ** Inspection Commands
 - =?d= : Display data stack
@@ -122,10 +122,10 @@ Optional features that extend Level 0 functionality.
 - =?@R= : Dump memory at address stored in register R
 
 ** Dictionary/Debug
-- =\p= or =%p= : Print dictionary (all defined words)
-- =\f= : Show forward references
-- =\o= or =-o= : Show opcodes table
-- =\h= or =%h= : Show help
+- =/p= : Print dictionary (all defined words)
+- =/f= : Show forward references
+- =/o= or =-o= : Show opcodes table
+- =/h= : Show help
 
 ** Calculator Mode
 

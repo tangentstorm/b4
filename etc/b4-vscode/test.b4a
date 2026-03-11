@@ -8,8 +8,8 @@
     du      # duplicate top of stack
     'a 'A '   # single character literals
     "string"
-    %R %C %s  # assembler directives
-    \p \o     # interpreter directives
+    /R /C /s  # assembler directives
+    /p /o     # interpreter directives
     .f .n ..  # macros
     `@ `A `B `C `X `Y `Z  # names without cl
     `[ `\ `] `^ `_        # more names without cl

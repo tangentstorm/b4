@@ -7,7 +7,7 @@
 
 * TEST b4s.bios : ensure BIOS is loaded
 #+begin_src b4a
-  > cscr 'o ^O 'k ^O sp B4 putn \0 %q
+  > cscr 'o ^O 'k ^O sp B4 putn \0 /q
   ok B4
 #+end_src
 
@@ -29,7 +29,7 @@ memory.  See [[file:bios-tests.org][bios-tests.org]] for more info.
   ds: [-1]
   > @nil^ nil? ?d zp
   ds: [-1]
-  > %q
+  > /q
 #+end_src
 
 Nil is a special cell that marks the end of the list,
@@ -40,7 +40,7 @@ and is also used to indcate false.
   > inic
   > nil car nil?
   > nil cdr nil?
-  > ?d %q
+  > ?d /q
   ds: [-1 -1]
 #+end_src
 
@@ -61,7 +61,7 @@ Nil's car and cdr both point back to nil.
   ds: [0]
   > # last (non-nil) cell should have number (numc-1)
   > @end^ 10 sb celn
-  > @numc c1 sb eq ?d %q
+  > @numc c1 sb eq ?d /q
   ds: [-1]
 #+end_src
 
@@ -79,7 +79,7 @@ cell adddresses without refering to exact memory locations.
   > @nxt^ car car car car celn ?d zp
   ds: [4]
   > # car of last cell in list should be nil
-  > @end^ 10 sb car nil? ?d %q
+  > @end^ 10 sb car nil? ?d /q
   ds: [-1]
 #+end_src
 
@@ -98,7 +98,7 @@ address 8 bytes ahead).
   > @nxt^ celn ?d zp
   ds: [0]
   > # if we take it, then next up is cell 1
-  > nxtc celn @nxt^ celn ?d %q
+  > nxtc celn @nxt^ celn ?d /q
   ds: [0 1]
 #+end_src
 
@@ -117,7 +117,7 @@ cause the =nxt^= to move to the next cell in the list.
   > @C cdr ?d zp
   ds: [1234]
   > # 3. it sets car to NOS
-  > @C car ?d zp %q
+  > @C car ?d zp /q
   ds: [ABCD]
 #+end_src
 
@@ -135,7 +135,7 @@ cause the =nxt^= to move to the next cell in the list.
   > inic
   > 7C cnum du pnum \0
   7C
-  > celn ?d %q
+  > celn ?d /q
   ds: [0]
 #+end_src
 
@@ -151,7 +151,7 @@ We have to wrap plain b4 numbers in cells in order to use them in b4s.
   ds: [73 79 6D 21]
   > glu ?d                # glue together as symbol
   ds: [216D7973]
-  > o4c ?d \0 %q          # o4c calls ^O on each non-zero char
+  > o4c ?d \0 /q          # o4c calls ^O on each non-zero char
   ds: []
   sym!
 #+end_src
@@ -188,7 +188,7 @@ Symbols are stored in the cdr of a cell, just like a b4s number.
   > 12345 cnum ctyp ?d zp
   ds: [2]
   > # symbols are type 0b100=4
-  > 's 'i 'm 'i glu csym ctyp ?d zp %q
+  > 's 'i 'm 'i glu csym ctyp ?d zp /q
   ds: [4]
 #+end_src
 
@@ -221,7 +221,7 @@ the type code in the implementation of =car= and =cdr=.
   > inic
   > 's 'y 'm 00 glu csym pval \0
   sym
-  > 's 'y 'm 00 glu cnum pval \0 %q
+  > 's 'y 'm 00 glu cnum pval \0 /q
   6D7973
 #+end_src
 
@@ -231,7 +231,7 @@ It should inspect the type code and then call =pnum= or =psym= accordingly.
 * TEST b4s.pval-nil : =pval= 2 : nil
 #+begin_src b4a
   > inic
-  > nil pval ?d \0 %q
+  > nil pval ?d \0 /q
   ds: []
   ()
 #+end_src
@@ -242,7 +242,7 @@ However, if we print it on its own, we should print the value '()'
 * TEST b4s.pval-pair : =pval= 3 : dotted pairs
 #+begin_src b4a
   > inic
-  > c1 cnum c2 cnum cons pval \0 %q
+  > c1 cnum c2 cnum cons pval \0 /q
   (1 . 2)
 #+end_src
 
@@ -303,10 +303,10 @@ then print the =cdr=.
 * TEST b4s.msym : =msym=
 #+begin_src b4a
   > :S 'x 'y ..
-  > C0 inic pre msym @M @N ?d %R
+  > C0 inic pre msym @M @N ?d /R
   ds: [C0 -1 79780000]
   > :S 'x ') ..
-  > C1 inic pre msym @M @N ?d %R
+  > C1 inic pre msym @M @N ?d /R
   ds: [C1 -1 78000000]
 #+end_src
 
@@ -343,14 +343,14 @@ then print the =cdr=.
 #+begin_src b4a
   > inic
   > :S ..
-  > C0 pre rval ?d %R
+  > C0 pre rval ?d /R
   ds: [C0 0]
   > :S '0 ..
-  > C1 pre rval sw pval ?d \0 %R
+  > C1 pre rval sw pval ?d \0 /R
   ds: [C1 -1]
   0
   > :S 'x ..
-  > C2 pre rval sw pval ?d \0 %R
+  > C2 pre rval sw pval ?d \0 /R
   ds: [C2 -1]
   x
   > # use same string again, but set m0 first
@@ -379,11 +379,11 @@ either =cnum= or =csym= to build the cell.
 #+begin_src b4a
   > inic
   > :S '' '0 ..
-  > C0 pre rval sw pval ?d \0 %R
+  > C0 pre rval sw pval ?d \0 /R
   ds: [C0 -1]
   '0
   > :S '' 'x ..
-  > C1 pre rval sw pval ?d \0 %R
+  > C1 pre rval sw pval ?d \0 /R
   ds: [C1 -1]
   'x
 #+end_src
@@ -392,11 +392,11 @@ either =cnum= or =csym= to build the cell.
 #+begin_src b4a
   > inic
   > :S '( ') ..
-  > C0 pre rval sw !A ?d %R
+  > C0 pre rval sw !A ?d /R
   ds: [C0 -1]
-  > C1 @A nil? ?d %R
+  > C1 @A nil? ?d /R
   ds: [C1 -1]
-  > C2 putn sp @A pval \0 %q
+  > C2 putn sp @A pval \0 /q
   C2 ()
 #+end_src
 
@@ -407,26 +407,26 @@ and written as =()=.
 #+begin_src b4a
   > inic
   > :S "(0)" ..
-  > C0 pre rval sw pval ?d \0 %R
+  > C0 pre rval sw pval ?d \0 /R
   ds: [C0 -1]
   (0)
   > :S "(C1)" ..
-  > C1 pre rval sw pval ?d \0 %R
+  > C1 pre rval sw pval ?d \0 /R
   ds: [C1 -1]
   (C1)
   > # same thing but with a space after
   > :S "(C2 )" ..
-  > C2 pre rval sw pval ?d \0 %R
+  > C2 pre rval sw pval ?d \0 /R
   ds: [C2 -1]
   (C2)
   > # ... or in front
   > :S "( C3)" ..
-  > C3 pre rval sw pval ?d \0 %R
+  > C3 pre rval sw pval ?d \0 /R
   ds: [C3 -1]
   (C3)
   > # ... or everywhere
   > :S "  (  C4  )  " ..
-  > C4 pre rval sw pval ?d \0 %R
+  > C4 pre rval sw pval ?d \0 /R
   ds: [C4 -1]
   (C4)
 #+end_src
@@ -441,15 +441,15 @@ parentheses in a list.
 #+begin_src b4a
   > inic
   > :S "(0 1)"
-  > C0 pre rval sw pval ?d \0 %R
+  > C0 pre rval sw pval ?d \0 /R
   ds: [C0 -1]
   (0 1)
   > :S "(nice ice)" ..
-  > C1 pre rval sw pval ?d \0 %R
+  > C1 pre rval sw pval ?d \0 /R
   ds: [C1 -1]
   (nice ice)
   > :S "(one two 3 4 5 six 7 8 9)" ..
-  > C2 pre rval sw pval ?d \0 %R
+  > C2 pre rval sw pval ?d \0 /R
   ds: [C2 -1]
   (one two 3 4 5 six 7 8 9)
 #+end_src
@@ -458,19 +458,19 @@ parentheses in a list.
 #+begin_src b4a
   > inic
   > :S "(())" ..
-  > C0 pre rval sw pval ?d \0 %R
+  > C0 pre rval sw pval ?d \0 /R
   ds: [C0 -1]
   (())
   > :S "((C1))" ..
-  > C1 pre rval sw pval ?d \0 %R
+  > C1 pre rval sw pval ?d \0 /R
   ds: [C1 -1]
   ((C1))
   > :S "(1 (C2) 3)" ..
-  > C2 pre rval sw pval ?d \0 %R
+  > C2 pre rval sw pval ?d \0 /R
   ds: [C2 -1]
   (1 (C2) 3)
   > :S "(one (two 3) 4 (5 6 7 8 (9)))" ..
-  > C4 pre rval sw pval ?d \0 %R
+  > C4 pre rval sw pval ?d \0 /R
   ds: [C4 -1]
   (one (two 3) 4 (5 6 7 8 (9)))
 #+end_src
@@ -479,20 +479,20 @@ parentheses in a list.
 #+begin_src b4a
   > inic
   > :S "(())" ..
-  > C0 pre rval sw pval ?d \0 %R
+  > C0 pre rval sw pval ?d \0 /R
   ds: [C0 -1]
   (())
   > :S "( () () )" ..
-  > C1 pre rval sw pval ?d \0 %R
+  > C1 pre rval sw pval ?d \0 /R
   ds: [C1 -1]
   (() ())
   > # the last () is never printed
   > :S "( () () () )" ..
-  > C2 pre rval sw pval ?d \0 %R
+  > C2 pre rval sw pval ?d \0 /R
   ds: [C2 -1]
   (() () ())
   > :S "( (() ()) )" ..
-  > C2 pre rval sw pval ?d \0 %R
+  > C2 pre rval sw pval ?d \0 /R
   ds: [C2 -1]
   ((() ()))
 #+end_src
@@ -501,7 +501,7 @@ parentheses in a list.
 #+begin_src b4a
   > inic
   > :S "(a . 1)" ..
-  > C0 pre rval sw pval ?d \0 %R
+  > C0 pre rval sw pval ?d \0 /R
   ds: [C0 -1]
   (a . 1)
   > pre rval zp du
@@ -510,7 +510,7 @@ parentheses in a list.
   a
   1
   > :S "((a . 1) (b . 2) . c))" ..
-  > C1 pre rval sw pval ?d \0 %R
+  > C1 pre rval sw pval ?d \0 /R
   ds: [C1 -1]
   ((a . 1) (b . 2) . c)
 #+end_src
@@ -519,10 +519,10 @@ parentheses in a list.
 #+begin_src b4a
   > inic
   > :S "(quo . C0)" ..
-  > pre rval zp pval \0 %R
+  > pre rval zp pval \0 /R
   'C0
   > :S "(quo C1)" ..
-  > pre rval zp pval \0 %R
+  > pre rval zp pval \0 /R
   '(C1)
 #+end_src
 
@@ -588,18 +588,18 @@ a path.
 * TEST b4s.eq? : =eq?=  (=eq= is a b4 opcode)
 #+begin_src b4a
 > inic
-> C0 c1 cnum c1 cnum eq? ?d %R
+> C0 c1 cnum c1 cnum eq? ?d /R
 ds: [C0 -1]
-> C1 c1 cnum c2 cnum eq? ?d %R
+> C1 c1 cnum c2 cnum eq? ?d /R
 ds: [C1 0]
-> C2 'a 'b 'c 'd glu csym 'a 'b 'c 'd glu csym eq? ?d %R
+> C2 'a 'b 'c 'd glu csym 'a 'b 'c 'd glu csym eq? ?d /R
 ds: [C2 -1]
-> C3 'a 'b 'c 'd glu csym 'w 'x 'y 'z glu csym eq? ?d %R
+> C3 'a 'b 'c 'd glu csym 'w 'x 'y 'z glu csym eq? ?d /R
 ds: [C3 0]
-> C4 nil nil eq? ?d %R
+> C4 nil nil eq? ?d /R
 ds: [C4 -1]
 > # last one is structurally equal, but eq? doesn't know this
-> C5 c1 cnum nil cons c1 cnum nil cons eq? ?d %R
+> C5 c1 cnum nil cons c1 cnum nil cons eq? ?d /R
 ds: [C5 0]
 #+end_src
 
@@ -637,7 +637,7 @@ Note that the original list is not modified in place.
 #+begin_src b4a
   > :S 'a  .. rt
   > inic
-  > pre rval zp cdr 'a symc cdr ?d %R
+  > pre rval zp cdr 'a symc cdr ?d /R
   ds: [61000000 61000000]
   > pre rval zp 'a symc eq? ?d
   ds: [-1]

@@ -104,13 +104,13 @@
         },
         [], [+0], [+1], [+2], [+3], [+4], [+5], [+6], [+7], [+8], [+9], [+A], [+B], [+C], [+D], [+E], [+F],
         [\$0], [..], [\^A], [\^B], [\^C], [\^D], [\^E], [\^F], [\^G], [\^H], [\^I], [\^J], [\^K], [\^L], [\^M], [\^N], [\^O],
-        [\$1], [\^P], [\^Q], [\^R], [\^S], [\^T], [\^U], [\^V], [\^W], [\^X], [\^Y], [\^Z], [\^\[], [\^\\], [\^\]], [\^\^], [\^\_],
+        [\$1], [\^P], [\^Q], [\^R], [\^S], [\^T], [\^U], [\^V], [\^W], [\^X], [\^Y], [\^Z], [\^\[], [\^//], [\^\]], [\^\^], [\^\_],
         [\$2], [\@\@], [\@A], [\@B], [\@C], [\@D], [\@E], [\@F], [\@G], [\@H], [\@I], [\@J], [\@K], [\@L], [\@M], [\@N], [\@O],
-        [\$3], [\@P], [\@Q], [\@R], [\@S], [\@T], [\@U], [\@V], [\@W], [\@X], [\@Y], [\@Z], [\@\[], [\@\\], [\@\]], [\@\^], [\@\_],
+        [\$3], [\@P], [\@Q], [\@R], [\@S], [\@T], [\@U], [\@V], [\@W], [\@X], [\@Y], [\@Z], [\@\[], [\@//], [\@\]], [\@\^], [\@\_],
         [\$4], [!\@], [!A], [!B], [!C], [!D], [!E], [!F], [!G], [!H], [!I], [!J], [!K], [!L], [!M], [!N], [!O],
-        [\$5], [!P], [!Q], [!R], [!S], [!T], [!U], [!V], [!W], [!X], [!Y], [!Z], [!\[], [!\\], [!\]], [!\^], [!\_],
+        [\$5], [!P], [!Q], [!R], [!S], [!T], [!U], [!V], [!W], [!X], [!Y], [!Z], [!\[], [!//], [!\]], [!\^], [!\_],
         [\$6], [+\@], [+A], [+B], [+C], [+D], [+E], [+F], [+G], [+H], [+I], [+J], [+K], [+L], [+M], [+N], [+O],
-        [\$7], [+P], [+Q], [+R], [+S], [+T], [+U], [+V], [+W], [+X], [+Y], [+Z], [+\[], [+\\], [+\]], [+\^], [+\_],
+        [\$7], [+P], [+Q], [+R], [+S], [+T], [+U], [+V], [+W], [+X], [+Y], [+Z], [+\[], [+//], [+\]], [+\^], [+\_],
         [\$8], [ad], [sb], [ml], [dv], [md], [sh], [an], [or], [xr], [nt], [eq], [lt], [du], [sw], [ov], [zp],
         [\$9], [dc], [cd], [rb], [ri], [wb], [wi], [lb], [li], [rs], [ls], [jm], [hp], [h0], [cl], [rt], [nx],
         [\$A], [--], [--], [--], [--], [--], [--], [--], [--], [--], [--], [--], [--], [--], [--], [--], [--],
@@ -302,18 +302,18 @@
 
 #v(0.15em)
 #text(size: 6.5pt, weight: "bold")[Control]
-#smallop("%q", "quit")
-#smallop("%s", "step one instruction")
-#smallop("%g", "go (run until halt)")
-#smallop("%C", "clear/reboot VM")
-#smallop("%R", "reset VM")
+#smallop("/q", "quit")
+#smallop("/s", "step one instruction")
+#smallop("/g", "go (run until halt)")
+#smallop("/C", "clear/reboot VM")
+#smallop("/R", "reset VM")
 
 #v(0.15em)
 #text(size: 6.5pt, weight: "bold")[Files]
-#smallop("\\a", "assemble .b4a file")
-#smallop("\\i", "interpret .b4i script")
-#smallop("\\d", "change directory")
-#smallop("\\p", "print dictionary")
+#smallop("\/a", "assemble .b4a file")
+#smallop("\/i", "interpret .b4i script")
+#smallop("\/d", "change directory")
+#smallop("\/p", "print dictionary")
 
 #v(0.15em)
 #text(size: 6.5pt, weight: "bold")[Calculator Mode]

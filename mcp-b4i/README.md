@@ -174,11 +174,11 @@ See [doc/b4i.org](../doc/b4i.org) for complete B4i documentation.
 - `?100` - Memory dump at address
 
 **VM Control:**
-- `%s` - Step one instruction
-- `%q` - Quit (not needed in MCP context)
-- `%C` - Clear VM
-- `%R` - Reset VM
-- `\g` - Go (run until halt/breakpoint)
+- `/s` - Step one instruction
+- `/q` - Quit (not needed in MCP context)
+- `/C` - Clear VM
+- `/R` - Reset VM
+- `/g` - Go (run until halt/breakpoint)
 
 **Assembly:**
 - `:100 AA BB CC` - Assemble at address
@@ -192,10 +192,10 @@ See [doc/b4i.org](../doc/b4i.org) for complete B4i documentation.
 - `^R` - Call code at register R
 
 **Dictionary/Files:**
-- `\p` - Print dictionary
-- `\a file.b4a` - Assemble file
-- `\i file.b4i` - Interpret script
-- `\d [path]` - Change directory
+- `/p` - Print dictionary
+- `/a file.b4a` - Assemble file
+- `/i file.b4i` - Interpret script
+- `/d [path]` - Change directory
 
 ## Example Session
 
@@ -282,7 +282,7 @@ Commands are sent via stdin and responses collected from stdout, allowing for ef
 
 **Process exits unexpectedly:**
 - Check stderr output for b4i errors (tagged with instance name like `b4i[js0]`)
-- Verify file paths are correct for `\a` and `\i` commands
+- Verify file paths are correct for `/a` and `/i` commands
 - Instances auto-restart on crash
 
 ## License

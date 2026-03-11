@@ -1,13 +1,7 @@
 #+title: b4 implementation plan
 
 * -- roadmap --
-** TODO prefix all assembler/debugger commands with =/=
-=/s= : step
-=/g= : go
-=/q= : quit
-=/r= : reset stack
-=/R= : reset everything
-
+** TODO single test.py command
 ** TODO assemble 32-bit hex numbers                            :b4a:
 ** TODO canvas/sprite device
 ** TODO implement variants
@@ -45,6 +39,7 @@ when fixed, update ch< in pre.b4a
 - =x.b4m= :: a saved b4 machine (binary)
 - =x.b4d= :: data (binary like k's .l files)
 
+** TODO allow parens to act as comments                        :b4i:
 * --- backlog ---
 ** TODO bicameral repl
 - use line editor
@@ -178,7 +173,6 @@ and then 'run to cursor'
 
 ** TODO implement mastermind game                              :demo:big:
 ** TODO would be nice to syntax highlight in b4x input
-** TODO allow parens to act as comments                        :b4i:
 ** TODO have .] automatically insert =rt=
 ** TODO bug: can define :| interactively but not assemble it
 ** TODO dependencies between tests

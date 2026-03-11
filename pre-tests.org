@@ -28,7 +28,7 @@ string.
   > ln ?d zp
   ds: [0]
   > :S .. .. .. :K
-  > ln ?d %q
+  > ln ?d /q
   ds: [3]
 #+end_src
 
@@ -40,7 +40,7 @@ Subtracting =@S= from =@K= gives us the match length.
 #+begin_src b4a
  > pre ln ?d zp
  ds: [0]
- > c4 fw ln ?d %q
+ > c4 fw ln ?d /q
  ds: [4]
 #+end_src
 
@@ -88,13 +88,13 @@ but it also drops a single argument.
 #+begin_src b4a
  > :S 'x 'y ..
  > pre
- > C0 any @M ln ?d %R
+ > C0 any @M ln ?d /R
  ds: [C0 -1 1]
- > C1 any @M ln ?d %R
+ > C1 any @M ln ?d /R
  ds: [C1 -1 2]
- > C2 any @M ln ?d %R
+ > C2 any @M ln ?d /R
  ds: [C2 0 2]
- > m1 C3 end @M ln ?d %R
+ > m1 C3 end @M ln ?d /R
  ds: [C3 -1 2]
 #+end_src
 
@@ -124,14 +124,14 @@ If so, it increments =@K= by one position by calling =nc=.
 #+begin_src b4a
   > :S :K 'm ..
   > # if m0, zap arg and do nothing
-  > m0 'z lte @M ln ?d %R
+  > m0 'z lte @M ln ?d /R
   ds: [0 0]
   > # if m1, run the test
-  > m1 'a lte @M ln ?d %R
+  > m1 'a lte @M ln ?d /R
   ds: [0 0]
-  > m1 'z lte @M ln ?d %R
+  > m1 'z lte @M ln ?d /R
   ds: [-1 0]
-  > m1 'm lte @M ln ?d %R
+  > m1 'm lte @M ln ?d /R
   ds: [-1 0]
 #+end_src
 
@@ -148,14 +148,14 @@ add one to  calling =lt=.
 #+begin_src b4a
   > :S :K 'm ..
   > # if m0, zap arg and do nothing
-  > C0 m0 'z gte @M ln ?d %R
+  > C0 m0 'z gte @M ln ?d /R
   ds: [C0 0 0]
   > # if m1, run the test
-  > C1 m1 'a gte @M ln ?d %R # 'm >= 'a so match
+  > C1 m1 'a gte @M ln ?d /R # 'm >= 'a so match
   ds: [C1 -1 0]
-  > C2 m1 'z gte @M ln ?d %R # 'm < 'z so fail
+  > C2 m1 'z gte @M ln ?d /R # 'm < 'z so fail
   ds: [C2 0 0]
-  > C3 m1 'm gte @M ln ?d %R # 'm = 'm so match
+  > C3 m1 'm gte @M ln ?d /R # 'm = 'm so match
   ds: [C3 -1 0]
 #+end_src
 
@@ -177,13 +177,13 @@ it as "not less than": =lt nt=
 #+begin_src b4a
   > :H lb 'A gte lb 'F lte mf1 rt  # match on hex digit (range A-F)
   > :S :K 'Q
-  > C0 m1 ^H @M ln ?d %R    # Q not in range, so no match
+  > C0 m1 ^H @M ln ?d /R    # Q not in range, so no match
   ds: [C0 0 0]
   > :S :K 'C
-  > C1 m1 ^H @M ln ?d %R    # C is in the range, so match!
+  > C1 m1 ^H @M ln ?d /R    # C is in the range, so match!
   ds: [C1 -1 1]
   > :S :K 'C
-  > C2 m0 ^H @M ln ?d %R    # m0 was set so no matching allowed
+  > C2 m0 ^H @M ln ?d /R    # m0 was set so no matching allowed
   ds: [C2 0 0]
 #+end_src
 
@@ -202,22 +202,22 @@ in fact, let's just do that.
 #+begin_src b4a
  > :S '5 ..
  > # case 0 it won't match if m0
- > C0 pre m0 '0 '9 btw @M ln ?d %R
+ > C0 pre m0 '0 '9 btw @M ln ?d /R
  ds: [C0 0 0]
  > # case 1 it's in range
- > C1 pre m1 '0 '9 btw @M ln ?d %R
+ > C1 pre m1 '0 '9 btw @M ln ?d /R
  ds: [C1 -1 1]
  > # case 2 it's above the range
- > C2 pre m1 '0 '4 btw @M ln ?d %R
+ > C2 pre m1 '0 '4 btw @M ln ?d /R
  ds: [C2 0 0]
  > # case 3 it's below the range
- > C3 pre m1 '6 '9 btw @M ln ?d %R
+ > C3 pre m1 '6 '9 btw @M ln ?d /R
  ds: [C3 0 0]
  > # case 4 it's the low end of range
- > C4 pre m1 '5 '9 btw @M ln ?d %R
+ > C4 pre m1 '5 '9 btw @M ln ?d /R
  ds: [C4 -1 1]
  > # case 5 it's the high end of range
- > C5 pre m1 '0 '5 btw @M ln ?d %R
+ > C5 pre m1 '0 '5 btw @M ln ?d /R
  ds: [C5 -1 1]
 #+end_src
 
@@ -279,7 +279,7 @@ where it started.
   > ^A ln ?d zp
   ds: [0]
   > @S !K
-  > ^B ln ?d %q
+  > ^B ln ?d /q
   ds: [4]
 #+end_src
 
@@ -297,9 +297,9 @@ otherwise it discards the backed up value.
 #+begin_src b4a
   > :S 'a 'b ..
   > :A lb 'a chr rt
-  > C0 pre ^A @M ln ?d %R  # normal matching, nothing new
+  > C0 pre ^A @M ln ?d /R  # normal matching, nothing new
   ds: [C0 -1 1]
-  > C1 pre @A lka @M ln ?d %R  # should match but not consume
+  > C1 pre @A lka @M ln ?d /R  # should match but not consume
   ds: [C1 -1 0]
 #+end_src
 * TEST pre.not : =neg (p-)= : negative lookahead
@@ -307,9 +307,9 @@ otherwise it discards the backed up value.
   > :S 'a 'b ..
   > :A lb 'a chr rt
   > :B lb 'b chr rt
-  > C0 pre @A neg @M ln ?d %R  # `^A` would match, so `@A neg` should fail
+  > C0 pre @A neg @M ln ?d /R  # `^A` would match, so `@A neg` should fail
   ds: [C0 0 0]
-  > C1 pre @B neg @M ln ?d %R  # `@B neg` should match but consumes nothing.
+  > C1 pre @B neg @M ln ?d /R  # `@B neg` should match but consumes nothing.
   ds: [C1 -1 0]
 #+end_src
 
@@ -319,10 +319,10 @@ otherwise it discards the backed up value.
   > :B .[ c2 fw m0 m| c4 fw m1 rt .] try rt
   > :C .[ c2 fw m1 m| c4 fw m0 rt .] try rt
   > :D .[ c2 fw m1 m| c4 fw m1 rt .] try rt
-  > CA pre ^A @M ln ?d %R
-  > CB pre ^B @M ln ?d %R
-  > CC pre ^C @M ln ?d %R
-  > CD pre ^D @M ln ?d %q
+  > CA pre ^A @M ln ?d /R
+  > CB pre ^B @M ln ?d /R
+  > CC pre ^C @M ln ?d /R
+  > CD pre ^D @M ln ?d /q
   ds: [CA 0 0]
   ds: [CB -1 4]
   ds: [CC -1 2]
@@ -352,10 +352,10 @@ by =try=, =lka=, or =not=.
 #+begin_src b4a
   > :G  .[ lb 'c chr rt .] opt rt
   > :S 'c  # ^G should match and advance 1
-  > pre ^G @M ln ?d %R
+  > pre ^G @M ln ?d /R
   ds: [-1 1]
   > :S 'x  # ^G should match but not advance
-  > pre ^G @M ln ?d %R
+  > pre ^G @M ln ?d /R
   ds: [-1 0]
 #+end_src
 
@@ -367,13 +367,13 @@ consume any characters unless the underlying parser matches.
 #+begin_src b4a
   > :G  .[ lb 'a chr rt .] rep rt
   > :S 'c  # ^G should fail
-  > pre ^G @M ln ?d %R
+  > pre ^G @M ln ?d /R
   ds: [0 0]
   > :S "abc"  # ^G should match 1 char
-  > pre ^G @M ln ?d %R
+  > pre ^G @M ln ?d /R
   ds: [-1 1]
   > :S "aardvark"  # ^G should match 2
-  > pre ^G @M ln ?d %R
+  > pre ^G @M ln ?d /R
   ds: [-1 2]
 #+end_src
 
@@ -384,15 +384,15 @@ at least once, then as many times as possible.
 #+begin_src b4a
   > :G  .[ lb 'a chr rt .] orp rt
   > :S 'c  # ^G should succeed but match 0 chars
-  > C0 pre ^G @M ln ?d %R
+  > C0 pre ^G @M ln ?d /R
   ds: [C0 -1 0]
   > :S "abc"  # ^G should match 1 char (same as before)
-  > C1 pre ^G @M ln ?d %R
+  > C1 pre ^G @M ln ?d /R
   ds: [C1 -1 1]
   > :S "aardvark"  # ^G should match 2 (same as before)
-  > C2 pre ^G @M ln ?d %R
+  > C2 pre ^G @M ln ?d /R
   ds: [C2 -1 2]
-  > C3 pre m0 ^G @M ln ?d %R # no match because m0
+  > C3 pre m0 ^G @M ln ?d /R # no match because m0
   ds: [C3 0 0]
 #+end_src
 
@@ -402,7 +402,7 @@ Note that =orp= can never fail to match, so it should always leave =@M= unchange
 * TEST b4s.ws* : =ws= and =ws*= match whitespace
 #+begin_src b4a
  > :S 20 20 20 ..
- > pre ws @M ln ?d %R
+ > pre ws @M ln ?d /R
  ds: [-1 1]
  > ws* @M ln ?d
  ds: [-1 3]
@@ -414,20 +414,20 @@ Whitespace is any character between 01 and 20 inclusive.
 * TEST pre.mhex : =mhex= : match an uppercase hex number
 #+begin_src b4a
   > :S "-123" ..
-  > pre mhex @M ln ?d %R
+  > pre mhex @M ln ?d /R
   ds: [-1 4]
   > :S "123" ..
-  > pre mhex @M ln ?d %R
+  > pre mhex @M ln ?d /R
   ds: [-1 3]
   > :S "-ABCDEF0123456789" ..
-  > pre mhex @M ln ?d %R
+  > pre mhex @M ln ?d /R
   ds: [-1 11]
   > # do not match lowercase!
   > :S "abcedef01234567890" ..
-  > pre mhex @M ln ?d %R
+  > pre mhex @M ln ?d /R
   ds: [0 0]
   > :S "-no" ..
-  > pre mhex @M ln ?d %R
+  > pre mhex @M ln ?d /R
   ds: [0 0]
 #+end_src
 
@@ -437,10 +437,10 @@ followed by  hex number.
 * TEST pre.mhex-@n : =mhex= should populate @N
 #+begin_src b4a
   > :S "1234" ..
-  > C0 pre mhex @M ln @N ?d %R
+  > C0 pre mhex @M ln @N ?d /R
   ds: [C0 -1 4 1234]
   > :S "ABCD" ..
-  > C1 pre mhex @M ln @N ?d %R
+  > C1 pre mhex @M ln @N ?d /R
   ds: [C1 -1 4 ABCD]
 #+end_src
 

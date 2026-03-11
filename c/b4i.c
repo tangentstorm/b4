@@ -382,34 +382,30 @@ static int b4i(const char *line) {
     char *tok = tokbuf[i];
     if (tok[0] == '#') break; /* comment */
 
-    /* debugger / percent commands */
-    if (tok[0] == '%') {
-      if (strcmp(tok, "%q") == 0) { done = 1; break; }
-      else if (strcmp(tok, "%s") == 0) b4step();
-      else if (strcmp(tok, "%C") == 0) { b4boot(); clear_dict(); }
-      else if (strcmp(tok, "%R") == 0) {
+    /* slash commands */
+    if (tok[0] == '/') {
+      if (strcmp(tok, "/q") == 0) { done = 1; break; }
+      else if (strcmp(tok, "/s") == 0) b4step();
+      else if (strcmp(tok, "/C") == 0) { b4boot(); clear_dict(); }
+      else if (strcmp(tok, "/R") == 0) {
         SCH(0); SDH(0); SIP(HERE);
       }
-      continue;
-    }
-    /* backslash commands */
-    if (tok[0] == '\\') {
-      if (strcmp(tok, "\\g") == 0) run_wrapped();
-      else if (strcmp(tok, "\\p") == 0) {
+      else if (strcmp(tok, "/g") == 0) run_wrapped();
+      else if (strcmp(tok, "/p") == 0) {
         for (int j = 0; j < nlabels; j++)
           printf("%04X:%s\n", labels[j].addr, labels[j].name);
       }
-      else if (strcmp(tok, "\\f") == 0) {
+      else if (strcmp(tok, "/f") == 0) {
         for (int j = 0; j < nfwds; j++)
           printf("%04X>%s\n", fwds[j].at, fwds[j].name);
       }
-      else if (strcmp(tok, "\\a") == 0) {
+      else if (strcmp(tok, "/a") == 0) {
         if (i+1 < ntoks) { i++; load_b4a_file(tokbuf[i]); }
-        else printf("usage: \\a <filename>\n");
+        else printf("usage: /a <filename>\n");
       }
-      else if (strcmp(tok, "\\i") == 0) {
+      else if (strcmp(tok, "/i") == 0) {
         if (i+1 < ntoks) { i++; load_b4i_file(tokbuf[i]); }
-        else printf("usage: \\i <filename>\n");
+        else printf("usage: /i <filename>\n");
       }
       continue;
     }
