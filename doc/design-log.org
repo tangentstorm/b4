@@ -62,6 +62,15 @@ inspired by the opcode in mako.
   cells would be one example where you might, but you don't tend to visit
   them in order outside =inic= or the forthcoming garbage collector)
 
+* command sigils
+Originally =%= was the prefix for some commands, and then later others used =\= , and there was no clear rule to distinguish them.
+
+I wanted to unify on one, and prefer =\= , but at some point, I would like the on-board editor to use =\= as a prefix for typing non-ascii characters.
+
+I am also strongly considering =%= as a prefix for decimal integers, since most numbers in b4 are hex.
+
+So instead, I settled on =/= for commands.
+
 * ideas under consideration
 
 ** probably: return the 'new' value for =+R=
