@@ -44,7 +44,7 @@ export class B4ElectronIpc implements B4Interface {
     return this._out;
   }
 
-  fmtStacks(): Promise<{ cs: string; ds: string }> {
+  fmtStacks(): Promise<{ cs: string; ds: string; ip: string }> {
     return Promise.resolve(this.electron.fmtStacks());
   }
 
@@ -207,12 +207,12 @@ export class B4ReplCmpt extends HTMLElement {
     commandElement.innerHTML = `<span style="color:#569CD6">&gt;</span> ${b4HlLine(input)}`
     outputArea.appendChild(commandElement);
     this.vm!.b4i(input).then(() => {
-      this.vm!.fmtStacks().then(({ cs, ds }) => {
-        this.updateStacks(cs, ds);
+      this.vm!.fmtStacks().then(({ cs, ds, ip }) => {
+        this.updateStacks(cs, ds, ip);
       });
     });
     (this.shadowRoot!.getElementById('repl-input') as HTMLInputElement).value = '';
-    commandElement.scrollIntoView({ behavior: 'smooth' });
+    commandElement.scrollIntoView?.({ behavior: 'smooth' });
   }
 
   handleKeyDown(event: KeyboardEvent): void {
