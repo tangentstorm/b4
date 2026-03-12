@@ -48,6 +48,10 @@ dis =: {{ NB. disassemble bytes to b4 assembly language
   else. hexstr y end. }}
 memstr =: {{ , ' ',.~ dis"0 a.i. (y+i.16) { M__vm  }}
 showmem =: echo@memstr
+hexbyte =: {{ if. y=0 do. '..' else. toupper 2 {. '0',~ hfd y end. }}
+hexmemstr =: {{ , ' ',.~ hexbyte"0 a.i. (y+i.16) { M__vm }}
+showhexmem =: echo@hexmemstr
+resetvm =: {{ D__vm =: 0$0 [ C__vm =: 0$0 [ P__vm =: 16b100 }}
 
 main =: {{
   (rgn__vm'_') rset__vm~ P__vm =: 16b100 [ done=:0
@@ -59,8 +63,10 @@ main =: {{
       select. tok=.>tok
       case. ''   do.
       case. '/q' do. done=:1
-      case. '/s' do. step''
+      case. '/';'/s' do. step''
+      case. '/g';'//' do. run__vm''
       case. '/C' do. create__vm'' NB. clear everything
+      case. '/R' do. resetvm''
       case. '?d' do. echo 'ds: [', (stackstr D__vm), ']'
       case. '?c' do. echo 'cs: [', (stackstr C__vm), ']'
       case. '?i' do. echo 'ip: ', hexstr P__vm
@@ -79,9 +85,11 @@ main =: {{
         case. '`' do. dput rega 1{tok
         case. '?' do.
           if. 2=#tok do. echo _8 {. (8$'0'),hfd rget__vm rgn__vm 1{tok
+          elseif. ('x'={:tok) *. isHEX }: }.tok do. showhexmem addr }. }:tok
           else. showmem addr }.tok end.
         case. do.
-          if. puthex tok do.
+          if. ('/'=0{tok) *. isHEX }.tok do. P__vm =: addr }.tok
+          elseif. puthex tok do.
           else. exit [ echo 'unrecognized token "',tok,'"' end.
         end. NB. select 0{tok
       end. NB. select tok

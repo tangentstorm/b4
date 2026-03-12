@@ -302,9 +302,8 @@ end
 
 mod.showMem: on showMem a do " " fuse dis @ vm.mem @ a + range 16 end
 mod.showMemA: on showMemA a do " " fuse disa @ vm.mem @ a + range 16 end
-mod.showHexMem: on showHexMem a do
-  " " fuse on b do if b=0 ".." else "%02H" format b end end @ vm.mem @ a + range 16
-end
+on hexbyte b do if b=0 ".." else "%02H" format b end end
+mod.showHexMem: on showHexMem a do " " fuse hexbyte @ vm.mem @ a + range 16 end
 mod.showIp: on showIp do "ip: %02H" format vm.rg[RIP] end
 on assemble a s do n:count toks:" "split s  vm.mem[a,n]:raze asm@toks n end
 on asm_via hp s do a:_ri[hp]  n:assemble[a s] _wi[hp a+n] end
@@ -383,7 +382,7 @@ mod.b4i: on b4i line do
         each name in label_names
           echo["%04H:%s" format labels[name],name]
         end
-      elseif isHex[a:1 drop tok] _goto[a]
+      elseif isHex[a:1 drop tok] vm.rg[RIP]:unHex[a]
       else echo["/.no: ",tok] end
     elseif t="?"
       if tok="?i" echo[showIp[]]
@@ -391,8 +390,13 @@ mod.b4i: on b4i line do
       elseif tok="?c" echo[showStack["cs"]]
       elseif (nm:1 drop tok) in labels
         echo["%08H %s" format labels[nm],showMem[labels[nm]]]
-      else hex: "?%[q].1oa%[a]H%[x].1ox%[m]z" parse tok
-        if hex.m echo[(if hex.q showMemA elseif hex.x showHexMem else showMem end)[hex.a]]
+      elseif ((count tok)>2) & ("x" = tok[(count tok)-1])
+        qtok:1 drop tok
+        qtok:((count qtok)-1) take qtok
+        if isHex[qtok] echo[showHexMem[unHex[qtok]]]
+        else echo["?.no: ",tok] end
+      else hex: "?%[q].1oa%[a]H%[m]z" parse tok
+        if hex.m echo[(if hex.q showMemA else showMem end)[hex.a]]
         else echo["?.no: ",tok] end
       end
     elseif t="$"

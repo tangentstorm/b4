@@ -4,6 +4,7 @@ unit ub4i;
 interface uses sysutils, strutils, ub4, ub4asm, ub4ops, classes;
 
   procedure ShowMem(addr:integer);
+  procedure ShowHexMem(addr:integer);
   procedure ShowOpcodes;
   procedure b4i_file(path:string);
   function b4i(line:string):boolean; { returns 'done' flag }
@@ -76,6 +77,17 @@ begin
       else tok := format('%02x', [v]);
     end;
     write(tok,' ')
+  end;
+  writeln;
+end;
+
+procedure ShowHexMem(addr :integer );
+  var i: integer;
+begin
+  for i := 0 to 15 do begin
+    if i > 0 then write(' ');
+    if mem[addr + i] = 0 then write('..')
+    else write(UpperCase(format('%.2x', [mem[addr + i]])));
   end;
   writeln;
 end;
@@ -280,7 +292,7 @@ begin
                  then writeln('error changing directory to ', toks[i]) end
              else writeln(GetCurrentDir);
       '/f' : for fw in fwds do writeln(hexstr(fw.at, 4), '>', fw.key);
-      '/g' : run_wrapped;
+      '/g', '//' : run_wrapped;
       '/j' : if i < High(toks) then begin inc(i);
                if tryhex(toks[i], a) then ub4.rg^[ub4.RIP]:=a end
              else writeln('usage: /j <address>');
@@ -291,7 +303,7 @@ begin
       '/p' : PrintWords;
       '/q' : done := true;
       '/R' : reset_vm;
-      '/s' : ub4.step;
+      '/', '/s' : ub4.step;
       '/t' : logging_enabled := not logging_enabled;
       '/v' : if i < High(toks) then begin inc(i);
                if tryhex(toks[i], a) then ub4.rg^[ub4.RED]:=a
@@ -324,14 +336,18 @@ begin
                  write(format('%.8x ',[a])); ShowMem(a); end
                else begin
                  tok := copy(tok,2,length(tok)-1);
-                 if tryHex(tok, a) then showmem(a)
+                 if (length(tok) > 0) and (tok[length(tok)]='x') and
+                    tryHex(copy(tok, 1, length(tok)-1), a) then ShowHexMem(a)
+                 else if tryHex(tok, a) then showmem(a)
                  else if ub4asm.find(tok, addr) then begin
                    a:=longint(addr);
                    write(format('%.8x ',[a])); ShowMem(a); end
                  else writeln('invalid address: ', tok);
                end;
         else
-          if tryHex(tok, a) then dput(a)
+          if (length(tok) > 1) and (tok[1] = '/') and
+             tryHex(copy(tok, 2, length(tok)-1), a) then ub4.rg^[ub4.RIP] := a
+          else if tryHex(tok, a) then dput(a)
           else if ub4asm.find(tok, addr) then wrapCall(addr)
           else if ub4asm.b4op(tok, op) then begin
             if op < $20 then wrapCall(ub4.address(rg^[op]))

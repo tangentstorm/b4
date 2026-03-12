@@ -113,8 +113,15 @@ export class B4VM {
   }
 
   reset(): void {
-    this.ip = 0x100; this.vw = 4;
-    this.cs=[]; this.ds=[]; this.ram = new Uint8Array(4096).fill(0)
+    this.ip = 0x100; this.vw = 4; this.st = 0; this.dbg = 0
+    this.cs=[]; this.ds=[]
+  }
+
+  clear(): void {
+    this.reset()
+    this.ram = new Uint8Array(4096).fill(0)
+    this._labels = {}
+    this._fwds = []
   }
 
   snapshot(): unknown {
@@ -148,6 +155,19 @@ export class B4VM {
     let res: string[] = []
     for (let i=0; i<len; i++) res.push(this.dis(this.ram[a++]))
     return res.join(' ')
+  }
+  peekHex(a: number, len: number): string {
+    let res: string[] = []
+    for (let i=0; i<len; i++) {
+      const b = this.ram[a++]
+      res.push(b === 0 ? '..' : b.toString(16).toUpperCase().padStart(2,'0'))
+    }
+    return res.join(' ')
+  }
+  runCurrent(): void {
+    this.st = 1
+    this.dbg = 0
+    while (this.st && !this.dbg) this.step()
   }
 
   // arithmetic/logic ops
@@ -424,11 +444,11 @@ export class B4VM {
       }
       else if (t==="/") {
         if (tok==="/q") state=BYE
-        else if (tok==="/s") this.step()
-        else if (tok==="/C") { this._labels = {}; this._fwds = []; }
+        else if (tok==="/" || tok==="/s") this.step()
+        else if (tok==="/C") this.clear()
         else if (tok==="/R") this.reset()
+        else if (tok==="/g" || tok==="//") this.runCurrent()
         else if (tok==="/e") {} // TODO run to end
-        else if (tok==="//") {} // TODO jump to '\' register
         else if (tok==="/p") { // print all definitions
           for (let [name, addr] of Object.entries(this._labels)) {
             this.out(`${hexp(addr, addr <= 0xFFFF ? 4 : 8)}:${name}`)
@@ -455,7 +475,8 @@ export class B4VM {
         case '?i': this.out(this.fmtIp()); break;
         default:
           let a = tok.slice(1);
-          if (Object.hasOwn(this._labels, a)) this.out(hexp(this._labels[a],8) + ' ' + this.peek(this._labels[a], 16))
+          if (a.endsWith('x') && isHex(a.slice(0,-1))) this.out(this.peekHex(parseInt(a.slice(0,-1),16), 16))
+          else if (Object.hasOwn(this._labels, a)) this.out(hexp(this._labels[a],8) + ' ' + this.peek(this._labels[a], 16))
           else if (isHex(a)) this.out(this.peek(parseInt(a,16), 16))
           else this.out(`?.no: ${tok}`)
       }

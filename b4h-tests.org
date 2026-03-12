@@ -1,0 +1,492 @@
+#+title: b4 hex debugger test suite
+#+tanco-format: 0.2
+
+* About this file
+This is a hex-only variant of [[file:b4-tests.org][b4-tests.org]].
+
+It keeps the VM and debugger coverage, but removes tests whose only
+purpose was parser or assembler sugar:
+
+- direct mnemonic execution in calculator mode
+- quoted character syntax
+- control-character address syntax
+- labels and assembler macros
+- bare =:= continuation without an address
+
+Every runnable program in this file is assembled as raw bytes, usually
+at =:100=, and ends with =FF= (=hl= / halt).
+
+* How to read the tests
+
+Lines starting with =>= are /input/ to the program.
+
+Lines without =>= are the expected outputs.
+
+* Protocol under test
+
+This suite assumes the hex-only debugger protocol:
+
+- =/q= quit
+- =:12A0 ...= assemble raw hex bytes at address =12A0=
+- =?1240x= dump 16 bytes of memory as hex starting at that address
+- =/1240= jump to that address
+- =/= or =/s= step one instruction
+- =//= or =/g= run until =db= or =hl=
+- =?d=, =?c=, =?i= inspect state
+- =/C= and =/R= clear/reset
+
+There is no standalone =hl= assertion because a correct =FF= halts the
+session immediately. Instead, =FF= terminates each runnable program.
+
+* debugger interface
+** TEST io./q : =/q= : quit
+#+begin_src b4a
+> /q
+#+end_src
+
+** TEST io.?d : =?d= : query the data stack
+#+begin_src b4a
+> ?d /q
+ds: []
+#+end_src
+
+** TEST io.?c : =?c= : query the control stack
+#+begin_src b4a
+> ?c /q
+cs: []
+#+end_src
+
+** TEST dbg.?i : =?i= : query the instruction pointer
+#+begin_src b4a
+> ?i /q
+ip: 100
+#+end_src
+
+** TEST dbg.?x : =?100x= : hex dump memory
+#+begin_src b4a
+> ?100x /q
+.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+** TEST asm.hex-addr : =:100= : assemble raw bytes
+#+begin_src b4a
+# 00 AA BB CC
+> :100 00 AA BB CC
+> ?100x /q
+.. AA BB CC .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+** TEST asm.hex-addr.replace : =:addr= replaces bytes at that address
+#+begin_src b4a
+# AA BB
+> :100 AA BB
+# CC DD
+> :104 CC DD
+> ?100x
+AA BB .. .. CC DD .. .. .. .. .. .. .. .. .. ..
+# 11 22
+> :100 11 22
+> ?100x /q
+11 22 .. .. CC DD .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+** TEST dbg.jump-addr : =/100= : jump to an address
+#+begin_src b4a
+# c1 hl
+> :120 C1 FF
+> /120 ?i /q
+ip: 120
+#+end_src
+
+** TEST dbg./ : =/= : step alias
+#+begin_src b4a
+# c0 hl
+> :100 C0 FF
+> /100 / ?d /q
+ds: [0]
+#+end_src
+
+** TEST dbg./s : =/s= : step
+#+begin_src b4a
+# c1 hl
+> :100 C1 FF
+> /100 /s ?d ?i /q
+ds: [1]
+ip: 101
+#+end_src
+
+** TEST dbg./R : =/R= : reset stacks and ip
+#+begin_src b4a
+# c1 hl
+> :100 C1 FF
+# AA BB CC DD
+> :200 AA BB CC DD
+> /100 // ?d
+ds: [1]
+> /R ?d ?i
+ds: []
+ip: 100
+> ?200x /q
+AA BB CC DD .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+** TEST dbg./C : =/C= : clear memory and reset state
+#+begin_src b4a
+# AA BB CC DD
+> :200 AA BB CC DD
+> /C ?d ?c ?i
+ds: []
+cs: []
+ip: 100
+> ?200x /q
+.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+* constant ops
+** TEST op.const ($C0 $C1 $F6 $F7 $F8) : =c0 c1 c2 n1 c4=
+#+begin_src b4a
+# c0 c1 c2 n1 c4 hl
+> :100 C0 C1 F6 F7 F8 FF
+> /100 // ?d /q
+ds: [0 1 2 -1 4]
+#+end_src
+
+* arithmetic, logic, and stack ops
+** TEST op.ad ($80) : =ad=
+#+begin_src b4a
+# lb 01 lb 02 ad hl
+> :100 96 01 96 02 80 FF
+> /100 // ?d /q
+ds: [3]
+#+end_src
+
+** TEST op.ml ($82) : =ml=
+#+begin_src b4a
+# lb 03 lb 03 ml hl
+> :100 96 03 96 03 82 FF
+> /100 // ?d /q
+ds: [9]
+#+end_src
+
+** TEST op.sb ($81) : =sb=
+#+begin_src b4a
+# lb 0A lb 05 sb hl
+> :100 96 0A 96 05 81 FF
+> /100 // ?d /q
+ds: [5]
+#+end_src
+
+** TEST op.dv ($83) : =dv=
+#+begin_src b4a
+# lb 0A lb 05 dv hl
+> :100 96 0A 96 05 83 FF
+> /100 // ?d /q
+ds: [2]
+#+end_src
+
+** TEST op.md ($84) : =md=
+#+begin_src b4a
+# lb 0A lb 03 md hl
+> :100 96 0A 96 03 84 FF
+> /100 // ?d /q
+ds: [1]
+#+end_src
+
+** TEST op.sh ($85) : =sh= left and right
+#+begin_src b4a
+# c4 c1 sh c4 n1 sh hl
+> :100 F8 C1 85 F8 F7 85 FF
+> /100 // ?d /q
+ds: [8 2]
+#+end_src
+
+** TEST op.an ($86) : =an=
+#+begin_src b4a
+# lb 12 lb 35 an hl
+> :100 96 12 96 35 86 FF
+> /100 // ?d /q
+ds: [10]
+#+end_src
+
+** TEST op.or ($87) : =or=
+#+begin_src b4a
+# lb 12 lb 35 or hl
+> :100 96 12 96 35 87 FF
+> /100 // ?d /q
+ds: [37]
+#+end_src
+
+** TEST op.xr ($88) : =xr=
+#+begin_src b4a
+# lb 12 lb 35 xr hl
+> :100 96 12 96 35 88 FF
+> /100 // ?d /q
+ds: [27]
+#+end_src
+
+** TEST op.nt ($89) : =nt=
+#+begin_src b4a
+# lb 12 nt hl
+> :100 96 12 89 FF
+> /100 // ?d /q
+ds: [-13]
+#+end_src
+
+** TEST op.eq ($8A) : =eq=
+#+begin_src b4a
+# lb AA lb BB eq lb CC lb CC eq hl
+> :100 96 AA 96 BB 8A 96 CC 96 CC 8A FF
+> /100 // ?d /q
+ds: [0 -1]
+#+end_src
+
+** TEST op.lt ($8B) : =lt=
+#+begin_src b4a
+# lb AA lb BB lt lb DD lb CC lt lb EE lb EE lt hl
+> :100 96 AA 96 BB 8B 96 DD 96 CC 8B 96 EE 96 EE 8B FF
+> /100 // ?d /q
+ds: [-1 0 0]
+#+end_src
+
+** TEST op.du ($8C) : =du=
+#+begin_src b4a
+# lb 0A du hl
+> :100 96 0A 8C FF
+> /100 // ?d /q
+ds: [A A]
+#+end_src
+
+** TEST op.zp ($8F) : =zp=
+#+begin_src b4a
+# lb 0A zp hl
+> :100 96 0A 8F FF
+> /100 // ?d /q
+ds: []
+#+end_src
+
+** TEST op.sw ($8D) : =sw=
+#+begin_src b4a
+# lb 0A lb 0B sw hl
+> :100 96 0A 96 0B 8D FF
+> /100 // ?d /q
+ds: [B A]
+#+end_src
+
+** TEST op.ov ($8E) : =ov=
+#+begin_src b4a
+# lb 0A lb 0B ov hl
+> :100 96 0A 96 0B 8E FF
+> /100 // ?d /q
+ds: [A B A]
+#+end_src
+
+** TEST op.dc-cd ($90 $91) : =dc= and =cd=
+#+begin_src b4a
+# lb 0A dc cd hl
+> :100 96 0A 90 91 FF
+> /100 /s /s ?d ?c
+ds: []
+cs: [A]
+> /s ?d ?c /q
+ds: [A]
+cs: []
+#+end_src
+
+* memory access
+** TEST op.wi ($95) : =wi=
+#+begin_src b4a
+# li AABBCCDD li 00000200 wi hl
+> :100 97 DD CC BB AA 97 00 02 00 00 95 FF
+> /100 // ?200x /q
+DD CC BB AA .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+** TEST op.wb ($94) : =wb=
+#+begin_src b4a
+# li AABBCCDD li 00000200 wb hl
+> :100 97 DD CC BB AA 97 00 02 00 00 94 FF
+> /100 // ?200x /q
+DD .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+** TEST op.ri ($93) : =ri=
+#+begin_src b4a
+# AA BB CC 00
+> :200 AA BB CC 00
+# li 00000200 ri hl
+> :100 97 00 02 00 00 93 FF
+> /100 // ?d /q
+ds: [CCBBAA]
+#+end_src
+
+** TEST op.rb ($92) : =rb=
+#+begin_src b4a
+# AA BB 00 77
+> :200 AA BB 00 77
+# li 00000200 rb hl
+> :100 97 00 02 00 00 92 FF
+> /100 // ?d /q
+ds: [AA]
+#+end_src
+
+** TEST op.rs ($98) : =rs=
+#+begin_src b4a
+# 7F FF
+> :200 7F FF
+# li 00000200 rs li 00000201 rs hl
+> :100 97 00 02 00 00 98 97 01 02 00 00 98 FF
+> /100 // ?d /q
+ds: [7F -1]
+#+end_src
+
+** TEST op.lb ($96) : =lb=
+#+begin_src b4a
+# lb AB hl
+> :100 96 AB FF
+> ?100x
+96 AB FF .. .. .. .. .. .. .. .. .. .. .. .. ..
+> /100 /s ?d ?i /q
+ds: [AB]
+ip: 102
+#+end_src
+
+** TEST op.li ($97) : =li=
+#+begin_src b4a
+# li 11223344 li FFFFFFFF hl
+> :100 97 44 33 22 11 97 FF FF FF FF FF
+> /100 // ?d /q
+ds: [11223344 -1]
+#+end_src
+
+** TEST op.ls ($99) : =ls=
+#+begin_src b4a
+# ls 7F ls FF hl
+> :100 99 7F 99 FF FF
+> /100 // ?d /q
+ds: [7F -1]
+#+end_src
+
+* register ops
+** TEST op.reg ($38 $58 $78) : =@X= =!X= =+X=
+#+begin_src b4a
+# lb 12 !X hl
+> :100 96 12 58 FF
+> /100 //
+> ?60x
+12 00 00 00 .. .. .. .. .. .. .. .. .. .. .. ..
+# @X c1 +X @X hl
+> :100 38 C1 78 38 FF
+> /100 // ?d
+ds: [12 12 13]
+> ?60x /q
+13 00 00 00 .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+* control flow ops
+** TEST op.hp ($9B) : =hp= forward
+#+begin_src b4a
+# hp 05 hl
+> :100 9B 05 FF
+> /100 /s ?i /q
+ip: 105
+#+end_src
+
+** TEST op.hp.back ($9B) : =hp= backward
+#+begin_src b4a
+# 00 00 00 hp FD hl
+> :100 00 00 00 9B FD FF
+> /100 /s /s /s ?i
+ip: 103
+> /s ?i /q
+ip: 100
+#+end_src
+
+** TEST op.h0 ($9C) : =h0= hop if zero
+#+begin_src b4a
+# c0 h0 23 hl
+> :100 C0 9C 23 FF
+> /100 /s /s ?i
+ip: 123
+# c1 h0 23 hl
+> :100 C1 9C 23 FF
+> /100 /s /s ?i /q
+ip: 102
+#+end_src
+
+** TEST op.jm ($9A) : =jm=
+#+begin_src b4a
+# jm 12345678 hl
+> :100 9A 78 56 34 12 FF
+> /100 /s ?i /q
+ip: 12345678
+#+end_src
+
+** TEST op.cl ($9D) : =cl=
+#+begin_src b4a
+# cl 12345678 hl
+> :100 9D 78 56 34 12 FF
+> /100 /s ?i ?c /q
+ip: 12345678
+cs: [105]
+#+end_src
+
+** TEST op.rt ($9E) : =rt=
+#+begin_src b4a
+# li 00001234 dc rt hl
+> :100 97 34 12 00 00 90 9E FF
+> /100 ?i ?c
+ip: 100
+cs: []
+> /s /s ?i ?c
+ip: 106
+cs: [1234]
+> /s ?i ?c /q
+ip: 1234
+cs: []
+#+end_src
+
+** TEST op.nx ($9F) : =nx=
+#+begin_src b4a
+# c2 dc nx 00 hl
+> :100 F6 90 9F 00 FF
+> /100 /s /s ?c ?i
+cs: [2]
+ip: 102
+> /s ?c ?i
+cs: [1]
+ip: 102
+> /s ?c ?i /q
+cs: []
+ip: 104
+#+end_src
+
+* i/o and debugger control
+** TEST op.io ($FD) : ='e io= emit
+#+begin_src b4a
+# lb 68 lb 65 io lb 69 lb 65 io hl
+> :100 96 68 96 65 FD 96 69 96 65 FD FF
+> /100 // /q
+hi
+#+end_src
+
+** TEST op.db ($FE) : =db= pauses execution
+#+begin_src b4a
+# c0 c1 db c2 c4 hl
+> :100 C0 C1 FE F6 F8 FF
+> /100 // ?d ?i
+ds: [0 1]
+ip: 103
+> /s /s ?d /q
+ds: [0 1 2 4]
+#+end_src
+
+** TEST dbg./g ($FE) : =/g= resumes until =db=
+#+begin_src b4a
+# c0 c1 db c2 c4 hl
+> :100 C0 C1 FE F6 F8 FF
+> /100 /g ?d ?i
+ds: [0 1]
+ip: 103
+> /g ?d /q
+ds: [0 1 2 4]
+#+end_src

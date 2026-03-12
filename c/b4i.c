@@ -74,6 +74,15 @@ static void show_mem(int addr) {
   printf("\n");
 }
 
+static void show_hex_mem(int addr) {
+  for (int i = 0; i < 16; i++) {
+    if (i > 0) printf(" ");
+    if (mem[addr+i] == 0) printf("..");
+    else printf("%02X", mem[addr+i]);
+  }
+  printf("\n");
+}
+
 /* find label by name; returns address or -1 */
 static int find_label(const char *name) {
   for (int i = nlabels-1; i >= 0; i--)
@@ -385,12 +394,12 @@ static int b4i(const char *line) {
     /* slash commands */
     if (tok[0] == '/') {
       if (strcmp(tok, "/q") == 0) { done = 1; break; }
-      else if (strcmp(tok, "/s") == 0) b4step();
+      else if (strcmp(tok, "/") == 0 || strcmp(tok, "/s") == 0) b4step();
       else if (strcmp(tok, "/C") == 0) { b4boot(); clear_dict(); }
       else if (strcmp(tok, "/R") == 0) {
         SCH(0); SDH(0); SIP(HERE);
       }
-      else if (strcmp(tok, "/g") == 0) run_wrapped();
+      else if (strcmp(tok, "/g") == 0 || strcmp(tok, "//") == 0) run_wrapped();
       else if (strcmp(tok, "/p") == 0) {
         for (int j = 0; j < nlabels; j++)
           printf("%04X:%s\n", labels[j].addr, labels[j].name);
@@ -406,6 +415,11 @@ static int b4i(const char *line) {
       else if (strcmp(tok, "/i") == 0) {
         if (i+1 < ntoks) { i++; load_b4i_file(tokbuf[i]); }
         else printf("usage: /i <filename>\n");
+      }
+      else {
+        int addr;
+        if (try_hex(tok + 1, &addr)) SIP(addr);
+        else printf("/.no: %s\n", tok);
       }
       continue;
     }
@@ -431,6 +445,14 @@ static int b4i(const char *line) {
         /* ?addr or ?label */
         char *s = tok+1;
         int addr;
+        size_t slen = strlen(s);
+        if (slen > 0 && s[slen-1] == 'x') {
+          char tmp[256];
+          if (slen >= sizeof(tmp)) slen = sizeof(tmp) - 1;
+          memcpy(tmp, s, slen - 1);
+          tmp[slen - 1] = 0;
+          if (try_hex(tmp, &addr)) { show_hex_mem(addr); continue; }
+        }
         if (try_hex(s, &addr)) show_mem(addr);
         else {
           int a = find_label(s);

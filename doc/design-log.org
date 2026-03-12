@@ -76,6 +76,7 @@ So instead, I settled on =/= for commands.
 ** probably: return the 'new' value for =+R=
 - both old and new are easy with =@R= before or after
 - but new value is /probably/ the one you actually want
+- no, this is wrong. you can always fetch the new value with =@R= later
 
 ** probably: ops to push/restore registers
 - most likely would push the first n registers to cs, along with count

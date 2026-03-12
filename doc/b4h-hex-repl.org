@@ -1,0 +1,118 @@
+#+title: The B4 Hex REPL Protocol
+
+* Overview
+
+The hex REPL is the Level 0 stdin/stdout protocol for a B4 VM.
+
+It is intentionally small:
+
+- assemble raw bytes into RAM
+- jump to an address
+- step one instruction
+- run until =db= or =hl=
+- inspect stacks, ip, and memory
+
+It does /not/ require a mnemonic parser in immediate mode.
+Behavioral tests should therefore be written in terms of byte values.
+
+* Commands
+
+** Session control
+
+- =/q= : quit the session
+- =/R= : reset stacks and instruction pointer, preserving RAM
+- =/C= : clear RAM, clear definitions and forward references, then reset
+
+** Execution
+
+- =/1234= : set =ip= to hex address =1234=
+- =/= or =/s= : step one instruction at =ip=
+- =//= or =/g= : run until =db= sets the debug flag or =hl= halts
+
+** Inspection
+
+- =?d= : print the data stack
+- =?c= : print the control stack
+- =?i= : print the instruction pointer
+- =?R= : print register =R= when the implementation supports register queries
+- =?1234= : show 16 cells of memory using the implementation's normal view
+- =?1234x= : show 16 bytes of memory as raw hex
+
+The =x= suffix forces hex byte output. Zero bytes are printed as =..=.
+
+** Assembly
+
+- =:1234 AA BB CC= : assemble raw bytes at hex address =1234=
+
+The rest of the line is interpreted as hexadecimal bytes or words already
+supported by that implementation's assembler, but Level 0 compatibility only
+requires raw hex bytes.
+
+* Hex dump format
+
+A forced hex dump prints 16 bytes separated by spaces.
+
+Example:
+
+#+begin_example
+AA BB .. .. CC DD .. .. .. .. .. .. .. .. .. ..
+#+end_example
+
+Rules:
+
+- bytes are uppercase hexadecimal
+- zero bytes may print as =..=
+- no address prefix is required for =?1234x=
+
+* Running programs
+
+The normal pattern is:
+
+#+begin_example
+:100 C0 C1 FE F6 F8 FF
+/100
+//
+?d
+#+end_example
+
+This assembles a program at =0100=, jumps to it, runs until =db=, and then
+inspects the stack.
+
+Programs in tests usually end with =FF= (=hl=).
+
+* Opcode reminders
+
+The byte values used most often in hex REPL tests are:
+
+| Byte | Op | Meaning |
+|------+------+---------------------------|
+| =96= | =lb= | load byte from instruction stream |
+| =97= | =li= | load int32 from instruction stream |
+| =9A= | =jm= | jump |
+| =9B= | =hp= | hop |
+| =9C= | =h0= | hop if zero |
+| =9D= | =cl= | call |
+| =9E= | =rt= | return |
+| =9F= | =nx= | next |
+| =C0= | =c0= | push 0 |
+| =C1= | =c1= | push 1 |
+| =F6= | =c2= | push 2 |
+| =F7= | =n1= | push -1 |
+| =F8= | =c4= | push 4 |
+| =FD= | =io= | device I/O |
+| =FE= | =db= | break into debugger |
+| =FF= | =hl= | halt |
+
+For the full opcode table, see [[file:opcodes.org][opcodes.org]].
+
+* Relationship to older =b4i=
+
+Older interactive interfaces also supported:
+
+- direct mnemonic execution
+- quoted character literals in immediate mode
+- labels and macros in the REPL
+- disassembly-oriented =?addr= output only
+
+Those features may still exist in some implementations, but the hex REPL
+defines the minimum common protocol.
