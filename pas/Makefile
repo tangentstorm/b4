@@ -87,7 +87,7 @@ ub4ops.pas: $(MKOPTBL)
 $(MKOPTBL): mkoptbl.pas ub4.pas
 	$(FPC) -o$(MKOPTBL) -B mkoptbl.pas
 
-$(B4A): $(B4) b4a.pas
+$(B4A): $(B4) b4a.pas ub4asm.pas
 	$(FPC) -o$(B4A) -B b4a.pas
 
 $(B4D): $(B4) b4d.pas
