@@ -10,7 +10,7 @@ name:"mb4.deck"
 description:"the b4 virtual machine"
 {script}
 
-echo:print
+out:print
 
 on ord c do first "%a" parse c end
 mod.reg: on reg c do 4*ord[c]-64 end
@@ -68,6 +68,8 @@ end
 # just by replacing vm.mem.
 vm:new[]
 labels:()dict()
+label_names:()
+forwards:()dict()
 
 mod.ri: on _ri a do vm.mem.here:a vm.mem.struct["i32l"] end
 mod.wi: on _wi a v do vm.mem.here:a vm.mem.struct["i32l" v] end
@@ -76,6 +78,8 @@ mod.clear: on clear do
   vm:new[]
   mod.wi[HERE 256]
   labels:()dict()
+  label_names:()
+  forwards:()dict()
   vm.ob:()
 end
 mod.reset: on reset do
@@ -148,6 +152,9 @@ op.wb: on wb do vm.mem[dpop[]]: dpop[] end
 op.wi: on wi do a:dpop[] v:dpop[] _wi[a v] end
 op.c0: on c0 do dput[0] end
 op.c1: on c1 do dput[1] end
+op.c2: on c2 do dput[2] end
+op.n1: on n1 do dput[-1] end
+op.c4: on c4 do dput[4] end
 op.rr: on rr r do dput[_ri[r]] end
 op.ir: on ir r do v:_ri[r] t:dpop[] _wi[r v+t] dput[v] end
 op.wr: on wr r do v:dpop[] _wi[r v] end
@@ -254,7 +261,7 @@ B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 BA BB BC BD tm cv
 c0 c1 C2 C3 C4 C5 C6 C7 C8 C9 CA CB CC CD CE CF
 D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 DA DB DC DD DE DF
 E0 E1 E2 E3 E4 E5 E6 E7 E8 E9 EA EB EC ED EE EF
-F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 FA FB FC io db hl"
+F0 F1 F2 F3 F4 F5 c2 n1 c4 F9 FA FB FC io db hl"
 TBL: " " split " " fuse "\n" split TBL
 TBL:select op:index code:value from TBL
 
@@ -295,20 +302,58 @@ end
 
 mod.showMem: on showMem a do " " fuse dis @ vm.mem @ a + range 16 end
 mod.showMemA: on showMemA a do " " fuse disa @ vm.mem @ a + range 16 end
+mod.showHexMem: on showHexMem a do
+  " " fuse on b do if b=0 ".." else "%02H" format b end end @ vm.mem @ a + range 16
+end
 mod.showIp: on showIp do "ip: %02H" format vm.rg[RIP] end
 on assemble a s do n:count toks:" "split s  vm.mem[a,n]:raze asm@toks n end
 on asm_via hp s do a:_ri[hp]  n:assemble[a s] _wi[hp a+n] end
+on trim_last s do -1 drop s end
+on asm_text hp s pref do
+  a:_ri[hp]
+  xs:each ch in s ord[ch] end
+  if pref xs:(count s),xs end
+  n:count xs
+  vm.mem[a,n]:xs
+  _wi[hp a+n]
+end
+on add_fwd name a do
+  if name in forwards forwards[name]:forwards[name],a
+  else forwards[name]:list a end
+end
+on resolve_fwds name a do
+  if name in forwards
+    each ref in forwards[name]
+      _wi[ref a]
+    end
+    forwards[name]:()
+  end
+end
 
 mod.exec: on im_run a do # immediately run word at address a (for b4i)
-  cput[vm.rg[RIP]] cput[0] _goto[a+1] run[] ip:cpop[] vm.rg[RIP]:ip
+  cput[vm.rg[RIP]] cput[0] _goto[a+1] run[]
+  if !vm.rg[RDB] ip:cpop[] vm.rg[RIP]:ip end
 end
 
 mod.b4i: on b4i line do
   toks: extract value where value from " " split line
-  state:IMM:0 ASM:1 CMT:2    hp:HERE # may be THERE later
+  IMM:0 ASM:1 CMT:2 STR:3
+  state:IMM
+  hp:HERE # may be THERE later
   quit:0
+  pref:0
+  sbuf:""
   each tok in toks  t:tok[0]
-    if (state=CMT) | (t="#") state:CMT
+    if state=STR
+      if (count sbuf) sbuf:" " fuse sbuf,tok
+      else sbuf:tok end
+      if "\"" in tok
+        asm_text[hp trim_last[sbuf] pref]
+        sbuf:""
+        pref:0
+        state:ASM
+      end
+    elseif (state=CMT) | (t="#") state:CMT
     elseif regop[tok] r:reg[c:tok[1]]
       if t="?" echo["%08H" format _ri[r]]
       elseif t=":" state:ASM _wi[r _ri[hp]]
@@ -325,22 +370,36 @@ mod.b4i: on b4i line do
       if     tok="/q" quit:1
       elseif tok="/R" reset[]
       elseif tok="/C" clear[]
-      elseif tok="/s" step[]
+      elseif (tok="/")|(tok="/s") step[]
+      elseif (tok="/g")|(tok="//") run[]
       elseif tok="/e" runToEnd[]
-      elseif tok="//" _goto[_gr["\\"]+1]
+      elseif tok="/f"
+        each refs name in forwards
+          each ref in refs
+            echo["%04H>%s" format ref,name]
+          end
+        end
+      elseif tok="/p"
+        each name in label_names
+          echo["%04H:%s" format labels[name],name]
+        end
+      elseif isHex[a:1 drop tok] _goto[a]
       else echo["/.no: ",tok] end
     elseif t="?"
       if tok="?i" echo[showIp[]]
       elseif tok="?d" echo[showStack["ds"]]
       elseif tok="?c" echo[showStack["cs"]]
-      else hex: "?%[q].1oa%[a]H%[m]z" parse tok
-        if hex.m echo[(if hex.q showMemA else showMem end)[hex.a]]
-        elseif (nm:1 drop tok) in labels
-          echo[":%04h %s" format labels[nm],showMem[labels[nm]]]
+      elseif (nm:1 drop tok) in labels
+        echo["%08H %s" format labels[nm],showMem[labels[nm]]]
+      else hex: "?%[q].1oa%[a]H%[x].1ox%[m]z" parse tok
+        if hex.m echo[(if hex.q showMemA elseif hex.x showHexMem else showMem end)[hex.a]]
         else echo["?.no: ",tok] end
       end
     elseif t="$"
-      if (nm:1 drop tok) in labels
+      nm:1 drop tok
+      if state=ASM & isHex[nm]
+        asm_int[hp unHex[nm]]
+      elseif nm in labels
         v:labels[nm] if state=ASM
           a:_ri[hp] _wi[a v] _wi[hp a+4] # !!same as 'ei[v]' in `macro`
         else dput[v] end
@@ -349,13 +408,38 @@ mod.b4i: on b4i line do
       state:ASM hp:HERE c:tok[1]
       if tok="::" # ok
       elseif 2=count tok echo[":.no: ", tok] # because it's 2 chars but not regop
-      elseif tok=":" echo["no: :"]
-      elseif isHex[a:1 drop tok]  _wi[hp:THERE unHex[a]]
-      else labels[1 drop tok]: _ri[hp] end
+      elseif tok=":" # continue assembling from current here
+      elseif isHex[a:1 drop tok]  _wi[hp:HERE unHex[a]]
+      else
+        name:1 drop tok
+        if !(name in labels) label_names:label_names,name end
+        labels[name]: _ri[hp]
+        resolve_fwds[name labels[name]]
+      end
     elseif t="'"
       v: if tok="'" 32 else ord[tok[1]] end
       if state=ASM asm_via[hp tok]
       else dput[v] end
+    elseif (state=ASM) & (ord[t]=34)
+      pref:0
+      sbuf:1 drop tok
+      if "\"" in sbuf
+        asm_text[hp trim_last[sbuf] pref]
+        sbuf:""
+      else state:STR end
+    elseif (state=ASM) & ((count tok)>1) & (".\"" = 2 take tok)
+      pref:1
+      sbuf:2 drop tok
+      if "\"" in sbuf
+        asm_text[hp trim_last[sbuf] pref]
+        sbuf:""
+        pref:0
+      else state:STR end
+    elseif (state=ASM) & (t=">")
+      a:_ri[hp]
+      add_fwd[1 drop tok a]
+      _wi[a 0]
+      _wi[hp a+4]
     elseif t="." macro[hp tok[1]]
     elseif tok in op
       # '..' executes as no-op. if you want to push 0, type '00'
@@ -378,8 +462,11 @@ mod.b4i: on b4i line do
       end
     else echo["no: %s" format tok] end
   end
+  if (state=STR)
+    asm_text[hp sbuf pref]
+  end
   if vm.ob echo[vm.ob] vm.ob:() end
-  if quit if deck reset[] else mod.exit[0] end end
+  if quit mod.exit[0] end
 end
 
 on asm_int hp i do a:_ri[hp] _wi[a i] _wi[hp a+4] end
@@ -427,10 +514,11 @@ end
 mod.dput: dput
 mod.dpop: dpop
 mod.get_labels: on get_labels do labels end
-mod.echo: on echo line do mod.echo[line] end
+on echo line do out[line] end
+mod.echo: echo
 mod.set_cv: on set_cv cv do mod.cv: cv end
 mod.set_tm: on set_tm tm do mod.tm: tm end
-mod.set_echo: on set_echo fn do mod.echo: fn end
+mod.set_echo: on set_echo fn do out: fn end
 mod.TBL: TBL
 mod.get_vm:on get_vm do vm end
 mod.get_ip:on get_ip do vm.rg[RIP] end  mod.set_ip:on set_ip a do vm.rg[RIP]:a end

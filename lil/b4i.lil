@@ -11,7 +11,7 @@ end
 p: if exists["." "mb4.deck"] "mb4.deck"
    elseif exists["lil" "mb4.deck"] "lil/mb4.deck"
    else panic["couldn't find mb4.deck"] end
-dek:read[p]
+dek:readdeck[p]
 mb4:dek.modules.mb4.value
 mb4.set_exit[exit]
 mb4.set_echo[on echo s do print[s] end]
