@@ -55,7 +55,6 @@ which of these should it be?
 : ds: [CC00BBAA]
 : ds: [-33FF4456]
 
-
 ** TEST io.?c : =?c= : query the call stack
 #+begin_src b4a
 > ?c /q
@@ -63,7 +62,6 @@ cs: [] # should be an empty array
 #+end_src
 
 ** TEST io.hex : hex numbers are pushed to the data stack
-# Original headline: push a hex number to the stack
 #+begin_src b4a
 > FF CC ?d /q
 ds: [FF CC]
@@ -110,39 +108,37 @@ ds: [6C 70 74 78 7C]
 These ops push small constants onto =ds=.
 
 * ALU / stack operations
-** TEST op.ad : ad: adds the top two items on the stack
-# Original headline: =ad= op
+** TEST op.ad : =ad= op (add)
 #+begin_src b4a
 > 01 02 ad ?d /q
 ds: [3]
 #+end_src
 
 The result is pushed back to the stack.
-** TEST op.ml : =ml= op
+** TEST op.ml : =ml= op (multiply)
 #+begin_src b4a
 > 03 03 ml ?d /q
 ds: [9]
 #+end_src
-** TEST io.math : =sb= op
+** TEST op.sb : =sb= op (subtract)
 #+begin_src b4a
 > 0A 05 sb ?d /q
 ds: [5]
 #+end_src
 
-** TEST math.dv : =dv= op
+** TEST op.dv : =dv= op (divide)
 #+begin_src b4a
 > 0A 05 dv ?d /q
 ds: [2]
 #+end_src
-** TEST math.md : =md= op
+** TEST op.md : =md= op (modulo)
 #+begin_src b4a
 > 0A 05 md ?d
 ds: [0]
 > zp 0A 03 md ?d /q
 ds: [1]
 #+end_src
-** TEST math.sh : sh : shift
-# Original headline: =sh= op
+** TEST op.sh : =sh= op (shift)
 #+begin_src b4a
   > : c4 c1 sh rt
   >   /s /s /s ?d
@@ -160,64 +156,64 @@ The 'sh' op shifts the bits of NOS by the amount in TOS.
   : When the TOS is negative, we shift the NOS to the right.
 #+end_src
 
-** TEST math.an : =an= op
+** TEST op.an : =an= op (bitwise AND)
 #+begin_src b4a
 > 12 35 an ?d /q
 ds: [10]
 #+end_src
 
-** TEST math.or : =or= op
+** TEST op.or : =or= op (bitwise OR)
 #+begin_src b4a
 > 12 35 or ?d /q
 ds: [37]
 #+end_src
 
-** TEST math.xr : =xr= op
+** TEST op.xr : =xr= op (bitwise XOR)
 #+begin_src b4a
 > 12 35 xr ?d /q
 ds: [27]
 #+end_src
 
-** TEST math.nt : =nt= op
+** TEST op.nt : =nt= op (bitwise NOT)
 #+begin_src b4a
 > 12 nt ?d /q
 ds: [-13]
 #+end_src
 
-** TEST math.eq : =eq= op
+** TEST op.eq : =eq= op (equality test)
 #+begin_src b4a
 > AA BB eq CC CC eq ?d /q
 ds: [0 -1]
 #+end_src
 
-** TEST op.lt : =lt= op
+** TEST op.lt : =lt= op (less-than)
 #+begin_src b4a
 > AA BB lt DD CC lt EE EE lt ?d /q
 ds: [-1 0 0]
 #+end_src
 
-** TEST op.du : =du= op
+** TEST op.du : =du= op (duplicate)
 #+begin_src b4a
 > 0A du ?d /q
 ds: [A A]
 #+end_src b4a
-** TEST op.zp : =zp= op
+** TEST op.zp : =zp= op (zap)
 #+begin_src b4a
 > 0A ?d zp ?d /q
 ds: [A]
 ds: []
 #+end_src
-** TEST io.sw : =sw= op
+** TEST io.sw : =sw= op (swap)
 #+begin_src b4a
 > 0A 0B sw ?d /q
 ds: [B A]
 #+end_src
-** TEST op.ov : =ov= op
+** TEST op.ov : =ov= op (over)
 #+begin_src b4a
 > 0A 0B ov ?d /q
 ds: [A B A]
 #+end_src
-** TEST op.cd-dc : =cd= and =dc= ops
+** TEST op.dc-cd : =dc= and =cd= ops (data to control, control to data)
 #+begin_src b4a
 > 0A dc ?d ?c
 ds: []
@@ -242,11 +238,9 @@ cs: []
 .. AA BB CC .. .. .. .. .. .. .. .. .. .. .. ..
 #+end_src
 
-
 * memory operations
-
 ** TODO test that /C clears memory and stacks
-** TEST io.wi : =wi= : write int32 to address
+** TEST op.wi : =wi= : write int32 to address
 
 #+begin_src b4a
 > /C
@@ -255,7 +249,7 @@ cs: []
 DD CC BB AA .. .. .. .. .. .. .. .. .. .. .. .. # 16 0 bytes
 #+end_src
 
-** TEST io.wb : =wb= : write byte to address
+** TEST op.wb : =wb= : write byte to address
 
 #+begin_src b4a
 > /C
@@ -293,9 +287,7 @@ ds: [7700BBAA]
 
 
 
-
 * register ops
-
 ** =@R= and =!R= : read and write registers
 *** TEST op.rr-wr.runtime : assembler:
 #+begin_src b4a
