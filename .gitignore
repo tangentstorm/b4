@@ -33,4 +33,5 @@ js/package-lock.json
 *.tsbuildinfo
 
 # C build artifacts
+c/b4h
 c/b4i
