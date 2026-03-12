@@ -40,7 +40,7 @@ type
   TB4Process = record
     proc: TProcess;
     active: boolean;
-    outbuf: TStringList;  { buffer for reading lines }
+    outbuf: string;  { buffered child stdout not yet returned by io 'r' }
   end;
 
 var
@@ -118,8 +118,10 @@ procedure boot;
     rg[RED] := minheap;
     rg[RBP] := maxcell;
     { initialize process array }
-    for i := 0 to 15 do
+    for i := 0 to 15 do begin
       procs[i].active := false;
+      procs[i].outbuf := '';
+    end;
   end;
 
 { helpers }
@@ -434,7 +436,7 @@ procedure opio;
                 {$ENDIF}
                 procs[i].proc.Parameters.Add(fname);
                 procs[i].proc.Options := [poUsePipes];
-                procs[i].outbuf := TStringList.Create;
+                procs[i].outbuf := '';
                 procs[i].proc.Execute;
                 procs[i].active := true;
                 dput(i);  { return handle }
@@ -457,23 +459,28 @@ procedure opio;
               i := dpop;  { handle }
               addr := dpop;  { destination pointer }
               if (i >= 0) and (i < 16) and procs[i].active then begin
-                { check if data available }
-                len := procs[i].proc.Output.NumBytesAvailable;
-                if len > 0 then begin
-                  { read available data into buffer }
+                while Pos(#10, procs[i].outbuf) = 0 do begin
+                  len := procs[i].proc.Output.NumBytesAvailable;
+                  if len <= 0 then break;
                   SetLength(fname, len);
                   len := procs[i].proc.Output.Read(fname[1], len);
-                  { copy to memory, stopping at newline or end }
-                  fsize := 0;
-                  for b := 1 to len do begin
-                    if fname[b] = #10 then break;
-                    mem[addr + fsize] := ord(fname[b]);
-                    inc(fsize);
-                  end;
-                  mem[addr + fsize] := 0;  { null terminate }
-                  dput(fsize);  { return length }
+                  if len <= 0 then break;
+                  SetLength(fname, len);
+                  procs[i].outbuf := procs[i].outbuf + fname;
+                end;
+                fsize := Pos(#10, procs[i].outbuf);
+                if fsize > 0 then begin
+                  fname := Copy(procs[i].outbuf, 1, fsize - 1);
+                  if (Length(fname) > 0) and (fname[Length(fname)] = #13) then
+                    Delete(fname, Length(fname), 1);
+                  Delete(procs[i].outbuf, 1, fsize);
+                  len := Length(fname);
+                  for b := 1 to len do
+                    mem[addr + b - 1] := ord(fname[b]);
+                  mem[addr + len] := 0;  { null terminate }
+                  dput(len);
                 end else begin
-                  dput(0);  { no data available }
+                  dput(0);  { no complete line available }
                 end;
               end else begin
                 dput(-1);  { invalid handle }
@@ -484,7 +491,7 @@ procedure opio;
               if (i >= 0) and (i < 16) and procs[i].active then begin
                 procs[i].proc.Terminate(0);
                 procs[i].proc.Free;
-                procs[i].outbuf.Free;
+                procs[i].outbuf := '';
                 procs[i].active := false;
               end;
             end;

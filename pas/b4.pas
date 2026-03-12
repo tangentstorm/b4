@@ -13,6 +13,7 @@ var
 
 begin
   loadfile := '';
+  boot;
 
   { Parse command line }
   i := 1;
@@ -49,13 +50,12 @@ begin
     else
       rg[RIP] := minheap;  { Default entry point at 0x100 }
   end else begin
-    { No file loaded - initialize empty VM }
-    boot;
     rg[RIP] := minheap;
   end;
+  rg[RST] := 1;
 
   { Main execution loop }
-  while rg[RIP] <= maxheap do begin
+  while (rg[RST] = 1) and (rg[RIP] <= maxheap) do begin
     try
       step;
     except

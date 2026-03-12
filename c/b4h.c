@@ -41,6 +41,7 @@ static void print_stack(const char *pre, val *s, int count) {
     printf("%s", buf);
   }
   printf("]\n");
+  fflush(stdout);
 }
 
 static void show_mem(int addr) {
@@ -49,6 +50,7 @@ static void show_mem(int addr) {
     printf("%s", dis(mem[addr+i]));
   }
   printf("\n");
+  fflush(stdout);
 }
 
 static void show_hex_mem(int addr) {
@@ -57,6 +59,7 @@ static void show_hex_mem(int addr) {
     printf("%02X", mem[addr+i]);
   }
   printf("\n");
+  fflush(stdout);
 }
 
 /* --- tokenizer --- */
@@ -181,10 +184,12 @@ static int b4h(const char *line) {
       else if (strcmp(tok, "?i") == 0) {
         char buf[20]; b4fmt(buf, IP);
         printf("ip: %s\n", buf);
+        fflush(stdout);
       }
       else if (strlen(tok)==2 && is_reg_char(tok[1])) {
         /* ?R: show register value */
         printf("%08X\n", (unsigned)rg(rega(tok[1])));
+        fflush(stdout);
       }
       else if (strlen(tok)==3 && tok[1]=='@' && is_reg_char(tok[2])) {
         /* ?@R: show memory at register address */
@@ -234,12 +239,14 @@ static int b4h(const char *line) {
       }
     }
     printf("what does \"%s\" mean?\n", tok);
+    fflush(stdout);
   }
 
   /* flush output buffer */
   if (ob_len > 0) {
     ob[ob_len] = 0;
     printf("%s\n", ob);
+    fflush(stdout);
     ob_len = 0;
   }
   return done;
