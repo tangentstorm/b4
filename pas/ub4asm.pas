@@ -275,6 +275,9 @@ procedure b4as_core;
         chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
               else emit(ord(tok.str[1]));
         def : if isreg(tok.str) then rg[regn(tok.str[1])]:=here
+              else if (length(tok.str) > 1) and (tok.str[1] = '+') and
+                      tryHex(copy(tok.str, 2, length(tok.str) - 1), a) then
+                inc(here, a)
               else if tryHex(tok.str,a) then here:=a
               else if ents=high(dict) then begin writeln('too many :defs'); halt end
               else begin

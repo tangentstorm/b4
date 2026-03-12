@@ -181,6 +181,14 @@ clears the stacks and resets memory
 
 pushes the address of the label onto the stack
 
+** TEST b4i.alloc.hex : :+HEX allocates that many bytes
+#+begin_src b4a
+  > :aaa :+123
+  > :bbb
+  > `bbb `aaa sb ?d /q
+  ds: [123]
+#+end_src
+
 ** TEST b4i.hexname : edge case: names that are also lowercase hex numbers
 #+begin_src b4a
   > :def 'a 'b 'c 'd
