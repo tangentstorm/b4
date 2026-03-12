@@ -39,33 +39,33 @@ There is no standalone =hl= assertion because a correct =FF= halts the
 session immediately. Instead, =FF= terminates each runnable program.
 
 * debugger interface
-** TEST io./q : =/q= : quit
+** TEST io.quit : =/q= : quit
 #+begin_src b4a
 > /q
 #+end_src
 
-** TEST io.?d : =?d= : query the data stack
+** TEST io.data-stack : =?d= : query the data stack
 #+begin_src b4a
 > ?d /q
 ds: []
 #+end_src
 
-** TEST io.?c : =?c= : query the control stack
+** TEST io.control-stack : =?c= : query the control stack
 #+begin_src b4a
 > ?c /q
 cs: []
 #+end_src
 
-** TEST dbg.?i : =?i= : query the instruction pointer
+** TEST dbg.ip : =?i= : query the instruction pointer
 #+begin_src b4a
 > ?i /q
 ip: 100
 #+end_src
 
-** TEST dbg.?x : =?100x= : hex dump memory
+** TEST dbg.hex-dump : =?100x= : hex dump memory
 #+begin_src b4a
 > ?100x /q
-.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 #+end_src
 
 ** TEST asm.hex-addr : =:100= : assemble raw bytes
@@ -73,7 +73,7 @@ ip: 100
 # 00 AA BB CC
 > :100 00 AA BB CC
 > ?100x /q
-.. AA BB CC .. .. .. .. .. .. .. .. .. .. .. ..
+00 AA BB CC 00 00 00 00 00 00 00 00 00 00 00 00
 #+end_src
 
 ** TEST asm.hex-addr.replace : =:addr= replaces bytes at that address
@@ -83,11 +83,11 @@ ip: 100
 # CC DD
 > :104 CC DD
 > ?100x
-AA BB .. .. CC DD .. .. .. .. .. .. .. .. .. ..
+AA BB 00 00 CC DD 00 00 00 00 00 00 00 00 00 00
 # 11 22
 > :100 11 22
 > ?100x /q
-11 22 .. .. CC DD .. .. .. .. .. .. .. .. .. ..
+11 22 00 00 CC DD 00 00 00 00 00 00 00 00 00 00
 #+end_src
 
 ** TEST dbg.jump-addr : =/100= : jump to an address
@@ -98,7 +98,7 @@ AA BB .. .. CC DD .. .. .. .. .. .. .. .. .. ..
 ip: 120
 #+end_src
 
-** TEST dbg./ : =/= : step alias
+** TEST dbg.step-alias : =/= : step alias
 #+begin_src b4a
 # c0 hl
 > :100 C0 FF
@@ -106,7 +106,7 @@ ip: 120
 ds: [0]
 #+end_src
 
-** TEST dbg./s : =/s= : step
+** TEST dbg.step : =/s= : step
 #+begin_src b4a
 # c1 hl
 > :100 C1 FF
@@ -115,7 +115,7 @@ ds: [1]
 ip: 101
 #+end_src
 
-** TEST dbg./R : =/R= : reset stacks and ip
+** TEST dbg.reset : =/R= : reset stacks and ip
 #+begin_src b4a
 # c1 hl
 > :100 C1 FF
@@ -127,10 +127,10 @@ ds: [1]
 ds: []
 ip: 100
 > ?200x /q
-AA BB CC DD .. .. .. .. .. .. .. .. .. .. .. ..
+AA BB CC DD 00 00 00 00 00 00 00 00 00 00 00 00
 #+end_src
 
-** TEST dbg./C : =/C= : clear memory and reset state
+** TEST dbg.clear : =/C= : clear memory and reset state
 #+begin_src b4a
 # AA BB CC DD
 > :200 AA BB CC DD
@@ -139,11 +139,11 @@ ds: []
 cs: []
 ip: 100
 > ?200x /q
-.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 #+end_src
 
 * constant ops
-** TEST op.const ($C0 $C1 $F6 $F7 $F8) : =c0 c1 c2 n1 c4=
+** TEST op.const : =c0 c1 c2 n1 c4=
 #+begin_src b4a
 # c0 c1 c2 n1 c4 hl
 > :100 C0 C1 F6 F7 F8 FF
@@ -152,7 +152,7 @@ ds: [0 1 2 -1 4]
 #+end_src
 
 * arithmetic, logic, and stack ops
-** TEST op.ad ($80) : =ad=
+** TEST op.ad : =ad=
 #+begin_src b4a
 # lb 01 lb 02 ad hl
 > :100 96 01 96 02 80 FF
@@ -160,7 +160,7 @@ ds: [0 1 2 -1 4]
 ds: [3]
 #+end_src
 
-** TEST op.ml ($82) : =ml=
+** TEST op.ml : =ml=
 #+begin_src b4a
 # lb 03 lb 03 ml hl
 > :100 96 03 96 03 82 FF
@@ -168,7 +168,7 @@ ds: [3]
 ds: [9]
 #+end_src
 
-** TEST op.sb ($81) : =sb=
+** TEST op.sb : =sb=
 #+begin_src b4a
 # lb 0A lb 05 sb hl
 > :100 96 0A 96 05 81 FF
@@ -176,7 +176,7 @@ ds: [9]
 ds: [5]
 #+end_src
 
-** TEST op.dv ($83) : =dv=
+** TEST op.dv : =dv=
 #+begin_src b4a
 # lb 0A lb 05 dv hl
 > :100 96 0A 96 05 83 FF
@@ -184,7 +184,7 @@ ds: [5]
 ds: [2]
 #+end_src
 
-** TEST op.md ($84) : =md=
+** TEST op.md : =md=
 #+begin_src b4a
 # lb 0A lb 03 md hl
 > :100 96 0A 96 03 84 FF
@@ -192,7 +192,7 @@ ds: [2]
 ds: [1]
 #+end_src
 
-** TEST op.sh ($85) : =sh= left and right
+** TEST op.sh : =sh= left and right
 #+begin_src b4a
 # c4 c1 sh c4 n1 sh hl
 > :100 F8 C1 85 F8 F7 85 FF
@@ -200,7 +200,7 @@ ds: [1]
 ds: [8 2]
 #+end_src
 
-** TEST op.an ($86) : =an=
+** TEST op.an : =an=
 #+begin_src b4a
 # lb 12 lb 35 an hl
 > :100 96 12 96 35 86 FF
@@ -208,7 +208,7 @@ ds: [8 2]
 ds: [10]
 #+end_src
 
-** TEST op.or ($87) : =or=
+** TEST op.or : =or=
 #+begin_src b4a
 # lb 12 lb 35 or hl
 > :100 96 12 96 35 87 FF
@@ -216,7 +216,7 @@ ds: [10]
 ds: [37]
 #+end_src
 
-** TEST op.xr ($88) : =xr=
+** TEST op.xr : =xr=
 #+begin_src b4a
 # lb 12 lb 35 xr hl
 > :100 96 12 96 35 88 FF
@@ -224,7 +224,7 @@ ds: [37]
 ds: [27]
 #+end_src
 
-** TEST op.nt ($89) : =nt=
+** TEST op.nt : =nt=
 #+begin_src b4a
 # lb 12 nt hl
 > :100 96 12 89 FF
@@ -232,7 +232,7 @@ ds: [27]
 ds: [-13]
 #+end_src
 
-** TEST op.eq ($8A) : =eq=
+** TEST op.eq : =eq=
 #+begin_src b4a
 # lb AA lb BB eq lb CC lb CC eq hl
 > :100 96 AA 96 BB 8A 96 CC 96 CC 8A FF
@@ -240,7 +240,7 @@ ds: [-13]
 ds: [0 -1]
 #+end_src
 
-** TEST op.lt ($8B) : =lt=
+** TEST op.lt : =lt=
 #+begin_src b4a
 # lb AA lb BB lt lb DD lb CC lt lb EE lb EE lt hl
 > :100 96 AA 96 BB 8B 96 DD 96 CC 8B 96 EE 96 EE 8B FF
@@ -248,7 +248,7 @@ ds: [0 -1]
 ds: [-1 0 0]
 #+end_src
 
-** TEST op.du ($8C) : =du=
+** TEST op.du : =du=
 #+begin_src b4a
 # lb 0A du hl
 > :100 96 0A 8C FF
@@ -256,7 +256,7 @@ ds: [-1 0 0]
 ds: [A A]
 #+end_src
 
-** TEST op.zp ($8F) : =zp=
+** TEST op.zp : =zp=
 #+begin_src b4a
 # lb 0A zp hl
 > :100 96 0A 8F FF
@@ -264,7 +264,7 @@ ds: [A A]
 ds: []
 #+end_src
 
-** TEST op.sw ($8D) : =sw=
+** TEST op.sw : =sw=
 #+begin_src b4a
 # lb 0A lb 0B sw hl
 > :100 96 0A 96 0B 8D FF
@@ -272,7 +272,7 @@ ds: []
 ds: [B A]
 #+end_src
 
-** TEST op.ov ($8E) : =ov=
+** TEST op.ov : =ov=
 #+begin_src b4a
 # lb 0A lb 0B ov hl
 > :100 96 0A 96 0B 8E FF
@@ -280,7 +280,7 @@ ds: [B A]
 ds: [A B A]
 #+end_src
 
-** TEST op.dc-cd ($90 $91) : =dc= and =cd=
+** TEST op.dc-cd : =dc= and =cd=
 #+begin_src b4a
 # lb 0A dc cd hl
 > :100 96 0A 90 91 FF
@@ -293,23 +293,23 @@ cs: []
 #+end_src
 
 * memory access
-** TEST op.wi ($95) : =wi=
+** TEST op.wi : =wi=
 #+begin_src b4a
 # li AABBCCDD li 00000200 wi hl
 > :100 97 DD CC BB AA 97 00 02 00 00 95 FF
 > /100 // ?200x /q
-DD CC BB AA .. .. .. .. .. .. .. .. .. .. .. ..
+DD CC BB AA 00 00 00 00 00 00 00 00 00 00 00 00
 #+end_src
 
-** TEST op.wb ($94) : =wb=
+** TEST op.wb : =wb=
 #+begin_src b4a
 # li AABBCCDD li 00000200 wb hl
 > :100 97 DD CC BB AA 97 00 02 00 00 94 FF
 > /100 // ?200x /q
-DD .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+DD 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 #+end_src
 
-** TEST op.ri ($93) : =ri=
+** TEST op.ri : =ri=
 #+begin_src b4a
 # AA BB CC 00
 > :200 AA BB CC 00
@@ -319,7 +319,7 @@ DD .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
 ds: [CCBBAA]
 #+end_src
 
-** TEST op.rb ($92) : =rb=
+** TEST op.rb : =rb=
 #+begin_src b4a
 # AA BB 00 77
 > :200 AA BB 00 77
@@ -329,7 +329,7 @@ ds: [CCBBAA]
 ds: [AA]
 #+end_src
 
-** TEST op.rs ($98) : =rs=
+** TEST op.rs : =rs=
 #+begin_src b4a
 # 7F FF
 > :200 7F FF
@@ -339,18 +339,18 @@ ds: [AA]
 ds: [7F -1]
 #+end_src
 
-** TEST op.lb ($96) : =lb=
+** TEST op.lb : =lb=
 #+begin_src b4a
 # lb AB hl
 > :100 96 AB FF
 > ?100x
-96 AB FF .. .. .. .. .. .. .. .. .. .. .. .. ..
+96 AB FF 00 00 00 00 00 00 00 00 00 00 00 00 00
 > /100 /s ?d ?i /q
 ds: [AB]
 ip: 102
 #+end_src
 
-** TEST op.li ($97) : =li=
+** TEST op.li : =li=
 #+begin_src b4a
 # li 11223344 li FFFFFFFF hl
 > :100 97 44 33 22 11 97 FF FF FF FF FF
@@ -358,7 +358,7 @@ ip: 102
 ds: [11223344 -1]
 #+end_src
 
-** TEST op.ls ($99) : =ls=
+** TEST op.ls : =ls=
 #+begin_src b4a
 # ls 7F ls FF hl
 > :100 99 7F 99 FF FF
@@ -367,23 +367,23 @@ ds: [7F -1]
 #+end_src
 
 * register ops
-** TEST op.reg ($38 $58 $78) : =@X= =!X= =+X=
+** TEST op.reg : =@X= =!X= =+X=
 #+begin_src b4a
 # lb 12 !X hl
 > :100 96 12 58 FF
 > /100 //
 > ?60x
-12 00 00 00 .. .. .. .. .. .. .. .. .. .. .. ..
+12 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 # @X c1 +X @X hl
 > :100 38 C1 78 38 FF
 > /100 // ?d
 ds: [12 12 13]
 > ?60x /q
-13 00 00 00 .. .. .. .. .. .. .. .. .. .. .. ..
+13 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 #+end_src
 
 * control flow ops
-** TEST op.hp ($9B) : =hp= forward
+** TEST op.hp-forward : =hp= forward
 #+begin_src b4a
 # hp 05 hl
 > :100 9B 05 FF
@@ -391,7 +391,7 @@ ds: [12 12 13]
 ip: 105
 #+end_src
 
-** TEST op.hp.back ($9B) : =hp= backward
+** TEST op.hp-backward : =hp= backward
 #+begin_src b4a
 # 00 00 00 hp FD hl
 > :100 00 00 00 9B FD FF
@@ -401,19 +401,19 @@ ip: 103
 ip: 100
 #+end_src
 
-** TEST op.h0 ($9C) : =h0= hop if zero
+** TEST op.h0 : =h0= hop if zero
 #+begin_src b4a
 # c0 h0 23 hl
 > :100 C0 9C 23 FF
 > /100 /s /s ?i
-ip: 123
+ip: 124
 # c1 h0 23 hl
 > :100 C1 9C 23 FF
 > /100 /s /s ?i /q
-ip: 102
+ip: 103
 #+end_src
 
-** TEST op.jm ($9A) : =jm=
+** TEST op.jm : =jm=
 #+begin_src b4a
 # jm 12345678 hl
 > :100 9A 78 56 34 12 FF
@@ -421,7 +421,7 @@ ip: 102
 ip: 12345678
 #+end_src
 
-** TEST op.cl ($9D) : =cl=
+** TEST op.cl : =cl=
 #+begin_src b4a
 # cl 12345678 hl
 > :100 9D 78 56 34 12 FF
@@ -430,7 +430,7 @@ ip: 12345678
 cs: [105]
 #+end_src
 
-** TEST op.rt ($9E) : =rt=
+** TEST op.rt : =rt=
 #+begin_src b4a
 # li 00001234 dc rt hl
 > :100 97 34 12 00 00 90 9E FF
@@ -445,7 +445,7 @@ ip: 1234
 cs: []
 #+end_src
 
-** TEST op.nx ($9F) : =nx=
+** TEST op.nx : =nx=
 #+begin_src b4a
 # c2 dc nx 00 hl
 > :100 F6 90 9F 00 FF
@@ -461,7 +461,7 @@ ip: 104
 #+end_src
 
 * i/o and debugger control
-** TEST op.io ($FD) : ='e io= emit
+** TEST op.io : ='e io= emit
 #+begin_src b4a
 # lb 68 lb 65 io lb 69 lb 65 io hl
 > :100 96 68 96 65 FD 96 69 96 65 FD FF
@@ -469,7 +469,7 @@ ip: 104
 hi
 #+end_src
 
-** TEST op.db ($FE) : =db= pauses execution
+** TEST op.db : =db= pauses execution
 #+begin_src b4a
 # c0 c1 db c2 c4 hl
 > :100 C0 C1 FE F6 F8 FF
@@ -480,7 +480,7 @@ ip: 103
 ds: [0 1 2 4]
 #+end_src
 
-** TEST dbg./g ($FE) : =/g= resumes until =db=
+** TEST dbg.go : =/g= resumes until =db=
 #+begin_src b4a
 # c0 c1 db c2 c4 hl
 > :100 C0 C1 FE F6 F8 FF
