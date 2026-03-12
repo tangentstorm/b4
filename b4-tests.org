@@ -42,7 +42,7 @@ b4 should not produce any output unless explicitly instructed to do so.
 > /q
 #+end_src
 
-** TEST io.?d : =?d= : query the data stack
+** TEST io.data-stack : =?d= : query the data stack
 #+begin_src b4a
 > ?d /q
 ds: [] # should be an empty array
@@ -55,7 +55,7 @@ which of these should it be?
 : ds: [CC00BBAA]
 : ds: [-33FF4456]
 
-** TEST io.?c : =?c= : query the call stack
+** TEST io.call-stack : =?c= : query the call stack
 #+begin_src b4a
 > ?c /q
 cs: [] # should be an empty array
@@ -332,13 +332,13 @@ ds: [11223344 11223348 1122334A]
 
 
 * debugger commands: stepping
-** TEST dbg.?i : =?i= : query instruction pointer
+** TEST dbg.ip : =?i= : query instruction pointer
 
 #+begin_src b4a
 > ?i /q
 ip: 100
 #+end_src
-** TEST dbg./s : =/s= : step command
+** TEST dbg.step : =/s= : step command
 
 #+begin_src b4a
 > ?i /s ?i /q
