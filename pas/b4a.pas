@@ -1,27 +1,50 @@
 program b4a; { b4 assembler }
-uses ub4, ub4asm, sysutils {leftstr};
+uses ub4, ub4asm, sysutils, classes {leftstr};
 
 type
   tfmt = (json, b4x);
 var
   i : ub4.value;
 
-procedure ParseParams(var ifn, ofn: string; var fmt: tfmt);
-  var a : byte = 0;
+procedure ParseParams(var inputs: TStringList; var ofn: string; var fmt: tfmt);
+  var
+    a : byte = 0;
+    idx: integer;
+    arg: string;
+    have_output: boolean = false;
   begin
     fmt := b4x;
-    for i := 1 to paramcount do begin
-      if paramstr(i) = '-j' then fmt := json
-      else case a of
-        0: begin ifn := paramstr(i); inc(a) end;
-        1: begin ofn := paramstr(i); inc(a) end;
-        otherwise begin writeln('too many arguments'); halt end
+    inputs.Clear;
+    idx := 1;
+    while idx <= paramcount do begin
+      arg := paramstr(idx);
+      if arg = '-j' then fmt := json
+      else if arg = '-o' then begin
+        inc(idx);
+        if idx > paramcount then begin writeln('-o requires a filename'); halt end;
+        ofn := paramstr(idx);
+        have_output := true;
       end
+      else if (arg = '-a') or (arg = '-i') then begin
+        inc(idx);
+        if idx > paramcount then begin writeln(arg, ' requires a filename'); halt end;
+        inputs.Add(paramstr(idx));
+      end
+      else case a of
+        0: begin inputs.Add(arg); inc(a) end;
+        1: if have_output then begin writeln('too many arguments'); halt end
+           else begin ofn := arg; have_output := true; inc(a) end;
+        otherwise begin writeln('too many arguments'); halt end
+      end;
+      inc(idx);
     end;
-    if a = 0 then begin writeln('usage: b4a [-j] infile.b4a [outfile]'); halt end
-    else if a = 1 then begin
-      a := lastdelimiter('.', ifn);
-      if a > 0 then ofn := leftstr(ifn, a) else ofn := ifn + '.';
+    if inputs.Count = 0 then begin
+      writeln('usage: b4a [-j] [-o outfile] [-a file] [-i file] [infile.b4a] [outfile]');
+      halt
+    end
+    else if not have_output then begin
+      a := lastdelimiter('.', inputs[0]);
+      if a > 0 then ofn := leftstr(inputs[0], a) else ofn := inputs[0] + '.';
       if fmt = json then ofn += 'json' else ofn += 'b4x';
     end
   end;
@@ -46,14 +69,20 @@ procedure emit_json(ofn: string);
     close(out)
   end;
 
-var ifn, ofn : string; fmt: tfmt;
+var
+  ofn : string;
+  fmt: tfmt;
+  inputs: TStringList;
 begin
-  parseParams(ifn, ofn, fmt);
+  inputs := TStringList.Create;
+  try
+    parseParams(inputs, ofn, fmt);
+    boot;
+    for i := 0 to inputs.Count - 1 do ub4asm.b4a_file(inputs[i]);
 
-  assign(input, ifn); reset(input);
-  boot; ub4asm.b4as;
-  close(input);
-
-  if fmt = b4x then emit_b4x(ofn)
-  else emit_json(ofn)
+    if fmt = b4x then emit_b4x(ofn)
+    else emit_json(ofn)
+  finally
+    inputs.Free;
+  end
 end.

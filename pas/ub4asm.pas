@@ -200,6 +200,42 @@ begin
   except on EConvertError do result := false end
 end;
 
+procedure expand_file_into(path: string; strs: TStringList);
+var
+  src: TStringList;
+  i, p: integer;
+  line, trimmed, arg, inc_path, base_dir: string;
+begin
+  if not FileExists(path) then begin
+    writeln('file not found: ', path);
+    exit;
+  end;
+  src := TStringList.Create;
+  try
+    src.LoadFromFile(path);
+    base_dir := ExtractFileDir(ExpandFileName(path));
+    for i := 0 to src.Count - 1 do begin
+      line := src[i];
+      trimmed := TrimLeft(line);
+      if ((LeftStr(trimmed, 2) = '/a') or (LeftStr(trimmed, 2) = '/i')) and
+         ((Length(trimmed) = 2) or (trimmed[3] <= ' ')) then begin
+        p := 3;
+        while (p <= Length(trimmed)) and (trimmed[p] <= ' ') do inc(p);
+        arg := Trim(Copy(trimmed, p, MaxInt));
+        if arg = '' then begin
+          writeln('include directive requires a filename: ', line);
+          halt;
+        end;
+        if ExtractFilePath(arg) = '' then inc_path := ExpandFileName(base_dir + PathDelim + arg)
+        else inc_path := ExpandFileName(arg);
+        expand_file_into(inc_path, strs);
+      end else strs.Add(line);
+    end;
+  finally
+    src.Free;
+  end;
+end;
+
 
 procedure b4as_core;
   var here: value; err: integer; tok: token; ch: char;
@@ -315,13 +351,9 @@ end;
 procedure b4a_file(path:string);
 var strs: TStringList;
 begin
-  if not FileExists(path) then begin
-    writeln('file not found: ', path);
-    exit;
-  end;
   strs := TStringList.Create;
   try
-    strs.LoadFromFile(path);
+    expand_file_into(path, strs);
     b4a_strs(strs);
   finally
     strs.Free;
