@@ -315,11 +315,11 @@
 
 #v(0.15em)
 #text(size: 6.5pt, weight: "bold")[Tools]
-#smallop("\/p", "print dictionary")
-#smallop("\/f", "show forward refs")
-#smallop("\/a", "assemble .b4a file")
-#smallop("\/i", "interpret .b4i script")
-#smallop("\/d", "change directory")
+#smallop("/p", "print dictionary")
+#smallop("/f", "show forward refs")
+#smallop("/a", "assemble .b4a file")
+#smallop("/i", "interpret .b4i script")
+#smallop("/d", "change directory")
 
 #v(0.15em)
 #text(size: 6.5pt, weight: "bold")[Calculator Mode]
