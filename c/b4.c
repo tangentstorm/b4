@@ -215,7 +215,7 @@ void runop(byte op) {
   case OP_C4: dput(4); break;
   case OP_IO: opio(); break;
   case OP_DB: SDB(1); break;
-  case OP_HL: exit(0); break;
+  case OP_HL: SST(0); break;
   default: break; /* unknown op: nop */
   }
 }

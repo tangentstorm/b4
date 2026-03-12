@@ -28,7 +28,7 @@ static void init_optbl(void) {
 }
 
 /* opcode lookup by mnemonic -> byte value; -1 if not found */
-static int op_lookup(const char *s) {
+static __attribute__((unused)) int op_lookup(const char *s) {
   int i;
   for (i = 0; i < 256; i++)
     if (optbl[i] && optbl[i][0]==s[0] && optbl[i][1]==s[1]) return i;

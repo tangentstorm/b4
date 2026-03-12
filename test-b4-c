@@ -1,3 +1,0 @@
-#!/bin/sh
-(cd c && make) && \
-tanco run -t b4-tests.org c/b4i

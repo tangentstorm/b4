@@ -1,0 +1,3 @@
+#!/bin/sh
+(cd c && make) && \
+tanco run -t b4h-tests.org c/b4h
