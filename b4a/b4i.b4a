@@ -2,20 +2,18 @@
 #
 # Acts as a proxy to a Level 0 implementation.
 # Spawns a subprocess (c/b4h) and forwards stdin/stdout.
-#
-# -- memory layout ---------------------------------------------
-# 0100..01FF  256-byte input buffer (stdin)
-# 0200..02FF  256-byte output buffer (subprocess stdout)
-# 0300..03FF  data block
-# 0400..04FF  rewrite buffer
 # --------------------------------------------------------------
 
-:0100 :INBUF
-:0200 :OUTBUF
+# Pull in the parser helpers used by the rewrite layer.
+/a pre.b4a
+
+
+:INBUF  :+100
+:OUTBUF :+100
+:RWBUF  :+100
 
 # --- Data -------------------------
 
-:0300
 :CMD "c/b4h" 00  # Command to spawn Level 0 hex interpreter
 :RWMODE 00 00 00 00  # 1 => translate next child line from hex dump to opcodes
 :QUIT   00 00 00 00  # 1 => current input line was exact "/q"
@@ -31,11 +29,7 @@
 'E'0  'E'1  'E'2  'E'3  'E'4  'E'5  'E'6  'E'7  'E'8  'E'9  'E'A  'E'B  'E'C  'E'D  'E'E  'E'F  # $E0
 'F'0  'F'1  'F'2  'F'3  'F'4  'F'5  'c'2  'n'1  'c'4  'F'9  'F'A  'F'B  'F'C  'i'o  'd'b  'h'l  # $F0
 
-:0400 :RWBUF
-:0500
 
-# Pull in the parser helpers used by the rewrite layer.
-/a pre.b4a
 
 :cpyn
   !N !B !A                         # (src dst n --)
