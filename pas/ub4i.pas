@@ -86,8 +86,7 @@ procedure ShowHexMem(addr :integer );
 begin
   for i := 0 to 15 do begin
     if i > 0 then write(' ');
-    if mem[addr + i] = 0 then write('..')
-    else write(UpperCase(format('%.2x', [mem[addr + i]])));
+    write(UpperCase(format('%.2x', [mem[addr + i]])));
   end;
   writeln;
 end;
@@ -110,7 +109,7 @@ procedure reset_vm;
 begin
   rg^[RCS] := 0;
   rg^[RDS] := 0;
-  rg^[RIP] := rg^[RHP];
+  rg^[RIP] := $100;
 end;
 
 function tokenize(const line: string): TStringArray;

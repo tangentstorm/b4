@@ -611,7 +611,7 @@ procedure runop(op : byte);
       $FC : {FC} ;
       $FD : {io} opio;
       $FE : {db} rg[RDB] := 1;
-      $FF : {hl} halt;
+      $FF : {hl} rg[RST] := 0;
       else { no-op };
     end
   end;

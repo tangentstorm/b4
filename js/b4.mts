@@ -160,7 +160,7 @@ export class B4VM {
     let res: string[] = []
     for (let i=0; i<len; i++) {
       const b = this.ram[a++]
-      res.push(b === 0 ? '..' : b.toString(16).toUpperCase().padStart(2,'0'))
+      res.push(b.toString(16).toUpperCase().padStart(2,'0'))
     }
     return res.join(' ')
   }
@@ -177,7 +177,11 @@ export class B4VM {
   dv(): this { let y=this.dpop();
          return this.dput(Math.floor(this.dpop()/y)) }
   md(): this { let y=this.dpop(); return this.dput(this.dpop()%y) }
-  sh(): this { let y=this.dpop(); return this.dput(this.dpop()<<y) }
+  sh(): this {
+    const y = this.dpop()
+    const x = this.dpop()
+    return this.dput(y < 0 ? x >>> -y : x << y)
+  }
   an(): this { return this.dput(this.dpop()&this.dpop()) }
   or(): this { return this.dput(this.dpop()|this.dpop()) }
   xr(): this { return this.dput(this.dpop()^this.dpop()) }

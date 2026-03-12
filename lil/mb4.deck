@@ -302,7 +302,7 @@ end
 
 mod.showMem: on showMem a do " " fuse dis @ vm.mem @ a + range 16 end
 mod.showMemA: on showMemA a do " " fuse disa @ vm.mem @ a + range 16 end
-on hexbyte b do if b=0 ".." else "%02H" format b end end
+on hexbyte b do "%02H" format b end
 mod.showHexMem: on showHexMem a do " " fuse hexbyte @ vm.mem @ a + range 16 end
 mod.showIp: on showIp do "ip: %02H" format vm.rg[RIP] end
 on assemble a s do n:count toks:" "split s  vm.mem[a,n]:raze asm@toks n end

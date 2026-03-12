@@ -48,7 +48,7 @@ dis =: {{ NB. disassemble bytes to b4 assembly language
   else. hexstr y end. }}
 memstr =: {{ , ' ',.~ dis"0 a.i. (y+i.16) { M__vm  }}
 showmem =: echo@memstr
-hexbyte =: {{ if. y=0 do. '..' else. toupper 2 {. '0',~ hfd y end. }}
+hexbyte =: {{ toupper 2 {. '0',~ hfd y }}
 hexmemstr =: {{ , ' ',.~ hexbyte"0 a.i. (y+i.16) { M__vm }}
 showhexmem =: echo@hexmemstr
 resetvm =: {{ D__vm =: 0$0 [ C__vm =: 0$0 [ P__vm =: 16b100 }}
