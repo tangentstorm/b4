@@ -156,4 +156,4 @@ When not a command, tokens are interpreted as:
 
 Level 0 communicates via stdin/stdout (testable with =tanco= against =b4-tests.org=).
 
-The B4-native implementation (=bios/b4i.b4a=) can run on any VM by spawning a Level 0 implementation as a child process.
+The B4-native implementation ([[file:../b4a/b4i.b4a][b4a/b4i.b4a]]) can run on any VM by spawning a Level 0 implementation as a child process.

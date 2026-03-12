@@ -3,7 +3,7 @@
 
 * intro
 
-This is a test suite for [[bios/pre.b4a]], a parsing and
+This is a test suite for [[file:b4a/pre.b4a][pre.b4a]], a parsing and
 regular expression toolkit for the b4 virtual machine.
 
 * TEST pre.m : =m0 (-)= and =m1 (-)= set the match bit.

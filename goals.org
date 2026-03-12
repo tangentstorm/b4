@@ -85,14 +85,14 @@ The long-term b4 project expands that concept to the following experiment:
 
 Some of these already exist in some form, but I am still "blazing" these trails. (To blaze a trail is to go wandering around, leaving markers for others to follow).
 
-**** [[bios/bios.b4a.org][bios.b4a.org]]
+**** [[file:b4a/bios.b4a.org][bios.b4a.org]]
 
 This is currently an implementation in b4a, not a test suite.
 It currently contains the following, which will probably be
 broken out into separate files:
 
 - the actual BIOS
-  - in-memory color text terminal (see [[bios/bios.b4a][bios.b4a]])
+  - in-memory color text terminal (see [[file:b4a/bios.b4a][bios.b4a]])
   - read/write numbers
   - read/write strings
 
@@ -102,7 +102,7 @@ broken out into separate files:
   - Words can be looked up and executed.
   - There are not yet any words for defining new words.
 
-**** [[file:bios/mm.b4a][mm.b4a]]
+**** [[file:b4a/mm.b4a][mm.b4a]]
 
 **** B4s ("beforce" : a small lisp-like interpreter)
 This is intended to be a bootstrapping layer for all
@@ -118,7 +118,7 @@ The "tree buliding" part of this will be pluggable, so it can be
 configured to run on lisp-like cons cells or other dynamically
 allocated memory.
 
-**** [[file:bios/mm.b4a.org][mm.b4a.org]] : a basic memory manager
+**** [[file:b4a/mm.b4a.org][mm.b4a.org]] : a basic memory manager
 This is there but largely untested.
 
 **** [[file:b3a/b3a.org][b3a.org]] is a self-hosting assembler

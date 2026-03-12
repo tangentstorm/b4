@@ -6,7 +6,7 @@
 (cd pas; make b4 b4a) && \
 
 # Assemble b4i.b4a to b4i.b4x
-pas/b4a bios/b4i.b4a b4i.b4x && \
+pas/b4a b4a/b4i.b4a b4i.b4x && \
 
 # Run tests with b4i.b4a loaded into pas/b4.exe
 tanco run -t b4-tests.org -c "pas/b4 -l b4i.b4x"

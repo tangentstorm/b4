@@ -264,7 +264,7 @@ For example, the following b4a code puts the numbers 0 2 4 onto =ds=, leaving
 
 These are only implemented in the pascal version (file:../pas/uhw_vt.pas), and are not part of the b4 spec.
 
-Probably they will be removed in favor of the in-memory terminal in file:../bios/bios.b4a .
+Probably they will be removed in favor of the in-memory terminal in [[file:../b4a/bios.b4a][b4a/bios.b4a]].
 
 B4 will eventually have an official spec for color terminal i/o, but it will just be regular Forth words that use =io= to talk to virtual hardware, rather than dedicated ops.
 

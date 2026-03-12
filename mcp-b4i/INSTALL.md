@@ -208,7 +208,7 @@ Once configured, you can ask Claude to:
 
 ### Debug a Program
 
-> Load the file `bios/b4i.b4a` and step through the first 5 instructions
+> Load the file `b4a/b4i.b4a` and step through the first 5 instructions
 
 ### Inspect VM State
 

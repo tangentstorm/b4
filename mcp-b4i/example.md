@@ -144,7 +144,7 @@ await b4i_execute({ command: "/g ?d" })
 
 ```javascript
 // Load a B4 assembly file
-await b4i_load_image({ path: "bios/b4i.b4a" })
+await b4i_load_image({ path: "b4a/b4i.b4a" })
 
 // The assembler processes the file and creates labels
 await b4i_execute({ command: "/p" })  // Print dictionary
@@ -408,5 +408,5 @@ await b4i_query_memory({ address: "FFFFFF" })
 
 - Read the [B4 specification](../doc/b4i.org)
 - Study the [test suite](../b4-tests.org) for more examples
-- Examine the [BIOS implementation](../bios/b4i.b4a)
+- Examine the [BIOS implementation](../b4a/b4i.b4a)
 - Build your own B4 programs!

@@ -56,7 +56,7 @@ There are currently five implementations:
 
 The implementations are kept in sync through the tests in [[./b4-tests.org]]
 
-See [[./bios/bios.b4a]] for an example of b4 assembly language.
+See [[file:./b4a/bios.b4a][bios.b4a]] for an example of b4 assembly language.
 
 * Links
 
