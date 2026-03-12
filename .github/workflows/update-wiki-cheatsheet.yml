@@ -1,0 +1,50 @@
+name: Update Wiki Cheatsheet
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - doc/b4-cheatsheet.typ
+      - .github/workflows/update-wiki-cheatsheet.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-wiki-cheatsheet:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Typst
+        uses: typst-community/setup-typst@v4
+
+      - name: Install PDF rasterizer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Render cheatsheet
+        run: |
+          mkdir -p out
+          typst compile doc/b4-cheatsheet.typ out/b4-cheatsheet.pdf
+          pdftoppm -png -singlefile -r 200 out/b4-cheatsheet.pdf out/b4-cheatsheet
+
+      - name: Update wiki image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.wiki.git" wiki
+          cp out/b4-cheatsheet.png wiki/b4-cheatsheet.png
+          cd wiki
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add b4-cheatsheet.png
+          if git diff --cached --quiet; then
+            echo "Wiki image already up to date."
+            exit 0
+          fi
+          git commit -m "Update b4 cheatsheet image"
+          git push

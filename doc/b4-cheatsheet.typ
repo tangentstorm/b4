@@ -293,6 +293,8 @@
 #colbreak()
 
 #section[b4i Interactive]
+#text(size: 6pt, style: "italic")[shell commands use #code[/], queries use #code[?]]
+#v(0.1em)
 #text(size: 6.5pt, weight: "bold")[Inspect]
 #smallop("?d", "data stack")
 #smallop("?c", "control stack")
@@ -303,17 +305,21 @@
 #v(0.15em)
 #text(size: 6.5pt, weight: "bold")[Control]
 #smallop("/q", "quit")
+#smallop("/", "step alias")
 #smallop("/s", "step one instruction")
-#smallop("/g", "go (run until halt)")
-#smallop("/C", "clear/reboot VM")
-#smallop("/R", "reset VM")
+#smallop("//", "run alias")
+#smallop("/g", "run until db or hl")
+#smallop("/1234", "jump to hex address")
+#smallop("/C", "clear VM, dictionary, forwards")
+#smallop("/R", "reset stacks and IP")
 
 #v(0.15em)
-#text(size: 6.5pt, weight: "bold")[Files]
+#text(size: 6.5pt, weight: "bold")[Tools]
+#smallop("\/p", "print dictionary")
+#smallop("\/f", "show forward refs")
 #smallop("\/a", "assemble .b4a file")
 #smallop("\/i", "interpret .b4i script")
 #smallop("\/d", "change directory")
-#smallop("\/p", "print dictionary")
 
 #v(0.15em)
 #text(size: 6.5pt, weight: "bold")[Calculator Mode]
