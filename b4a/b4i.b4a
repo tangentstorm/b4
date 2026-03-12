@@ -6,16 +6,46 @@
 # -- memory layout ---------------------------------------------
 # 0100..01FF  256-byte input buffer (stdin)
 # 0200..02FF  256-byte output buffer (subprocess stdout)
-# 0300..      main code
+# 0300..03FF  main code / data
+# 0400..04FF  rewrite buffer
 # --------------------------------------------------------------
 
 :0100 :INBUF            # Input buffer at 0x100
 :0200 :OUTBUF           # Output buffer at 0x200
+:0400 :RWBUF            # Rewrite buffer at 0x400
 
 # --- Data -------------------------
 
 :0300
 :CMD "c/b4h" 00  # Command to spawn Level 0 hex interpreter
+
+# Pull in the parser helpers used by the rewrite layer.
+/a pre.b4a
+
+:cpyz
+  !B !A                            # use @A/@B as scratch cursors: (src dst --)
+  .w c1 .d
+    @A rb du @B wb                 # copy byte and keep a copy to test for NUL
+    c0 eq .i rt .t                 # stop after copying the terminator
+    c1 +A zp
+    c1 +B zp
+  .o
+
+:rw-quit?
+  pre
+  lb '/ chr
+  lb 'q chr
+  end
+  @M rt
+
+:rw-in
+  li `RWBUF cpyz                   # rewrite INBUF -> RWBUF (currently passthrough)
+  li `RWBUF !S                     # pre parses from @S, so point it at RWBUF
+  li `RWBUF rt
+
+:rw-out
+  li `RWBUF cpyz                   # rewrite OUTBUF -> RWBUF (currently passthrough)
+  li `RWBUF rt
 
 :emitz
   du rb c0 eq .i
@@ -27,7 +57,7 @@
 :readout
   li `OUTBUF @H lb 'r io !R        # Read from subprocess -> @R = length
   @R c0 eq nt .i                   # If got data (length != 0)
-    li `OUTBUF emitz
+    li `OUTBUF rw-out emitz
     lb 0A lb 'o io                 # Restore trailing newline trimmed by io 'r'
   .t
   rt
@@ -52,14 +82,10 @@
       @H lb 'k io c0 hl                   # Kill subprocess and exit
     .t
 
-    # Check for /q command
-    li `INBUF rb lb '/ eq .i          # If first char is '/'
-      li `INBUF c1 ad rb lb 'q eq .i  # and second char is 'q'
-        @H lb 'k io c0 hl             # Kill subprocess and exit
-      .t
+    li `INBUF rw-in du @H lb 'w io    # Rewrite and send input to subprocess
+    rw-quit? .i                       # Parser-based quit check on rewritten input
+      c0 hl                           # Child saw /q already; exit proxy too
     .t
-
-    li `INBUF @H lb 'w io          # Send input to subprocess
 
     # --- Read subprocess output in a few short passes
     # io 'r' returns one complete line at a time, but one input line can
