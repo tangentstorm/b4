@@ -6,21 +6,45 @@
 # -- memory layout ---------------------------------------------
 # 0100..01FF  256-byte input buffer (stdin)
 # 0200..02FF  256-byte output buffer (subprocess stdout)
-# 0300..03FF  main code / data
+# 0300..03FF  data block
 # 0400..04FF  rewrite buffer
 # --------------------------------------------------------------
 
-:0100 :INBUF            # Input buffer at 0x100
-:0200 :OUTBUF           # Output buffer at 0x200
-:0400 :RWBUF            # Rewrite buffer at 0x400
+:0100 :INBUF
+:0200 :OUTBUF
 
 # --- Data -------------------------
 
 :0300
 :CMD "c/b4h" 00  # Command to spawn Level 0 hex interpreter
+:RWMODE 00 00 00 00  # 1 => translate next child line from hex dump to opcodes
+:QUIT   00 00 00 00  # 1 => current input line was exact "/q"
+
+:OPCODES
+#+ 0   + 1   + 2   + 3   + 4   + 5   + 6   + 7   + 8   + 9   + A   + B   + C   + D   + E   + F
+'a'd  's'b  'm'l  'd'v  'm'd  's'h  'a'n  'o'r  'x'r  'n't  'e'q  'l't  'd'u  's'w  'o'v  'z'p  # $80
+'d'c  'c'd  'r'b  'r'i  'w'b  'w'i  'l'b  'l'i  'r's  'l's  'j'm  'h'p  'h'0  'c'l  'r't  'n'x  # $90
+'A'0  'A'1  'A'2  'A'3  'A'4  'A'5  'A'6  'A'7  'A'8  'A'9  'A'A  'A'B  'A'C  'A'D  'A'E  'A'F  # $A0
+'B'0  'B'1  'B'2  'B'3  'B'4  'B'5  'B'6  'B'7  't'm  'B'9  'B'A  'B'B  'B'C  'B'D  'B'E  'B'F  # $B0
+'c'0  'c'1  'C'2  'C'3  'C'4  'C'5  'C'6  'C'7  'C'8  'C'9  'C'A  'C'B  'C'C  'C'D  'C'E  'C'F  # $C0
+'D'0  'D'1  'D'2  'D'3  'D'4  'D'5  'D'6  'D'7  'D'8  'D'9  'D'A  'D'B  'D'C  'D'D  'D'E  'D'F  # $D0
+'E'0  'E'1  'E'2  'E'3  'E'4  'E'5  'E'6  'E'7  'E'8  'E'9  'E'A  'E'B  'E'C  'E'D  'E'E  'E'F  # $E0
+'F'0  'F'1  'F'2  'F'3  'F'4  'F'5  'c'2  'n'1  'c'4  'F'9  'F'A  'F'B  'F'C  'i'o  'd'b  'h'l  # $F0
+
+:0400 :RWBUF
+:0500
 
 # Pull in the parser helpers used by the rewrite layer.
 /a pre.b4a
+
+:cpyn
+  !N !B !A                         # (src dst n --)
+  @N .f
+    @A rb @B wb
+    c1 +A zp
+    c1 +B zp
+  .n
+  rt
 
 :cpyz
   !B !A                            # use @A/@B as scratch cursors: (src dst --)
@@ -31,20 +55,137 @@
     c1 +B zp
   .o
 
-:rw-quit?
-  pre
-  lb '/ chr
-  lb 'q chr
-  end
-  @M rt
+:b!+ @B wb c1 +B zp rt             # (c--) write char at @B and advance
+
+:hexval                             # (c-n) uppercase hex digit to value
+  du lb 'A lt .i
+    lb '0 sb
+  .e
+    lb 'A sb lb 0A ad
+  .t
+  rt
+
+:emithex                            # (b--) emit as two uppercase hex digits
+  du lb 10 dv
+  du lb 0A lt .i lb '0 .e lb 'A lb 0A sb .t ad b!+
+  lb 0F an
+  du lb 0A lt .i lb '0 .e lb 'A lb 0A sb .t ad b!+
+  rt
+
+:emitop                             # (b--) opcode byte -> 2-char token or hex
+  du c0 eq .i zp lb '. b!+ lb '. b!+ rt .t
+  du lb 20 lt .i lb '^ b!+ lb 40 ad b!+ zp rt .t
+  du lb 40 lt .i lb '@ b!+ du lb 20 sb lb 40 ad b!+ zp rt .t
+  du lb 60 lt .i lb '! b!+ du lb 40 sb lb 40 ad b!+ zp rt .t
+  du lb 80 lt .i lb '+ b!+ du lb 60 sb lb 40 ad b!+ zp rt .t
+  du lb 80 sb c1 sh li `OPCODES ad !T
+  @T rb du c0 eq .i zp emithex rt .t
+  b!+
+  @T c1 ad rb b!+
+  zp rt
+
+:copy-line
+  li `INBUF li `RWBUF cpyz
+  m1 rt
+
+:dbg\ @\ nt .i cd zp .t rt          # early-exit current word unless debug register is nonzero
+
+:tasm  dbg\ lb '> lb 'o io lb 'a lb 'o io lb 's lb 'o io lb 'm lb 'o io lb 0A lb 'o io rt
+:tcmt  dbg\ lb '> lb 'o io lb 'c lb 'o io lb 'm lb 'o io lb 't lb 'o io lb 0A lb 'o io rt
+:tcmd  dbg\ lb '> lb 'o io lb 'c lb 'o io lb 'm lb 'o io lb 'd lb 'o io lb 0A lb 'o io rt
+:tqry  dbg\ lb '> lb 'o io lb 'q lb 'o io lb 'r lb 'o io lb 'y lb 'o io lb 0A lb 'o io rt
+
+:do-asm
+  m\
+  tasm
+  copy-line rt
+
+:do-cmt
+  m\
+  tcmt
+  copy-line rt
+
+:do-cmd
+  m\
+  tcmd
+  copy-line
+  ch lb 'q eq .i
+    nc c0 eq .i
+      lb 01 !QUIT
+    .t
+  .t
+  rt
+
+:do-qry
+  m\
+  tqry
+  mhex
+  @M .i
+    ch lb 'x eq .i
+      copy-line                     # ?100x => passthrough
+    .e
+      li `INBUF li `RWBUF ln cpyn   # ?100 => ?100x plus rest of line
+      lb 'x b!+
+      @K @B cpyz
+      lb 01 !RWMODE
+      m1
+    .t
+  .e
+    copy-line                       # malformed ?... => passthrough
+  .t
+  rt
+
+:linepat
+  m\
+  lb '? chr do-qry
+  m| lb '/ chr do-cmd
+  m| lb ': chr do-asm
+  m| lb '# chr do-cmt
+  rt
+
+:rw-dehex
+  li `OUTBUF !A
+  li `RWBUF !B
+  .w c1 .d
+    @A rb c0 eq .i
+      c0 @B wb
+      c0 !RWMODE
+      rt
+    .t
+
+    @A rb hexval lb 10 ml
+    @A c1 ad rb hexval ad
+    emitop
+
+    c1 +A zp
+    c1 +A zp
+
+    @A rb lb ' eq .i               # skip source space, preserve separators
+      c1 +A zp
+      @A rb c0 eq nt .i
+        lb '  b!+
+      .t
+    .t
+  .o
 
 :rw-in
-  li `RWBUF cpyz                   # rewrite INBUF -> RWBUF (currently passthrough)
+  c0 !RWMODE
+  c0 !QUIT
+  li `INBUF !S
+  pre
+  li `linepat try
+  @M nt .i                         # unknown prefix => passthrough
+    copy-line zp
+  .t
   li `RWBUF !S                     # pre parses from @S, so point it at RWBUF
   li `RWBUF rt
 
 :rw-out
-  li `RWBUF cpyz                   # rewrite OUTBUF -> RWBUF (currently passthrough)
+  @RWMODE c0 eq .i
+    li `OUTBUF li `RWBUF cpyz      # passthrough
+  .e
+    rw-dehex
+  .t
   li `RWBUF rt
 
 :emitz
@@ -54,10 +195,17 @@
   du rb lb 'o io
   c1 ad emitz rt
 
+:trace<
+  dbg\
+  lb '< lb 'o io
+  emitz
+  lb 0A lb 'o io
+  rt
+
 :readout
   li `OUTBUF @H lb 'r io !R        # Read from subprocess -> @R = length
   @R c0 eq nt .i                   # If got data (length != 0)
-    li `OUTBUF rw-out emitz
+    rw-out emitz
     lb 0A lb 'o io                 # Restore trailing newline trimmed by io 'r'
   .t
   rt
@@ -65,6 +213,11 @@
 :pump
   lb 0A lb 'S io
   readout rt
+
+:rl
+  li `INBUF !S
+  li `INBUF li 00 01 00 00 lb 'i io !L
+  rt
 
 # --- Main Code -------------------------
 
@@ -77,14 +230,18 @@
 
   # --- Main loop: forward stdin to subprocess
   .w c1 .d            # while true do
-    li `INBUF li 00 01 00 00 lb 'i io !L  # Read line from stdin -> @L = length
+    rl                                    # Read line from stdin -> @L = length
     @L c0 eq .i                           # If EOF (length == 0)
+      pump                                # Drain any final child output before exit
+      pump
+      pump
+      pump
       @H lb 'k io c0 hl                   # Kill subprocess and exit
     .t
 
-    li `INBUF rw-in du @H lb 'w io    # Rewrite and send input to subprocess
-    rw-quit? .i                       # Parser-based quit check on rewritten input
-      c0 hl                           # Child saw /q already; exit proxy too
+    rw-in du trace< @H lb 'w io       # Rewrite and send input to subprocess
+    @QUIT .i                          # Exact "/q" line: child saw it, so exit proxy too
+      c0 hl
     .t
 
     # --- Read subprocess output in a few short passes
@@ -94,6 +251,7 @@
     pump
     pump
     pump
+
   .o
 
 # --- Subprocess IO Functions -----------
