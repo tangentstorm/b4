@@ -79,8 +79,8 @@
     du lb ' eq .i zp rt .t
     du lb 0A eq .i zp rt .t
     zp
-    c1 +A
-    c1 +N
+    c1 +A zp
+    c1 +N zp
   .o
   rt
 
@@ -104,8 +104,8 @@
         @V lb 80 ad rt
       .t
     .t
-    c2 +U
-    c1 +V
+    c2 +U zp
+    c1 +V zp
   .o
   n1 rt
 
@@ -171,7 +171,52 @@
   asmbyte
   rt
 
+:SAVEDIP 00 00 00 00
+
+:saveip                            # save child IP by reading memory at 0084
+  cmd-reset
+  lb '? b!+
+  lb 00 emithex lb 84 emithex      # ?0084x
+  lb 'x b!+
+  c0 @B wb
+  sendbuf
+  cl >rlc                           # read "XX XX XX XX ..."
+  # parse first 4 hex byte pairs into SAVEDIP
+  li `OUTBUF !X
+  li `SAVEDIP !Y
+  c4 .f
+    @X rb hexval lb 10 ml @X c1 ad rb hexval ad @Y wb
+    lb 03 +X zp                      # skip "XX " (3 chars)
+    c1 +Y zp
+  .n
+  rt
+
+:restoreip                         # restore child IP only if in scratch area
+  # read IP byte 1 (at 0085) to check if IP is in B4xx range
+  cmd-reset
+  lb '? b!+
+  lb 00 emithex lb 85 emithex       # ?0085x reads byte 1 of IP
+  lb 'x b!+
+  c0 @B wb
+  sendbuf
+  cl >rlc
+  # first 2 chars of response are the byte value
+  li `OUTBUF rb hexval lb 10 ml
+  li `OUTBUF c1 ad rb hexval ad
+  lb B4 eq nt .i rt .t               # not B4 => user db, don't restore
+  # restore saved IP
+  cmd-reset
+  lb '/ b!+
+  li `SAVEDIP c1 ad c2 ad rb emithex  # high byte first (byte 3)
+  li `SAVEDIP c2 ad rb emithex        # byte 2
+  li `SAVEDIP c1 ad rb emithex        # byte 1
+  li `SAVEDIP rb emithex              # byte 0
+  c0 @B wb
+  sendbuf
+  rt
+
 :exec-lb                            # (b--) assemble+run "lb xx"
+  saveip
   cmd-reset
   snippet>
   emit-lb
@@ -179,9 +224,11 @@
   c0 @B wb
   sendbuf
   cl >odrain
+  restoreip
   rt
 
 :exec-op                            # (b--) assemble+run single opcode
+  saveip
   cmd-reset
   snippet>
   asmbyte
@@ -189,10 +236,12 @@
   c0 @B wb
   sendbuf
   cl >odrain
+  restoreip
   rt
 
 :exec-li                            # (n--) assemble+run "li n"
   !NUMV
+  saveip
   cmd-reset
   snippet>
   lb 97 asmbyte
@@ -204,6 +253,7 @@
   c0 @B wb
   sendbuf
   cl >odrain
+  restoreip
   rt
 
 :hnum
@@ -215,7 +265,7 @@
       c0 rt
     .t
     @U lb 10 ml @V rb hexval ad !U
-    c1 +V
+    c1 +V zp
     @W c1 sb !W
   .o
   @U rt
@@ -376,6 +426,21 @@
   exec-op
   n1 rt
 
+:calc-reg-token                    # (@T/@N -> ok) ^X @X !X +X
+  @N c2 eq nt .i
+    c0 rt
+  .t
+  @T c1 ad rb du lb '@ lt .i zp c0 rt .t
+  du lb '_ lt nt .i
+    lb '_ eq nt .i c0 rt .t
+  .t
+  lb '@ sb                            # r = second char - '@'
+  @T rb du lb '^ eq .i zp exec-op n1 rt .t
+  du lb '@ eq .i zp lb 20 ad exec-op n1 rt .t
+  du lb '! eq .i zp lb 40 ad exec-op n1 rt .t
+  lb '+ eq .i lb 60 ad exec-op n1 rt .t
+  zp c0 rt
+
 :calc-token                        # (@T/@N -> ok)
   quote-token .i n1 rt .t
   ctrl-token .i n1 rt .t
@@ -383,6 +448,7 @@
   num-token .i n1 rt .t
   basic-op-token .i n1 rt .t
   const-token .i n1 rt .t
+  calc-reg-token .i n1 rt .t
   op-token rt
 
 :emitaddr
@@ -428,11 +494,38 @@
   lb 00 asm-byte
   n1 rt
 
+:asm-set-reg                       # (regchar--) set child register to ASMADDR
+  lb '@ sb c2 sh !W                  # W = (regchar-'@')*4 = register byte offset
+  cmd-reset
+  lb ': b!+
+  lb 00 emithex @W emithex             # emit register address as 4-digit hex (00XX)
+  sp+
+  li `ASMADDR rb asmbyte             # emit ASMADDR as 4 little-endian bytes
+  li `ASMADDR c1 ad rb asmbyte
+  li `ASMADDR c2 ad rb asmbyte
+  li `ASMADDR c1 ad c2 ad rb asmbyte
+  c0 @B wb
+  sendbuf
+  n1 rt
+
 :asm-addr-token
-  @N c2 lt .i
+  @T rb lb ': eq nt .i
     c0 rt
   .t
-  @T rb lb ': eq nt .i
+  @N c1 eq .i
+    n1 rt                              # bare ':' -> keep current ASMADDR
+  .t
+  @N c2 eq .i
+    @T c1 ad rb du lb '@ lt .i        # :X where X is register char?
+      zp c0 rt
+    .t
+    du lb '_ lt nt .i
+      lb '_ eq nt .i c0 rt .t
+    .t
+    asm-set-reg
+    n1 rt
+  .t
+  @N c2 lt .i
     c0 rt
   .t
   @T c1 ad !T
@@ -559,13 +652,39 @@
   asm-byte
   n1 rt
 
+:asm-reg-token                     # (@T/@N -> ok) ^X @X !X +X
+  @N c2 eq nt .i
+    c0 rt
+  .t
+  @T c1 ad rb du lb '@ lt .i zp c0 rt .t
+  du lb '_ lt nt .i
+    lb '_ eq nt .i c0 rt .t
+  .t
+  lb '@ sb                            # r = second char - '@'
+  @T rb du lb '^ eq .i zp asm-byte n1 rt .t
+  du lb '@ eq .i zp lb 20 ad asm-byte n1 rt .t
+  du lb '! eq .i zp lb 40 ad asm-byte n1 rt .t
+  lb '+ eq .i lb 60 ad asm-byte n1 rt .t
+  zp c0 rt
+
+:asmneghex                 # (@T/@N -> ok) -XX negative hex byte
+  @N c2 lt .i c0 rt .t
+  @T rb lb '- eq nt .i c0 rt .t
+  @T c1 ad rb ishex nt .i c0 rt .t  # check digit after '-' before modifying
+  @T c1 ad !T
+  @N c1 sb !N
+  hnum c0 sw sb lb FF an asm-byte
+  n1 rt
+
 :asm-token                         # (@T/@N -> ok)
   asm-addr-token .i n1 rt .t
   asm-quote-token .i n1 rt .t
   asm-zero-token .i n1 rt .t
   asm-hex-token .i n1 rt .t
+  asmneghex .i n1 rt .t
   abop .i n1 rt .t
   asm-const-token .i n1 rt .t
+  asm-reg-token .i n1 rt .t
   asm-op-token rt
 
 :tok>
@@ -692,13 +811,13 @@
     zp rt
   .t
   du lb ' eq .i
-    zp c1 +A ox-line rt
+    zp c1 +A zp ox-line rt
   .t
   zp
   @A rb hexval lb 10 ml
   @A c1 ad rb hexval ad
   lb 'o io
-  c2 +A
+  c2 +A zp
   @U c1 sb !U
   ox-line rt
 
@@ -735,7 +854,11 @@
 :raw-readout
   rlc
   @R c0 eq nt .i
-    li `OUTBUF dumpz
+    @RWMODE .i
+      cl >rw-out cl >emitz
+    .e
+      li `OUTBUF dumpz
+    .t
     lb 0A lb 'o io
   .t
   rt
@@ -804,7 +927,7 @@
       c0 rt
     .t
     @U lb 10 ml @V rb hexval ad !U
-    c1 +V
+    c1 +V zp
     @W c1 sb !W
   .o
   @U rt
@@ -1103,6 +1226,32 @@
   .t
   rt
 
+:query-reg?                        # (@TOKA/@TOKN -> flag) true if ?X where X is reg char
+  @TOKN c2 eq nt .i c0 rt .t
+  @TOKA rb lb '? eq nt .i c0 rt .t
+  @TOKA c1 ad rb du lb '@ lt .i zp c0 rt .t
+  du lb '_ lt nt .i lb '_ eq rt .t
+  n1 rt
+
+:ohex2                             # (offset--) output 2 hex chars from OUTBUF at offset
+  li `OUTBUF ad du rb lb 'o io
+  c1 ad rb lb 'o io rt
+
+:query-reg                         # handle ?X by reading register from child memory
+  @TOKA c1 ad rb lb '@ sb c2 sh !W  # W = register byte offset
+  cmd-reset
+  lb '? b!+
+  lb 00 emithex @W emithex          # ?00XXx
+  lb 'x b!+
+  c0 @B wb
+  sendbuf
+  rlc                                # read hex dump line "XX XX XX XX ..."
+  @R c0 eq .i rt .t
+  # output 4 LE bytes as 8 BE hex digits: bytes at offsets 9,6,3,0
+  lb 09 ohex2 lb 06 ohex2 lb 03 ohex2 lb 00 ohex2
+  lb 0A lb 'o io
+  rt
+
 :imm-token
   @TOKN c0 eq .i
     rt
@@ -1113,6 +1262,10 @@
       copy-line
       c0 !HANDLED
     .t
+    rt
+  .t
+  query-reg? .i
+    query-reg
     rt
   .t
   raw-token? .i
@@ -1137,16 +1290,6 @@
   c0 !ASMMODE
   c0 !QUIT
   lb 01 !HANDLED
-  li `INBUF !A
-  skipws
-  @A rb lb ': eq .i
-    li `INBUF li `RWBUF cpyz
-    sendbuf
-    @QUIT .i
-      c0 hl
-    .t
-    rt
-  .t
   li `INBUF !A
   lb 01 !MORE
   .w @MORE .d
