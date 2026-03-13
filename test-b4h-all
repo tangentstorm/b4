@@ -1,10 +1,10 @@
 #!/bin/sh
 (cd pas; make b4i) \
 && echo "== pas ================" \
-&& tanco run -t b4h-tests.org pas/b4i \
+&& tanco run -t b4h-tests.org -- pas/b4i \
 && echo "== js =================" \
 && (cd js; npm run build) \
-&& tanco run -t b4h-tests.org node js/dist/b4i.mjs \
+&& tanco run -t b4h-tests.org -- node js/dist/b4i.mjs \
 && echo "== jlang ==============" \
 && if command -v ijconsole >/dev/null 2>&1; then \
      (cd jlang; tanco run -t ../b4h-tests.org -c "ijconsole b4i.ijs"); \
@@ -15,8 +15,8 @@
 && INPUT_PATH=input.txt tanco run -t b4h-tests.org -c "lilt lil/b4i.lil input.txt" \
 && echo "== c ==================" \
 && (cd c; make) \
-&& tanco run -t b4h-tests.org c/b4h
+&& tanco run -t b4h-tests.org -- c/b4h
 
 # && echo "== godot =============="
 # && SKIP_LINES=2 INPUT_PATH=../b4-gd/input.txt GODOT="${GODOT:-~/Downloads/Godot_v4.3-stable_win64.exe/Godot_v4.3-stable_win64_console.exe}" \
-#    tanco run --tests b4h-tests.org "$GODOT" --path ../b4-gd --headless --script cli.gd -- input.txt
+#    tanco run --tests b4h-tests.org -- "$GODOT" --path ../b4-gd --headless --script cli.gd -- input.txt

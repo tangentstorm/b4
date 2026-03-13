@@ -17,4 +17,4 @@ fi
 export GODOT="$GODOT_PATH"
 
 # Use tanco to run tests
-tanco run --tests b4-tests.org "$GODOT" --path ../b4-gd --headless --script cli.gd -- input.txt
+tanco run --tests b4-tests.org -- "$GODOT" --path ../b4-gd --headless --script cli.gd -- input.txt
