@@ -523,6 +523,11 @@ procedure opio;
       'i' : begin  { read line from stdin: (dest-ptr maxlen -- actual-len) }
               len := dpop;   { max length }
               addr := dpop;  { destination }
+              if eof(input) then begin
+                mem[addr] := 0;
+                dput(0);
+                exit;
+              end;
               fname := '';
               readln(fname);  { read line from stdin }
               fsize := length(fname);
