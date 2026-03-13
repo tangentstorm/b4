@@ -95,4 +95,5 @@ const vm = new B4VM()
 addNativeIo(vm)
 
 export { B4VM }
+export { vm }
 export function b4i(line: string): void { vm.b4i(line) }
