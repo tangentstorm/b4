@@ -15,6 +15,7 @@ B4IX = b4ix$(EXE)
 B4A = b4a$(EXE)
 B4D = b4d$(EXE)
 MKOPTBL = mkoptbl$(EXE)
+BINS = $(B4) $(B4X) $(B4I) $(B4H) $(B4IX) $(B4A) $(B4D) $(MKOPTBL)
 
 main:
 	@echo 'usage : make <target> ARGS="..."'
@@ -107,4 +108,4 @@ colortest: uhw_vt.pas colortest.pas
 	./colortest
 
 clean:
-	@rm -f *.o *.ppu *.exe *~
+	@rm -f *.o *.ppu *.exe $(BINS) link*.res *~
