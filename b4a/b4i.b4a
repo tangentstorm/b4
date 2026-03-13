@@ -28,6 +28,9 @@
 :TOKA   00 00 00 00  # saved token start for raw dispatch
 :TOKN   00 00 00 00  # saved token length for raw dispatch
 :NUMV   00 00 00 00  # parsed 32-bit immediate for li snippets
+:DL0  00 00 00 00  # pointer to last dictionary entry (0 = empty)
+:DH0  00 00 00 00  # next free byte in dictionary buffer
+:DICT   :+400        # dictionary buffer (1024 bytes)
 
 :OPCODES
 #+ 0   + 1   + 2   + 3   + 4   + 5   + 6   + 7   + 8   + 9   + A   + B   + C   + D   + E   + F
@@ -138,7 +141,7 @@
 
 :<snippet
   @A !X
-  lb FE asmbyte
+  lb FF asmbyte
   nl+
   lb '/ b!+
   li `SCRATCH @B cpyz
@@ -441,6 +444,33 @@
   lb '+ eq .i lb 60 ad exec-op n1 rt .t
   zp c0 rt
 
+:calc-label-token                  # (@T/@N -> ok) look up label and call/get/set
+  @T rb lb '@ eq .i                 # @label -> exec li+ri
+    @T c1 ad @N c1 sb cl >d.find nt .i zp c0 rt .t
+    exec-li lb 93 exec-op n1 rt     # push addr, exec ri
+  .t
+  @T rb lb '! eq .i                 # !label -> exec li+wi
+    @T c1 ad @N c1 sb cl >d.find nt .i zp c0 rt .t
+    exec-li lb 95 exec-op n1 rt     # push addr, exec wi
+  .t
+  @T @N cl >d.find nt .i zp c0 rt .t   # bare label -> call it
+  # assemble cl <addr> hl at scratch, run it
+  !NUMV
+  saveip
+  cmd-reset
+  snippet>
+  lb 9D asmbyte                       # cl
+  li `NUMV rb asmbyte
+  li `NUMV c1 ad rb asmbyte
+  li `NUMV c2 ad rb asmbyte
+  li `NUMV c1 ad c2 ad rb asmbyte
+  <snippet
+  c0 @B wb
+  sendbuf
+  cl >odrain
+  restoreip
+  n1 rt
+
 :calc-token                        # (@T/@N -> ok)
   quote-token .i n1 rt .t
   ctrl-token .i n1 rt .t
@@ -449,12 +479,70 @@
   basic-op-token .i n1 rt .t
   const-token .i n1 rt .t
   calc-reg-token .i n1 rt .t
+  calc-label-token .i n1 rt .t
   op-token rt
 
 :emitaddr
   @ASMADDR du li 00 01 00 00 dv emithex
   lb FF an emithex
   rt
+
+# --- Dictionary ---
+# Entry format: [link:4][count:1][name:N][addr:4]
+# DL0 points to most recent entry, DH0 is next free byte in DICT buffer.
+
+:d.add                             # (@T @N --) define label: add entry with current ASMADDR
+  !W !V                            # V=name ptr, W=name length
+  @DH0 !X                        # X = start of new entry
+  # write link to previous entry (4 bytes LE)
+  li `DL0 rb @DH0 wb @DH0 c1 ad !DH0
+  li `DL0 c1 ad rb @DH0 wb @DH0 c1 ad !DH0
+  li `DL0 c2 ad rb @DH0 wb @DH0 c1 ad !DH0
+  li `DL0 c1 ad c2 ad rb @DH0 wb @DH0 c1 ad !DH0
+  # write count byte
+  @W @DH0 wb @DH0 c1 ad !DH0
+  # write name bytes
+  @W .f
+    @V rb @DH0 wb
+    c1 +V zp @DH0 c1 ad !DH0
+  .n
+  # write address (4 bytes LE from ASMADDR)
+  li `ASMADDR rb @DH0 wb @DH0 c1 ad !DH0
+  li `ASMADDR c1 ad rb @DH0 wb @DH0 c1 ad !DH0
+  li `ASMADDR c2 ad rb @DH0 wb @DH0 c1 ad !DH0
+  li `ASMADDR c1 ad c2 ad rb @DH0 wb @DH0 c1 ad !DH0
+  # update DL0 to point to this entry
+  @X !DL0
+  rt
+
+:d.streq                           # (ptr1 ptr2 len -- flag) compare len bytes
+  !W !V !U                         # U=ptr1 V=ptr2 W=len
+  .w @W .d
+    @U rb @V rb eq nt .i
+      c0 rt                        # mismatch
+    .t
+    c1 +U zp c1 +V zp
+    @W c1 sb !W
+  .o
+  n1 rt                            # all matched
+
+:d.find                            # (@T @N -- addr flag) look up name in dictionary
+  !W !V                            # V=name ptr, W=name length
+  @DL0 !X                        # X = current entry
+  .w @X .d                         # while X != 0
+    # read count byte at X+4
+    @X c4 ad rb @W eq .i           # count matches?
+      @W dc                         # save W (d.streq clobbers it)
+      @V @X lb 05 ad @W d.streq
+      cd !W                          # restore W
+      .i                             # name matches?
+        @X lb 05 ad @W ad ri       # read address (ri reads 4 LE bytes)
+        n1 rt
+      .t
+    .t
+    @X ri !X                        # follow link (ri reads 4 LE bytes)
+  .o
+  c0 c0 rt                         # not found
 
 :asm-byte                          # (b--) write one byte to remote memory at @ASMADDR
   cmd-reset
@@ -508,6 +596,14 @@
   sendbuf
   n1 rt
 
+:allhex?                           # (@T @N -- flag) true if all chars are hex
+  @T !U @N !V
+  .w @V .d
+    @U rb ishex nt .i c0 rt .t
+    c1 +U zp @V c1 sb !V
+  .o
+  n1 rt
+
 :asm-addr-token
   @T rb lb ': eq nt .i
     c0 rt
@@ -515,22 +611,25 @@
   @N c1 eq .i
     n1 rt                              # bare ':' -> keep current ASMADDR
   .t
-  @N c2 eq .i
-    @T c1 ad rb du lb '@ lt .i        # :X where X is register char?
-      zp c0 rt
+  @T c1 ad !T                         # skip ':'
+  @N c1 sb !N
+  @N c1 eq .i
+    @T rb du lb '@ lt .i              # :X where X is register char?
+      zp @T c1 sb !T @N c1 ad !N c0 rt  # restore and fail
     .t
     du lb '_ lt nt .i
-      lb '_ eq nt .i c0 rt .t
+      lb '_ eq nt .i
+        @T c1 sb !T @N c1 ad !N c0 rt  # restore and fail
+      .t
     .t
     asm-set-reg
     n1 rt
   .t
-  @N c2 lt .i
-    c0 rt
+  allhex? .i
+    hnum !ASMADDR                      # hex address like :100
+  .e
+    @T @N d.add                        # multi-char label like :int
   .t
-  @T c1 ad !T
-  @N c1 sb !N
-  hnum !ASMADDR
   n1 rt
 
 :asm-hex-token                     # (@T/@N -> ok)
@@ -676,6 +775,37 @@
   hnum c0 sw sb lb FF an asm-byte
   n1 rt
 
+:asm-li-addr                       # (addr--) emit li <addr> as 5 bytes
+  !NUMV
+  lb 97 asm-byte                    # li opcode
+  li `NUMV rb asm-byte
+  li `NUMV c1 ad rb asm-byte
+  li `NUMV c2 ad rb asm-byte
+  li `NUMV c1 ad c2 ad rb asm-byte
+  rt
+
+:asm-label-ref                     # (@T/@N -> ok) @label->li+ri, !label->li+wi, label->cl
+  @T rb du lb '@ eq .i
+    zp @T c1 ad @N c1 sb d.find nt .i zp c0 rt .t
+    asm-li-addr lb 93 asm-byte      # ri
+    n1 rt
+  .t
+  du lb '! eq .i
+    zp @T c1 ad @N c1 sb d.find nt .i zp c0 rt .t
+    asm-li-addr lb 95 asm-byte      # wi
+    n1 rt
+  .t
+  zp
+  @T @N d.find nt .i zp c0 rt .t
+  # bare label -> cl <addr> (5 bytes: cl + 4 addr bytes)
+  !NUMV
+  lb 9D asm-byte                    # cl opcode
+  li `NUMV rb asm-byte
+  li `NUMV c1 ad rb asm-byte
+  li `NUMV c2 ad rb asm-byte
+  li `NUMV c1 ad c2 ad rb asm-byte
+  n1 rt
+
 :asm-token                         # (@T/@N -> ok)
   asm-addr-token .i n1 rt .t
   asm-quote-token .i n1 rt .t
@@ -685,6 +815,7 @@
   abop .i n1 rt .t
   asm-const-token .i n1 rt .t
   asm-reg-token .i n1 rt .t
+  asm-label-ref .i n1 rt .t
   asm-op-token rt
 
 :tok>
@@ -1333,6 +1464,7 @@
 :main
   li `CMD lb 'p io !H  # Spawn child process, store handle in @H
   li 00 01 00 00 !ASMADDR
+  li `DICT !DH0       # initialize dictionary pointer
   @H c0 lt .i         # Check if spawn failed (handle < 0)
     'E 'e io 'R 'e io 'R 'e io 0A 'e io  # Print "Err\n" to stderr
     lb 01 hl          # Exit with code 1
