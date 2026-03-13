@@ -15,8 +15,13 @@
 # --- Data -------------------------
 
 :CMD "c/b4h" 00  # Command to spawn Level 0 hex interpreter
+:SCRATCH "B4A0" 00
 :RWMODE 00 00 00 00  # 1 => translate next child line from hex dump to opcodes
 :QUIT   00 00 00 00  # 1 => current input line was exact "/q"
+:OK     00 00 00 00  # 1 => calculator line rewrote successfully
+:MORE   00 00 00 00  # 1 => calculator scanner should keep reading tokens
+:SEEN   00 00 00 00  # 1 => calculator line parsed at least one token
+:TAIL   00 00 00 00  # ptr to first passthrough command after calculator code
 
 :OPCODES
 #+ 0   + 1   + 2   + 3   + 4   + 5   + 6   + 7   + 8   + 9   + A   + B   + C   + D   + E   + F
@@ -50,6 +55,53 @@
   .o
 
 :b!+ @B wb c1 +B zp rt             # (c--) write char at @B and advance
+:sp+ lb '  b!+ rt
+:nl+ lb 0A b!+ rt
+
+:skipws
+  .w @A rb du lb ' eq
+     sw lb 0A eq or .d
+    c1 +A zp
+  .o
+  rt
+
+:tok
+  @A !T
+  c0 !N
+  .w c1 .d
+    @A rb du c0 eq .i zp rt .t
+    du lb ' eq .i zp rt .t
+    du lb 0A eq .i zp rt .t
+    zp
+    c1 +A
+    c1 +N
+  .o
+  rt
+
+:ishex
+  du lb '0 lt .i zp c0 rt .t
+  du lb '9 lt .i zp n1 rt .t
+  du lb '9 eq .i zp n1 rt .t
+  du lb 'A lt .i zp c0 rt .t
+  du lb 'F lt .i zp n1 rt .t
+  lb 'F eq rt
+
+:opfind                            # (@T/@N -> op|-1)
+  @N c2 eq nt .i
+    n1 rt
+  .t
+  li `OPCODES !U
+  c0 !V
+  .w @V lb 80 lt .d
+    @U rb @T rb eq .i
+      @U c1 ad rb @T c1 ad rb eq .i
+        @V lb 80 ad rt
+      .t
+    .t
+    c2 +U
+    c1 +V
+  .o
+  n1 rt
 
 :hexval                             # (c-n) uppercase hex digit to value
   du lb 'A lt .i
@@ -66,6 +118,271 @@
   du lb 0A lt .i lb '0 .e lb 'A lb 0A sb .t ad b!+
   rt
 
+:asmbyte                           # (b--) emit raw hex byte plus trailing space
+  emithex sp+
+  rt
+
+:snippet>
+  @A !X
+  lb ': b!+
+  li `SCRATCH @B cpyz
+  @X !A
+  sp+
+  rt
+
+:<snippet
+  @A !X
+  lb FE asmbyte
+  nl+
+  lb '/ b!+
+  li `SCRATCH @B cpyz
+  @X !A
+  sp+
+  lb '/ b!+
+  lb '/ b!+
+  nl+
+  rt
+
+:emit-lb
+  lb 96 asmbyte
+  asmbyte
+  rt
+
+:exec-lb                            # (b--) assemble+run "lb xx"
+  snippet>
+  emit-lb
+  <snippet
+  rt
+
+:exec-op                            # (b--) assemble+run single opcode
+  snippet>
+  asmbyte
+  <snippet
+  rt
+
+:hex-token                         # (@T/@N -> ok) emit lb XX for 2-digit uppercase hex
+  @N c2 eq nt .i
+    c0 rt
+  .t
+  @T rb du ishex nt .i
+    zp c0 rt
+  .t
+  hexval lb 10 ml
+  @T c1 ad rb du ishex nt .i
+    zp zp c0 rt
+  .t
+  hexval ad exec-lb
+  n1 rt
+
+:quote-token                       # (@T/@N -> ok)
+  @T rb lb '' eq nt .i
+    c0 rt
+  .t
+  @N c1 eq .i
+    lb 20 exec-lb
+    n1 rt
+  .t
+  @N c2 eq .i
+    @T c1 ad rb exec-lb
+    n1 rt
+  .t
+  c0 rt
+
+:ctrl-token                        # (@T/@N -> ok)
+  @T rb lb '` eq nt .i
+    c0 rt
+  .t
+  @N c2 eq nt .i
+    c0 rt
+  .t
+  @T c1 ad rb lb '@ sb c2 sh exec-lb
+  n1 rt
+
+:basic-op-token                    # (@T/@N -> ok)
+  @N c2 eq nt .i
+    c0 rt
+  .t
+  @T rb !U
+  @T c1 ad rb !V
+  @U lb 'a eq .i
+    @V lb 'd eq .i lb 80 exec-op n1 rt .t
+    @V lb 'n eq .i lb 86 exec-op n1 rt .t
+  .t
+  @U lb 's eq .i
+    @V lb 'b eq .i lb 81 exec-op n1 rt .t
+    @V lb 'h eq .i lb 85 exec-op n1 rt .t
+    @V lb 'w eq .i lb 8D exec-op n1 rt .t
+  .t
+  @U lb 'm eq .i
+    @V lb 'l eq .i lb 82 exec-op n1 rt .t
+    @V lb 'd eq .i lb 84 exec-op n1 rt .t
+  .t
+  @U lb 'd eq .i
+    @V lb 'v eq .i lb 83 exec-op n1 rt .t
+    @V lb 'u eq .i lb 8C exec-op n1 rt .t
+    @V lb 'c eq .i lb 90 exec-op n1 rt .t
+    @V lb 'b eq .i lb FE exec-op n1 rt .t
+  .t
+  @U lb 'o eq .i
+    @V lb 'r eq .i lb 87 exec-op n1 rt .t
+    @V lb 'v eq .i lb 8E exec-op n1 rt .t
+  .t
+  @U lb 'x eq .i
+    @V lb 'r eq .i
+      lb 88 exec-op n1 rt
+    .t
+  .t
+  @U lb 'n eq .i
+    @V lb 't eq .i lb 89 exec-op n1 rt .t
+    @V lb 'x eq .i lb 9F exec-op n1 rt .t
+  .t
+  @U lb 'e eq .i
+    @V lb 'q eq .i
+      lb 8A exec-op n1 rt
+    .t
+  .t
+  @U lb 'l eq .i
+    @V lb 't eq .i lb 8B exec-op n1 rt .t
+    @V lb 'b eq .i lb 96 exec-op n1 rt .t
+    @V lb 'i eq .i lb 97 exec-op n1 rt .t
+    @V lb 's eq .i lb 99 exec-op n1 rt .t
+  .t
+  @U lb 'r eq .i
+    @V lb 'b eq .i lb 92 exec-op n1 rt .t
+    @V lb 'i eq .i lb 93 exec-op n1 rt .t
+    @V lb 's eq .i lb 98 exec-op n1 rt .t
+    @V lb 't eq .i lb 9E exec-op n1 rt .t
+  .t
+  @U lb 'w eq .i
+    @V lb 'b eq .i lb 94 exec-op n1 rt .t
+    @V lb 'i eq .i lb 95 exec-op n1 rt .t
+  .t
+  @U lb 'j eq .i
+    @V lb 'm eq .i
+      lb 9A exec-op n1 rt
+    .t
+  .t
+  @U lb 'h eq .i
+    @V lb 'p eq .i lb 9B exec-op n1 rt .t
+    @V lb 'l eq .i lb FF exec-op n1 rt .t
+    @V lb '0 eq .i lb 9C exec-op n1 rt .t
+  .t
+  @U lb 'c eq .i
+    @V lb 'd eq .i lb 91 exec-op n1 rt .t
+    @V lb 'l eq .i lb 9D exec-op n1 rt .t
+  .t
+  @U lb 'i eq .i
+    @V lb 'o eq .i
+      lb FD exec-op n1 rt
+    .t
+  .t
+  c0 rt
+
+:const-token                       # (@T/@N -> ok)
+  @N c2 eq nt .i
+    c0 rt
+  .t
+  @T rb lb 'c eq .i
+    @T c1 ad rb du lb '0 eq .i zp lb C0 exec-op n1 rt .t
+    du lb '1 eq .i zp lb C1 exec-op n1 rt .t
+    du lb '2 eq .i zp lb F6 exec-op n1 rt .t
+    du lb '4 eq .i zp lb F8 exec-op n1 rt .t
+    zp
+  .t
+  @T rb lb 'n eq .i
+    @T c1 ad rb lb '1 eq .i
+      lb F7 exec-op n1 rt
+    .t
+  .t
+  c0 rt
+
+:op-token                          # (@T/@N -> ok)
+  opfind du c0 lt .i
+    zp c0 rt
+  .t
+  exec-op
+  n1 rt
+
+:calc-token                        # (@T/@N -> ok)
+  quote-token .i n1 rt .t
+  ctrl-token .i n1 rt .t
+  hex-token .i n1 rt .t
+  basic-op-token .i n1 rt .t
+  const-token .i n1 rt .t
+  op-token rt
+
+:copytail                          # copy rest of input line, including newline if present
+  @TAIL c0 eq .i
+    nl+
+    c0 @B wb
+    rt
+  .t
+  @TAIL !A
+  .w c1 .d
+    @A rb du c0 eq .i
+      @B wb
+      rt
+    .t
+    du @B wb
+    c1 +A
+    c1 +B
+    lb 0A eq .i
+      c0 @B wb
+      rt
+    .t
+  .o
+  rt
+
+:copy-line
+  li `INBUF li `RWBUF cpyz
+  m1 rt
+
+:calc-fail
+  c0 !OK
+  copy-line rt
+
+:calc-step
+  skipws
+  @A rb du c0 eq .i
+    zp c0 !MORE rt
+  .t
+  du lb '? eq .i
+    zp @A !TAIL c0 !MORE rt
+  .t
+  du lb '/ eq .i
+    zp @A !TAIL c0 !MORE rt
+  .t
+  du lb '# eq .i
+    zp c0 !TAIL c0 !MORE rt
+  .t
+  zp
+  tok
+  calc-token nt .i
+    calc-fail
+  .t
+  lb 01 !SEEN
+  rt
+
+:do-calc
+  li `INBUF !A
+  li `RWBUF !B
+  lb 01 !OK
+  lb 01 !MORE
+  c0 !SEEN
+  c0 !TAIL
+
+  .w @MORE .d
+    calc-step
+  .o
+
+  @SEEN c0 eq .i
+    c0 !OK
+    copy-line rt
+  .t
+
+  copytail
+  rt
+
 :emitop                             # (b--) opcode byte -> 2-char token or hex
   du c0 eq .i zp lb '. b!+ lb '. b!+ rt .t
   du lb 20 lt .i lb '^ b!+ lb 40 ad b!+ zp rt .t
@@ -77,10 +394,6 @@
   b!+
   @T c1 ad rb b!+
   zp rt
-
-:copy-line
-  li `INBUF li `RWBUF cpyz
-  m1 rt
 
 :dbg\ @\ nt .i cd zp .t rt          # early-exit current word unless debug register is nonzero
 
@@ -169,7 +482,8 @@
   pre
   li `linepat try
   @M nt .i                         # unknown prefix => passthrough
-    copy-line zp
+    do-calc
+    zp
   .t
   li `RWBUF !S                     # pre parses from @S, so point it at RWBUF
   li `RWBUF rt
