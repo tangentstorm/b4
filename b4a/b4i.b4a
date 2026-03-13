@@ -17,11 +17,17 @@
 :CMD "c/b4h" 00  # Command to spawn Level 0 hex interpreter
 :SCRATCH "B4A0" 00
 :RWMODE 00 00 00 00  # 1 => translate next child line from hex dump to opcodes
+:ASMMODE 00 00 00 00 # 1 => after ':' on this line, assemble rest of line
 :QUIT   00 00 00 00  # 1 => current input line was exact "/q"
+:HANDLED 00 00 00 00 # 1 => current line was sent directly to child
 :OK     00 00 00 00  # 1 => calculator line rewrote successfully
-:MORE   00 00 00 00  # 1 => calculator scanner should keep reading tokens
+:MORE   00 00 00 00  # loop flag for token scanners
 :SEEN   00 00 00 00  # 1 => calculator line parsed at least one token
-:TAIL   00 00 00 00  # ptr to first passthrough command after calculator code
+:NEXTA  00 00 00 00  # parser cursor after current token
+:ASMADDR 00 01 00 00 # next remote assembly address (defaults to MINHEAP)
+:TOKA   00 00 00 00  # saved token start for raw dispatch
+:TOKN   00 00 00 00  # saved token length for raw dispatch
+:NUMV   00 00 00 00  # parsed 32-bit immediate for li snippets
 
 :OPCODES
 #+ 0   + 1   + 2   + 3   + 4   + 5   + 6   + 7   + 8   + 9   + A   + B   + C   + D   + E   + F
@@ -143,22 +149,76 @@
   nl+
   rt
 
+:cmd-reset
+  li `RWBUF !B
+  c0 @B wb
+  rt
+
+:dumpz
+  du rb c0 eq .i
+    zp rt
+  .t
+  du rb lb 'o io
+  c1 ad dumpz rt
+
+:sendbuf
+  li `RWBUF @H lb 'w io
+  cmd-reset
+  rt
+
 :emit-lb
   lb 96 asmbyte
   asmbyte
   rt
 
 :exec-lb                            # (b--) assemble+run "lb xx"
+  cmd-reset
   snippet>
   emit-lb
   <snippet
+  c0 @B wb
+  sendbuf
+  cl >odrain
   rt
 
 :exec-op                            # (b--) assemble+run single opcode
+  cmd-reset
   snippet>
   asmbyte
   <snippet
+  c0 @B wb
+  sendbuf
+  cl >odrain
   rt
+
+:exec-li                            # (n--) assemble+run "li n"
+  !NUMV
+  cmd-reset
+  snippet>
+  lb 97 asmbyte
+  li `NUMV rb asmbyte
+  li `NUMV c1 ad rb asmbyte
+  li `NUMV c2 ad rb asmbyte
+  li `NUMV c1 ad c2 ad rb asmbyte
+  <snippet
+  c0 @B wb
+  sendbuf
+  cl >odrain
+  rt
+
+:hnum
+  c0 !U
+  @T !V
+  @N !W
+  .w @W .d
+    @V rb ishex nt .i
+      c0 rt
+    .t
+    @U lb 10 ml @V rb hexval ad !U
+    c1 +V
+    @W c1 sb !W
+  .o
+  @U rt
 
 :hex-token                         # (@T/@N -> ok) emit lb XX for 2-digit uppercase hex
   @N c2 eq nt .i
@@ -172,6 +232,19 @@
     zp zp c0 rt
   .t
   hexval ad exec-lb
+  n1 rt
+
+:num-token                         # (@T/@N -> ok) emit li N for 3..8 digit uppercase hex
+  @N c1 eq .i
+    c0 rt
+  .t
+  @N c2 eq .i
+    c0 rt
+  .t
+  @T rb ishex nt .i
+    c0 rt
+  .t
+  hnum exec-li
   n1 rt
 
 :quote-token                       # (@T/@N -> ok)
@@ -307,30 +380,200 @@
   quote-token .i n1 rt .t
   ctrl-token .i n1 rt .t
   hex-token .i n1 rt .t
+  num-token .i n1 rt .t
   basic-op-token .i n1 rt .t
   const-token .i n1 rt .t
   op-token rt
 
-:copytail                          # copy rest of input line, including newline if present
-  @TAIL c0 eq .i
-    nl+
-    c0 @B wb
-    rt
+:emitaddr
+  @ASMADDR du li 00 01 00 00 dv emithex
+  lb FF an emithex
+  rt
+
+:asm-byte                          # (b--) write one byte to remote memory at @ASMADDR
+  cmd-reset
+  lb ': b!+
+  emitaddr
+  sp+
+  asmbyte
+  c0 @B wb
+  sendbuf
+  @ASMADDR c1 ad !ASMADDR
+  rt
+
+:asm-quote-token                   # (@T/@N -> ok)
+  @T rb lb '' eq nt .i
+    c0 rt
   .t
-  @TAIL !A
-  .w c1 .d
-    @A rb du c0 eq .i
-      @B wb
-      rt
+  @N c1 eq .i
+    lb 20 asm-byte
+    n1 rt
+  .t
+  @N c2 eq .i
+    @T c1 ad rb asm-byte
+    n1 rt
+  .t
+  c0 rt
+
+:asm-zero-token
+  @N c2 eq nt .i
+    c0 rt
+  .t
+  @T rb lb '. eq nt .i
+    c0 rt
+  .t
+  @T c1 ad rb lb '. eq nt .i
+    c0 rt
+  .t
+  lb 00 asm-byte
+  n1 rt
+
+:asm-addr-token
+  @N c2 lt .i
+    c0 rt
+  .t
+  @T rb lb ': eq nt .i
+    c0 rt
+  .t
+  @T c1 ad !T
+  @N c1 sb !N
+  hnum !ASMADDR
+  n1 rt
+
+:asm-hex-token                     # (@T/@N -> ok)
+  @N c2 eq nt .i
+    c0 rt
+  .t
+  @T rb du ishex nt .i
+    zp c0 rt
+  .t
+  hexval lb 10 ml
+  @T c1 ad rb du ishex nt .i
+    zp zp c0 rt
+  .t
+  hexval ad asm-byte
+  n1 rt
+
+:asm-const-token
+  @N c2 eq nt .i
+    c0 rt
+  .t
+  @T rb lb 'c eq .i
+    @T c1 ad rb du lb '0 eq .i zp lb C0 asm-byte n1 rt .t
+    du lb '1 eq .i zp lb C1 asm-byte n1 rt .t
+    du lb '2 eq .i zp lb F6 asm-byte n1 rt .t
+    du lb '4 eq .i zp lb F8 asm-byte n1 rt .t
+    zp
+  .t
+  @T rb lb 'n eq .i
+    @T c1 ad rb lb '1 eq .i
+      lb F7 asm-byte n1 rt
     .t
-    du @B wb
-    c1 +A
-    c1 +B
-    lb 0A eq .i
-      c0 @B wb
-      rt
+  .t
+  c0 rt
+
+:abop
+  @N c2 eq nt .i
+    c0 rt
+  .t
+  @T rb !U
+  @T c1 ad rb !V
+  @U lb 'a eq .i
+    @V lb 'd eq .i lb 80 asm-byte n1 rt .t
+    @V lb 'n eq .i lb 86 asm-byte n1 rt .t
+  .t
+  @U lb 's eq .i
+    @V lb 'b eq .i lb 81 asm-byte n1 rt .t
+    @V lb 'h eq .i lb 85 asm-byte n1 rt .t
+    @V lb 'w eq .i lb 8D asm-byte n1 rt .t
+  .t
+  @U lb 'm eq .i
+    @V lb 'l eq .i lb 82 asm-byte n1 rt .t
+    @V lb 'd eq .i lb 84 asm-byte n1 rt .t
+  .t
+  @U lb 'd eq .i
+    @V lb 'v eq .i lb 83 asm-byte n1 rt .t
+    @V lb 'u eq .i lb 8C asm-byte n1 rt .t
+    @V lb 'c eq .i lb 90 asm-byte n1 rt .t
+    @V lb 'b eq .i lb FE asm-byte n1 rt .t
+  .t
+  @U lb 'o eq .i
+    @V lb 'r eq .i lb 87 asm-byte n1 rt .t
+    @V lb 'v eq .i lb 8E asm-byte n1 rt .t
+  .t
+  @U lb 'x eq .i
+    @V lb 'r eq .i
+      lb 88 asm-byte n1 rt
     .t
-  .o
+  .t
+  @U lb 'n eq .i
+    @V lb 't eq .i lb 89 asm-byte n1 rt .t
+    @V lb 'x eq .i lb 9F asm-byte n1 rt .t
+  .t
+  @U lb 'e eq .i
+    @V lb 'q eq .i
+      lb 8A asm-byte n1 rt
+    .t
+  .t
+  @U lb 'l eq .i
+    @V lb 't eq .i lb 8B asm-byte n1 rt .t
+    @V lb 'b eq .i lb 96 asm-byte n1 rt .t
+    @V lb 'i eq .i lb 97 asm-byte n1 rt .t
+    @V lb 's eq .i lb 99 asm-byte n1 rt .t
+  .t
+  @U lb 'r eq .i
+    @V lb 'b eq .i lb 92 asm-byte n1 rt .t
+    @V lb 'i eq .i lb 93 asm-byte n1 rt .t
+    @V lb 's eq .i lb 98 asm-byte n1 rt .t
+    @V lb 't eq .i lb 9E asm-byte n1 rt .t
+  .t
+  @U lb 'w eq .i
+    @V lb 'b eq .i lb 94 asm-byte n1 rt .t
+    @V lb 'i eq .i lb 95 asm-byte n1 rt .t
+  .t
+  @U lb 'j eq .i
+    @V lb 'm eq .i
+      lb 9A asm-byte n1 rt
+    .t
+  .t
+  @U lb 'h eq .i
+    @V lb 'p eq .i lb 9B asm-byte n1 rt .t
+    @V lb 'l eq .i lb FF asm-byte n1 rt .t
+    @V lb '0 eq .i lb 9C asm-byte n1 rt .t
+  .t
+  @U lb 'c eq .i
+    @V lb 'd eq .i lb 91 asm-byte n1 rt .t
+    @V lb 'l eq .i lb 9D asm-byte n1 rt .t
+  .t
+  @U lb 'i eq .i
+    @V lb 'o eq .i
+      lb FD asm-byte n1 rt
+    .t
+  .t
+  c0 rt
+
+:asm-op-token                      # (@T/@N -> ok)
+  opfind du c0 lt .i
+    zp c0 rt
+  .t
+  asm-byte
+  n1 rt
+
+:asm-token                         # (@T/@N -> ok)
+  asm-addr-token .i n1 rt .t
+  asm-quote-token .i n1 rt .t
+  asm-zero-token .i n1 rt .t
+  asm-hex-token .i n1 rt .t
+  abop .i n1 rt .t
+  asm-const-token .i n1 rt .t
+  asm-op-token rt
+
+:tok>
+  @T !X
+  @N .f
+    @X rb b!+
+    c1 +X zp
+  .n
   rt
 
 :copy-line
@@ -339,48 +582,374 @@
 
 :calc-fail
   c0 !OK
+  c0 !HANDLED
+  c0 !SEEN
   copy-line rt
 
-:calc-step
+:raw-token?
+  @TOKN c0 eq .i
+    c0 rt
+  .t
+  @TOKA rb du lb '? eq
+  sw lb '/ eq or
+  rt
+
+:raw-q?
+  @TOKN c2 eq nt .i
+    c0 rt
+  .t
+  @TOKA rb lb '/ eq nt .i
+    c0 rt
+  .t
+  @TOKA c1 ad rb lb 'q eq
+  rt
+
+:rlc
+  li `OUTBUF @H lb 'r io !R
+  rt
+
+:qdrain1
+  rlc
+  @R c0 eq nt .i
+    li `OUTBUF dumpz
+    lb 0A lb 'o io
+  .t
+  rt
+
+:raw-run?
+  @TOKN c1 eq .i
+    @TOKA rb lb '/ eq
+    rt
+  .t
+  @TOKN c2 eq nt .i
+    c0 rt
+  .t
+  @TOKA rb lb '/ eq nt .i
+    c0 rt
+  .t
+  @TOKA c1 ad rb du lb 's eq .i
+    zp n1 rt
+  .t
+  du lb 'g eq .i
+    zp n1 rt
+  .t
+  lb '/ eq
+  rt
+
+:raw-read?
+  @TOKN c0 eq .i
+    c0 rt
+  .t
+  @TOKA rb lb '? eq .i
+    n1 rt
+  .t
+  @TOKN c4 eq nt .i
+    c0 rt
+  .t
+  @TOKA rb lb '/ eq nt .i
+    c0 rt
+  .t
+  @TOKA c1 ad rb lb 'o eq nt .i
+    c0 rt
+  .t
+  @TOKA c2 ad rb lb 'x eq nt .i
+    c0 rt
+  .t
+  @TOKA c1 ad c2 ad rb lb '? eq
+  rt
+
+:raw-ox?
+  @TOKN c4 eq nt .i
+    c0 rt
+  .t
+  @TOKA rb lb '/ eq nt .i
+    c0 rt
+  .t
+  @TOKA c1 ad rb lb 'o eq nt .i
+    c0 rt
+  .t
+  @TOKA c2 ad rb lb 'x eq nt .i
+    c0 rt
+  .t
+  @TOKA c1 ad c2 ad rb lb '? eq
+  rt
+
+:raw-hexdump?
+  @TOKN c2 eq .i
+    c0 rt
+  .t
+  @TOKA rb lb '? eq nt .i
+    c0 rt
+  .t
+  @TOKA @TOKN c1 sb ad rb lb 'x eq nt
+  rt
+
+:ox-line
+  @U c0 eq .i
+    rt
+  .t
+  @A rb du c0 eq .i
+    zp rt
+  .t
+  du lb ' eq .i
+    zp c1 +A ox-line rt
+  .t
+  zp
+  @A rb hexval lb 10 ml
+  @A c1 ad rb hexval ad
+  lb 'o io
+  c2 +A
+  @U c1 sb !U
+  ox-line rt
+
+:ox-read
+  @U c0 eq .i
+    rt
+  .t
+  rlc
+  @R c0 eq .i
+    rt
+  .t
+  li `OUTBUF !A
+  ox-line
+  ox-read rt
+
+:odrain
+  cmd-reset
+  lb '/ b!+
+  lb 'o b!+
+  lb 'x b!+
+  lb '? b!+
+  c0 @B wb
+  sendbuf
+  rlc
+  @R c0 eq .i
+    rt
+  .t
+  li `OUTBUF !A
+  @A rb hexval lb 10 ml
+  @A c1 ad rb hexval ad !U
+  ox-read
+  rt
+
+:raw-readout
+  rlc
+  @R c0 eq nt .i
+    li `OUTBUF dumpz
+    lb 0A lb 'o io
+  .t
+  rt
+
+:ox-relay
+  rlc
+  @R c0 eq .i
+    rt
+  .t
+  li `OUTBUF dumpz
+  lb 0A lb 'o io
+  li `OUTBUF !A
+  @A rb hexval lb 10 ml
+  @A c1 ad rb hexval ad lb 0F ad lb 10 dv !U
+  .w @U .d
+    raw-readout
+    @U c1 sb !U
+  .o
+  rt
+
+:send-raw-token
+  raw-q? .i
+    lb 01 !QUIT
+  .t
+  raw-ox? !W
+  raw-read? !U
+  @TOKA li `OUTBUF @TOKN cpyn
+  raw-hexdump? .i
+    lb 'x li `OUTBUF @TOKN ad wb
+    c0 li `OUTBUF @TOKN ad c1 ad wb
+    lb 01 !RWMODE
+    @TOKN c1 ad !TOKN
+  .e
+    c0 li `OUTBUF @TOKN ad wb
+  .t
+  cmd-reset
+  li `OUTBUF !X
+  @TOKN .f
+    @X rb b!+
+    c1 +X zp
+  .n
+  c0 @B wb
+  sendbuf
+  @W .i
+    ox-relay
+  .e
+    @U .i
+    raw-readout
+    .t
+  .t
+  rt
+
+:skipxws
+  .w @X rb du lb ' eq
+     sw lb 0A eq or .d
+    c1 +X zp
+  .o
+  rt
+
+:hexnum
+  c0 !U
+  @T !V
+  @N !W
+  .w @W .d
+    @V rb ishex nt .i
+      c0 rt
+    .t
+    @U lb 10 ml @V rb hexval ad !U
+    c1 +V
+    @W c1 sb !W
+  .o
+  @U rt
+
+:scan-read
   skipws
   @A rb du c0 eq .i
-    zp c0 !MORE rt
-  .t
-  du lb '? eq .i
-    zp @A !TAIL c0 !MORE rt
-  .t
-  du lb '/ eq .i
-    zp @A !TAIL c0 !MORE rt
+    zp c0 rt
   .t
   du lb '# eq .i
-    zp c0 !TAIL c0 !MORE rt
+    zp c0 rt
   .t
   zp
   tok
+  @A !NEXTA
+  @T !TOKA
+  @N !TOKN
+  raw-read? .i
+    n1 rt
+  .t
+  @NEXTA !A
+  scan-read rt
+
+:line-read?
+  li `INBUF !A
+  scan-read
+  rt
+
+:raw-loop
+  skipws
+  @A rb du c0 eq .i
+    zp rt
+  .t
+  du lb '# eq .i
+    zp rt
+  .t
+  zp
+  tok
+  @A !NEXTA
+  @T !TOKA
+  @N !TOKN
+  send-raw-token
+  @NEXTA !A
+  raw-loop rt
+
+:whole-loop
+  skipws
+  @A rb du c0 eq .i
+    zp rt
+  .t
+  du lb '# eq .i
+    zp rt
+  .t
+  zp
+  tok
+  @A !NEXTA
+  @T !TOKA
+  @N !TOKN
+  raw-q? .i
+    lb 01 !QUIT
+  .t
+  raw-read? .i
+    raw-readout
+  .e
+    raw-run? .i
+      odrain
+    .t
+  .t
+  @NEXTA !A
+  whole-loop rt
+
+:do-whole
+  lb 01 !HANDLED
+  li `RWBUF li `INBUF cpyz
+  sendbuf
+  li `INBUF !A
+  whole-loop
+  rt
+
+:do-raw
+  lb 01 !HANDLED
+  li `RWBUF li `INBUF cpyz
+  li `INBUF !A
+  raw-loop
+  rt
+
+:asm-loop
+  skipws
+  @A rb du c0 eq .i
+    zp rt
+  .t
+  du lb '# eq .i
+    zp rt
+  .t
+  zp
+  tok
+  @A !NEXTA
+  asm-token nt .i
+    copy-line
+    c0 !HANDLED
+    c0 !SEEN
+    rt
+  .t
+  @NEXTA !A
+  lb 01 !SEEN
+  asm-loop rt
+
+:calc-loop
+  skipws
+  @A rb du c0 eq .i
+    zp rt
+  .t
+  du lb '# eq .i
+    zp rt
+  .t
+  zp
+  tok
+  @A !NEXTA
+  @T !TOKA
+  @N !TOKN
+  raw-token? .i
+    send-raw-token
+    @NEXTA !A
+    calc-loop rt
+  .t
   calc-token nt .i
     calc-fail
   .t
+  @NEXTA !A
   lb 01 !SEEN
-  rt
+  calc-loop rt
 
 :do-calc
+  lb 01 !HANDLED
   li `INBUF !A
-  li `RWBUF !B
   lb 01 !OK
-  lb 01 !MORE
   c0 !SEEN
-  c0 !TAIL
 
-  .w @MORE .d
-    calc-step
-  .o
+  calc-loop
 
   @SEEN c0 eq .i
     c0 !OK
+    c0 !HANDLED
     copy-line rt
   .t
-
-  copytail
   rt
 
 :emitop                             # (b--) opcode byte -> 2-char token or hex
@@ -405,7 +974,15 @@
 :do-asm
   m\
   tasm
-  copy-line rt
+  lb 01 !HANDLED
+  c0 !SEEN
+  li `INBUF !A
+  asm-loop
+  @SEEN c0 eq .i
+    copy-line
+    c0 !HANDLED
+  .t
+  rt
 
 :do-cmt
   m\
@@ -416,6 +993,11 @@
   m\
   tcmd
   copy-line
+  ch lb 'C eq .i
+    nc c0 eq .i
+      li 00 01 00 00 !ASMADDR
+    .t
+  .t
   ch lb 'q eq .i
     nc c0 eq .i
       lb 01 !QUIT
@@ -477,7 +1059,10 @@
 
 :rw-in
   c0 !RWMODE
+  c0 !ASMMODE
   c0 !QUIT
+  c0 !HANDLED
+  c0 !SEEN
   li `INBUF !S
   pre
   li `linepat try
@@ -511,16 +1096,89 @@
   rt
 
 :readout
-  li `OUTBUF @H lb 'r io !R        # Read from subprocess -> @R = length
+  rlc                              # Read one line from child -> @R = length
   @R c0 eq nt .i                   # If got data (length != 0)
     rw-out emitz
     lb 0A lb 'o io                 # Restore trailing newline trimmed by io 'r'
   .t
   rt
 
-:pump
-  lb 0A lb 'S io
-  readout rt
+:imm-token
+  @TOKN c0 eq .i
+    rt
+  .t
+  @TOKA rb lb ': eq .i
+    lb 01 !ASMMODE
+    asm-token nt .i
+      copy-line
+      c0 !HANDLED
+    .t
+    rt
+  .t
+  raw-token? .i
+    send-raw-token
+    rt
+  .t
+  calc-token nt .i
+    copy-line
+    c0 !HANDLED
+  .t
+  rt
+
+:asm-line-token
+  asm-token nt .i
+    copy-line
+    c0 !HANDLED
+  .t
+  rt
+
+:line-step
+  c0 !RWMODE
+  c0 !ASMMODE
+  c0 !QUIT
+  lb 01 !HANDLED
+  li `INBUF !A
+  skipws
+  @A rb lb ': eq .i
+    li `INBUF li `RWBUF cpyz
+    sendbuf
+    @QUIT .i
+      c0 hl
+    .t
+    rt
+  .t
+  li `INBUF !A
+  lb 01 !MORE
+  .w @MORE .d
+    skipws
+    @A rb du c0 eq .i
+      zp c0 !MORE
+    .e
+      du lb '# eq .i
+        zp c0 !MORE
+      .e
+        zp
+        tok
+        @A !NEXTA
+        @T !TOKA
+        @N !TOKN
+        @ASMMODE .i
+          asm-line-token
+        .e
+          imm-token
+        .t
+        @HANDLED c0 eq .i
+          c0 !MORE
+        .e
+          @NEXTA !A
+        .t
+      .t
+    .t
+  .o
+  @QUIT .i                            # Exact "/q" line: child saw it, so exit proxy too
+    c0 hl
+  .t
+  rt
 
 :rl
   li `INBUF !S
@@ -531,6 +1189,7 @@
 
 :main
   li `CMD lb 'p io !H  # Spawn child process, store handle in @H
+  li 00 01 00 00 !ASMADDR
   @H c0 lt .i         # Check if spawn failed (handle < 0)
     'E 'e io 'R 'e io 'R 'e io 0A 'e io  # Print "Err\n" to stderr
     lb 01 hl          # Exit with code 1
@@ -540,25 +1199,9 @@
   .w c1 .d            # while true do
     rl                                    # Read line from stdin -> @L = length
     @L c0 eq .i                           # If EOF (length == 0)
-      pump                                # Drain any final child output before exit
-      pump
-      pump
-      pump
       @H lb 'k io c0 hl                   # Kill subprocess and exit
     .t
-
-    rw-in du trace< @H lb 'w io       # Rewrite and send input to subprocess
-    @QUIT .i                          # Exact "/q" line: child saw it, so exit proxy too
-      c0 hl
-    .t
-
-    # --- Read subprocess output in a few short passes
-    # io 'r' returns one complete line at a time, but one input line can
-    # trigger several child responses, so we do a bounded drain here.
-    pump
-    pump
-    pump
-    pump
+    line-step
 
   .o
 
