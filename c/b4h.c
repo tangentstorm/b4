@@ -44,15 +44,6 @@ static void print_stack(const char *pre, val *s, int count) {
   fflush(stdout);
 }
 
-static void show_mem(int addr) {
-  for (int i = 0; i < 16; i++) {
-    if (i > 0) printf(" ");
-    printf("%s", dis(mem[addr+i]));
-  }
-  printf("\n");
-  fflush(stdout);
-}
-
 static void show_hex_mem(int addr) {
   for (int i = 0; i < 16; i++) {
     if (i > 0) printf(" ");
@@ -203,19 +194,8 @@ static int b4h(const char *line) {
         printf("ip: %s\n", buf);
         fflush(stdout);
       }
-      else if (strlen(tok)==2 && is_reg_char(tok[1])) {
-        /* ?R: show register value */
-        printf("%08X\n", (unsigned)rg(rega(tok[1])));
-        fflush(stdout);
-      }
-      else if (strlen(tok)==3 && tok[1]=='@' && is_reg_char(tok[2])) {
-        /* ?@R: show memory at register address */
-        int addr = rg(rega(tok[2]));
-        printf("%08X ", (unsigned)addr);
-        show_mem(addr);
-      }
       else {
-        /* ?addr or ?label */
+        /* ?ADDRx: hex dump memory */
         char *s = tok+1;
         int addr;
         size_t slen = strlen(s);
@@ -226,8 +206,8 @@ static int b4h(const char *line) {
           tmp[slen - 1] = 0;
           if (try_hex(tmp, &addr)) { show_hex_mem(addr); continue; }
         }
-        if (try_hex(s, &addr)) show_mem(addr);
-        else printf("invalid address: %s\n", s);
+        printf("?.no: %s\n", tok);
+        fflush(stdout);
       }
       continue;
     }
