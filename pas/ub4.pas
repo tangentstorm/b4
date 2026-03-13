@@ -324,6 +324,28 @@ procedure oprr(r:byte); inline; begin dput(rg[r]) end; { read register }
 procedure opwr(r:byte); inline; begin rg[r] := dpop end; { write register }
 procedure opir(r:byte); inline;
   var v:value; begin v:=rg[r]; rg[r]+=dpop; dput(v) end; { read+inc register }
+
+procedure PumpProcOutput(index: integer);
+var
+  buf: string;
+  got: integer;
+begin
+  while procs[index].proc.Output.NumBytesAvailable > 0 do begin
+    SetLength(buf, procs[index].proc.Output.NumBytesAvailable);
+    got := procs[index].proc.Output.Read(buf[1], Length(buf));
+    if got <= 0 then break;
+    SetLength(buf, got);
+    procs[index].outbuf := procs[index].outbuf + buf;
+  end;
+end;
+
+function ProcLineReady(index: integer): boolean;
+begin
+  PumpProcOutput(index);
+  Result := Pos(#10, procs[index].outbuf) > 0;
+  if not Result then
+    Result := (not procs[index].proc.Running) and (Length(procs[index].outbuf) > 0);
+end;
 
 procedure opio;
   var ch: char; cmd: char;
@@ -455,33 +477,36 @@ procedure opio;
                 procs[i].proc.Input.Write(fname[1], length(fname));
               end;
             end;
-      'r' : begin  { read line from process: (dest-ptr handle -- length|-1) }
+      'l' : begin  { line waiting on process stdout: (handle -- bool) }
+              i := dpop;  { handle }
+              if (i >= 0) and (i < 16) and procs[i].active then begin
+                if ProcLineReady(i) then dput(-1) else dput(0);
+              end else begin
+                dput(-1);  { invalid handle }
+              end;
+            end;
+      'r' : begin  { read line from process, blocking: (dest-ptr handle -- length|-1) }
               i := dpop;  { handle }
               addr := dpop;  { destination pointer }
               if (i >= 0) and (i < 16) and procs[i].active then begin
-                while Pos(#10, procs[i].outbuf) = 0 do begin
-                  len := procs[i].proc.Output.NumBytesAvailable;
-                  if len <= 0 then break;
-                  SetLength(fname, len);
-                  len := procs[i].proc.Output.Read(fname[1], len);
-                  if len <= 0 then break;
-                  SetLength(fname, len);
-                  procs[i].outbuf := procs[i].outbuf + fname;
-                end;
+                while not ProcLineReady(i) do Sleep(1);
                 fsize := Pos(#10, procs[i].outbuf);
                 if fsize > 0 then begin
                   fname := Copy(procs[i].outbuf, 1, fsize - 1);
                   if (Length(fname) > 0) and (fname[Length(fname)] = #13) then
                     Delete(fname, Length(fname), 1);
                   Delete(procs[i].outbuf, 1, fsize);
-                  len := Length(fname);
-                  for b := 1 to len do
-                    mem[addr + b - 1] := ord(fname[b]);
-                  mem[addr + len] := 0;  { null terminate }
-                  dput(len);
+                end else if Length(procs[i].outbuf) > 0 then begin
+                  fname := procs[i].outbuf;
+                  procs[i].outbuf := '';
                 end else begin
-                  dput(0);  { no complete line available }
+                  fname := '';
                 end;
+                len := Length(fname);
+                for b := 1 to len do
+                  mem[addr + b - 1] := ord(fname[b]);
+                mem[addr + len] := 0;  { null terminate }
+                dput(len);
               end else begin
                 dput(-1);  { invalid handle }
               end;
