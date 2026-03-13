@@ -138,7 +138,9 @@ static int assemble_hex(const char *line) {
   tokenize(line);
   if (ntoks == 0) return 0;
   if (tokbuf[0][0] != ':') return 0;
-  if (!try_hex(tokbuf[0] + 1, &addr)) {
+  if (tokbuf[0][1] == '\0') {
+    addr = HERE;  /* bare ':' means continue at HERE */
+  } else if (!try_hex(tokbuf[0] + 1, &addr)) {
     printf("invalid address: %s\n", tokbuf[0] + 1);
     return 0;
   }

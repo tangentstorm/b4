@@ -11,7 +11,6 @@ purpose was parser or assembler sugar:
 - quoted character syntax
 - control-character address syntax
 - labels and assembler macros
-- bare =:= continuation without an address
 
 Every runnable program in this file is assembled as raw bytes, usually
 at =:100=, and ends with =FF= (=hl= / halt).
@@ -89,6 +88,14 @@ AA BB 00 00 CC DD 00 00 00 00 00 00 00 00 00 00
 > :100 11 22
 > ?100x /q
 11 22 00 00 CC DD 00 00 00 00 00 00 00 00 00 00
+#+end_src
+
+** TEST asm.bare-colon : bare =:= continues at HERE
+#+begin_src b4a
+> :100 AA BB
+> : CC DD
+> ?100x /q
+AA BB CC DD 00 00 00 00 00 00 00 00 00 00 00 00
 #+end_src
 
 ** TEST dbg.jump-addr : =/100= : jump to an address
