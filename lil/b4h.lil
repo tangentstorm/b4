@@ -1,0 +1,23 @@
+#!/bin/env lilt
+# ------------------------------------------
+# b4h wrapper for lil backend
+# ------------------------------------------
+
+on exists dnm fnm do
+  count select where name=fnm from dir[dnm]
+end
+
+p: if exists["." "mb4.deck"] "mb4.deck"
+   elseif exists["lil" "mb4.deck"] "lil/mb4.deck"
+   else panic["couldn't find mb4.deck"] end
+dek:readdeck[p]
+mb4:dek.modules.mb4.value
+mb4.set_b4h[1]
+mb4.set_exit[exit]
+mb4.set_echo[on echo s do print[s] end]
+if (count args) > 2
+  shell["sleep 0.01"]
+  mb4.b4i @ "\n" split read[args[2]]
+else
+  while 1 mb4.b4i[input["b4h> "]] end
+end

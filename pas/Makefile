@@ -10,6 +10,7 @@ ARGS ?= # specify ARGS="..." on make command line
 B4 = b4$(EXE)
 B4X = b4x$(EXE)
 B4I = b4i$(EXE)
+B4H = b4h$(EXE)
 B4IX = b4ix$(EXE)
 B4A = b4a$(EXE)
 B4D = b4d$(EXE)
@@ -26,6 +27,7 @@ main:
 	@echo ' runx : build/run b4x (graphical)'
 	@echo ' runf : build/run b4f (b4 $ARGS -a ../b4a/b4f.b4a)'
 	@echo ' runi : build/run b4i (plain interpreter)'
+	@echo ' runh : build/run b4h (hex debugger mode)'
 	@echo ' runix: build/run b4ix (fancy interpreter)'
 	@echo ' runa : build/run b4a (batch assembler)'
 	@echo ' rund : build/run b4d (disassembler)'
@@ -48,6 +50,9 @@ runf: $(B4)
 runi: $(B4I)
 	./$(B4I) $(ARGS)
 
+runh: $(B4H)
+	./$(B4H) $(ARGS)
+
 runix: $(B4IX)
 	./$(B4IX) $(ARGS)
 
@@ -61,6 +66,7 @@ ifeq ($(OS),Windows_NT)
 b4: $(B4)
 b4x: $(B4X)
 b4i: $(B4I)
+b4h: $(B4H)
 b4ix: $(B4IX)
 b4a: $(B4A)
 b4d: $(B4D)
@@ -68,6 +74,9 @@ endif
 
 $(B4I): $(B4X) b4i.pas ub4i.pas
 	$(FPC) -o$(B4I) -B b4i.pas
+
+$(B4H): $(B4X) b4h.pas ub4i.pas
+	$(FPC) -o$(B4H) -B b4h.pas
 
 $(B4IX): $(B4I) b4ix.pas
 	$(FPC) -o$(B4IX) -B b4ix.pas

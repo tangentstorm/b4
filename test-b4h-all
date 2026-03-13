@@ -1,18 +1,18 @@
 #!/bin/sh
-(cd pas; make b4i) \
+(cd pas; make b4h) \
 && echo "== pas ================" \
-&& tanco run -t b4h-tests.org -- pas/b4i \
+&& tanco run -t b4h-tests.org -- pas/b4h \
 && echo "== js =================" \
 && (cd js; npm run build) \
-&& tanco run -t b4h-tests.org -- node js/dist/b4i.mjs \
+&& tanco run -t b4h-tests.org -- node js/dist/b4h.mjs \
 && echo "== jlang ==============" \
 && if command -v ijconsole >/dev/null 2>&1; then \
-     (cd jlang; tanco run -t ../b4h-tests.org -c "ijconsole b4i.ijs"); \
+     (cd jlang; tanco run -t ../b4h-tests.org -c "ijconsole b4h.ijs"); \
    else \
      echo "skipping jlang: ijconsole not found"; \
    fi \
 && echo "== lil ================" \
-&& INPUT_PATH=input.txt tanco run -t b4h-tests.org -c "lilt lil/b4i.lil input.txt" \
+&& INPUT_PATH=input.txt tanco run -t b4h-tests.org -c "lilt lil/b4h.lil input.txt" \
 && echo "== c ==================" \
 && (cd c; make) \
 && tanco run -t b4h-tests.org -- c/b4h

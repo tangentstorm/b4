@@ -83,6 +83,7 @@ export class B4VM {
   dbg: number;
   ram: Uint8Array;
   ob: string[];
+  b4hMode: boolean;
   out: OutputFunction;
   onBye: (() => void) | null;
   private _conb: Map<string, number>;
@@ -101,6 +102,7 @@ export class B4VM {
     this.dbg = 0 // debug flag
     this.ram = new Uint8Array(4096).fill(0)
     this.ob = [] // output buffer
+    this.b4hMode = false
     this._wi(rega("_"), 0x100)
     this._conb = new Map() // custom op name -> byte
     this._cobn = new Map() // custom op byte -> name
@@ -255,6 +257,16 @@ export class B4VM {
   _writeStr(addr: number, s: string): void {
     for (let i = 0; i < s.length; i++) this.ram[addr + i] = s.charCodeAt(i)
     this.ram[addr + s.length] = 0
+  }
+
+  drainOutputHex(): void {
+    this.out(hexp(this.ob.length & 0xFF, 2))
+    for (let i = 0; i < this.ob.length; i += 16) {
+      this.out(this.ob.slice(i, i + 16)
+        .map((ch) => hexp(ch.codePointAt(0) ?? 0, 2))
+        .join(' '))
+    }
+    this.ob = []
   }
 
   addIo(c: string, handler: IoHandler): void {
@@ -448,6 +460,7 @@ export class B4VM {
       }
       else if (t==="/") {
         if (tok==="/q") state=BYE
+        else if (tok==="/ox?") this.drainOutputHex()
         else if (tok==="/" || tok==="/s") this.step()
         else if (tok==="/C") this.clear()
         else if (tok==="/R") this.reset()
@@ -501,14 +514,14 @@ export class B4VM {
         }
         else this.out(`\$.no: ${tok}`)
       }
-    else if (t===":") {
-      state = ASM; let a = tok.slice(1);
-      if (tok==="::") {} //  ok. assemble from here
-      else if (tok===":") {} // just enter ASM mode at current HERE
-      else if (a.startsWith('+') && isHex(a.slice(1))) this._wi(hp, this._ri(hp) + parseInt(a.slice(1), 16))
-      else if (isHex(a)) this._wi(hp, parseInt(a, 16))
-      else this.labelHere(a)
-    }
+      else if (t===":") {
+        state = ASM; let a = tok.slice(1);
+        if (tok==="::") {} //  ok. assemble from here
+        else if (tok===":") {} // just enter ASM mode at current HERE
+        else if (a.startsWith('+') && isHex(a.slice(1))) this._wi(hp, this._ri(hp) + parseInt(a.slice(1), 16))
+        else if (isHex(a)) this._wi(hp, parseInt(a, 16))
+        else this.labelHere(a)
+      }
       else if (t==="'") {
         let a = this._ri(hp);
         for (let ch of tok.slice(1).split("'")) {
@@ -581,7 +594,7 @@ export class B4VM {
       else this.out(`unknown token: ${tok}`);
     }
     // done with line, now dump output:
-    if (this.ob.length) { this.out(this.ob.join("")); this.ob=[] }
+    if (this.ob.length && !this.b4hMode) { this.out(this.ob.join("")); this.ob=[] }
     if (state==BYE && this.onBye) this.onBye()
   }
 

@@ -29,6 +29,7 @@ This suite assumes the hex-only debugger protocol:
 - =/q= quit
 - =:12A0 ...= assemble raw hex bytes at address =12A0=
 - =?1240x= dump 16 bytes of memory as hex starting at that address
+- =/ox?= drain pending program output as hex bytes
 - =/1240= jump to that address
 - =/= or =/s= step one instruction
 - =//= or =/g= run until =db= or =hl=
@@ -465,8 +466,15 @@ ip: 104
 #+begin_src b4a
 # lb 68 lb 65 io lb 69 lb 65 io hl
 > :100 96 68 96 65 FD 96 69 96 65 FD FF
-> /100 // /q
-hi
+> /100 // /ox? /q
+02
+68 69
+#+end_src
+
+** TEST io.output-empty : =/ox?= with no pending output
+#+begin_src b4a
+> /ox? /q
+00
 #+end_src
 
 ** TEST op.db : =db= pauses execution

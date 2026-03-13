@@ -11,6 +11,7 @@ description:"the b4 virtual machine"
 {script}
 
 out:print
+b4h_mode:0
 
 on ord c do first "%a" parse c end
 mod.reg: on reg c do 4*ord[c]-64 end
@@ -303,6 +304,18 @@ end
 mod.showMem: on showMem a do " " fuse dis @ vm.mem @ a + range 16 end
 mod.showMemA: on showMemA a do " " fuse disa @ vm.mem @ a + range 16 end
 on hexbyte b do "%02H" format b end
+mod.drainOutputHex: on drainOutputHex do
+  echo[hexbyte[count vm.ob]]
+  if vm.ob
+    xs:each ch in vm.ob hexbyte[ord[ch]] end
+    while xs
+      n:if (count xs)>16 16 else count xs end
+      echo[" " fuse n take xs]
+      xs:n drop xs
+    end
+    vm.ob:()
+  end
+end
 mod.showHexMem: on showHexMem a do " " fuse hexbyte @ vm.mem @ a + range 16 end
 mod.showIp: on showIp do "ip: %02H" format vm.rg[RIP] end
 on assemble a s do n:count toks:" "split s  vm.mem[a,n]:raze asm@toks n end
@@ -367,6 +380,7 @@ mod.b4i: on b4i line do
       else echo["regop.no: ",tok] end
     elseif t="/"
       if     tok="/q" quit:1
+      elseif tok="/ox?" drainOutputHex[]
       elseif tok="/R" reset[]
       elseif tok="/C" clear[]
       elseif (tok="/")|(tok="/s") step[]
@@ -470,7 +484,7 @@ mod.b4i: on b4i line do
   if (state=STR)
     asm_text[hp sbuf pref]
   end
-  if vm.ob echo[vm.ob] vm.ob:() end
+  if vm.ob & !b4h_mode echo[vm.ob] vm.ob:() end
   if quit mod.exit[0] end
 end
 
@@ -524,6 +538,7 @@ mod.echo: echo
 mod.set_cv: on set_cv cv do mod.cv: cv end
 mod.set_tm: on set_tm tm do mod.tm: tm end
 mod.set_echo: on set_echo fn do out: fn end
+mod.set_b4h: on set_b4h flag do b4h_mode:flag end
 mod.TBL: TBL
 mod.get_vm:on get_vm do vm end
 mod.get_ip:on get_ip do vm.rg[RIP] end  mod.set_ip:on set_ip a do vm.rg[RIP]:a end

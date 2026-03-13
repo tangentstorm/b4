@@ -62,6 +62,20 @@ static void show_hex_mem(int addr) {
   fflush(stdout);
 }
 
+static void drain_output_hex(void) {
+  int i;
+  int count = ob_len;
+  printf("%02X\n", count & 0xFF);
+  for (i = 0; i < count; i++) {
+    if (i > 0 && (i % 16) == 0) printf("\n");
+    else if (i > 0) printf(" ");
+    printf("%02X", (unsigned char)ob[i]);
+  }
+  if (count > 0) printf("\n");
+  fflush(stdout);
+  ob_len = 0;
+}
+
 /* --- tokenizer --- */
 /* split line into tokens; # starts a comment */
 #define MAX_TOKS 256
@@ -164,6 +178,7 @@ static int b4h(const char *line) {
     /* slash commands */
     if (tok[0] == '/') {
       if (strcmp(tok, "/q") == 0) { done = 1; break; }
+      else if (strcmp(tok, "/ox?") == 0) drain_output_hex();
       else if (strcmp(tok, "/") == 0 || strcmp(tok, "/s") == 0) b4step();
       else if (strcmp(tok, "/C") == 0) b4boot();
       else if (strcmp(tok, "/R") == 0) {
@@ -242,13 +257,6 @@ static int b4h(const char *line) {
     fflush(stdout);
   }
 
-  /* flush output buffer */
-  if (ob_len > 0) {
-    ob[ob_len] = 0;
-    printf("%s\n", ob);
-    fflush(stdout);
-    ob_len = 0;
-  }
   return done;
 }
 

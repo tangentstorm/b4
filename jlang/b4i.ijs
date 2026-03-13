@@ -1,6 +1,8 @@
 #!/usr/bin/env j
 load 'b4.ijs'
 
+b4hMode =: ". :: 0: 'b4hMode'
+
 vm =: 'b4' conew~''
 readln =: [: (1!:01) 1:
 doNext =: [: (9!:29) 1: [ 9!:27
@@ -18,7 +20,19 @@ step =: step__vm
 isHEX =: [: *./@(e.&'0123456789ABCDEF') }.^:('-'={.) NB. upper case hex num?
 puthex =: {{ if. isHEX y do. 1 [ dput ihx y return. end. 0 }}
 hexstr =: toupper@{{ if. y<0 do. '-',hfd -y else. hfd y end. }}
+hexbyte =: {{ toupper 2 {. '0',~ hfd y }}
 stackstr =: ' ' joinstring toupper @ hexstr &.>
+drainouthex =: {{
+  echo hexbyte #O__vm
+  if. #O__vm do.
+    bytes =. hexbyte"0 a.i. O__vm
+    while. #bytes do.
+      echo ' ' joinstring 16 {. bytes
+      bytes =. 16 }. bytes
+    end.
+    O__vm =: ''
+  end.
+}}
 asm =: {{
   if. (#ops__vm) > ix=.(<y) i.~ ops__vm do. OPCODE + ix
   elseif. (2=#y) *.''''=0{y do.          ord 1{y
@@ -60,9 +74,10 @@ main =: {{
     if. ''-:line do.
     elseif.':'=0{line do. putmem }.line
     else. for_tok. ' 'splitstring line do.
-      select. tok=.>tok
+      select. tok=. ,>tok
       case. ''   do.
       case. '/q' do. done=:1
+      case. '/ox?' do. drainouthex''
       case. '/';'/s' do. step''
       case. '/g';'//' do. run__vm''
       case. '/C' do. create__vm'' NB. clear everything
@@ -88,13 +103,13 @@ main =: {{
           elseif. ('x'={:tok) *. isHEX }: }.tok do. showhexmem addr }. }:tok
           else. showmem addr }.tok end.
         case. do.
-          if. ('/'=0{tok) *. isHEX }.tok do. P__vm =: addr }.tok
+          if. (1 < #tok) *. ('/'=0{tok) *. isHEX }.tok do. P__vm =: addr }.tok
           elseif. puthex tok do.
           else. exit [ echo 'unrecognized token "',tok,'"' end.
         end. NB. select 0{tok
       end. NB. select tok
     end.end. NB. else/for_tok.
-    if. #O__vm do. O__vm=:'' [ echo O__vm end.
+    if. (#O__vm) *. -. b4hMode do. O__vm=:'' [ echo O__vm end.
     if. done do. exit'' end.
   end.}}
 

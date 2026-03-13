@@ -12,8 +12,28 @@ interface uses sysutils, strutils, ub4, ub4asm, ub4ops, classes;
 
 var
   logging_enabled: boolean = false;
+  b4h_mode: boolean = false;
 
 implementation
+
+procedure DrainOutputHex;
+var
+  i, count: integer;
+begin
+  count := Length(ub4.ob);
+  WriteLn(UpperCase(format('%.2x', [count and $FF])));
+  if count > 0 then begin
+    for i := 1 to count do begin
+      if i > 1 then begin
+        if ((i - 1) mod 16) = 0 then WriteLn
+        else Write(' ');
+      end;
+      Write(UpperCase(format('%.2x', [ord(ub4.ob[i]) and $FF])));
+    end;
+    WriteLn;
+  end;
+  ub4.ob := '';
+end;
 
 procedure LogState(op_str: string);
   var a:integer; ident: ub4asm.ident;
@@ -299,6 +319,7 @@ begin
       '/i' : if i < High(toks) then begin inc(i); ub4i.b4i_file(toks[i]) end
              else writeln('usage: /i <filename>');
       '/o', '-o' : ShowOpcodes;
+      '/ox?' : DrainOutputHex;
       '/p' : PrintWords;
       '/q' : done := true;
       '/R' : reset_vm;
@@ -355,7 +376,7 @@ begin
       end;
     end
   end;
-  if ub4.ob <> '' then begin writeln(ub4.ob); ub4.ob := '' end;
+  if (ub4.ob <> '') and not b4h_mode then begin writeln(ub4.ob); ub4.ob := '' end;
   result := done;
 end;
 
