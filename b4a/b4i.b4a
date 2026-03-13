@@ -20,10 +20,8 @@
 :ASMMODE 00 00 00 00 # 1 => after ':' on this line, assemble rest of line
 :QUIT   00 00 00 00  # 1 => current input line was exact "/q"
 :HANDLED 00 00 00 00 # 1 => current line was sent directly to child
-:OK     00 00 00 00  # 1 => calculator line rewrote successfully
 :MORE   00 00 00 00  # loop flag for token scanners
 :SEEN   00 00 00 00  # 1 => calculator line parsed at least one token
-:NEXTA  00 00 00 00  # parser cursor after current token
 :ASMADDR 00 01 00 00 # next remote assembly address (defaults to MINHEAP)
 :TOKA   00 00 00 00  # saved token start for raw dispatch
 :TOKN   00 00 00 00  # saved token length for raw dispatch
@@ -67,26 +65,6 @@
 :sp+ lb '  b!+ rt
 :nl+ lb 0A b!+ rt
 
-:skipws
-  .w @A rb du lb ' eq
-     sw lb 0A eq or .d
-    c1 +A zp
-  .o
-  rt
-
-:tok
-  @A !T
-  c0 !N
-  .w c1 .d
-    @A rb du c0 eq .i zp rt .t
-    du lb ' eq .i zp rt .t
-    du lb 0A eq .i zp rt .t
-    zp
-    c1 +A zp
-    c1 +N zp
-  .o
-  rt
-
 :ishex
   du lb '0 lt .i zp c0 rt .t
   du lb '9 lt .i zp n1 rt .t
@@ -119,6 +97,94 @@
     lb 'A sb lb 0A ad
   .t
   rt
+
+# --- Combinator-based matchers ---
+# These use pre.b4a state (@S/@K/@M) to match token patterns.
+# Each matcher leaves a parsed value on the data stack on success.
+
+:tb  m\ ch lb '! lt !M rt          # token boundary: succeed if ch <= ' '
+:nws m\ ch lb '! lt .i m0 .e c1 fw .t rt  # match one non-whitespace char
+
+:mop2i                              # inner: match 2-char opcode
+  any any tb m\
+  @K c2 sb !T c2 !N opfind
+  du c0 lt .i zp m0 .t
+  rt
+:mop2 m\ li `mop2i try rt          # (-op) match 2-char opcode -> opcode byte
+
+:mhex2i                             # inner: match exactly 2 uppercase hex digits
+  c0 !N @K !T
+  li `hexn rep tb m\                # match 1+ hex digits + boundary
+  @K @T sb c2 eq nt .i m0 rt .t    # must be exactly 2 digits
+  @N rt
+:mhex2 m\ li `mhex2i try rt        # (-b) match 2-digit hex -> byte value
+
+:mhexni                             # inner: match 3+ uppercase hex digits
+  c0 !N @K !T
+  li `hexn rep tb m\                # match 1+ hex digits + boundary
+  @K @T sb lb 03 lt .i m0 rt .t    # if length < 3, fail (want 3+)
+  @N rt
+:mhexn m\ li `mhexni try rt        # (-n) match 3+ digit hex -> value in @N
+
+:mquoti                             # inner: match 'X or bare '
+  lb '' chr m\
+  .[ any tb m\ lc rt               # 'X -> char value
+  m| tb m\ lb '  rt                # bare ' -> space
+  .] try rt
+:mquot m\ li `mquoti try rt        # (-c) match quote token -> char value
+
+:mctrli                             # inner: match `X
+  lb '` chr m\ any tb m\
+  lc lb '@ sb c2 sh rt             # ctrl value
+:mctrl m\ li `mctrli try rt        # (-c) match ctrl token -> ctrl value
+
+:mregi                              # inner: match ^X @X !X +X where X is register char
+  any any tb m\
+  @K c2 sb rb !V                   # V = first char (prefix)
+  @K c1 sb rb !W                   # W = second char (register name)
+  @W lb '@ lt .i m0 rt .t          # must be >= '@'
+  @W lb '_ lt nt .i
+    @W lb '_ eq nt .i m0 rt .t
+  .t
+  @W lb '@ sb                      # r = regchar - '@'
+  @V lb '^ eq .i rt .t             # ^X -> r
+  @V lb '@ eq .i lb 20 ad rt .t    # @X -> r+0x20
+  @V lb '! eq .i lb 40 ad rt .t    # !X -> r+0x40
+  @V lb '+ eq .i lb 60 ad rt .t    # +X -> r+0x60
+  m0 rt                             # unknown prefix -> fail
+:mreg m\ li `mregi try rt          # (-op) match register token -> opcode byte
+
+:mconsti                            # inner: match c0/c1/c2/c4/n1
+  any any tb m\
+  @K c2 sb rb !U                   # first char
+  @K c1 sb rb !V                   # second char
+  @U lb 'c eq .i
+    @V lb '0 eq .i lb C0 rt .t
+    @V lb '1 eq .i lb C1 rt .t
+    @V lb '2 eq .i lb F6 rt .t
+    @V lb '4 eq .i lb F8 rt .t
+  .t
+  @U lb 'n eq .i
+    @V lb '1 eq .i lb F7 rt .t
+  .t
+  m0 rt
+:mconst m\ li `mconsti try rt     # (-op) match const token -> opcode byte
+
+:mzeroi                             # inner: match ..
+  lb '. chr m\ lb '. chr m\ tb rt
+:mzero m\ li `mzeroi try rt       # (--) match .. (zero byte)
+
+:mnegi                              # inner: match -XX (negative hex byte)
+  lb '- chr m\ c0 !N hexn hexn tb m\
+  @N c0 sw sb lb FF an rt          # negate and mask to byte
+:mneg m\ li `mnegi try rt          # (-b) match negative hex -> byte value
+
+:mtoki                              # inner: match any whitespace-delimited token
+  @K !TOKA c0 !TOKN
+  li `nws rep
+  @K @TOKA sb !TOKN
+  rt
+:mtok m\ li `mtoki try rt          # (--) match any token, save @TOKA/@TOKN
 
 :emithex                            # (b--) emit as two uppercase hex digits
   du lb 10 dv
@@ -273,177 +339,6 @@
   .o
   @U rt
 
-:hex-token                         # (@T/@N -> ok) emit lb XX for 2-digit uppercase hex
-  @N c2 eq nt .i
-    c0 rt
-  .t
-  @T rb du ishex nt .i
-    zp c0 rt
-  .t
-  hexval lb 10 ml
-  @T c1 ad rb du ishex nt .i
-    zp zp c0 rt
-  .t
-  hexval ad exec-lb
-  n1 rt
-
-:num-token                         # (@T/@N -> ok) emit li N for 3..8 digit uppercase hex
-  @N c1 eq .i
-    c0 rt
-  .t
-  @N c2 eq .i
-    c0 rt
-  .t
-  @T rb ishex nt .i
-    c0 rt
-  .t
-  hnum exec-li
-  n1 rt
-
-:quote-token                       # (@T/@N -> ok)
-  @T rb lb '' eq nt .i
-    c0 rt
-  .t
-  @N c1 eq .i
-    lb 20 exec-lb
-    n1 rt
-  .t
-  @N c2 eq .i
-    @T c1 ad rb exec-lb
-    n1 rt
-  .t
-  c0 rt
-
-:ctrl-token                        # (@T/@N -> ok)
-  @T rb lb '` eq nt .i
-    c0 rt
-  .t
-  @N c2 eq nt .i
-    c0 rt
-  .t
-  @T c1 ad rb lb '@ sb c2 sh exec-lb
-  n1 rt
-
-:basic-op-token                    # (@T/@N -> ok)
-  @N c2 eq nt .i
-    c0 rt
-  .t
-  @T rb !U
-  @T c1 ad rb !V
-  @U lb 'a eq .i
-    @V lb 'd eq .i lb 80 exec-op n1 rt .t
-    @V lb 'n eq .i lb 86 exec-op n1 rt .t
-  .t
-  @U lb 's eq .i
-    @V lb 'b eq .i lb 81 exec-op n1 rt .t
-    @V lb 'h eq .i lb 85 exec-op n1 rt .t
-    @V lb 'w eq .i lb 8D exec-op n1 rt .t
-  .t
-  @U lb 'm eq .i
-    @V lb 'l eq .i lb 82 exec-op n1 rt .t
-    @V lb 'd eq .i lb 84 exec-op n1 rt .t
-  .t
-  @U lb 'd eq .i
-    @V lb 'v eq .i lb 83 exec-op n1 rt .t
-    @V lb 'u eq .i lb 8C exec-op n1 rt .t
-    @V lb 'c eq .i lb 90 exec-op n1 rt .t
-    @V lb 'b eq .i lb FE exec-op n1 rt .t
-  .t
-  @U lb 'o eq .i
-    @V lb 'r eq .i lb 87 exec-op n1 rt .t
-    @V lb 'v eq .i lb 8E exec-op n1 rt .t
-  .t
-  @U lb 'x eq .i
-    @V lb 'r eq .i
-      lb 88 exec-op n1 rt
-    .t
-  .t
-  @U lb 'n eq .i
-    @V lb 't eq .i lb 89 exec-op n1 rt .t
-    @V lb 'x eq .i lb 9F exec-op n1 rt .t
-  .t
-  @U lb 'e eq .i
-    @V lb 'q eq .i
-      lb 8A exec-op n1 rt
-    .t
-  .t
-  @U lb 'l eq .i
-    @V lb 't eq .i lb 8B exec-op n1 rt .t
-    @V lb 'b eq .i lb 96 exec-op n1 rt .t
-    @V lb 'i eq .i lb 97 exec-op n1 rt .t
-    @V lb 's eq .i lb 99 exec-op n1 rt .t
-  .t
-  @U lb 'r eq .i
-    @V lb 'b eq .i lb 92 exec-op n1 rt .t
-    @V lb 'i eq .i lb 93 exec-op n1 rt .t
-    @V lb 's eq .i lb 98 exec-op n1 rt .t
-    @V lb 't eq .i lb 9E exec-op n1 rt .t
-  .t
-  @U lb 'w eq .i
-    @V lb 'b eq .i lb 94 exec-op n1 rt .t
-    @V lb 'i eq .i lb 95 exec-op n1 rt .t
-  .t
-  @U lb 'j eq .i
-    @V lb 'm eq .i
-      lb 9A exec-op n1 rt
-    .t
-  .t
-  @U lb 'h eq .i
-    @V lb 'p eq .i lb 9B exec-op n1 rt .t
-    @V lb 'l eq .i lb FF exec-op n1 rt .t
-    @V lb '0 eq .i lb 9C exec-op n1 rt .t
-  .t
-  @U lb 'c eq .i
-    @V lb 'd eq .i lb 91 exec-op n1 rt .t
-    @V lb 'l eq .i lb 9D exec-op n1 rt .t
-  .t
-  @U lb 'i eq .i
-    @V lb 'o eq .i
-      lb FD exec-op n1 rt
-    .t
-  .t
-  c0 rt
-
-:const-token                       # (@T/@N -> ok)
-  @N c2 eq nt .i
-    c0 rt
-  .t
-  @T rb lb 'c eq .i
-    @T c1 ad rb du lb '0 eq .i zp lb C0 exec-op n1 rt .t
-    du lb '1 eq .i zp lb C1 exec-op n1 rt .t
-    du lb '2 eq .i zp lb F6 exec-op n1 rt .t
-    du lb '4 eq .i zp lb F8 exec-op n1 rt .t
-    zp
-  .t
-  @T rb lb 'n eq .i
-    @T c1 ad rb lb '1 eq .i
-      lb F7 exec-op n1 rt
-    .t
-  .t
-  c0 rt
-
-:op-token                          # (@T/@N -> ok)
-  opfind du c0 lt .i
-    zp c0 rt
-  .t
-  exec-op
-  n1 rt
-
-:calc-reg-token                    # (@T/@N -> ok) ^X @X !X +X
-  @N c2 eq nt .i
-    c0 rt
-  .t
-  @T c1 ad rb du lb '@ lt .i zp c0 rt .t
-  du lb '_ lt nt .i
-    lb '_ eq nt .i c0 rt .t
-  .t
-  lb '@ sb                            # r = second char - '@'
-  @T rb du lb '^ eq .i zp exec-op n1 rt .t
-  du lb '@ eq .i zp lb 20 ad exec-op n1 rt .t
-  du lb '! eq .i zp lb 40 ad exec-op n1 rt .t
-  lb '+ eq .i lb 60 ad exec-op n1 rt .t
-  zp c0 rt
-
 :calc-label-token                  # (@T/@N -> ok) look up label and call/get/set
   @T rb lb '@ eq .i                 # @label -> exec li+ri
     @T c1 ad @N c1 sb cl >d.find nt .i zp c0 rt .t
@@ -471,16 +366,6 @@
   restoreip
   n1 rt
 
-:calc-token                        # (@T/@N -> ok)
-  quote-token .i n1 rt .t
-  ctrl-token .i n1 rt .t
-  hex-token .i n1 rt .t
-  num-token .i n1 rt .t
-  basic-op-token .i n1 rt .t
-  const-token .i n1 rt .t
-  calc-reg-token .i n1 rt .t
-  calc-label-token .i n1 rt .t
-  op-token rt
 
 :emitaddr
   @ASMADDR du li 00 01 00 00 dv emithex
@@ -555,33 +440,6 @@
   @ASMADDR c1 ad !ASMADDR
   rt
 
-:asm-quote-token                   # (@T/@N -> ok)
-  @T rb lb '' eq nt .i
-    c0 rt
-  .t
-  @N c1 eq .i
-    lb 20 asm-byte
-    n1 rt
-  .t
-  @N c2 eq .i
-    @T c1 ad rb asm-byte
-    n1 rt
-  .t
-  c0 rt
-
-:asm-zero-token
-  @N c2 eq nt .i
-    c0 rt
-  .t
-  @T rb lb '. eq nt .i
-    c0 rt
-  .t
-  @T c1 ad rb lb '. eq nt .i
-    c0 rt
-  .t
-  lb 00 asm-byte
-  n1 rt
-
 :asm-set-reg                       # (regchar--) set child register to ASMADDR
   lb '@ sb c2 sh !W                  # W = (regchar-'@')*4 = register byte offset
   cmd-reset
@@ -632,149 +490,6 @@
   .t
   n1 rt
 
-:asm-hex-token                     # (@T/@N -> ok)
-  @N c2 eq nt .i
-    c0 rt
-  .t
-  @T rb du ishex nt .i
-    zp c0 rt
-  .t
-  hexval lb 10 ml
-  @T c1 ad rb du ishex nt .i
-    zp zp c0 rt
-  .t
-  hexval ad asm-byte
-  n1 rt
-
-:asm-const-token
-  @N c2 eq nt .i
-    c0 rt
-  .t
-  @T rb lb 'c eq .i
-    @T c1 ad rb du lb '0 eq .i zp lb C0 asm-byte n1 rt .t
-    du lb '1 eq .i zp lb C1 asm-byte n1 rt .t
-    du lb '2 eq .i zp lb F6 asm-byte n1 rt .t
-    du lb '4 eq .i zp lb F8 asm-byte n1 rt .t
-    zp
-  .t
-  @T rb lb 'n eq .i
-    @T c1 ad rb lb '1 eq .i
-      lb F7 asm-byte n1 rt
-    .t
-  .t
-  c0 rt
-
-:abop
-  @N c2 eq nt .i
-    c0 rt
-  .t
-  @T rb !U
-  @T c1 ad rb !V
-  @U lb 'a eq .i
-    @V lb 'd eq .i lb 80 asm-byte n1 rt .t
-    @V lb 'n eq .i lb 86 asm-byte n1 rt .t
-  .t
-  @U lb 's eq .i
-    @V lb 'b eq .i lb 81 asm-byte n1 rt .t
-    @V lb 'h eq .i lb 85 asm-byte n1 rt .t
-    @V lb 'w eq .i lb 8D asm-byte n1 rt .t
-  .t
-  @U lb 'm eq .i
-    @V lb 'l eq .i lb 82 asm-byte n1 rt .t
-    @V lb 'd eq .i lb 84 asm-byte n1 rt .t
-  .t
-  @U lb 'd eq .i
-    @V lb 'v eq .i lb 83 asm-byte n1 rt .t
-    @V lb 'u eq .i lb 8C asm-byte n1 rt .t
-    @V lb 'c eq .i lb 90 asm-byte n1 rt .t
-    @V lb 'b eq .i lb FE asm-byte n1 rt .t
-  .t
-  @U lb 'o eq .i
-    @V lb 'r eq .i lb 87 asm-byte n1 rt .t
-    @V lb 'v eq .i lb 8E asm-byte n1 rt .t
-  .t
-  @U lb 'x eq .i
-    @V lb 'r eq .i
-      lb 88 asm-byte n1 rt
-    .t
-  .t
-  @U lb 'n eq .i
-    @V lb 't eq .i lb 89 asm-byte n1 rt .t
-    @V lb 'x eq .i lb 9F asm-byte n1 rt .t
-  .t
-  @U lb 'e eq .i
-    @V lb 'q eq .i
-      lb 8A asm-byte n1 rt
-    .t
-  .t
-  @U lb 'l eq .i
-    @V lb 't eq .i lb 8B asm-byte n1 rt .t
-    @V lb 'b eq .i lb 96 asm-byte n1 rt .t
-    @V lb 'i eq .i lb 97 asm-byte n1 rt .t
-    @V lb 's eq .i lb 99 asm-byte n1 rt .t
-  .t
-  @U lb 'r eq .i
-    @V lb 'b eq .i lb 92 asm-byte n1 rt .t
-    @V lb 'i eq .i lb 93 asm-byte n1 rt .t
-    @V lb 's eq .i lb 98 asm-byte n1 rt .t
-    @V lb 't eq .i lb 9E asm-byte n1 rt .t
-  .t
-  @U lb 'w eq .i
-    @V lb 'b eq .i lb 94 asm-byte n1 rt .t
-    @V lb 'i eq .i lb 95 asm-byte n1 rt .t
-  .t
-  @U lb 'j eq .i
-    @V lb 'm eq .i
-      lb 9A asm-byte n1 rt
-    .t
-  .t
-  @U lb 'h eq .i
-    @V lb 'p eq .i lb 9B asm-byte n1 rt .t
-    @V lb 'l eq .i lb FF asm-byte n1 rt .t
-    @V lb '0 eq .i lb 9C asm-byte n1 rt .t
-  .t
-  @U lb 'c eq .i
-    @V lb 'd eq .i lb 91 asm-byte n1 rt .t
-    @V lb 'l eq .i lb 9D asm-byte n1 rt .t
-  .t
-  @U lb 'i eq .i
-    @V lb 'o eq .i
-      lb FD asm-byte n1 rt
-    .t
-  .t
-  c0 rt
-
-:asm-op-token                      # (@T/@N -> ok)
-  opfind du c0 lt .i
-    zp c0 rt
-  .t
-  asm-byte
-  n1 rt
-
-:asm-reg-token                     # (@T/@N -> ok) ^X @X !X +X
-  @N c2 eq nt .i
-    c0 rt
-  .t
-  @T c1 ad rb du lb '@ lt .i zp c0 rt .t
-  du lb '_ lt nt .i
-    lb '_ eq nt .i c0 rt .t
-  .t
-  lb '@ sb                            # r = second char - '@'
-  @T rb du lb '^ eq .i zp asm-byte n1 rt .t
-  du lb '@ eq .i zp lb 20 ad asm-byte n1 rt .t
-  du lb '! eq .i zp lb 40 ad asm-byte n1 rt .t
-  lb '+ eq .i lb 60 ad asm-byte n1 rt .t
-  zp c0 rt
-
-:asmneghex                 # (@T/@N -> ok) -XX negative hex byte
-  @N c2 lt .i c0 rt .t
-  @T rb lb '- eq nt .i c0 rt .t
-  @T c1 ad rb ishex nt .i c0 rt .t  # check digit after '-' before modifying
-  @T c1 ad !T
-  @N c1 sb !N
-  hnum c0 sw sb lb FF an asm-byte
-  n1 rt
-
 :asm-li-addr                       # (addr--) emit li <addr> as 5 bytes
   !NUMV
   lb 97 asm-byte                    # li opcode
@@ -806,35 +521,11 @@
   li `NUMV c1 ad c2 ad rb asm-byte
   n1 rt
 
-:asm-token                         # (@T/@N -> ok)
-  asm-addr-token .i n1 rt .t
-  asm-quote-token .i n1 rt .t
-  asm-zero-token .i n1 rt .t
-  asm-hex-token .i n1 rt .t
-  asmneghex .i n1 rt .t
-  abop .i n1 rt .t
-  asm-const-token .i n1 rt .t
-  asm-reg-token .i n1 rt .t
-  asm-label-ref .i n1 rt .t
-  asm-op-token rt
-
-:tok>
-  @T !X
-  @N .f
-    @X rb b!+
-    c1 +X zp
-  .n
-  rt
 
 :copy-line
   li `INBUF li `RWBUF cpyz
   m1 rt
 
-:calc-fail
-  c0 !OK
-  c0 !HANDLED
-  c0 !SEEN
-  copy-line rt
 
 :raw-token?
   @TOKN c0 eq .i
@@ -1042,170 +733,6 @@
   .t
   rt
 
-:skipxws
-  .w @X rb du lb ' eq
-     sw lb 0A eq or .d
-    c1 +X zp
-  .o
-  rt
-
-:hexnum
-  c0 !U
-  @T !V
-  @N !W
-  .w @W .d
-    @V rb ishex nt .i
-      c0 rt
-    .t
-    @U lb 10 ml @V rb hexval ad !U
-    c1 +V zp
-    @W c1 sb !W
-  .o
-  @U rt
-
-:scan-read
-  skipws
-  @A rb du c0 eq .i
-    zp c0 rt
-  .t
-  du lb '# eq .i
-    zp c0 rt
-  .t
-  zp
-  tok
-  @A !NEXTA
-  @T !TOKA
-  @N !TOKN
-  raw-read? .i
-    n1 rt
-  .t
-  @NEXTA !A
-  scan-read rt
-
-:line-read?
-  li `INBUF !A
-  scan-read
-  rt
-
-:raw-loop
-  skipws
-  @A rb du c0 eq .i
-    zp rt
-  .t
-  du lb '# eq .i
-    zp rt
-  .t
-  zp
-  tok
-  @A !NEXTA
-  @T !TOKA
-  @N !TOKN
-  send-raw-token
-  @NEXTA !A
-  raw-loop rt
-
-:whole-loop
-  skipws
-  @A rb du c0 eq .i
-    zp rt
-  .t
-  du lb '# eq .i
-    zp rt
-  .t
-  zp
-  tok
-  @A !NEXTA
-  @T !TOKA
-  @N !TOKN
-  raw-q? .i
-    lb 01 !QUIT
-  .t
-  raw-read? .i
-    raw-readout
-  .e
-    raw-run? .i
-      odrain
-    .t
-  .t
-  @NEXTA !A
-  whole-loop rt
-
-:do-whole
-  lb 01 !HANDLED
-  li `RWBUF li `INBUF cpyz
-  sendbuf
-  li `INBUF !A
-  whole-loop
-  rt
-
-:do-raw
-  lb 01 !HANDLED
-  li `RWBUF li `INBUF cpyz
-  li `INBUF !A
-  raw-loop
-  rt
-
-:asm-loop
-  skipws
-  @A rb du c0 eq .i
-    zp rt
-  .t
-  du lb '# eq .i
-    zp rt
-  .t
-  zp
-  tok
-  @A !NEXTA
-  asm-token nt .i
-    copy-line
-    c0 !HANDLED
-    c0 !SEEN
-    rt
-  .t
-  @NEXTA !A
-  lb 01 !SEEN
-  asm-loop rt
-
-:calc-loop
-  skipws
-  @A rb du c0 eq .i
-    zp rt
-  .t
-  du lb '# eq .i
-    zp rt
-  .t
-  zp
-  tok
-  @A !NEXTA
-  @T !TOKA
-  @N !TOKN
-  raw-token? .i
-    send-raw-token
-    @NEXTA !A
-    calc-loop rt
-  .t
-  calc-token nt .i
-    calc-fail
-  .t
-  @NEXTA !A
-  lb 01 !SEEN
-  calc-loop rt
-
-:do-calc
-  lb 01 !HANDLED
-  li `INBUF !A
-  lb 01 !OK
-  c0 !SEEN
-
-  calc-loop
-
-  @SEEN c0 eq .i
-    c0 !OK
-    c0 !HANDLED
-    copy-line rt
-  .t
-  rt
-
 :emitop                             # (b--) opcode byte -> 2-char token or hex
   du c0 eq .i zp lb '. b!+ lb '. b!+ rt .t
   du lb 20 lt .i lb '^ b!+ lb 40 ad b!+ zp rt .t
@@ -1219,72 +746,6 @@
   zp rt
 
 :dbg\ @\ nt .i cd zp .t rt          # early-exit current word unless debug register is nonzero
-
-:tasm  dbg\ lb '> lb 'o io lb 'a lb 'o io lb 's lb 'o io lb 'm lb 'o io lb 0A lb 'o io rt
-:tcmt  dbg\ lb '> lb 'o io lb 'c lb 'o io lb 'm lb 'o io lb 't lb 'o io lb 0A lb 'o io rt
-:tcmd  dbg\ lb '> lb 'o io lb 'c lb 'o io lb 'm lb 'o io lb 'd lb 'o io lb 0A lb 'o io rt
-:tqry  dbg\ lb '> lb 'o io lb 'q lb 'o io lb 'r lb 'o io lb 'y lb 'o io lb 0A lb 'o io rt
-
-:do-asm
-  m\
-  tasm
-  lb 01 !HANDLED
-  c0 !SEEN
-  li `INBUF !A
-  asm-loop
-  @SEEN c0 eq .i
-    copy-line
-    c0 !HANDLED
-  .t
-  rt
-
-:do-cmt
-  m\
-  tcmt
-  copy-line rt
-
-:do-cmd
-  m\
-  tcmd
-  copy-line
-  ch lb 'C eq .i
-    nc c0 eq .i
-      li 00 01 00 00 !ASMADDR
-    .t
-  .t
-  ch lb 'q eq .i
-    nc c0 eq .i
-      lb 01 !QUIT
-    .t
-  .t
-  rt
-
-:do-qry
-  m\
-  tqry
-  mhex
-  @M .i
-    ch lb 'x eq .i
-      copy-line                     # ?100x => passthrough
-    .e
-      li `INBUF li `RWBUF ln cpyn   # ?100 => ?100x plus rest of line
-      lb 'x b!+
-      @K @B cpyz
-      lb 01 !RWMODE
-      m1
-    .t
-  .e
-    copy-line                       # malformed ?... => passthrough
-  .t
-  rt
-
-:linepat
-  m\
-  lb '? chr do-qry
-  m| lb '/ chr do-cmd
-  m| lb ': chr do-asm
-  m| lb '# chr do-cmt
-  rt
 
 :rw-dehex
   li `OUTBUF !A
@@ -1311,22 +772,6 @@
     .t
   .o
 
-:rw-in
-  c0 !RWMODE
-  c0 !ASMMODE
-  c0 !QUIT
-  c0 !HANDLED
-  c0 !SEEN
-  li `INBUF !S
-  pre
-  li `linepat try
-  @M nt .i                         # unknown prefix => passthrough
-    do-calc
-    zp
-  .t
-  li `RWBUF !S                     # pre parses from @S, so point it at RWBUF
-  li `RWBUF rt
-
 :rw-out
   @RWMODE c0 eq .i
     li `OUTBUF li `RWBUF cpyz      # passthrough
@@ -1341,13 +786,6 @@
   .t
   du rb lb 'o io
   c1 ad emitz rt
-
-:trace<
-  dbg\
-  lb '< lb 'o io
-  emitz
-  lb 0A lb 'o io
-  rt
 
 :readout
   rlc                              # Read one line from child -> @R = length
@@ -1383,75 +821,86 @@
   lb 0A lb 'o io
   rt
 
-:imm-token
-  @TOKN c0 eq .i
-    rt
-  .t
-  @TOKA rb lb ': eq .i
-    lb 01 !ASMMODE
-    asm-token nt .i
-      copy-line
-      c0 !HANDLED
-    .t
-    rt
-  .t
+# --- Combinator-based token dispatch ---
+# Each tok1 function processes one token from @K, returns flag (0=stop, -1=continue)
+
+:grab-tok                           # advance @K past token, save to @T/@N and @TOKA/@TOKN
+  @K !T @K !TOKA c0 !N c0 !TOKN
+  .w ch c0 eq nt ch lb '  eq nt an ch lb 0A eq nt an .d
+    c1 fw c1 +N zp
+  .o
+  @N !TOKN rt
+
+:calc-tok1                          # process one calc token from @K -> (flag)
+  .[ mquot @M .i exec-lb .t
+  m| mctrl @M .i exec-lb .t
+  m| mhexn @M .i @N exec-li .t
+  m| mhex2 @M .i exec-lb .t
+  m| mconst @M .i exec-op .t
+  m| mreg @M .i exec-op .t
+  m| mop2 @M .i exec-op .t
+  rt .] try
+  @M .i lb 01 !SEEN n1 rt .t       # combinator matched -> success
+  # fallback: grab token text for raw/label dispatch
+  m1 grab-tok
+  @TOKN c0 eq .i c0 rt .t          # empty -> stop
   query-reg? .i
-    query-reg
-    rt
+    query-reg lb 01 !SEEN n1 rt
   .t
   raw-token? .i
-    send-raw-token
-    rt
+    send-raw-token lb 01 !SEEN n1 rt
   .t
-  calc-token nt .i
-    copy-line
-    c0 !HANDLED
-  .t
-  rt
+  @TOKA !T @TOKN !N
+  calc-label-token .i lb 01 !SEEN n1 rt .t
+  c0 !HANDLED c0 rt                 # unknown -> stop
 
-:asm-line-token
-  asm-token nt .i
-    copy-line
-    c0 !HANDLED
-  .t
-  rt
+:asm-tok1                           # process one asm token from @K -> (flag)
+  @K dc                             # save @K for combinator retry
+  m1 grab-tok                       # set @T/@N for asm-addr-token
+  @TOKN c0 eq .i cd zp c0 rt .t    # empty -> stop
+  asm-addr-token .i cd zp lb 01 !SEEN n1 rt .t
+  cd !K m1                          # restore @K for combinator matchers
+  .[ mquot @M .i asm-byte .t
+  m| mzero @M .i lb 00 asm-byte .t
+  m| mneg @M .i asm-byte .t
+  m| mhex2 @M .i asm-byte .t
+  m| mconst @M .i asm-byte .t
+  m| mreg @M .i asm-byte .t
+  m| mop2 @M .i asm-byte .t
+  rt .] try
+  @M .i lb 01 !SEEN n1 rt .t       # combinator matched -> success
+  # fallback: re-grab token for label ref
+  m1 grab-tok
+  @TOKA !T @TOKN !N
+  asm-label-ref .i lb 01 !SEEN n1 rt .t
+  c0 !HANDLED c0 rt                 # unknown -> stop
 
 :line-step
   c0 !RWMODE
   c0 !ASMMODE
   c0 !QUIT
   lb 01 !HANDLED
-  li `INBUF !A
+  c0 !SEEN
+  li `INBUF !S pre                  # init combinator state @S=@K=INBUF, @M=1
   lb 01 !MORE
   .w @MORE .d
-    skipws
-    @A rb du c0 eq .i
-      zp c0 !MORE
+    ws* m1
+    ch c0 eq ch lb '# eq or .i     # end of line or comment?
+      c0 !MORE
     .e
-      du lb '# eq .i
-        zp c0 !MORE
+      @ASMMODE .i
+        asm-tok1 nt .i c0 !MORE .t
       .e
-        zp
-        tok
-        @A !NEXTA
-        @T !TOKA
-        @N !TOKN
-        @ASMMODE .i
-          asm-line-token
+        ch lb ': eq .i              # ':' prefix -> switch to asm mode
+          lb 01 !ASMMODE
+          asm-tok1 nt .i c0 !MORE .t
         .e
-          imm-token
-        .t
-        @HANDLED c0 eq .i
-          c0 !MORE
-        .e
-          @NEXTA !A
+          calc-tok1 nt .i c0 !MORE .t
         .t
       .t
     .t
   .o
-  @QUIT .i                            # Exact "/q" line: child saw it, so exit proxy too
-    c0 hl
-  .t
+  @QUIT .i c0 hl .t
   rt
 
 :rl
