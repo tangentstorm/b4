@@ -501,13 +501,14 @@ export class B4VM {
         }
         else this.out(`\$.no: ${tok}`)
       }
-      else if (t===":") {
-        state = ASM; let a = tok.slice(1);
-        if (tok==="::") {} //  ok. assemble from here
-        else if (tok===":") {} // just enter ASM mode at current HERE
-        else if (isHex(a)) this._wi(hp, parseInt(a, 16))
-        else this.labelHere(a)
-      }
+    else if (t===":") {
+      state = ASM; let a = tok.slice(1);
+      if (tok==="::") {} //  ok. assemble from here
+      else if (tok===":") {} // just enter ASM mode at current HERE
+      else if (a.startsWith('+') && isHex(a.slice(1))) this._wi(hp, this._ri(hp) + parseInt(a.slice(1), 16))
+      else if (isHex(a)) this._wi(hp, parseInt(a, 16))
+      else this.labelHere(a)
+    }
       else if (t==="'") {
         let a = this._ri(hp);
         for (let ch of tok.slice(1).split("'")) {

@@ -413,6 +413,7 @@ mod.b4i: on b4i line do
       if tok="::" # ok
       elseif 2=count tok echo[":.no: ", tok] # because it's 2 chars but not regop
       elseif tok=":" # continue assembling from current here
+      elseif ("+" = tok[1]) & isHex[a:2 drop tok] _wi[hp:HERE _ri[hp]+unHex[a]]
       elseif isHex[a:1 drop tok]  _wi[hp:HERE unHex[a]]
       else
         name:1 drop tok
