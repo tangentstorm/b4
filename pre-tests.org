@@ -53,7 +53,7 @@ Subtracting =@S= from =@K= gives us the match length.
 
 The word =pre= sets =@K= to =@S= and =@M= to -1.
 
-* TEST pre.m\ : =m\= : niladic match guard
+* TEST pre.m-guard0 : =m\= : niladic match guard
 #+begin_src b4a
   > :A m\ c4 rt
   > m0 ^A ?d
@@ -69,7 +69,7 @@ stack and then using the =rt= opcode.
 
 Niladic here means that it doesn't expect any arguments.
 
-* TEST pre.m! : =m! (x-x?)= : monadic match guard
+* TEST pre.m-gaurd1 : =m! (x-x?)= : monadic match guard
 #+begin_src b4a
   > :A m! c4 rt
   > # when m0 the argument gets dropped
@@ -84,7 +84,7 @@ but it also drops a single argument.
 
 "Monadic" here means "taking one argument".
 
-* TEST b4s.end/any : =any= and =end=
+* TEST b4s.end-any : =any= and =end=
 #+begin_src b4a
  > :S 'x 'y ..
  > pre
@@ -399,7 +399,7 @@ at least once, then as many times as possible.
 =orp= is the combination of =opt= and =rep=. It matches its pattern 0 or more times.
 Note that =orp= can never fail to match, so it should always leave =@M= unchanged.
 
-* TEST b4s.ws* : =ws= and =ws*= match whitespace
+* TEST b4s.ws : =ws= and =ws*= match whitespace
 #+begin_src b4a
  > :S 20 20 20 ..
  > pre ws @M ln ?d /R
@@ -434,7 +434,7 @@ Whitespace is any character between 01 and 20 inclusive.
 Putting the pieces together, =mhex= matches an uppercase hex number,
 followed by  hex number.
 
-* TEST pre.mhex-@n : =mhex= should populate @N
+* TEST pre.mhex-n : =mhex= should populate @N
 #+begin_src b4a
   > :S "1234" ..
   > C0 pre mhex @M ln @N ?d /R

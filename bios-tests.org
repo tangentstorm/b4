@@ -24,7 +24,7 @@ These tests use b4i to test the bios.
   @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@ @@
 #+end_src
 
-* TEST maxx/maxy : maxx/maxy
+* TEST max-xy : maxx/maxy
 #+begin_src b4a
   > @tmw maxx @tmh maxy ?d /q
   ds: [40 3F 10 F]
@@ -92,7 +92,7 @@ the cursor to 0,0 and clears the first line.
 
 * =@K= : character pointer
 
-** TEST b4s.ch/nc : =ch/nc= : current and next character
+** TEST b4s.ch-nc : =ch/nc= : current and next character
 #+begin_src b4a
   > :K 'a 'b 'c
   > ch ?d zp

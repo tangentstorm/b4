@@ -574,7 +574,7 @@ hi
 =db= is an opcode that causes the system to pause for inspection.
 
 
-* TEST b4a./g : debugger command: =/g= (go) to resume execution
+* TEST b4a.cmd-g : debugger command: =/g= (go) to resume execution
 #+begin_src b4a
   > :A c0 c1 db c2 c4 rt
   > ?i

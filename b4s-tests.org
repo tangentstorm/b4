@@ -69,7 +69,7 @@ The function =celn= can be used to map a cell back to its number.
 This is only intended for use by these tests, so that we can test
 cell adddresses without refering to exact memory locations.
 
-* TEST b4s.nxt^ : =inic= and =nxt^= : pointer to next free cell
+* TEST b4s.nxt-ptr : =inic= and =nxt^= : pointer to next free cell
 #+begin_src b4a
   > inic
   > @nxt^ celn ?d zp   # next cell should be cell 0
@@ -585,7 +585,7 @@ CE F
 tree using a single hex number whose digits describe
 a path.
 
-* TEST b4s.eq? : =eq?=  (=eq= is a b4 opcode)
+* TEST b4s.eq-p : =eq?=  (=eq= is a b4 opcode)
 #+begin_src b4a
 > inic
 > C0 c1 cnum c1 cnum eq? ?d /R
@@ -716,7 +716,7 @@ The first two evaluate to their defined values, and =c= evaluates to =nil=.
 
 Values quoted with =quo= evaluate to themselves (unquoted).
 
-* TEST b4s.eval.eq? : =eval= 4: =eq?= and =t=
+* TEST b4s.eval.eq-p : =eval= 4: =eq?= and =t=
 #+begin_src b4a
   > :S "((a . 1 ) (b . 1) (c . 2))"
   > inic pre rval zp !E
@@ -769,7 +769,7 @@ to a lisp boolean. (=()= / =t=)
   b
 #+end_src
 
-* TEST b4s.eval.sym? : =eval= 7: (sym? x)
+* TEST b4s.eval.sym-p : =eval= 7: (sym? x)
 #+begin_src b4a
   > :S "((a . 1) (b . b))"
   > inic pre rval zp !E
@@ -784,7 +784,7 @@ to a lisp boolean. (=()= / =t=)
   C2 t
 #+end_src
 
-* TEST b4s.eval.num? : =eval= 8: (num? x)
+* TEST b4s.eval.num-p : =eval= 8: (num? x)
 #+begin_src b4a
   > :S "((a . 1) (b . b))"
   > inic pre rval zp !E
@@ -908,4 +908,3 @@ When =eval= sees =lam= at the start of a list, it calls the function,
 by using =zip= to pair the remaining items of the list with
 the function arguments, and then evaluating =body= with the zipped
 pairs linked to the start of the current environment.
-
