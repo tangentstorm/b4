@@ -145,6 +145,44 @@ then `0x108` (`08 01 00 00` in little endian format).
   ds: [5]
 #+end_src
 
+** TEST b4i.semicolon : =;= exits assembler mode
+#+begin_src b4a
+  > :twice c2 ml rt ; 5 twice ?d /q
+  ds: [A]
+#+end_src
+
+=;= always exits the assembler (back to calculator mode) and
+invokes =^]= (which by default simply returns). This allows
+defining a word and calling it on the same line.
+
+** TEST b4i.assemble-at : :!name assembles at label address, ; restores HERE
+#+begin_src b4a
+  > :buf :+10
+  > :main rt
+  > :!buf 'h 'e 'l 'l 'o ;
+  > ?buf
+  00000100 +H +E +L +L +O .. .. .. .. .. .. .. .. .. .. ..
+  > `main ?d /q
+  ds: [110]
+#+end_src
+
+=:!name= saves the old HERE pointer, sets HERE to the address
+stored in label =name=, and enters the assembler. When =;= is
+reached, it exits the assembler and invokes =^]=, which during
+a =:!= assembly restores the old HERE pointer.
+
+** TEST b4i.assemble-at-multi : :!name and ; work multiple times on one line
+#+begin_src b4a
+  > :100 @[ :buf :+A @] ; ?100 :!buf "hello" ; : "etc" ; ?100
+  @[ .. .. .. .. .. .. .. .. .. .. @] .. .. .. ..
+  @[ +H +E +L +L +O .. .. .. .. .. @] +E +T +C ..
+#+end_src
+
+Multiple =:!name ... ;= and =: ... ;= segments can appear on a single
+line. Each =;= restores HERE (if =:!= was used) or simply exits the
+assembler (if bare =:= was used), and the line continues in immediate
+mode.
+
 * Interactive Commands
 
 ** TEST interactive.reset : /R : reset the virtual machine

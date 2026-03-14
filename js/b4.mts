@@ -46,7 +46,7 @@ const HERE=rega('_')
 const hex=(b: number): string => b.toString(16).toUpperCase()
 const hexp=(b: number, w: number): string => hex(b).padStart(w,'0')
 const isHex=(s: string): boolean => /^-?[0-9A-F]+$/.test(s)
-const isRegOp=(s: string): boolean => /[+`@:?!^][@A-Z[\\\]^_]/.test(s)
+const isRegOp=(s: string): boolean => s.length===2 && /[+`@:?!^][@A-Z[\\\]^_]/.test(s)
 
 function tokenize(line: string): string[] {
   const tokens: string[] = [];
@@ -86,6 +86,8 @@ export class B4VM {
   b4hMode: boolean;
   out: OutputFunction;
   onBye: (() => void) | null;
+  onSemi: (() => void) | null;
+  private _savedHere: number;
   private _conb: Map<string, number>;
   private _cobn: Map<number, string>;
   private _cobf: Map<number, () => void>;
@@ -112,6 +114,8 @@ export class B4VM {
     this._ioHandlers = new Map()
     this.out = console.log;
     this.onBye = null;
+    this.onSemi = null;
+    this._savedHere = 0;
   }
 
   reset(): void {
@@ -432,6 +436,19 @@ export class B4VM {
     for (let tok of tokenize(line)) {
       let t = tok[0];
       if (state===CMT || t==="#") state = CMT;
+      else if (tok===';' && state===ASM) {
+        state = IMM;
+        if (this.onSemi) { this.onSemi(); this.onSemi = null; }
+      }
+      else if (t===':' && tok.length > 2 && tok[1]==='!') {
+        state = ASM;
+        let name = tok.slice(2);
+        if (Object.hasOwn(this._labels, name)) {
+          this._savedHere = this._ri(hp);
+          this._wi(hp, this._labels[name]);
+          this.onSemi = () => { this._wi(hp, this._savedHere); };
+        } else this.out(`unknown label: ${name}`)
+      }
       else if (t==='"' || (t==='.' && tok[1]==='"')) { // string
         let a = this.here();
         let start = t==='"' ? 1 : 2; // skip quote or dot+quote

@@ -355,6 +355,8 @@ mod.b4i: on b4i line do
   quit:0
   pref:0
   sbuf:""
+  on_semi:0
+  saved_here:0
   each tok in toks  t:tok[0]
     if state=STR
       if (count sbuf) sbuf:" " fuse sbuf,tok
@@ -366,6 +368,8 @@ mod.b4i: on b4i line do
         state:ASM
       end
     elseif (state=CMT) | (t="#") state:CMT
+    elseif (tok=";") & (state=ASM) state:IMM
+      if on_semi on_semi[] on_semi:0 end
     elseif regop[tok] r:reg[c:tok[1]]
       if t="?" echo["%08H" format _ri[r]]
       elseif t=":" state:ASM _wi[r _ri[hp]]
@@ -425,6 +429,13 @@ mod.b4i: on b4i line do
     elseif t=":"
       state:ASM hp:HERE c:tok[1]
       if tok="::" # ok
+      elseif (c="!") & ((count tok)>2)
+        name:2 drop tok
+        if name in labels
+          saved_here:_ri[hp]
+          _wi[hp labels[name]]
+          on_semi: on restore_here do _wi[hp saved_here] end
+        else echo["unknown label: ",name] end
       elseif 2=count tok echo[":.no: ", tok] # because it's 2 chars but not regop
       elseif tok=":" # continue assembling from current here
       elseif ("+" = tok[1]) & isHex[a:2 drop tok] _wi[hp:HERE _ri[hp]+unHex[a]]

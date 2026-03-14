@@ -10,9 +10,13 @@ interface uses sysutils, strutils, ub4, ub4asm, ub4ops, classes;
   function b4i(line:string):boolean; { returns 'done' flag }
   function b4i_args:boolean; { returns true if should quit }
 
+type
+  TSemiProc = procedure;
+
 var
   logging_enabled: boolean = false;
   b4h_mode: boolean = false;
+  onSemi: TSemiProc = nil;
 
 implementation
 
@@ -117,6 +121,14 @@ begin
   except on EConvertError do result := false; end
 end;
 
+var savedHere: integer;
+
+procedure restoreHere;
+begin
+  rg^[RHP] := savedHere;
+  onSemi := nil;
+end;
+
 procedure ok; begin end;
 
 procedure err(s : string);
@@ -178,26 +190,6 @@ begin
   Tokens.Free;
 end;
 
-procedure PutMem(str:string);
-  var r: byte; tok, w_tok : string; a : integer;
-      toks : TStringArray;
-      cmt_pos: integer;
-begin
-  cmt_pos := Pos('#', str);
-  if cmt_pos > 0 then str := copy(str, 1, cmt_pos - 1);
-  toks := tokenize(trim(str));
-  for tok in toks do begin
-    if length(tok) = 0 then continue;
-    if tok[1] = ':' then begin
-      w_tok := copy(tok, 2, length(tok));
-      if length(w_tok) = 0 then continue;
-      if (length(w_tok) = 1) and ub4asm.isRegChar(w_tok[1], r) then
-        rg^[r] := rg^[RHP]
-      else if tryHex(w_tok, a) then rg^[RHP] := a
-      else ub4asm.b4a(tok) // let b4a add ':name'
-    end else ub4asm.b4a(tok)
-  end
-end;
 
 procedure ShowRegs;
 var r:char; i:byte=0;
@@ -291,17 +283,41 @@ end;
 
 function b4i(line:string):boolean;
   type tstate = (st_cmt,st_asm,st_imm);
-  var tok : string; done: boolean = false; r,op:byte; st:tstate=st_imm;
+  var tok, w_tok : string; done: boolean = false; r,op:byte; st:tstate=st_imm;
   toks: TStringArray; i: integer = -1; addr: ub4.address; a: integer;
 begin
   st:=st_imm;
   if length(line)=0 then exit(false);
-  if line[1] = ':' then begin PutMem(line); exit(false); end;
   toks := tokenize(line);
   while i < High(toks) do begin
     inc(i); tok := toks[i]; if tok='' then continue;
     // skip comments, but note ':' has its own comment handler :/
     if tok[1] = '#' then st:=st_cmt; if st=st_cmt then continue;
+    if st=st_asm then begin
+      if tok = ';' then begin
+        st := st_imm;
+        if onSemi <> nil then onSemi();
+      end else begin
+        if tok[1] = ':' then begin
+          w_tok := copy(tok, 2, length(tok));
+          if length(w_tok) > 0 then begin
+            if (length(w_tok) > 1) and (w_tok[1] = '!') then begin
+              w_tok := copy(w_tok, 2, length(w_tok));
+              if ub4asm.find(w_tok, addr) then begin
+                savedHere := rg^[RHP];
+                rg^[RHP] := addr;
+                onSemi := @restoreHere;
+              end else writeln('unknown label: ', w_tok)
+            end
+            else if (length(w_tok) = 1) and ub4asm.isRegChar(w_tok[1], r) then
+              rg^[r] := rg^[RHP]
+            else if tryHex(w_tok, a) then rg^[RHP] := a
+            else ub4asm.b4a(tok)
+          end
+        end else ub4asm.b4a(tok)
+      end;
+      continue;
+    end;
     case tok of
       '/a' : if i < High(toks) then begin inc(i); ub4asm.b4a_file(toks[i]) end
              else writeln('usage: /a <filename>');
@@ -364,6 +380,24 @@ begin
                    write(format('%.8x ',[a])); ShowMem(a); end
                  else writeln('invalid address: ', tok);
                end;
+        ':' : begin
+                st := st_asm;
+                w_tok := copy(tok, 2, length(tok));
+                if length(w_tok) > 0 then begin
+                  if (length(w_tok) > 1) and (w_tok[1] = '!') then begin
+                    w_tok := copy(w_tok, 2, length(w_tok));
+                    if ub4asm.find(w_tok, addr) then begin
+                      savedHere := rg^[RHP];
+                      rg^[RHP] := addr;
+                      onSemi := @restoreHere;
+                    end else writeln('unknown label: ', w_tok)
+                  end
+                  else if (length(w_tok) = 1) and ub4asm.isRegChar(w_tok[1], r) then
+                    rg^[r] := rg^[RHP]
+                  else if tryHex(w_tok, a) then rg^[RHP] := a
+                  else ub4asm.b4a(tok)
+                end
+              end;
         else
           if (length(tok) > 1) and (tok[1] = '/') and
              tryHex(copy(tok, 2, length(tok)-1), a) then ub4.rg^[ub4.RIP] := a
