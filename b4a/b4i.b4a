@@ -112,12 +112,12 @@
   rt
 :mop2 m\ li `mop2i try rt          # (-op) match 2-char opcode -> opcode byte
 
-:mhex2i                             # inner: match exactly 2 uppercase hex digits
+:mhexbi                              # inner: match 1-2 uppercase hex digits
   c0 !N @K !T
   li `hexn rep tb m\                # match 1+ hex digits + boundary
-  @K @T sb c2 eq nt .i m0 rt .t    # must be exactly 2 digits
+  @K @T sb lb 03 lt nt .i m0 rt .t # if length > 2, fail (want 1-2)
   @N rt
-:mhex2 m\ li `mhex2i try rt        # (-b) match 2-digit hex -> byte value
+:mhexb m\ li `mhexbi try rt        # (-b) match hex byte value
 
 :mhexni                             # inner: match 3+ uppercase hex digits
   c0 !N @K !T
@@ -128,9 +128,10 @@
 
 :mquoti                             # inner: match 'X or bare '
   lb '' chr m\
-  .[ any tb m\ lc rt               # 'X -> char value
-  m| tb m\ lb '  rt                # bare ' -> space
-  .] try rt
+  ch c0 eq ch lb '  eq or .i       # bare ' (NUL or space follows)?
+    lb '  rt                       #   -> push space
+  .t
+  any tb m\ lc rt                  # 'X -> char value
 :mquot m\ li `mquoti try rt        # (-c) match quote token -> char value
 
 :mctrli                             # inner: match `X
@@ -174,9 +175,10 @@
   lb '. chr m\ lb '. chr m\ tb rt
 :mzero m\ li `mzeroi try rt       # (--) match .. (zero byte)
 
-:mnegi                              # inner: match -XX (negative hex byte)
-  lb '- chr m\ c0 !N hexn hexn tb m\
-  @N c0 sw sb lb FF an rt          # negate and mask to byte
+:mnegi                              # inner: match -X..X (negative hex byte)
+  lb '- chr m\ c0 !N
+  li `hexn rep tb m\                # match 1+ hex digits + boundary
+  @N c0 sw sb lb FF an rt           # negate and mask to byte
 :mneg m\ li `mnegi try rt          # (-b) match negative hex -> byte value
 
 :mtoki                              # inner: match any whitespace-delimited token
@@ -835,7 +837,7 @@
   .[ mquot @M .i exec-lb .t
   m| mctrl @M .i exec-lb .t
   m| mhexn @M .i @N exec-li .t
-  m| mhex2 @M .i exec-lb .t
+  m| mhexb @M .i exec-lb .t
   m| mconst @M .i exec-op .t
   m| mreg @M .i exec-op .t
   m| mop2 @M .i exec-op .t
@@ -863,7 +865,7 @@
   .[ mquot @M .i asm-byte .t
   m| mzero @M .i lb 00 asm-byte .t
   m| mneg @M .i asm-byte .t
-  m| mhex2 @M .i asm-byte .t
+  m| mhexb @M .i asm-byte .t
   m| mconst @M .i asm-byte .t
   m| mreg @M .i asm-byte .t
   m| mop2 @M .i asm-byte .t
