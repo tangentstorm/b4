@@ -35,12 +35,17 @@ export function b4TokenKind(tok: string): string {
 
 export function b4Tokenize(line: string): B4Token[] {
   if (!line) return []
-  const parts = line.split(/(\s+)/)
+  // split off comment before tokenizing
+  const ci = line.indexOf('#')
+  const code = ci >= 0 ? line.slice(0, ci) : line
+  const comment = ci >= 0 ? line.slice(ci) : ''
+  const parts = code.split(/(\s+)/)
   const result: B4Token[] = []
   for (const part of parts) {
     if (!part) continue
     if (/^\s+$/.test(part)) result.push({ text: part, kind: 'ws' })
     else result.push({ text: part, kind: b4TokenKind(part) })}
+  if (comment) result.push({ text: comment, kind: 'comment' })
   return result
 }
 
