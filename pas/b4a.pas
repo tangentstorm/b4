@@ -21,26 +21,26 @@ procedure ParseParams(var inputs: TStringList; var ofn: string; var fmt: tfmt);
       if arg = '-j' then fmt := json
       else if arg = '-o' then begin
         inc(idx);
-        if idx > paramcount then begin writeln('-o requires a filename'); halt end;
+        if idx > paramcount then begin writeln('-o requires a filename'); halt(1) end;
         ofn := paramstr(idx);
         have_output := true;
       end
       else if (arg = '-a') or (arg = '-i') then begin
         inc(idx);
-        if idx > paramcount then begin writeln(arg, ' requires a filename'); halt end;
+        if idx > paramcount then begin writeln(arg, ' requires a filename'); halt(1) end;
         inputs.Add(paramstr(idx));
       end
       else case a of
         0: begin inputs.Add(arg); inc(a) end;
-        1: if have_output then begin writeln('too many arguments'); halt end
+        1: if have_output then begin writeln('too many arguments'); halt(1) end
            else begin ofn := arg; have_output := true; inc(a) end;
-        otherwise begin writeln('too many arguments'); halt end
+        otherwise begin writeln('too many arguments'); halt(1) end
       end;
       inc(idx);
     end;
     if inputs.Count = 0 then begin
       writeln('usage: b4a [-j] [-o outfile] [-a file] [-i file] [infile.b4a] [outfile]');
-      halt
+      halt(1)
     end
     else if not have_output then begin
       a := lastdelimiter('.', inputs[0]);

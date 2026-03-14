@@ -31,6 +31,14 @@ implementation
     g_strs: TStringList;
     g_line: integer;
     g_col: integer;
+    tok_line: integer;
+    tok_col: integer;
+
+  function tok_pos: string;
+  begin result := inttostr(tok_line+1) + ':' + inttostr(tok_col) end;
+
+  procedure die(msg:string);
+  begin writeln(tok_pos, ' ', msg); halt(1) end;
 
 
 function unhex(tok:string): integer;
@@ -72,7 +80,7 @@ function b4op(code : opstring; out op:byte) : boolean;
 function b4opc(code:opstring) : byte;
   begin
     if b4op(code, result) then ok
-    else begin writeln('invalid op: ', code); halt end end;
+    else die('invalid op: ' + code) end;
 
 type
   tokentag = ( wsp, cmt, hex, u32, chr, def, ref, ivk, adr, get, put, ink, fwd,
@@ -82,7 +90,11 @@ type
 function readnext( var ch : char ) : char;
   begin
     atEnd := eof;
-    if not atEnd then read(ch);
+    if not atEnd then begin
+      read(ch);
+      if ch = #10 then begin inc(g_line); g_col := 1 end
+      else inc(g_col);
+    end;
     readnext := ch;
   end;
 
@@ -129,7 +141,7 @@ function next( var tok : token; var ch : char ) : boolean;
     begin
       tok.str := '';
       while (not atEnd) and (nextchar(ch) <> '"') do keep;
-      if atEnd then begin writeln('unterminated string literal'); halt end;
+      if atEnd then die('unterminated string literal');
       ch := nextchar(ch); // consume closing quote
     end; { rdstr }
   procedure rdhex;
@@ -137,6 +149,7 @@ function next( var tok : token; var ch : char ) : boolean;
   procedure rest(t:tokentag);
     begin tok.tag := t; tok.str := ''; while (not atEnd) and (nextchar(ch) > #32) do keep end;
   begin tok.str := ch; next := true;
+    tok_line := g_line; tok_col := g_col;
     case ch of
       #0  : next := false;
       #1..#32: begin tok.tag := wsp; repeat until atEnd or (nextchar(ch) >= #32) end;
@@ -168,7 +181,7 @@ function next( var tok : token; var ch : char ) : boolean;
                 '"' : begin tok.tag := _cs; rdstr end;
                 '[': tok.tag := _ob;
                 ']': tok.tag := _cb;
-                otherwise begin writeln('unknown macro: .',ch); halt end
+                otherwise die('unknown macro: .' + ch)
               end;
               ch:=nextchar(ch);
             end
@@ -223,8 +236,7 @@ begin
         while (p <= Length(trimmed)) and (trimmed[p] <= ' ') do inc(p);
         arg := Trim(Copy(trimmed, p, MaxInt));
         if arg = '' then begin
-          writeln('include directive requires a filename: ', line);
-          halt;
+          die('include directive requires a filename: ' + line);
         end;
         if ExtractFilePath(arg) = '' then inc_path := ExpandFileName(base_dir + PathDelim + arg)
         else inc_path := ExpandFileName(arg);
@@ -242,7 +254,7 @@ procedure b4as_core;
   procedure emit(v:value); begin mem[here] := v; inc(here); end;
   procedure emitv(v:value); begin wrval(here, v); inc(here,4) end;
   procedure emit_call(v:value); begin emit(b4opc('cl')); emitv(v) end;
-  procedure unknown(s:string); begin writeln('unknown word:', s); halt end;
+  procedure unknown(s:string); begin die('unknown word:' + s) end;
   function isreg(s:string):boolean; begin
     result:=(length(s)=1) and (s[1]>='@') and (s[1]<='_') end;
   function find_addr(s:string): value; { return address of label }
@@ -255,14 +267,14 @@ procedure b4as_core;
   procedure hop_slot(op:string); begin emit(b4opc(op)); dput(here); emit(0); end;
   procedure hop_here(); var slot,dist:value;
     begin slot := dpop; dist := here-slot;
-      if dist < 0 then begin writeln('invalid hop_here at ', here); halt end;
-      if dist > 126 then begin writeln('hop too big: ', here, ' -> ',slot); halt end;
+      if dist < 0 then die('invalid hop_here at ' + inttostr(here));
+      if dist > 126 then die('hop too big: ' + inttostr(here) + ' -> ' + inttostr(slot));
       mem[slot] := dist+1
     end;
   procedure hop_back(); var dest,dist:value;
     begin dest := dpop; dist := dest-here;
-      if dist > 0 then begin writeln('invalid hop_back at ', here); halt end;
-      if dist < -128 then begin writeln('hop too big: ',here, ' -> ',dest); halt end;
+      if dist > 0 then die('invalid hop_back at ' + inttostr(here));
+      if dist < -128 then die('hop too big: ' + inttostr(here) + ' -> ' + inttostr(dest));
       emit(byte(dist+1))
     end;
   procedure compile;
@@ -272,14 +284,14 @@ procedure b4as_core;
         wsp, cmt : ok; { do nothing }
         hex : emit(unhex(tok.str));
         u32 : emitv(unhex(tok.str));
-        chr : if length(tok.str)>1 then begin writeln('bad char: ', tok.str); halt end
+        chr : if length(tok.str)>1 then die('bad char: ' + tok.str)
               else emit(ord(tok.str[1]));
         def : if isreg(tok.str) then rg[regn(tok.str[1])]:=here
               else if (length(tok.str) > 1) and (tok.str[1] = '+') and
                       tryHex(copy(tok.str, 2, length(tok.str) - 1), a) then
                 inc(here, a)
               else if tryHex(tok.str,a) then here:=a
-              else if ents=high(dict) then begin writeln('too many :defs'); halt end
+              else if ents=high(dict) then die('too many :defs')
               else begin
                 dict[ents].id:=tok.str; dict[ents].adr:=here; inc(ents); i:=0;
                 { Set RGO to 'main' entry point if this label is 'main' }
@@ -292,7 +304,7 @@ procedure b4as_core;
               end;
         ref : if b4op(tok.str, op) then emit(op) else emit_call(find_addr(tok.str));
         ivk : if isreg(tok.str) then emit(b4opc('^'+tok.str[1]))
-              else begin writeln('bad word: ^',tok.str); halt end;
+              else die('bad word: ^' + tok.str);
         fwd : begin
                 fw.key := tok.str; fw.at := here;
                 emitv(0); insert(fw, fwds, maxint);
@@ -305,7 +317,7 @@ procedure b4as_core;
               else begin
                 emit(b4opc('li')); emitv(find_addr(tok.str)); emit(b4opc('wi')) end;
         ink : if isreg(tok.str) then emit(b4opc('+'+tok.str[1])) // inKrement :)
-              else begin writeln('no such word: +',tok.str); halt end;
+              else die('no such word: +' + tok.str);
         _wh : dput(here); {(- wh)}
         _if ,
         _do : hop_slot('h0');
@@ -337,6 +349,7 @@ procedure b4as_core;
 procedure b4as;
 begin
   nextchar := @readnext;
+  g_line := 0; g_col := 0;
   atEnd := eof;
   b4as_core;
 end;
