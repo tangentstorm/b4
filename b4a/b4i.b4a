@@ -419,9 +419,9 @@
   .w @X .d                         # while X != 0
     # read count byte at X+4
     @X c4 ad rb @W eq .i           # count matches?
-      @W dc                         # save W (d.streq clobbers it)
+      @V dc @W dc                    # save V and W (d.streq clobbers both)
       @V @X lb 05 ad @W d.streq
-      cd !W                          # restore W
+      cd !W cd !V                    # restore W and V
       .i                             # name matches?
         @X lb 05 ad @W ad ri       # read address (ri reads 4 LE bytes)
         n1 rt
@@ -747,6 +747,42 @@
   @T c1 ad rb b!+
   zp rt
 
+:raw-p?                              # is token "/p"?
+  @TOKN c2 eq nt .i c0 rt .t
+  @TOKA rb lb '/ eq nt .i c0 rt .t
+  @TOKA c1 ad rb lb 'p eq rt
+
+:ohex1                               # (n--) output low nibble as hex char
+  lb 0F an
+  du lb 0A lt .i lb '0 .e lb 'A lb 0A sb .t ad lb 'o io rt
+
+:ohex                                # (b--) output byte as 2 hex chars
+  du lb 10 dv ohex1 ohex1 rt
+
+:oaddr                               # (addr--) output 16-bit address as 4 hex chars
+  du li 00 01 00 00 dv ohex lb FF an ohex rt
+
+:dict-print                          # walk dictionary and print entries
+  @DL0 !X
+  .w @X .d
+    # read address at X+5+count
+    @X c4 ad rb !W                   # W = name length
+    @X lb 05 ad @W ad ri             # read address
+    oaddr                            # print address
+    lb ': lb 'o io                   # print ':'
+    # print name bytes
+    @X lb 05 ad !Y                   # Y = start of name
+    @W .f
+      @Y rb lb 'o io
+      c1 +Y zp
+    .n
+    lb '  lb 'o io                   # trailing space
+    # follow link
+    @X ri !X
+  .o
+  lb 0A lb 'o io                     # newline
+  rt
+
 :dbg\ @\ nt .i cd zp .t rt          # early-exit current word unless debug register is nonzero
 
 :rw-dehex
@@ -849,6 +885,9 @@
   query-reg? .i
     query-reg lb 01 !SEEN n1 rt
   .t
+  raw-p? .i
+    dict-print lb 01 !SEEN n1 rt
+  .t
   raw-token? .i
     send-raw-token lb 01 !SEEN n1 rt
   .t
@@ -860,6 +899,9 @@
   @K dc                             # save @K for combinator retry
   m1 grab-tok                       # set @T/@N for asm-addr-token
   @TOKN c0 eq .i cd zp c0 rt .t    # empty -> stop
+  @TOKN c1 eq @TOKA rb lb '; eq an .i  # ';' -> back to calc mode
+    c0 !ASMMODE cd zp lb 01 !SEEN n1 rt
+  .t
   asm-addr-token .i cd zp lb 01 !SEEN n1 rt .t
   cd !K m1                          # restore @K for combinator matchers
   .[ mquot @M .i asm-byte .t
@@ -912,10 +954,14 @@
 
 # --- Main Code -------------------------
 
-:main
+:init
   li `CMD lb 'p io !H  # Spawn child process, store handle in @H
   li 00 01 00 00 !ASMADDR
   li `DICT !DH0       # initialize dictionary pointer
+  rt
+
+:main
+  init
   @H c0 lt .i         # Check if spawn failed (handle < 0)
     'E 'e io 'R 'e io 'R 'e io 0A 'e io  # Print "Err\n" to stderr
     lb 01 hl          # Exit with code 1
