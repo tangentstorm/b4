@@ -3,6 +3,7 @@ import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { ViewUpdate } from '@codemirror/view';
+import { b4a } from './cm6-lang-b4.mts';
 
 const STORAGE_KEY = 'b4-snippets';
 
@@ -95,6 +96,7 @@ export class B4Snippets extends HTMLElement {
         extensions: [
           basicSetup,
           oneDark,
+          b4a(),
           EditorView.updateListener.of((update: ViewUpdate) => {
             if (update.docChanged) this.saveCurrentSnippet();
           }),
