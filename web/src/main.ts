@@ -89,20 +89,6 @@ if (memShadow) {
 const snippets = document.querySelector('b4-snippets')! as B4Snippets;
 snippets.setVM(vm);
 
-// Fix debugger scrolling: normalize wheel deltas to prevent overshooting
-if (memShadow) {
-  const gridWrap = memShadow.querySelector('.grid-wrap') as HTMLElement;
-  if (gridWrap) {
-    gridWrap.addEventListener('wheel', (e: WheelEvent) => {
-      e.preventDefault();
-      const ROW_H = 27;
-      const maxDelta = ROW_H * 3;
-      const dy = Math.max(-maxDelta, Math.min(maxDelta, e.deltaY));
-      gridWrap.scrollTop += dy;
-    }, { passive: false });
-  }
-}
-
 // Wrap b4i to refresh the memory browser after each command
 const origB4i = vm.b4i.bind(vm);
 vm.b4i = function (line: string) {

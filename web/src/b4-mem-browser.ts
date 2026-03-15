@@ -3,7 +3,6 @@ import type { B4VM } from '@tangentstorm/b4';
 const COLS = 16;
 const TOTAL_BYTES = 4096;
 const TOTAL_ROWS = TOTAL_BYTES / COLS;
-const BUFFER = 5;
 
 const hex4 = (n: number) => n.toString(16).toUpperCase().padStart(4, '0');
 
@@ -68,7 +67,6 @@ td { cursor: pointer; user-select: none; }
   outline: none;
   z-index: 2;
 }
-.spacer td { padding: 0; border: 0; cursor: default; }
 
 /* sidebar */
 .side {
@@ -137,7 +135,7 @@ td { cursor: pointer; user-select: none; }
 .lbl-wrap .lv { color: #999; text-align: right; }
 `;
 
-type PoolRow = {
+type RowRef = {
   tr: HTMLTableRowElement;
   cells: HTMLTableCellElement[];
   addrTd: HTMLTableCellElement;
@@ -153,17 +151,8 @@ export class B4MemBrowser extends HTMLElement {
   private edIn!: HTMLInputElement;
   private lblBody!: HTMLTableSectionElement;
   private gridWrap!: HTMLDivElement;
-
-  // virtual scroll
-  private pool: PoolRow[] = [];
-  private spacerBotTr!: HTMLTableRowElement;
-  private spacerTopTd!: HTMLTableCellElement;
-  private spacerBotTd!: HTMLTableCellElement;
-  private rowHeight = 0;
+  private rows: RowRef[] = [];
   private headerHeight = 0;
-  private poolSize = 0;
-  private firstPoolRow = 0;
-  private scrollInited = false;
 
   constructor() {
     super();
@@ -187,26 +176,6 @@ export class B4MemBrowser extends HTMLElement {
     this.setAttribute('tabindex', '0');
     this.buildDOM();
     this.setupEvents();
-    requestAnimationFrame(() => this.initVirtualScroll());
-  }
-
-  // -- virtual scroll internals --
-
-  private createPoolRow(): PoolRow {
-    const tr = document.createElement('tr');
-    const addrTd = document.createElement('td');
-    addrTd.className = 'addr';
-    addrTd.textContent = '0000';
-    tr.appendChild(addrTd);
-    const cells: HTMLTableCellElement[] = [];
-    for (let c = 0; c < COLS; c++) {
-      const td = document.createElement('td');
-      td.dataset.a = '0';
-      td.textContent = '..';
-      tr.appendChild(td);
-      cells.push(td);
-    }
-    return { tr, cells, addrTd };
   }
 
   private buildDOM() {
@@ -242,120 +211,42 @@ export class B4MemBrowser extends HTMLElement {
 
     const tbody = this.shadowRoot!.querySelector('.grid-wrap tbody')!;
 
-    // top spacer
-    const trTop = document.createElement('tr');
-    trTop.className = 'spacer';
-    this.spacerTopTd = document.createElement('td');
-    this.spacerTopTd.colSpan = COLS + 1;
-    trTop.appendChild(this.spacerTopTd);
-    tbody.appendChild(trTop);
-
-    // one measurement row (more created in initVirtualScroll)
-    const row0 = this.createPoolRow();
-    this.pool.push(row0);
-    tbody.appendChild(row0.tr);
-
-    // bottom spacer
-    this.spacerBotTr = document.createElement('tr');
-    this.spacerBotTr.className = 'spacer';
-    this.spacerBotTd = document.createElement('td');
-    this.spacerBotTd.colSpan = COLS + 1;
-    this.spacerBotTr.appendChild(this.spacerBotTd);
-    tbody.appendChild(this.spacerBotTr);
-  }
-
-  private initVirtualScroll() {
-    if (this.scrollInited) return;
-    if (!this.pool.length || this.gridWrap.clientHeight === 0) return;
-
-    this.rowHeight = this.pool[0].tr.getBoundingClientRect().height;
-    if (this.rowHeight === 0) this.rowHeight = 27;
-
-    const thead = this.shadowRoot!.querySelector('.grid-wrap thead') as HTMLElement;
-    this.headerHeight = thead ? thead.getBoundingClientRect().height : this.rowHeight;
-
-    const dataViewport = this.gridWrap.clientHeight - this.headerHeight;
-    const visibleCount = Math.ceil(dataViewport / this.rowHeight) + 1;
-    this.poolSize = Math.min(visibleCount + 2 * BUFFER, TOTAL_ROWS);
-
-    // create remaining pool rows
-    const tbody = this.shadowRoot!.querySelector('.grid-wrap tbody')!;
-    for (let i = this.pool.length; i < this.poolSize; i++) {
-      const row = this.createPoolRow();
-      this.pool.push(row);
-      tbody.insertBefore(row.tr, this.spacerBotTr);
+    // Build all 256 rows directly — no virtual scrolling needed
+    for (let r = 0; r < TOTAL_ROWS; r++) {
+      const tr = document.createElement('tr');
+      const addrTd = document.createElement('td');
+      addrTd.className = 'addr';
+      addrTd.textContent = hex4(r * COLS);
+      tr.appendChild(addrTd);
+      const cells: HTMLTableCellElement[] = [];
+      for (let c = 0; c < COLS; c++) {
+        const td = document.createElement('td');
+        td.dataset.a = String(r * COLS + c);
+        td.textContent = '..';
+        tr.appendChild(td);
+        cells.push(td);
+      }
+      this.rows.push({ tr, cells, addrTd });
+      tbody.appendChild(tr);
     }
-
-    this.scrollInited = true;
-    this.syncScroll();
-    this.refresh();
   }
-
-  private growPool(needed: number) {
-    needed = Math.min(needed, TOTAL_ROWS);
-    if (needed <= this.poolSize) return;
-    const tbody = this.shadowRoot!.querySelector('.grid-wrap tbody')!;
-    for (let i = this.pool.length; i < needed; i++) {
-      const row = this.createPoolRow();
-      this.pool.push(row);
-      tbody.insertBefore(row.tr, this.spacerBotTr);
-    }
-    this.poolSize = needed;
-  }
-
-  private syncScroll() {
-    if (!this.scrollInited) return;
-    const scrollTop = this.gridWrap.scrollTop;
-    let first = Math.floor(scrollTop / this.rowHeight) - BUFFER;
-    first = Math.max(0, Math.min(first, TOTAL_ROWS - this.poolSize));
-    this.firstPoolRow = first;
-    this.spacerTopTd.style.height = (first * this.rowHeight) + 'px';
-    this.spacerBotTd.style.height =
-      (Math.max(0, TOTAL_ROWS - first - this.poolSize) * this.rowHeight) + 'px';
-  }
-
-  private onScroll = () => {
-    const prev = this.firstPoolRow;
-    this.syncScroll();
-    if (this.firstPoolRow !== prev) this.refreshPool();
-  };
 
   private ensureVisible(addr: number) {
-    if (!this.scrollInited) return;
     const row = Math.floor(addr / COLS);
-    const rowTop = row * this.rowHeight;
-    const rowBot = rowTop + this.rowHeight;
-    const visTop = this.gridWrap.scrollTop;
-    const visBot = visTop + this.gridWrap.clientHeight - this.headerHeight;
-    if (rowTop < visTop) this.gridWrap.scrollTop = rowTop;
-    else if (rowBot > visBot)
-      this.gridWrap.scrollTop = rowBot - this.gridWrap.clientHeight + this.headerHeight;
-    this.syncScroll();
+    if (row < 0 || row >= this.rows.length) return;
+    this.rows[row].tr.scrollIntoView({ block: 'nearest' });
   }
 
   private cellForAddr(addr: number): HTMLTableCellElement | null {
     const row = Math.floor(addr / COLS);
     const col = addr % COLS;
-    const idx = row - this.firstPoolRow;
-    if (idx < 0 || idx >= this.poolSize) return null;
-    return this.pool[idx].cells[col];
+    if (row < 0 || row >= this.rows.length) return null;
+    return this.rows[row].cells[col];
   }
 
   // -- events --
 
   private setupEvents() {
-    this.gridWrap.addEventListener('scroll', this.onScroll, { passive: true });
-
-    new ResizeObserver(() => {
-      if (!this.scrollInited) { this.initVirtualScroll(); return; }
-      const dv = this.gridWrap.clientHeight - this.headerHeight;
-      const vis = Math.ceil(dv / this.rowHeight) + 1;
-      const needed = Math.min(vis + 2 * BUFFER, TOTAL_ROWS);
-      if (needed > this.poolSize) this.growPool(needed);
-      this.syncScroll();
-      this.refreshPool();
-    }).observe(this.gridWrap);
-
     // cell click → select ed
     this.shadowRoot!.querySelector('.grid-wrap tbody')!
       .addEventListener('click', (e) => {
@@ -389,28 +280,16 @@ export class B4MemBrowser extends HTMLElement {
 
   refresh(): void {
     if (!this.vm || !this.ipIn) return;
-    this.refreshPool();
-    this.ipIn.value = hex4(this.vm.ip);
-    this.edIn.value = hex4(this._ed);
-    this.refreshLabels();
-  }
-
-  private refreshPool() {
-    if (!this.vm || !this.poolSize) return;
     const { ip, ram } = this.vm;
     const ed = this._ed;
 
-    for (let i = 0; i < this.poolSize; i++) {
-      const row = this.firstPoolRow + i;
-      if (row >= TOTAL_ROWS) break;
-      const base = row * COLS;
-      const p = this.pool[i];
-      p.addrTd.textContent = hex4(base);
+    for (let r = 0; r < TOTAL_ROWS; r++) {
+      const base = r * COLS;
+      const p = this.rows[r];
       for (let c = 0; c < COLS; c++) {
         const addr = base + c;
         const b = ram[addr];
         const cell = p.cells[c];
-        cell.dataset.a = String(addr);
         cell.textContent = this.vm!.dis(b);
         let cls = '';
         if (b === 0) cls = 'z';
@@ -419,6 +298,10 @@ export class B4MemBrowser extends HTMLElement {
         cell.className = cls;
       }
     }
+
+    this.ipIn.value = hex4(this.vm.ip);
+    this.edIn.value = hex4(this._ed);
+    this.refreshLabels();
   }
 
   private refreshLabels() {
@@ -447,13 +330,9 @@ export class B4MemBrowser extends HTMLElement {
   }
 
   scrollToAddress(addr: number) {
-    if (!this.scrollInited) return;
     const row = Math.floor(addr / COLS);
-    const dv = this.gridWrap.clientHeight - this.headerHeight;
-    const half = Math.floor(dv / this.rowHeight / 2);
-    this.gridWrap.scrollTop = Math.max(0, (row - half) * this.rowHeight);
-    this.syncScroll();
-    this.refreshPool();
+    if (row < 0 || row >= this.rows.length) return;
+    this.rows[row].tr.scrollIntoView({ block: 'center' });
   }
 
   scrollToIP() {
