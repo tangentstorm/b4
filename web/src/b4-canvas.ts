@@ -63,14 +63,17 @@ export class B4Canvas extends HTMLElement {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(0,0,0,0.9);
+          background: #333;
         }
         :host(.maximized) .wrap {
+          width: 95vw;
+          height: 95vh;
           border: none;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.6);
         }
         :host(.maximized) canvas {
-          width: 90vw;
-          height: 90vh;
+          width: 100%;
+          height: 100%;
           object-fit: contain;
         }
         :host(.maximized) button { opacity: 1; }
