@@ -12,28 +12,95 @@
       flex-direction: column;
       height: 100vh;
     }
-    #repl-panel {
-      height: 40vh;
-      min-height: 120px;
+    #top-panel {
+      display: flex;
+      flex-direction: row;
       border-bottom: 2px solid #333;
+    }
+    #repl-panel {
+      flex: 1;
+      min-width: 0;
+      height: 240px;
       display: flex;
       flex-direction: column;
+      border-right: 2px solid #333;
     }
-    b4-repl {
+    b4-repl { flex: 1; }
+    #canvas-panel {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 4px;
+      min-width: 200px;
+    }
+    #bottom-panel {
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
+    #bottom-tabs {
+      display: flex;
+      border-bottom: 1px solid #333;
+      background: #1a1a1a;
+    }
+    #bottom-tabs button {
+      background: none; border: none; color: #888;
+      font: 12px monospace; padding: 4px 16px;
+      cursor: pointer; border-bottom: 2px solid transparent;
+    }
+    #bottom-tabs button:hover { color: #ccc; }
+    #bottom-tabs button.active { color: #fff; border-bottom-color: #58f; }
+    #bottom-tabs .playpause {
+      margin-left: auto;
+      color: #6f6;
+      padding: 4px 12px;
+    }
+    #bottom-tabs .playpause.running { color: #f66; }
+    #bottom-content {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+    #bottom-content > * {
+      position: absolute;
+      inset: 0;
+    }
+    #bottom-content > .hidden { display: none; }
     b4-mem-browser {
-      flex: 1;
       min-height: 0;
     }
   </style>
 </head>
 <body>
   <div id="app">
-    <div id="repl-panel">
-      <b4-repl></b4-repl>
+    <div id="top-panel">
+      <div id="repl-panel">
+        <b4-repl></b4-repl>
+      </div>
+      <div id="canvas-panel">
+        <b4-canvas width="320" height="200"></b4-canvas>
+      </div>
     </div>
-    <b4-mem-browser></b4-mem-browser>
+    <div id="bottom-panel">
+      <div id="bottom-tabs">
+        <button class="active" data-tab="debugger">Debugger</button>
+        <button data-tab="snippets">Snippets</button>
+        <button data-tab="sprites">Sprites</button>
+        <button data-tab="map">Map</button>
+        <button data-tab="palette">Palette</button>
+        <button data-tab="help">Help</button>
+        <button id="btn-playpause" class="playpause" title="Start/stop game loop">&#9654;</button>
+      </div>
+      <div id="bottom-content">
+        <b4-mem-browser></b4-mem-browser>
+        <b4-snippets class="hidden"></b4-snippets>
+        <b4-grid-editor mode="sprite" class="hidden"></b4-grid-editor>
+        <b4-grid-editor mode="map" class="hidden"></b4-grid-editor>
+        <b4-palette-editor class="hidden"></b4-palette-editor>
+        <b4-help class="hidden"></b4-help>
+      </div>
+    </div>
   </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
