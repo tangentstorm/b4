@@ -11,10 +11,27 @@ export interface VGControls {
   onStateChange: ((animating: boolean) => void) | null;
 }
 
-export function initVG(vm: B4VM): VGControls {
+export interface VGRegisters {
+  keys?: string;    // keyboard input bitmask (default 'Q')
+  tick?: string;    // frame counter (default 'T')
+  mouse?: string;   // mouse state (default 'W')
+                    //   bits 0-9:  x (0-1023)
+                    //   bits 10-19: y (0-1023)
+                    //   bits 20-25: wheel (signed, 6-bit)
+                    //   bits 26-31: buttons (up to 6)
+  update?: string;  // update callback address (default 'U')
+  render?: string;  // render callback address (default 'R')
+}
+
+const DEFAULT_REGS: Required<VGRegisters> = {
+  keys: 'Q', tick: 'T', mouse: 'W', update: 'U', render: 'R',
+};
+
+export function initVG(vm: B4VM, regs?: VGRegisters): VGControls {
+  const reg = { ...DEFAULT_REGS, ...regs };
   const b4canvas = document.querySelector('b4-canvas')! as B4Canvas;
 
-  let mouseX = 0, mouseY = 0, mouseButtons = 0;
+  let mouseX = 0, mouseY = 0, mouseButtons = 0, mouseWheel = 0;
   let frameCount = 0;
   let animating = false;
   let stateCallback: ((animating: boolean) => void) | null = null;
@@ -102,6 +119,9 @@ export function initVG(vm: B4VM): VGControls {
   });
   wrapEl.addEventListener('mousedown', (e: MouseEvent) => { mouseButtons |= (1 << e.button); });
   wrapEl.addEventListener('mouseup', (e: MouseEvent) => { mouseButtons &= ~(1 << e.button); });
+  wrapEl.addEventListener('wheel', (e: WheelEvent) => {
+    if (animating) { e.preventDefault(); mouseWheel += Math.sign(e.deltaY); }
+  }, { passive: false });
 
   const controls: VGControls = {
     isAnimating: () => animating,
@@ -119,10 +139,7 @@ export function initVG(vm: B4VM): VGControls {
     set onStateChange(fn: ((a: boolean) => void) | null) { stateCallback = fn; },
   };
 
-  // Animation loop: sets input registers and calls ^U / ^R each frame
-  // S = game input state (button bitmask)
-  // T = frame count since start
-  // W = mouse: X in low 16 bits, Y in high 16 bits
+  // Animation loop: sets input registers and calls update/render each frame
   const FRAME_MS = 1000 / 30; // 30 fps
   let lastFrame = 0;
   function animationFrame(now: number) {
@@ -130,16 +147,22 @@ export function initVG(vm: B4VM): VGControls {
     requestAnimationFrame(animationFrame);
     if (now - lastFrame < FRAME_MS) return;
     lastFrame = now;
-    (vm as any)._sr('T', frameCount);
-    (vm as any)._sr('W', (mouseY << 16) | (mouseX & 0xFFFF));
+    (vm as any)._sr(reg.tick, frameCount);
+    // Pack mouse into W: bits 0-9 x, 10-19 y, 20-25 wheel (signed 6-bit), 26-31 buttons
+    const mx = mouseX & 0x3FF;
+    const my = (mouseY & 0x3FF) << 10;
+    const mw = (mouseWheel & 0x3F) << 20;
+    const mb = (mouseButtons & 0x3F) << 26;
+    (vm as any)._sr(reg.mouse, (mx | my | mw | mb) >>> 0);
+    mouseWheel = 0; // reset wheel accumulator each frame
     let kbits = 0;
     if (keyState['ArrowLeft']) kbits |= 1;
     if (keyState['ArrowRight']) kbits |= 2;
     if (keyState['ArrowUp'] || keyState['z'] || keyState['x']) kbits |= 4;
     if (keyState['ArrowDown']) kbits |= 8;
-    (vm as any)._sr('S', mouseButtons | kbits);
-    const addrU = (vm as any)._gr('U');
-    const addrR = (vm as any)._gr('R');
+    (vm as any)._sr(reg.keys, kbits);
+    const addrU = (vm as any)._gr(reg.update);
+    const addrR = (vm as any)._gr(reg.render);
     if (addrU) (vm as any).imrun(addrU);
     if (addrR) (vm as any).imrun(addrR);
     frameCount++;

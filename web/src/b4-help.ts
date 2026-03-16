@@ -191,11 +191,12 @@ export class B4Help extends HTMLElement {
           <h3>Input</h3>
           <table>
             <tr><td>'m vg</td><td>push mouse x, y</td></tr>
-            <tr><td>@S</td><td>button state bitmask</td></tr>
-            <tr><td>@W</td><td>mouse: X low 16, Y high 16</td></tr>
+            <tr><td>@Q</td><td>keyboard state bitmask</td></tr>
+            <tr><td>@W</td><td>mouse (packed 32-bit)</td></tr>
             <tr><td>@T</td><td>frame count since start</td></tr>
           </table>
-          <p class="note">S bits: 0=left 1=right 2=up/jump 3=down</p>
+          <p class="note">Q bits: 0=left 1=right 2=up/jump 3=down<br>
+          W bits: 0-9=x, 10-19=y, 20-25=wheel, 26-31=buttons</p>
 
           <h3>Game Loop</h3>
           <table>
