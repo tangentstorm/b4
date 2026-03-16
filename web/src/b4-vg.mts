@@ -160,6 +160,26 @@ export function initVG(vm: B4VM, regs?: VGRegisters): VGControls {
     if (keyState['ArrowRight']) kbits |= 2;
     if (keyState['ArrowUp'] || keyState['z'] || keyState['x']) kbits |= 4;
     if (keyState['ArrowDown']) kbits |= 8;
+    // Gamepad input → merge into kbits
+    const gamepads = navigator.getGamepads?.();
+    if (gamepads) {
+      for (const gp of gamepads) {
+        if (!gp) continue;
+        // D-pad buttons (standard mapping: 12=up 13=down 14=left 15=right)
+        if (gp.buttons[14]?.pressed) kbits |= 1; // left
+        if (gp.buttons[15]?.pressed) kbits |= 2; // right
+        if (gp.buttons[12]?.pressed) kbits |= 4; // up
+        if (gp.buttons[13]?.pressed) kbits |= 8; // down
+        // Left stick with deadzone
+        if (gp.axes[0] < -0.3) kbits |= 1;       // left
+        if (gp.axes[0] > 0.3) kbits |= 2;        // right
+        if (gp.axes[1] < -0.3) kbits |= 4;       // up
+        if (gp.axes[1] > 0.3) kbits |= 8;        // down
+        // A/B buttons → jump
+        if (gp.buttons[0]?.pressed) kbits |= 4;
+        break; // use first connected gamepad only
+      }
+    }
     (vm as any)._sr(reg.keys, kbits);
     const addrU = (vm as any)._gr(reg.update);
     const addrR = (vm as any)._gr(reg.render);
