@@ -2,7 +2,7 @@ import type { B4VM } from '@tangentstorm/b4';
 import '@tangentstorm/b4/repl';         // registers <b4-repl>
 import '@tangentstorm/b4/mem-browser';  // registers <b4-mem-browser>
 import type { B4MemBrowser } from '@tangentstorm/b4/mem-browser';
-import { initVG } from './b4-vg.mts';
+import { initVG } from './b4-gm.mts';
 import './b4-snippets';
 import type { B4Snippets } from './b4-snippets';
 import './b4-grid-editor';
