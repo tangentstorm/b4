@@ -57,9 +57,9 @@ vg.onStateChange = (anim: boolean) => {
 };
 btnPP.addEventListener('click', () => {
   if (vg.isAnimating()) {
-    vm.b4i("'P vg");
+    vm.b4i("'P gm");
   } else {
-    vm.b4i("^I 'p vg");
+    vm.b4i("^I 'p gm");
   }
 });
 

@@ -50,8 +50,8 @@ export function initVG(vm: B4VM, regs?: VGRegisters): VGControls {
   });
   document.addEventListener('keyup', (e) => { keyState[e.key] = false; });
 
-  // Register 'vg' opcode for video graphics
-  vm.addOp(0xA0, 'vg', () => {
+  // Register 'gm' opcode for game engine
+  vm.addOp(0xA0, 'gm', () => {
     const cmd = (vm as any)._dpopChar();
     switch (cmd) {
       case 'v': b4canvas.invert(); break;

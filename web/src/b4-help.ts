@@ -168,29 +168,29 @@ export class B4Help extends HTMLElement {
         </div>
 
         <div class="col">
-          <h2>Game Engine (vg)</h2>
-          <p class="note">Custom opcode at $A0. Sub-commands via <code>lb 'X vg</code></p>
+          <h2>Game Engine (ge)</h2>
+          <p class="note">Custom opcode at $A0. Sub-commands via <code>lb 'X gm</code></p>
 
           <h3>Drawing</h3>
           <table>
-            <tr><td>'f vg</td><td>set fill color (color &mdash; )</td></tr>
-            <tr><td>'X vg</td><td>clear screen</td></tr>
-            <tr><td>'b vg</td><td>draw box (x y w h &mdash; )</td></tr>
-            <tr><td>'c vg</td><td>draw circle (cx cy r &mdash; )</td></tr>
-            <tr><td>'s vg</td><td>draw sprite (si x y &mdash; )</td></tr>
-            <tr><td>'F vg</td><td>draw sprite flipped (si x y &mdash; )</td></tr>
-            <tr><td>'v vg</td><td>invert screen</td></tr>
+            <tr><td>'f gm</td><td>set fill color (color &mdash; )</td></tr>
+            <tr><td>'X gm</td><td>clear screen</td></tr>
+            <tr><td>'b gm</td><td>draw box (x y w h &mdash; )</td></tr>
+            <tr><td>'c gm</td><td>draw circle (cx cy r &mdash; )</td></tr>
+            <tr><td>'s gm</td><td>draw sprite (si x y &mdash; )</td></tr>
+            <tr><td>'F gm</td><td>draw sprite flipped (si x y &mdash; )</td></tr>
+            <tr><td>'v gm</td><td>invert screen</td></tr>
           </table>
 
           <h3>Map</h3>
           <table>
-            <tr><td>'g vg</td><td>get map tile (x y &mdash; tile)</td></tr>
-            <tr><td>'M vg</td><td>draw map region (mx my sx sy w h &mdash; )</td></tr>
+            <tr><td>'g gm</td><td>get map tile (x y &mdash; tile)</td></tr>
+            <tr><td>'M gm</td><td>draw map region (mx my sx sy w h &mdash; )</td></tr>
           </table>
 
           <h3>Input</h3>
           <table>
-            <tr><td>'m vg</td><td>push mouse x, y</td></tr>
+            <tr><td>'m gm</td><td>push mouse x, y</td></tr>
             <tr><td>@Q</td><td>keyboard state bitmask</td></tr>
             <tr><td>@W</td><td>mouse (packed 32-bit)</td></tr>
             <tr><td>@T</td><td>frame count since start</td></tr>
@@ -200,11 +200,11 @@ export class B4Help extends HTMLElement {
 
           <h3>Game Loop</h3>
           <table>
-            <tr><td>'p vg</td><td>start animation (30fps)</td></tr>
-            <tr><td>'P vg</td><td>stop animation</td></tr>
+            <tr><td>'p gm</td><td>start animation (30fps)</td></tr>
+            <tr><td>'P gm</td><td>stop animation</td></tr>
           </table>
           <p class="note">Define <code>:I</code> (init), <code>:U</code> (update), <code>:R</code> (render).<br>
-          Use <code>^I 'p vg</code> to init &amp; start the loop.</p>
+          Use <code>^I 'p gm</code> to init &amp; start the loop.</p>
 
           <h2>Colors</h2>
           <p class="note">32-bit AARRGGBB format.<br>
