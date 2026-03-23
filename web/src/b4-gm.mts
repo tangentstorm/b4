@@ -43,12 +43,23 @@ export function initVG(vm: B4VM, regs?: VGRegisters): VGControls {
 
   // Keyboard state: bit0=left, bit1=right, bit2=up/jump, bit3=down
   const keyState: Record<string, boolean> = {};
+  function isEditing(e: KeyboardEvent): boolean {
+    const t = e.target as HTMLElement;
+    if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return true;
+    // CodeMirror lives inside Shadow DOM — check composedPath
+    return e.composedPath().some(el =>
+      (el as HTMLElement).classList?.contains('cm-editor'));
+  }
   document.addEventListener('keydown', (e) => {
+    if (isEditing(e)) return;
     keyState[e.key] = true;
     if (animating && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','z','x'].includes(e.key))
       e.preventDefault();
   });
-  document.addEventListener('keyup', (e) => { keyState[e.key] = false; });
+  document.addEventListener('keyup', (e) => {
+    if (isEditing(e)) return;
+    keyState[e.key] = false;
+  });
 
   // Register 'gm' opcode for game engine
   vm.addOp(0xA0, 'gm', () => {
