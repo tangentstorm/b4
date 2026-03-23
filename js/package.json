@@ -31,6 +31,10 @@
     "./mem-browser": {
       "types": "./dist/b4-mem-browser.d.mts",
       "default": "./dist/b4-mem-browser.mjs"
+    },
+    "./hl": {
+      "types": "./dist/b4-hl.d.mts",
+      "default": "./dist/b4-hl.mjs"
     }
   },
   "bin": {
