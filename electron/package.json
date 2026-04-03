@@ -11,6 +11,6 @@
   },
   "type": "module",
   "devDependencies": {
-    "electron": "35.7.5"
+    "electron": "39.8.4"
   }
 }
