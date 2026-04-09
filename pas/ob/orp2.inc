@@ -808,7 +808,8 @@ begin
     org.WrLn('');
     Declarations(dc); org.SetDataSize((dc + 3) div 4 * 4);
     if org.varsize > 0 then begin
-      org.WrComment('reserve ' + IntToStr(org.varsize) + ' bytes for global variables at $0100');
+      org.WrComment('reserve ' + IntToStr(org.varsize) + ' bytes for global variables');
+      org.WrLbl('_globals');
       org.WrLn(':+' + IntToHex(org.varsize, 2));
     end;
     org.WrComment('jump to module body (entry point)');
