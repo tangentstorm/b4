@@ -302,16 +302,23 @@ begin
 
   { rt.rint: (addr --) read line, parse int, store at addr }
   WrLbl('rt.rint');
-  WrLn('!J rt.rline c0 !K c0 !L c0 !M');
+  WrLn('!J');
+  WrComment('inline readline');
+  WrLn('li 00 3C 00 00 lb FF lb 69 io li FC 3B 00 00 wi c0 li F8 3B 00 00 wi');
+  WrLn('c0 !K c0 !L c0 !M');
+  WrComment('check for minus sign');
   WrLn('li 00 3C 00 00 rb lb 2D eq .i c1 !M c1 !K .t');
-  WrComment('digit loop using .w .d .o');
-  WrLn('c0 !N'); { N = valid flag }
-  WrLn('.w @K li 00 3C 00 00 ad rb lb 30 sb');
-  WrLn('du c0 lt nt .i du lb 0A lt .i c1 !N .t .t');
-  WrLn('@N .d');  { loop while N is set }
-  WrLn('c0 !N');  { reset flag }
-  WrLn('@L lb 0A ml ad !L @K c1 ad !K .o');
-  WrLn('zp @L @M .i c0 sw sb .t @J wi rt');
+  WrComment('digit loop: check char, accumulate if digit');
+  { Read char at buf[K]. If ch >= ''0'' and ch <= ''9'', it''s a digit. }
+  { Use: read ch, dup, check >= ''0'' AND <= ''9'' as combined boolean. }
+  { .w condition .d body .o }
+  WrLn('.w @K li 00 3C 00 00 ad rb du lb 30 lt nt ov lb 3A lt an');
+  WrComment('  stack: (ch flag) -- flag is true if ''0''<=ch<=''9''');
+  WrLn('.d lb 30 sb @L lb 0A ml ad !L @K c1 ad !K .o');
+  WrComment('  not a digit: drop ch');
+  WrLn('zp');
+  WrComment('apply sign and store');
+  WrLn('@L @M .i c0 sw sb .t @J wi rt');
 
   WrComment('--- end runtime ---');
   WrLn('');
