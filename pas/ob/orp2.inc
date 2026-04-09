@@ -354,6 +354,35 @@ begin
           obj^.rdo := false;
         end else ors.Mark(':= expected');
       end else ors.Mark('identifier expected');
+    end else if sym = ors.sCASE then begin
+      { Numeric CASE: compile as IF/ELSIF chain }
+      { Save case expression to register N, then compare in each arm }
+      ors.Get(sym);
+      expression(x); org.load(x);
+      org.Wr('!N '); { save case value to register N }
+      Check(ors.sOF, 'OF expected');
+      L0 := 0;
+      if (sym <> ors.sEND) and (sym <> ors.sBAR) then begin
+        { first arm: label : statements }
+        expression(y); CheckConst(y); { case label must be constant }
+        org.Wr('@N '); org.WrPushInt(y.a); org.Wr('eq ');
+        org.CFJump(x);
+        Check(ors.sCOLON, ': expected');
+        StatSequence;
+        while sym = ors.sBAR do begin
+          ors.Get(sym);
+          org.FJump(L0);
+          org.Fixup(x);
+          expression(y); CheckConst(y);
+          org.Wr('@N '); org.WrPushInt(y.a); org.Wr('eq ');
+          org.CFJump(x);
+          Check(ors.sCOLON, ': expected');
+          StatSequence;
+        end;
+        org.Fixup(x);
+        org.FixLink(L0);
+      end;
+      Check(ors.sEND, 'no END');
     end;
     org.CheckRegs;
     if sym = ors.sSEMICOLON then ors.Get(sym)

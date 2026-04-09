@@ -45,6 +45,7 @@ procedure Wr(const s: string);    { write assembly text }
 procedure WrLn(const s: string);   { write line }
 procedure WrLbl(const s: string); { write label definition }
 procedure WrComment(const s: string);
+procedure WrPushInt(v: longint);
 function NewLabel: string;        { generate unique label }
 
 procedure load(var x: Item);
