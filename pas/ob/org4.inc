@@ -300,16 +300,16 @@ begin
 
   { rt.rint: (addr --) read line, parse int, store at addr }
   WrLbl('rt.rint');
-  WrLn('!J rt.rline');
-  WrLn('c0 !K c0 !L c0 !M');
-  WrLn('li 00003C00 rb lb 2D eq .i c1 !M c1 !K .t');
-  WrLbl('_ri.dloop');
-  WrLn('@K li 00003C00 ad rb lb 30 sb');
-  WrLn('du c0 lt .i zp jm >_ri.done .t');
-  WrLn('du lb 09 sw lt .i zp jm >_ri.done .t');
-  WrLn('@L lb 0A ml ad !L @K c1 ad !K jm >_ri.dloop');
-  WrLbl('_ri.done');
-  WrLn('@L @M .i c0 sw sb .t @J wi rt');
+  WrLn('!J rt.rline c0 !K c0 !L c0 !M');
+  WrLn('li 00 3C 00 00 rb lb 2D eq .i c1 !M c1 !K .t');
+  WrComment('digit loop using .w .d .o');
+  WrLn('c0 !N'); { N = valid flag }
+  WrLn('.w @K li 00 3C 00 00 ad rb lb 30 sb');
+  WrLn('du c0 lt nt .i du lb 0A lt .i c1 !N .t .t');
+  WrLn('@N .d');  { loop while N is set }
+  WrLn('c0 !N');  { reset flag }
+  WrLn('@L lb 0A ml ad !L @K c1 ad !K .o');
+  WrLn('zp @L @M .i c0 sw sb .t @J wi rt');
 
   WrComment('--- end runtime ---');
   WrLn('');
