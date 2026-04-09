@@ -331,7 +331,7 @@ begin
   WrComment('--- module body ---');
   WrLbl(modname + '_init');
   { initialize heap pointer to end of all code }
-  WrLn('li >' + modname + '.heap !_');
+  WrLn('li >' + modname + '_heap !_');
 end;
 
 procedure Close(var modid: ors.Ident; key, nofent: longint);
