@@ -1,0 +1,5 @@
+oberonc
+*.o
+*.ppu
+*.b4x
+link*.res
