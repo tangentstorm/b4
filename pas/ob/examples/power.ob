@@ -1,0 +1,20 @@
+MODULE Power;
+  (* Integer exponentiation by squaring *)
+  VAR result: INTEGER;
+
+  PROCEDURE Pow(base, exp: INTEGER): INTEGER;
+    VAR r: INTEGER;
+  BEGIN
+    r := 1;
+    WHILE exp > 0 DO
+      IF ODD(exp) THEN r := r * base END;
+      base := base * base;
+      exp := exp DIV 2
+    END;
+    RETURN r
+  END Pow;
+
+BEGIN
+  result := Pow(2, 10)
+  (* result = 1024 *)
+END Power.

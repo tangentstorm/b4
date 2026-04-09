@@ -56,7 +56,14 @@ begin
       FixLink(x.a);
       x.mode := mReg;
     end;
-    mReg: ; { already on stack, nothing to do }
+    mReg: begin
+      { address is on stack (from dynamic Index); dereference it }
+      if (x.typ <> nil) and (x.typ^.form <> orb.tNoTyp) and
+         (x.typ^.size > 0) and (x.typ^.form <= orb.tPointer) then begin
+        if x.typ^.size = 1 then Emit(bRB) else Emit(bRI);
+      end;
+      { else: already a value on stack, leave as-is }
+    end;
   end;
 end;
 
@@ -140,6 +147,12 @@ begin
       end;
       if x.typ^.size = 1 then Emit(bWB) else Emit(bWI);
     end;
+    mReg: begin
+      { address was saved to register H by Index/DeRef }
+      { load(y) already pushed value on DS }
+      EmitRegRd(8); { @H — push saved address }
+      if x.typ^.size = 1 then Emit(bWB) else Emit(bWI);
+    end;
   else
     ors.Mark('bad mode in Store');
   end;
@@ -218,7 +231,7 @@ begin
     else if x.mode = orb.clsPar then
       x.b := x.b + y.a * s;
   end else begin
-    { dynamic index: compute address }
+    { dynamic index: compute address, save to register H for Store }
     loadAdr(x);
     load(y);
     if s <> 1 then begin
@@ -226,9 +239,10 @@ begin
       Emit(oML);
     end;
     Emit(oAD);
-    { result is address on stack; mark as RegI-like }
+    { save computed address to register H (temp) }
+    Emit(oDU);         { dup address: keep one on stack for load, save one }
+    EmitRegWr(8);      { !H — save to register H for later Store }
     x.mode := mReg;
-    { caller will need to ri/wi through this address }
   end;
 end;
 

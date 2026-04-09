@@ -1,0 +1,34 @@
+MODULE Sort;
+  (* Insertion sort on a small array *)
+  CONST N = 8;
+  VAR
+    arr: ARRAY N OF INTEGER;
+    i, j, key: INTEGER;
+
+  PROCEDURE Init;
+  BEGIN
+    arr[0] := 64; arr[1] := 25; arr[2] := 12; arr[3] := 22;
+    arr[4] := 11; arr[5] := 90; arr[6] := 33; arr[7] := 7
+  END Init;
+
+  PROCEDURE InsertionSort;
+    VAR i, j, key: INTEGER;
+  BEGIN
+    i := 1;
+    WHILE i < N DO
+      key := arr[i];
+      j := i - 1;
+      WHILE (j >= 0) & (arr[j] > key) DO
+        arr[j + 1] := arr[j];
+        DEC(j)
+      END;
+      arr[j + 1] := key;
+      INC(i)
+    END
+  END InsertionSort;
+
+BEGIN
+  Init;
+  InsertionSort
+  (* arr is now [7, 11, 12, 22, 25, 33, 64, 90] *)
+END Sort.

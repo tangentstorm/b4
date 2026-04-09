@@ -1,0 +1,26 @@
+MODULE Fibonacci;
+  VAR i, n: INTEGER;
+
+  PROCEDURE Fib(n: INTEGER): INTEGER;
+    VAR a, b, t: INTEGER;
+  BEGIN
+    a := 0; b := 1;
+    WHILE n > 0 DO
+      t := b;
+      b := a + b;
+      a := t;
+      DEC(n)
+    END;
+    RETURN a
+  END Fib;
+
+BEGIN
+  (* compute first 12 Fibonacci numbers *)
+  (* results stored in memory starting at global n *)
+  i := 0;
+  WHILE i <= 12 DO
+    n := Fib(i);
+    INC(i)
+  END
+  (* n ends up as Fib(12) = 144 *)
+END Fibonacci.
