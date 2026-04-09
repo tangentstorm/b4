@@ -102,7 +102,11 @@ end;
 procedure Call(var x: Item; r: longint);
 begin
   if x.mode = orb.clsConst then begin
-    Wr(x.lbl + ' ');
+    { use cl + >label for imported (cross-module) procedures }
+    if copy(x.lbl, 1, length(modname)) <> modname then
+      Wr('cl >' + x.lbl + ' ')
+    else
+      Wr(x.lbl + ' ');
   end else begin
     Wr('!H ^H '); { indirect: save to H, invoke }
   end;

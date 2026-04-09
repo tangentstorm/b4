@@ -286,6 +286,7 @@ var obj: orb.PObj;
     L0, L1, rx: longint;
 begin
   repeat
+
     obj := nil;
     if not ((sym = ors.sIDENT) or (sym >= ors.sIF) and (sym <= ors.sFOR)
         or (sym >= ors.sSEMICOLON)) then begin
@@ -293,6 +294,7 @@ begin
       repeat ors.Get(sym) until (sym = ors.sIDENT) or (sym >= ors.sIF);
     end;
     if sym = ors.sIDENT then begin
+      qualident(obj); org.MakeItem(x, obj, level); x.lbl := lastImportLabel;
       if x.mode = orb.clsSProc then StandProc(obj^.val)
       else begin
         selector(x);
