@@ -39,7 +39,7 @@ begin
     if obj^.cls = orb.clsSFunc then
       StandFunc(x, obj^.val, obj^.typ)
     else begin
-      org.MakeItem(x, obj, level); x.lbl := lastImportLabel; selector(x);
+      org.MakeItem(x, obj, level); if lastImportLabel <> '' then x.lbl := lastImportLabel; selector(x);
       if sym = ors.sLPAREN then begin
         ors.Get(sym);
         if (x.typ^.form = orb.tProc) and (x.typ^.base^.form <> orb.tNoTyp) then begin
@@ -294,7 +294,7 @@ begin
       repeat ors.Get(sym) until (sym = ors.sIDENT) or (sym >= ors.sIF);
     end;
     if sym = ors.sIDENT then begin
-      qualident(obj); org.MakeItem(x, obj, level); x.lbl := lastImportLabel;
+      qualident(obj); org.MakeItem(x, obj, level); if lastImportLabel <> '' then x.lbl := lastImportLabel;
       if x.mode = orb.clsSProc then StandProc(obj^.val)
       else begin
         selector(x);
