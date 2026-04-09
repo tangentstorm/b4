@@ -164,13 +164,13 @@ begin
       if sym = ors.sLPAREN then begin
         ors.Get(sym); Check(ors.sRPAREN, ') expected');
       end;
-      org.WrLn('rt.wln');
+      org.WrLn('lb 0A lb 6F io');
     end;
     outChar: begin
       Check(ors.sLPAREN, '( expected');
       expression(x);
       Check(ors.sRPAREN, ') expected');
-      org.load(x); org.WrLn('rt.wch');
+      org.load(x); org.WrLn('lb 6F io');
     end;
     outInt: begin
       Check(ors.sLPAREN, '( expected');
