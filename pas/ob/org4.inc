@@ -13,6 +13,7 @@ begin result := nlabels; labels[nlabels] := NewLabel; inc(nlabels) end;
 
 var inWhile: boolean = false;
     elseEmitted: boolean = false;
+    inIfBlock: boolean = false; { true when .i was emitted, waiting for .t }
 
 function Here: longint;
 begin
@@ -23,9 +24,18 @@ begin
 end;
 
 procedure FJump(var L: longint);
+var idx: longint;
 begin
-  Wr('.e '); elseEmitted := true;
-  L := L + 1; { just count nesting for FixLink }
+  if inIfBlock then begin
+    { IF/ELSE context: use .e }
+    Wr('.e '); elseEmitted := true;
+    L := L + 1;
+  end else begin
+    { standalone forward jump (e.g. skip nested procedures) }
+    idx := AllocLabel;
+    WrLn('jm >' + labels[idx]);
+    L := -(idx + 1); { encode label index as negative }
+  end;
 end;
 
 procedure CFJump(var x: Item);
@@ -36,7 +46,7 @@ begin
     inWhile := false;
     x.a := -1; { mark as WHILE — Fixup should be no-op }
   end else begin
-    Wr('.i ');
+    Wr('.i '); inIfBlock := true;
     x.a := 0; { mark as IF — Fixup emits .t }
   end;
   elseEmitted := false;
@@ -64,13 +74,21 @@ begin
   { x.a = 0: IF without else, close .i with .t }
   { elseEmitted: .e was emitted, Fixup is a no-op (.t comes from FixLink) }
   if (x.a >= 0) and (not elseEmitted) then Wr('.t ');
+  inIfBlock := false;
   elseEmitted := false;
 end;
 
 procedure FixLink(L: longint);
 var i: longint;
 begin
-  for i := 1 to L do Wr('.t ');
+  if L > 0 then begin
+    { .e-based: emit .t for each .e }
+    for i := 1 to L do Wr('.t ');
+  end else if L < 0 then begin
+    { label-based: emit label definition }
+    WrLbl(labels[-(L + 1)]);
+    WrLn('');
+  end;
 end;
 
 { ---- Procedures ---- }
