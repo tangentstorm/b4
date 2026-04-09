@@ -1,0 +1,16 @@
+MODULE Test;
+  VAR i, sum: INTEGER;
+
+  PROCEDURE Double(a: INTEGER): INTEGER;
+  BEGIN RETURN a + a
+  END Double;
+
+BEGIN
+  i := 1;
+  sum := 0;
+  WHILE i <= 10 DO
+    sum := sum + i;
+    INC(i)
+  END;
+  sum := Double(sum)
+END Test.
