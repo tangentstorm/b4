@@ -85,7 +85,7 @@ procedure Call(var x: Item; r: longint);
 begin
   if x.mode = orb.clsConst then begin
     { direct call: x.a is the procedure's label index or name }
-    Wr(modname + '.P' + IntToStr(x.a) + ' ');
+    Wr(modname + '_P' + IntToStr(x.a) + ' ');
   end else begin
     Wr('!H ^H '); { indirect: save to H, invoke }
   end;
@@ -276,14 +276,14 @@ procedure EmitRuntime;
 begin
   WrComment('--- runtime library ---');
 
-  WrLbl('rt.wch'); WrLn('lb 6F io rt');  { (ch --) write char: 'o'=$6F }
-  WrLbl('rt.wln'); WrLn('lb 0A lb 6F io rt');  { write newline }
+  WrLbl('rt_wch'); WrLn('lb 6F io rt');  { (ch --) write char: 'o'=$6F }
+  WrLbl('rt_wln'); WrLn('lb 0A lb 6F io rt');  { write newline }
 
   { rt.wint: (n width --) write integer }
-  WrLbl('rt.wint');
-  WrLn('zp du .i jm >_wi.main .t');
-  WrLbl('_wi.zero'); WrLn('zp lb 30 lb 6F io rt');
-  WrLbl('_wi.main');
+  WrLbl('O'); WrLbl('rt_wint');
+  WrLn('zp du .i jm >_wi_main .t');
+  WrLbl('_wi_zero'); WrLn('zp lb 30 lb 6F io rt');
+  WrLbl('_wi_main');
   WrLn('du c0 lt .i lb 2D lb 6F io c0 sw sb .t');
   WrLn('cd !I c0 sw');
   WrComment('digit extraction loop: stack [count n]');
@@ -292,16 +292,16 @@ begin
   WrLn('.w du .d cd lb 6F io c1 sb .o zp @I dc rt');
 
   { rt.rline: ( -- ) read line into buffer at $3C00 }
-  WrLbl('rt.rline');
+  WrLbl('rt_rline');
   WrLn('li 00003C00 lb FF lb 69 io li 00003BFC wi c0 li 00003BF8 wi rt');
 
   { rt.rch: (addr --) read char from buffer }
-  WrLbl('rt.rch');
+  WrLbl('rt_rch');
   WrLn('li 00003BF8 ri li 00003C00 ad rb sw wi');
   WrLn('li 00003BF8 ri c1 ad li 00003BF8 wi rt');
 
   { rt.rint: (addr --) read line, parse int, store at addr }
-  WrLbl('rt.rint');
+  WrLbl('rt_rint');
   WrLn('!J');
   WrComment('inline readline');
   WrLn('li 00 3C 00 00 lb FF lb 69 io li FC 3B 00 00 wi c0 li F8 3B 00 00 wi');
@@ -329,7 +329,7 @@ end;
 procedure Header;
 begin
   WrComment('--- module body ---');
-  WrLbl(modname + '.init');
+  WrLbl(modname + '_init');
   { initialize heap pointer to end of all code }
   WrLn('li >' + modname + '.heap !_');
 end;
@@ -338,7 +338,7 @@ procedure Close(var modid: ors.Ident; key, nofent: longint);
 var i: longint;
 begin
   WrLn('hl');
-  WrLbl(modid + '.heap');
+  WrLbl(modid + '_heap');
   WrLn('');
   WrLn('');
   { emit string data }

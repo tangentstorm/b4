@@ -5,7 +5,7 @@ begin
   case x.mode of
     orb.clsConst: begin
       if x.typ^.form = orb.tProc then
-        Wr('li >' + modname + '.' + 'P' + IntToStr(x.a) + ' ')
+        Wr('li >' + modname + '_' + 'P' + IntToStr(x.a) + ' ')
       else
         WrPushInt(x.a);
       x.mode := mReg;
@@ -21,6 +21,7 @@ begin
       x.mode := mReg;
     end;
     mRegI: begin
+      Wr('@H ');
       if x.typ^.size = 1 then Wr('rb ') else Wr('ri ');
       x.mode := mReg;
     end;
@@ -114,7 +115,7 @@ begin
   end else begin
     loadAdr(x); load(y);
     if s <> 1 then begin WrPushInt(s); Wr('ml ') end;
-    Wr('ad du !H ');
+    Wr('ad !H ');
     x.mode := mRegI;
   end;
 end;
