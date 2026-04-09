@@ -1,0 +1,22 @@
+MODULE Hello;
+  IMPORT Out;
+  VAR i, f: INTEGER;
+
+  PROCEDURE Fact(n: INTEGER): INTEGER;
+    VAR r: INTEGER;
+  BEGIN
+    r := 1;
+    WHILE n > 1 DO r := r * n; DEC(n) END;
+    RETURN r
+  END Fact;
+
+BEGIN
+  i := 1;
+  WHILE i <= 10 DO
+    f := Fact(i);
+    Out.Int(f, 0);
+    Out.Char(32);
+    INC(i)
+  END;
+  Out.Ln
+END Hello.

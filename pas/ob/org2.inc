@@ -56,13 +56,11 @@ begin
       FixLink(x.a);
       x.mode := mReg;
     end;
-    mReg: begin
+    mReg: ; { value already on stack, nothing to do }
+    mRegI: begin
       { address is on stack (from dynamic Index); dereference it }
-      if (x.typ <> nil) and (x.typ^.form <> orb.tNoTyp) and
-         (x.typ^.size > 0) and (x.typ^.form <= orb.tPointer) then begin
-        if x.typ^.size = 1 then Emit(bRB) else Emit(bRI);
-      end;
-      { else: already a value on stack, leave as-is }
+      if x.typ^.size = 1 then Emit(bRB) else Emit(bRI);
+      x.mode := mReg;
     end;
   end;
 end;
@@ -147,7 +145,7 @@ begin
       end;
       if x.typ^.size = 1 then Emit(bWB) else Emit(bWI);
     end;
-    mReg: begin
+    mReg, mRegI: begin
       { address was saved to register H by Index/DeRef }
       { load(y) already pushed value on DS }
       EmitRegRd(8); { @H — push saved address }
@@ -242,7 +240,7 @@ begin
     { save computed address to register H (temp) }
     Emit(oDU);         { dup address: keep one on stack for load, save one }
     EmitRegWr(8);      { !H — save to register H for later Store }
-    x.mode := mReg;
+    x.mode := mRegI;
   end;
 end;
 
@@ -250,7 +248,7 @@ procedure DeRef(var x: Item);
 begin
   load(x); { load pointer value = address }
   { now TOS has the address of the pointed-to object }
-  x.mode := mReg;
+  x.mode := mRegI;
   { the pointer value IS the address; mark for subsequent field/index }
 end;
 

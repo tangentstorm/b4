@@ -35,6 +35,7 @@ const
 
   { internal item modes (beyond orb class values) }
   mReg = 10;  { value is on the data stack (TOS) }
+  mRegI = 11; { address is on the data stack (TOS), needs dereference }
   mCond = 12; { conditional: a=false-chain, b=true-chain, r=condition }
 
 type
@@ -53,6 +54,12 @@ var
   codebase: longint; { byte address where code starts in b4 memory }
   strx: longint;     { string buffer index }
   tdx: longint;
+  { runtime routine addresses (absolute, set by EmitRuntime) }
+  rtWriteChar: longint;  { (ch --) write character to stdout }
+  rtWriteInt: longint;   { (n width --) write integer to stdout }
+  rtWriteLn: longint;    { ( -- ) write newline }
+
+procedure EmitRuntime;
 
 procedure Open(v: integer);
 procedure SetDataSize(dc: longint);
@@ -294,6 +301,7 @@ procedure SetDataSize(dc: longint);
 begin
   varsize := dc;
   codebase := GlobalBase + varsize;
+  EmitRuntime; { emit runtime library at start of code }
 end;
 
 procedure CheckRegs;

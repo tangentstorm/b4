@@ -155,10 +155,54 @@ end;
 
 { ---- Statements ---- }
 
+procedure OutProc(pno: longint);
+var x, y: org.Item;
+begin
+  case pno of
+    outLn: begin
+      { Out.Ln — no parameters, may or may not have () }
+      if sym = ors.sLPAREN then begin
+        ors.Get(sym); Check(ors.sRPAREN, ') expected');
+      end;
+      org.Emit(org.oCL); org.Emit4(org.rtWriteLn);
+    end;
+    outChar: begin
+      Check(ors.sLPAREN, '( expected');
+      expression(x);
+      Check(ors.sRPAREN, ') expected');
+      org.load(x);
+      org.Emit(org.oCL); org.Emit4(org.rtWriteChar);
+    end;
+    outInt: begin
+      Check(ors.sLPAREN, '( expected');
+      expression(x);
+      Check(ors.sCOMMA, ', expected');
+      expression(y);
+      Check(ors.sRPAREN, ') expected');
+      org.load(x);
+      org.load(y);
+      org.Emit(org.oCL); org.Emit4(org.rtWriteInt);
+    end;
+    outStr: begin
+      Check(ors.sLPAREN, '( expected');
+      expression(x);
+      Check(ors.sRPAREN, ') expected');
+      { string printing: iterate chars, call rtWriteChar for each }
+      { for now, just drop it }
+      ors.Mark('Out.String not yet implemented');
+    end;
+  end;
+end;
+
 procedure StandProc(pno: longint);
 var nap, npar: longint;
     x, y, z: org.Item;
 begin
+  { check for Out module procedures }
+  if (pno div 10) in [outInt, outChar, outLn, outStr] then begin
+    OutProc(pno div 10);
+    exit;
+  end;
   Check(ors.sLPAREN, 'no (');
   npar := pno mod 10; pno := pno div 10;
   expression(x); nap := 1;
@@ -597,6 +641,52 @@ begin
   end;
 end;
 
+{ ---- Built-in Out module ---- }
+
+procedure RegisterOutModule(const alias: ors.Ident);
+var mod_, proc: orb.PObj; tp: orb.PType;
+begin
+  { create module object }
+  new(mod_); fillchar(mod_^, sizeof(orb.TObj), 0);
+  mod_^.name := alias;
+  mod_^.cls := orb.clsMod;
+  mod_^.rdo := true;
+  mod_^.typ := orb.noType;
+  mod_^.dsc := nil;
+
+  { Out.Ln: PROCEDURE }
+  new(proc); fillchar(proc^, sizeof(orb.TObj), 0);
+  proc^.name := 'Ln'; proc^.cls := orb.clsSProc;
+  proc^.val := outLn * 10 + 0; { 0 params }
+  proc^.typ := orb.noType;
+  proc^.next := mod_^.dsc; mod_^.dsc := proc;
+
+  { Out.Char: PROCEDURE(ch: CHAR) }
+  new(proc); fillchar(proc^, sizeof(orb.TObj), 0);
+  proc^.name := 'Char'; proc^.cls := orb.clsSProc;
+  proc^.val := outChar * 10 + 1; { 1 param }
+  proc^.typ := orb.noType;
+  proc^.next := mod_^.dsc; mod_^.dsc := proc;
+
+  { Out.Int: PROCEDURE(n: INTEGER; width: INTEGER) }
+  new(proc); fillchar(proc^, sizeof(orb.TObj), 0);
+  proc^.name := 'Int'; proc^.cls := orb.clsSProc;
+  proc^.val := outInt * 10 + 2; { 2 params }
+  proc^.typ := orb.noType;
+  proc^.next := mod_^.dsc; mod_^.dsc := proc;
+
+  { Out.String: PROCEDURE(s: ARRAY OF CHAR) }
+  new(proc); fillchar(proc^, sizeof(orb.TObj), 0);
+  proc^.name := 'String'; proc^.cls := orb.clsSProc;
+  proc^.val := outStr * 10 + 1; { 1 param }
+  proc^.typ := orb.noType;
+  proc^.next := mod_^.dsc; mod_^.dsc := proc;
+
+  { link into top scope }
+  mod_^.next := orb.topScope^.next;
+  orb.topScope^.next := mod_;
+end;
+
 { ---- Module ---- }
 
 procedure Module;
@@ -626,7 +716,8 @@ begin
           if sym = ors.sIDENT then begin ors.CopyId(impid1); ors.Get(sym) end
           else ors.Mark('id expected');
         end else impid1 := impid;
-        { simplified: just note the import, don't load .smb files }
+        { register built-in Out module }
+        if impid1 = 'Out' then RegisterOutModule(impid);
         if sym = ors.sCOMMA then ors.Get(sym)
         else if sym = ors.sIDENT then ors.Mark('comma missing');
       end;

@@ -1,5 +1,105 @@
 { org4.inc — control flow, procedures, inline functions, .b4x output }
 
+{ ---- Runtime library (emitted at start of code area) ---- }
+
+procedure EmitRuntime;
+var jmpatch, digitloop, printloop, h0pos: longint;
+begin
+  { These small subroutines are emitted before user code.
+    They use b4's io opcode with 'o' command for stdout output. }
+
+  { --- rt_writechar: (ch --) write one character --- }
+  rtWriteChar := codebase + pc;
+  EmitLB(ord('o'));   { push 'o' command }
+  Emit(oIO);          { io: pops cmd='o', pops ch, writes to stdout }
+  Emit(oRT);          { return }
+
+  { --- rt_writeln: ( -- ) write newline --- }
+  rtWriteLn := codebase + pc;
+  EmitLB(10);         { push newline char }
+  EmitLB(ord('o'));
+  Emit(oIO);
+  Emit(oRT);
+
+  { --- rt_writeint: (n width --) write signed integer --- }
+  { width is ignored; just prints the number }
+  rtWriteInt := codebase + pc;
+  Emit(oZP);          { drop width parameter }
+  { handle n=0 special case }
+  Emit(oDU);          { dup n }
+  Emit(oH0);          { if zero, hop past the jm to 'print 0' code }
+  Emit(byte(7));       { hop to h0_addr+7 = past the 5-byte jm }
+  Emit(oJM); jmpatch := pc; Emit4(0);  { jump to main logic — patched below }
+  { n=0 case: print '0' and return }
+  Emit(oZP);          { drop the 0 (dup from above) }
+  EmitLB(ord('0'));
+  EmitLB(ord('o'));
+  Emit(oIO);
+  Emit(oRT);          { return — CS still has our return addr }
+  { patch the jm to here }
+  code[jmpatch]   := byte(codebase + pc);
+  code[jmpatch+1] := byte((codebase + pc) shr 8);
+  code[jmpatch+2] := byte((codebase + pc) shr 16);
+  code[jmpatch+3] := byte((codebase + pc) shr 24);
+  { check if negative }
+  Emit(oDU);          { dup n }
+  Emit(oC0);
+  Emit(oLT);          { n < 0 ? }
+  Emit(oC1); Emit(oAN); { normalize to 0/1 }
+  Emit(oH0);          { if zero (not negative), skip neg handling }
+  Emit(byte(10));      { skip: lb '-' lb 'o' io c0 sw sb = 2+2+1+1+1+1=8 bytes + 2 for h0 itself = skip to h0+10 }
+  EmitLB(ord('-'));
+  EmitLB(ord('o'));
+  Emit(oIO);          { print '-' }
+  Emit(oC0); Emit(oSW); Emit(oSB); { negate: 0 - n }
+  { save return address from CS to register I }
+  Emit(oCD);           { pop return addr from CS }
+  EmitRegWr(9);        { !I — save to register I }
+  { now n is positive on TOS; push digits to CS }
+  Emit(oC0);          { digit count = 0 }
+  Emit(oSW);          { DS: [count n] }
+  { digit_loop: }
+  digitloop := pc;
+  Emit(oDU);          { dup n -- DS: [count n n] }
+  EmitLB(10);
+  Emit(oMD);          { md pops 10, pops n, pushes n MOD 10 }
+  EmitLB(ord('0'));
+  Emit(oAD);          { digit + '0' = ASCII }
+  Emit(oDC);          { push ASCII char to CS }
+  Emit(oSW);          { DS: [n count] }
+  Emit(oC1); Emit(oAD); { count + 1 }
+  Emit(oSW);          { DS: [count+1 n] }
+  EmitLB(10);
+  Emit(oDV);          { dv pops 10, pops n, pushes n DIV 10 }
+  Emit(oDU);          { dup new_n }
+  Emit(oC0);
+  Emit(oEQ);          { new_n = 0? -- returns -1 if equal }
+  Emit(oC1); Emit(oAN);{ 0 or 1 }
+  h0pos := pc;
+  Emit(oH0);          { if zero (new_n <> 0), loop back }
+  Emit(byte(digitloop - h0pos)); { relative hop back }
+  Emit(oZP);          { drop the 0 (exhausted n) }
+  { CS has digit chars (deepest = most significant), DS has count }
+  { print_loop: }
+  printloop := pc;
+  Emit(oCD);          { pop char from CS to DS }
+  EmitLB(ord('o'));
+  Emit(oIO);          { print it }
+  Emit(oC1); Emit(oSB); { sb: -1 + count = count-1 }
+  Emit(oDU);          { dup count }
+  Emit(oC0);
+  Emit(oEQ);          { count = 0? }
+  Emit(oC1); Emit(oAN);
+  h0pos := pc;
+  Emit(oH0);          { if zero (count <> 0), loop }
+  Emit(byte(printloop - h0pos));
+  Emit(oZP);          { drop count (0) }
+  { restore return address and return }
+  EmitRegRd(9);        { @I — push saved return addr }
+  Emit(oDC);           { push to CS }
+  Emit(oRT);          { return }
+end;
+
 { ---- Branch / Control flow ---- }
 
 function Here: longint;
@@ -35,13 +135,32 @@ end;
 procedure CFJump(var x: Item);
 begin
   { conditional forward jump: jump if false }
-  if x.mode <> mCond then loadCond(x);
-  load(x); { materialize boolean on stack }
-  { TOS is boolean: 0=false, nonzero=true. }
-  { Use nt+h0+jm pattern: invert, skip jm if was-true (now 0) }
-  Emit(oNT);      { invert: true(-1)->0, false(0)->-1 }
-  Emit(oH0);      { hop if zero (original was true): skip jm }
-  Emit(byte(5));   { skip 5 bytes (the jm instruction) }
+  { ensure boolean value is on the data stack }
+  if x.mode <> mReg then load(x);
+  { TOS is boolean: 0=false, nonzero=true (1 or -1). }
+  { If true (nonzero), skip the jm. If false (0), take the jm. }
+  { h0 hops when TOS=0. So: if false, h0 does NOT skip, falls to... }
+  { Wait: we want false to jump away. h0 jumps when 0 (false). }
+  { So: h0 with offset past the body works if body is small. }
+  { For general case: if TOS nonzero (true), skip jm; if zero (false), fall to jm. }
+  { Use: h0 +5 to skip jm when false... no, h0 hops when 0! }
+  { OK: h0 hops when TOS=0. We want to jump (take jm) when false (0). }
+  { So DON'T invert. When false(0), h0 hops PAST the jm? No, we want to TAKE jm. }
+  { Solution: h0 skips when false. But we want false to take jm. }
+  { Actual: push value, if nonzero skip jm (continue to body). If zero fall to jm. }
+  { h0 hops when 0. We want 0 to fall to jm, nonzero to skip jm. }
+  { So we DON'T use h0 for this. Use: dup, h0 (if 0 hop to jm), zp, hop past jm. }
+  { Pattern: value on TOS. }
+  {   h0 +3   — if false(0), hop to the jm (which is 3 bytes ahead: h0+offset+zp) }
+  {   zp      — drop value (was true) }
+  {   hp +5   — skip the jm (5 bytes) }
+  {   jm <target> — jump to else/end }
+  { h0 pops TOS and hops if zero. }
+  { false(0): h0 hops past the hp to the jm. true(nonzero): h0 falls through. }
+  Emit(oH0);      { if false (0), hop past hp to jm }
+  Emit(byte(4));   { hop to h0_addr+4 = past h0(1)+offset(1)+hp(1)+offset(1) = jm }
+  Emit(oHP);       { true: unconditional hop past jm }
+  Emit(byte(5));   { skip 5 bytes (jm instruction) }
   Emit(oJM);
   Emit4(x.a);     { chain to previous false-jump, 0 = end of chain }
   x.a := pc - 4;  { update chain head }
@@ -57,12 +176,12 @@ end;
 procedure CBJump(var x: Item; L: longint);
 begin
   { conditional backward jump for REPEAT..UNTIL: loop back when false }
-  if x.mode <> mCond then loadCond(x);
-  load(x);
-  { TOS = boolean. UNTIL exits when TRUE. Loop when FALSE (0). }
-  { nt + h0 + jm pattern: invert, skip jm if was-true }
-  Emit(oNT);      { invert }
-  Emit(oH0);      { hop if zero (original true): skip the jm, exit loop }
+  { h0 pops and hops when 0. For UNTIL: exit when true, loop when false. }
+  { false(0) → h0 hops past hp to jm (loops back). true(nonzero) → falls to hp (exits). }
+  if x.mode <> mReg then load(x);
+  Emit(oH0);      { if false (0), hop to jm }
+  Emit(byte(4));   { hop past h0+offset+hp+offset to jm }
+  Emit(oHP);       { true: skip jm, exit loop }
   Emit(byte(5));
   Emit(oJM);      { jump back to loop start }
   Emit4(codebase + L);
@@ -435,6 +554,8 @@ end;
 
 { ---- Module header and output ---- }
 
+var heapPatch: longint; { code offset of the heap init placeholder }
+
 procedure Header;
 begin
   { module body entry point: procedures are already emitted, so pc is past them }
@@ -443,6 +564,9 @@ begin
   { emit: set up global base register G }
   EmitPushInt(GlobalBase);
   EmitRegWr(rG);
+  { emit: initialize heap pointer _ }
+  Emit(oLI); heapPatch := pc; Emit4(0); { placeholder — patched in Close }
+  EmitRegWr(31);      { !_ }
 end;
 
 procedure Close(var modid: ors.Ident; key, nofent: longint);
@@ -460,6 +584,11 @@ begin
   { calculate layout }
   strbase := codebase + pc;
   totalsize := strbase + strx;
+  { patch the heap init in Header to point past all code+data }
+  code[heapPatch]   := byte(totalsize);
+  code[heapPatch+1] := byte(totalsize shr 8);
+  code[heapPatch+2] := byte(totalsize shr 16);
+  code[heapPatch+3] := byte(totalsize shr 24);
 
   { build memory image }
   setlength(img, B4MemSize);

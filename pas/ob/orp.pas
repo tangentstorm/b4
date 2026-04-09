@@ -17,6 +17,10 @@ type
     next: PtrBase;
   end;
 
+const
+  { Out module procedure IDs — must not overlap with standard proc IDs (0..20) }
+  outInt = 50; outChar = 51; outLn = 52; outStr = 53;
+
 var
   sym: integer;
   dc: longint;
