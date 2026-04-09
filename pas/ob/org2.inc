@@ -55,19 +55,21 @@ end;
 
 procedure Store(var x, y: Item);
 begin
-  load(y);
-  case x.mode of
-    orb.clsVar: WrStoreVar(x.r, x.a, x.typ^.size);
-    orb.clsPar: begin
-      WrRegRd(6); WrPushInt(x.a); Wr('ad ri ');
-      if x.b <> 0 then begin WrPushInt(x.b); Wr('ad ') end;
-      if x.typ^.size = 1 then Wr('wb ') else Wr('wi ');
+  if x.mode in [mReg, mRegI] then begin
+    { LHS address was saved to P by parser before RHS evaluation }
+    load(y);
+    Wr('@P wi ');
+  end else begin
+    load(y);
+    case x.mode of
+      orb.clsVar: WrStoreVar(x.r, x.a, x.typ^.size);
+      orb.clsPar: begin
+        WrRegRd(6); WrPushInt(x.a); Wr('ad ri ');
+        if x.b <> 0 then begin WrPushInt(x.b); Wr('ad ') end;
+        if x.typ^.size = 1 then Wr('wb ') else Wr('wi ');
+      end;
+    else ors.Mark('bad mode in Store');
     end;
-    mReg, mRegI: begin
-      { address was saved to register H by Index }
-      Wr('@H wi ');
-    end;
-  else ors.Mark('bad mode in Store');
   end;
   WrLn('');
 end;

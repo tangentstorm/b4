@@ -298,7 +298,9 @@ begin
       else begin
         selector(x);
         if sym = ors.sBECOMES then begin
-          ors.Get(sym); CheckReadOnly(x); expression(y);
+          ors.Get(sym); CheckReadOnly(x);
+          if x.mode = org.mRegI then org.Wr('@H !P '); { save LHS addr before RHS eval }
+          expression(y);
           if CompTypes(x.typ, y.typ, false) or
              (x.typ^.form = orb.tInt) and (y.typ^.form = orb.tInt) then begin
             if (x.typ^.form <= orb.tPointer) or (x.typ^.form = orb.tProc) then
