@@ -4,6 +4,7 @@
 
 procedure EmitRuntime;
 var jmpatch, digitloop, printloop, h0pos: longint;
+    dloop, done_hp, done_hp2, h0back: longint;
 begin
   { These small subroutines are emitted before user code.
     They use b4's io opcode with 'o' command for stdout output. }
@@ -98,6 +99,98 @@ begin
   EmitRegRd(9);        { @I — push saved return addr }
   Emit(oDC);           { push to CS }
   Emit(oRT);          { return }
+
+  { --- Input runtime --- }
+  { Input buffer at fixed addresses just below the data stack area. }
+  { b4vm's minbuff = 15613 ($3CFD). We use $3C00-$3CFF for the buffer }
+  { and $3BF8-$3BFF for pos (4 bytes) and len (4 bytes). }
+  rtInputBuf := $3C00;
+  rtInputPos := $3BF8;
+  rtInputLen := $3BFC;
+  rtPatchCount := 0;
+
+  { --- rt_readline: ( -- ) read line from stdin into buffer --- }
+  rtReadLine := codebase + pc;
+  EmitLI(rtInputBuf);
+  EmitLB(255);
+  EmitLB(ord('i'));
+  Emit(oIO);          { io 'i': (dest maxlen -- len) }
+  EmitLI(rtInputLen);
+  Emit(bWI);           { store length }
+  Emit(oC0);
+  EmitLI(rtInputPos);
+  Emit(bWI);           { reset pos to 0 }
+  Emit(oRT);
+
+  { --- rt_readchar: (dest-addr --) read one char, store at addr --- }
+  rtReadChar := codebase + pc;
+  EmitLI(rtInputPos); Emit(bRI);  { pos }
+  EmitLI(rtInputBuf); Emit(oAD);  { buffer + pos }
+  Emit(bRB);           { char }
+  Emit(oSW); Emit(bWI); { store char to dest addr }
+  { increment pos }
+  EmitLI(rtInputPos); Emit(bRI);
+  Emit(oC1); Emit(oAD);
+  EmitLI(rtInputPos); Emit(bWI);
+  Emit(oRT);
+
+  { --- rt_readint: (dest-addr --) read line, parse int, store at addr --- }
+  { All state in registers J-M. Only DS item is the current char being tested. }
+  { J=dest, K=pos, L=acc, M=neg }
+  rtReadInt := codebase + pc;
+  EmitRegWr(10);       { !J }
+  Emit(oCL); Emit4(rtReadLine);
+  Emit(oC0); EmitRegWr(11);  { K=0 }
+  Emit(oC0); EmitRegWr(12);  { L=0 }
+  Emit(oC0); EmitRegWr(13);  { M=0 }
+  { check '-' }
+  EmitLI(rtInputBuf); Emit(bRB);
+  EmitLB(ord('-')); Emit(oEQ); Emit(oC1); Emit(oAN);
+  Emit(oH0); Emit(byte(6)); { 0=not minus, skip 4 bytes (!M + !K = 2+2) }
+  Emit(oC1); EmitRegWr(13);
+  Emit(oC1); EmitRegWr(11);
+  { digit loop: DS is empty at loop top }
+  dloop := pc;
+  EmitRegRd(11); EmitLI(rtInputBuf); Emit(oAD); Emit(bRB); { ch on DS }
+  { subtract '0': if result < 0, not a digit (ch < '0') }
+  EmitLB(ord('0')); Emit(oSB); { digit = ch - '0' (sb: -'0' + ch) }
+  Emit(oDU); Emit(oC0); Emit(oLT); Emit(oC1); Emit(oAN);
+  { LT: digit < 0? If yes (result=1), not a digit. h0 hops on 0 (IS a digit, >= 0). }
+  { Non-zero (not digit) falls through to done-jump. }
+  Emit(oH0); Emit(byte(5)); { hop past zp+hp(2) if digit >= 0 }
+  Emit(oZP);
+  Emit(oHP); Emit(byte(0)); done_hp := pc - 1; { to done }
+  { check digit <= 9 }
+  Emit(oDU); EmitLB(10); Emit(oLT); Emit(oC1); Emit(oAN);
+  { LT: digit < 10? result=1 if yes (valid digit). h0 hops on 0 (digit >= 10, invalid). }
+  { Non-zero (valid) falls through to accumulate. Zero (invalid) hops to done. }
+  { Wait: we want invalid to go to done. h0 hops on 0. 0 = digit >= 10 = invalid. }
+  { So h0 hopping on 0 goes to... we need it to go to done. }
+  { But h0's hop offset is limited. Let me use: if valid (1), hop past done-jump. }
+  Emit(oH0); Emit(byte(5)); { if invalid (0), fall to zp+hp. if valid (1)... wait }
+  { Flip: 1 = valid. h0 hops on 0 (invalid). Falls through on 1 (valid). }
+  { We want: invalid → done, valid → accumulate. }
+  { So: h0 on 0 (invalid) should hop TO done. But h0 hops forward by offset. }
+  { We can't hop to done directly (it's forward, unknown distance). }
+  { Instead: if valid (1, nonzero), h0 does NOT hop, falls to accumulate. }
+  { If invalid (0), h0 DOES hop. Hop past the accumulate code to done? No, we }
+  { don't know the distance. Use same zp+hp pattern: }
+  Emit(oZP);
+  Emit(oHP); Emit(byte(0)); done_hp2 := pc - 1; { to done }
+  { accumulate: L = L * 10 + digit. DS has [digit]. }
+  EmitRegRd(12); EmitLB(10); Emit(oML); Emit(oAD); EmitRegWr(12);
+  EmitRegRd(11); Emit(oC1); Emit(oAD); EmitRegWr(11); { K++ }
+  h0back := pc;
+  Emit(oHP); Emit(byte(dloop - h0back)); { loop }
+  { done: patch jumps. DS should be empty (digit was consumed or dropped). }
+  code[done_hp] := byte(pc - (done_hp - 1));
+  code[done_hp2] := byte(pc - (done_hp2 - 1));
+  { result = if M then -L else L }
+  EmitRegRd(12);
+  EmitRegRd(13); Emit(oH0); Emit(byte(5)); { if 0 (positive), skip 3 bytes: c0+sw+sb }
+  Emit(oC0); Emit(oSW); Emit(oSB);
+  EmitRegRd(10); Emit(bWI);
+  Emit(oRT);
 end;
 
 { ---- Branch / Control flow ---- }

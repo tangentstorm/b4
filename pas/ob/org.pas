@@ -58,6 +58,14 @@ var
   rtWriteChar: longint;  { (ch --) write character to stdout }
   rtWriteInt: longint;   { (n width --) write integer to stdout }
   rtWriteLn: longint;    { ( -- ) write newline }
+  rtReadLine: longint;   { ( -- ) read line from stdin into buffer }
+  rtReadInt: longint;    { (addr --) parse int from buffer, store at addr }
+  rtReadChar: longint;   { (addr --) read char from buffer, store at addr }
+  rtInputBuf: longint;   { absolute address of input buffer in b4 memory }
+  rtInputPos: longint;   { absolute address of input position variable }
+  rtInputLen: longint;   { absolute address of input length variable }
+  rtPatches: array[0..15] of longint; { code offsets needing buffer addr patches }
+  rtPatchCount: longint;
 
 procedure EmitRuntime;
 

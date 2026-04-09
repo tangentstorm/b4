@@ -194,6 +194,36 @@ begin
   end;
 end;
 
+procedure InProc(pno: longint);
+var x: org.Item;
+begin
+  case pno of
+    inLine: begin
+      { In.Line — read a line, no params }
+      if sym = ors.sLPAREN then begin
+        ors.Get(sym); Check(ors.sRPAREN, ') expected');
+      end;
+      org.Emit(org.oCL); org.Emit4(org.rtReadLine);
+    end;
+    inChar: begin
+      { In.Char(VAR ch) — read one char into variable }
+      Check(ors.sLPAREN, '( expected');
+      expression(x);
+      Check(ors.sRPAREN, ') expected');
+      org.loadAdr(x); { push address of variable }
+      org.Emit(org.oCL); org.Emit4(org.rtReadChar);
+    end;
+    inInt: begin
+      { In.Int(VAR n) — read line and parse integer }
+      Check(ors.sLPAREN, '( expected');
+      expression(x);
+      Check(ors.sRPAREN, ') expected');
+      org.loadAdr(x); { push address of variable }
+      org.Emit(org.oCL); org.Emit4(org.rtReadInt);
+    end;
+  end;
+end;
+
 procedure StandProc(pno: longint);
 var nap, npar: longint;
     x, y, z: org.Item;
@@ -201,6 +231,11 @@ begin
   { check for Out module procedures }
   if (pno div 10) in [outInt, outChar, outLn, outStr] then begin
     OutProc(pno div 10);
+    exit;
+  end;
+  { check for In module procedures }
+  if (pno div 10) in [inInt, inChar, inLine] then begin
+    InProc(pno div 10);
     exit;
   end;
   Check(ors.sLPAREN, 'no (');
@@ -687,6 +722,41 @@ begin
   orb.topScope^.next := mod_;
 end;
 
+procedure RegisterInModule(const alias: ors.Ident);
+var mod_, proc: orb.PObj;
+begin
+  new(mod_); fillchar(mod_^, sizeof(orb.TObj), 0);
+  mod_^.name := alias;
+  mod_^.cls := orb.clsMod;
+  mod_^.rdo := true;
+  mod_^.typ := orb.noType;
+  mod_^.dsc := nil;
+
+  { In.Line: PROCEDURE — read a line from stdin }
+  new(proc); fillchar(proc^, sizeof(orb.TObj), 0);
+  proc^.name := 'Line'; proc^.cls := orb.clsSProc;
+  proc^.val := inLine * 10 + 0;
+  proc^.typ := orb.noType;
+  proc^.next := mod_^.dsc; mod_^.dsc := proc;
+
+  { In.Char: PROCEDURE(VAR ch: CHAR) }
+  new(proc); fillchar(proc^, sizeof(orb.TObj), 0);
+  proc^.name := 'Char'; proc^.cls := orb.clsSProc;
+  proc^.val := inChar * 10 + 1;
+  proc^.typ := orb.noType;
+  proc^.next := mod_^.dsc; mod_^.dsc := proc;
+
+  { In.Int: PROCEDURE(VAR n: INTEGER) }
+  new(proc); fillchar(proc^, sizeof(orb.TObj), 0);
+  proc^.name := 'Int'; proc^.cls := orb.clsSProc;
+  proc^.val := inInt * 10 + 1;
+  proc^.typ := orb.noType;
+  proc^.next := mod_^.dsc; mod_^.dsc := proc;
+
+  mod_^.next := orb.topScope^.next;
+  orb.topScope^.next := mod_;
+end;
+
 { ---- Module ---- }
 
 procedure Module;
@@ -718,6 +788,7 @@ begin
         end else impid1 := impid;
         { register built-in Out module }
         if impid1 = 'Out' then RegisterOutModule(impid);
+        if impid1 = 'In' then RegisterInModule(impid);
         if sym = ors.sCOMMA then ors.Get(sym)
         else if sym = ors.sIDENT then ors.Mark('comma missing');
       end;

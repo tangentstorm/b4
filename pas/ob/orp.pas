@@ -20,6 +20,8 @@ type
 const
   { Out module procedure IDs — must not overlap with standard proc IDs (0..20) }
   outInt = 50; outChar = 51; outLn = 52; outStr = 53;
+  { In module procedure IDs }
+  inInt = 60; inChar = 61; inLine = 62;
 
 var
   sym: integer;
