@@ -12,6 +12,7 @@ function AllocLabel: longint;
 begin result := nlabels; labels[nlabels] := NewLabel; inc(nlabels) end;
 
 var inWhile: boolean = false;
+    elseEmitted: boolean = false;
 
 function Here: longint;
 begin
@@ -22,30 +23,23 @@ begin
 end;
 
 procedure FJump(var L: longint);
-var idx: longint;
 begin
-  idx := AllocLabel;
-  Wr('jm >' + labels[idx] + ' ');
-  if L <> 0 then begin
-    { chain: not needed with labels, L just holds the label index }
-  end;
-  L := idx;
+  Wr('.e '); elseEmitted := true;
+  L := L + 1; { just count nesting for FixLink }
 end;
 
 procedure CFJump(var x: Item);
-var lbl: string;
 begin
   if x.mode <> mReg then load(x);
   if inWhile then begin
-    { WHILE context: use .d (h0 forward slot, paired with .o) }
     Wr('.d ');
     inWhile := false;
+    x.a := -1; { mark as WHILE — Fixup should be no-op }
   end else begin
-    { IF context: use nt .i jm >label .t }
-    x.a := AllocLabel;
-    lbl := labels[x.a];
-    WrLn('nt .i jm >' + lbl + ' .t');
+    Wr('.i ');
+    x.a := 0; { mark as IF — Fixup emits .t }
   end;
+  elseEmitted := false;
 end;
 
 procedure BJump(L: longint);
@@ -57,18 +51,26 @@ end;
 procedure CBJump(var x: Item; L: longint);
 begin
   if x.mode <> mReg then load(x);
-  { REPEAT..UNTIL: loop back when false (0). }
-  WrLn('nt .i jm >' + labels[L] + ' .t');
+  { REPEAT..UNTIL: condition true = exit, false = loop back. }
+  { .d tests and hops forward when false (0 = keep looping? no...) }
+  { Actually for UNTIL: exit when true. .o hops back on nonzero. }
+  { UNTIL uses nt + .d: invert so .d exits when original was true. }
+  Wr('nt .d .o ');
 end;
 
 procedure Fixup(var x: Item);
 begin
-  if x.a <> 0 then WrLbl(labels[x.a]);
+  { x.a = -1: WHILE context (.d), no .t needed (.o handles it) }
+  { x.a = 0: IF without else, close .i with .t }
+  { elseEmitted: .e was emitted, Fixup is a no-op (.t comes from FixLink) }
+  if (x.a >= 0) and (not elseEmitted) then Wr('.t ');
+  elseEmitted := false;
 end;
 
 procedure FixLink(L: longint);
+var i: longint;
 begin
-  if L <> 0 then WrLbl(labels[L]);
+  for i := 1 to L do Wr('.t ');
 end;
 
 { ---- Procedures ---- }
