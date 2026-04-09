@@ -134,6 +134,8 @@ begin
   loadAdr(x);
   if (ftype^.form = orb.tArray) and (ftype^.len < 0) then begin
     if x.typ^.len >= 0 then WrPushInt(x.typ^.len) else WrPushInt(0);
+  end else if ftype^.form = orb.tRecord then begin
+    WrPushInt(0); { dummy type tag }
   end;
 end;
 
