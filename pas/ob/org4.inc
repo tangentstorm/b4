@@ -244,7 +244,14 @@ begin if x.mode <> mReg then load(x) end;
 procedure Len_(var x: Item);
 begin
   if x.typ^.len >= 0 then begin x.mode := orb.clsConst; x.a := x.typ^.len end
-  else ors.Mark('open array LEN not yet implemented');
+  else begin
+    { open array: length is at FP + param_offset + 4 }
+    { Don't emit code here — set up as a Var-like item so load() handles it }
+    x.mode := orb.clsVar;
+    x.a := x.a + 4; { adjust offset to length slot }
+    x.r := 1; { mark as local (level > 0) }
+    x.typ := orb.intType;
+  end;
 end;
 
 procedure Shift(fct: longint; var x, y: Item);
