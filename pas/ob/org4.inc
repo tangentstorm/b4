@@ -1,731 +1,352 @@
-{ org4.inc — control flow, procedures, inline functions, .b4x output }
+{ org4.inc — control flow, procedures, runtime, output (b4a text) }
 
-{ ---- Runtime library (emitted at start of code area) ---- }
+{ ---- Control flow ---- }
+{ With b4a labels, we don't need fixup chains! Labels are strings. }
+{ We store the label name in x.a as an index into a label table. }
 
-procedure EmitRuntime;
-var jmpatch, digitloop, printloop, h0pos: longint;
-    dloop, done_hp, done_hp2, h0back: longint;
-begin
-  { These small subroutines are emitted before user code.
-    They use b4's io opcode with 'o' command for stdout output. }
+var
+  labels: array[0..255] of string;
+  nlabels: longint = 0;
 
-  { --- rt_writechar: (ch --) write one character --- }
-  rtWriteChar := codebase + pc;
-  EmitLB(ord('o'));   { push 'o' command }
-  Emit(oIO);          { io: pops cmd='o', pops ch, writes to stdout }
-  Emit(oRT);          { return }
-
-  { --- rt_writeln: ( -- ) write newline --- }
-  rtWriteLn := codebase + pc;
-  EmitLB(10);         { push newline char }
-  EmitLB(ord('o'));
-  Emit(oIO);
-  Emit(oRT);
-
-  { --- rt_writeint: (n width --) write signed integer --- }
-  { width is ignored; just prints the number }
-  rtWriteInt := codebase + pc;
-  Emit(oZP);          { drop width parameter }
-  { handle n=0 special case }
-  Emit(oDU);          { dup n }
-  Emit(oH0);          { if zero, hop past the jm to 'print 0' code }
-  Emit(byte(7));       { hop to h0_addr+7 = past the 5-byte jm }
-  Emit(oJM); jmpatch := pc; Emit4(0);  { jump to main logic — patched below }
-  { n=0 case: print '0' and return }
-  Emit(oZP);          { drop the 0 (dup from above) }
-  EmitLB(ord('0'));
-  EmitLB(ord('o'));
-  Emit(oIO);
-  Emit(oRT);          { return — CS still has our return addr }
-  { patch the jm to here }
-  code[jmpatch]   := byte(codebase + pc);
-  code[jmpatch+1] := byte((codebase + pc) shr 8);
-  code[jmpatch+2] := byte((codebase + pc) shr 16);
-  code[jmpatch+3] := byte((codebase + pc) shr 24);
-  { check if negative }
-  Emit(oDU);          { dup n }
-  Emit(oC0);
-  Emit(oLT);          { n < 0 ? }
-  Emit(oC1); Emit(oAN); { normalize to 0/1 }
-  Emit(oH0);          { if zero (not negative), skip neg handling }
-  Emit(byte(10));      { skip: lb '-' lb 'o' io c0 sw sb = 2+2+1+1+1+1=8 bytes + 2 for h0 itself = skip to h0+10 }
-  EmitLB(ord('-'));
-  EmitLB(ord('o'));
-  Emit(oIO);          { print '-' }
-  Emit(oC0); Emit(oSW); Emit(oSB); { negate: 0 - n }
-  { save return address from CS to register I }
-  Emit(oCD);           { pop return addr from CS }
-  EmitRegWr(9);        { !I — save to register I }
-  { now n is positive on TOS; push digits to CS }
-  Emit(oC0);          { digit count = 0 }
-  Emit(oSW);          { DS: [count n] }
-  { digit_loop: }
-  digitloop := pc;
-  Emit(oDU);          { dup n -- DS: [count n n] }
-  EmitLB(10);
-  Emit(oMD);          { md pops 10, pops n, pushes n MOD 10 }
-  EmitLB(ord('0'));
-  Emit(oAD);          { digit + '0' = ASCII }
-  Emit(oDC);          { push ASCII char to CS }
-  Emit(oSW);          { DS: [n count] }
-  Emit(oC1); Emit(oAD); { count + 1 }
-  Emit(oSW);          { DS: [count+1 n] }
-  EmitLB(10);
-  Emit(oDV);          { dv pops 10, pops n, pushes n DIV 10 }
-  Emit(oDU);          { dup new_n }
-  Emit(oC0);
-  Emit(oEQ);          { new_n = 0? -- returns -1 if equal }
-  Emit(oC1); Emit(oAN);{ 0 or 1 }
-  h0pos := pc;
-  Emit(oH0);          { if zero (new_n <> 0), loop back }
-  Emit(byte(digitloop - h0pos)); { relative hop back }
-  Emit(oZP);          { drop the 0 (exhausted n) }
-  { CS has digit chars (deepest = most significant), DS has count }
-  { print_loop: }
-  printloop := pc;
-  Emit(oCD);          { pop char from CS to DS }
-  EmitLB(ord('o'));
-  Emit(oIO);          { print it }
-  Emit(oC1); Emit(oSB); { sb: -1 + count = count-1 }
-  Emit(oDU);          { dup count }
-  Emit(oC0);
-  Emit(oEQ);          { count = 0? }
-  Emit(oC1); Emit(oAN);
-  h0pos := pc;
-  Emit(oH0);          { if zero (count <> 0), loop }
-  Emit(byte(printloop - h0pos));
-  Emit(oZP);          { drop count (0) }
-  { restore return address and return }
-  EmitRegRd(9);        { @I — push saved return addr }
-  Emit(oDC);           { push to CS }
-  Emit(oRT);          { return }
-
-  { --- Input runtime --- }
-  { Input buffer at fixed addresses just below the data stack area. }
-  { b4vm's minbuff = 15613 ($3CFD). We use $3C00-$3CFF for the buffer }
-  { and $3BF8-$3BFF for pos (4 bytes) and len (4 bytes). }
-  rtInputBuf := $3C00;
-  rtInputPos := $3BF8;
-  rtInputLen := $3BFC;
-  rtPatchCount := 0;
-
-  { --- rt_readline: ( -- ) read line from stdin into buffer --- }
-  rtReadLine := codebase + pc;
-  EmitLI(rtInputBuf);
-  EmitLB(255);
-  EmitLB(ord('i'));
-  Emit(oIO);          { io 'i': (dest maxlen -- len) }
-  EmitLI(rtInputLen);
-  Emit(bWI);           { store length }
-  Emit(oC0);
-  EmitLI(rtInputPos);
-  Emit(bWI);           { reset pos to 0 }
-  Emit(oRT);
-
-  { --- rt_readchar: (dest-addr --) read one char, store at addr --- }
-  rtReadChar := codebase + pc;
-  EmitLI(rtInputPos); Emit(bRI);  { pos }
-  EmitLI(rtInputBuf); Emit(oAD);  { buffer + pos }
-  Emit(bRB);           { char }
-  Emit(oSW); Emit(bWI); { store char to dest addr }
-  { increment pos }
-  EmitLI(rtInputPos); Emit(bRI);
-  Emit(oC1); Emit(oAD);
-  EmitLI(rtInputPos); Emit(bWI);
-  Emit(oRT);
-
-  { --- rt_readint: (dest-addr --) read line, parse int, store at addr --- }
-  { All state in registers J-M. Only DS item is the current char being tested. }
-  { J=dest, K=pos, L=acc, M=neg }
-  rtReadInt := codebase + pc;
-  EmitRegWr(10);       { !J }
-  Emit(oCL); Emit4(rtReadLine);
-  Emit(oC0); EmitRegWr(11);  { K=0 }
-  Emit(oC0); EmitRegWr(12);  { L=0 }
-  Emit(oC0); EmitRegWr(13);  { M=0 }
-  { check '-' }
-  EmitLI(rtInputBuf); Emit(bRB);
-  EmitLB(ord('-')); Emit(oEQ); Emit(oC1); Emit(oAN);
-  Emit(oH0); Emit(byte(6)); { 0=not minus, skip 4 bytes (!M + !K = 2+2) }
-  Emit(oC1); EmitRegWr(13);
-  Emit(oC1); EmitRegWr(11);
-  { digit loop: DS is empty at loop top }
-  dloop := pc;
-  EmitRegRd(11); EmitLI(rtInputBuf); Emit(oAD); Emit(bRB); { ch on DS }
-  { subtract '0': if result < 0, not a digit (ch < '0') }
-  EmitLB(ord('0')); Emit(oSB); { digit = ch - '0' (sb: -'0' + ch) }
-  Emit(oDU); Emit(oC0); Emit(oLT); Emit(oC1); Emit(oAN);
-  { LT: digit < 0? If yes (result=1), not a digit. h0 hops on 0 (IS a digit, >= 0). }
-  { Non-zero (not digit) falls through to done-jump. }
-  Emit(oH0); Emit(byte(5)); { hop past zp+hp(2) if digit >= 0 }
-  Emit(oZP);
-  Emit(oHP); Emit(byte(0)); done_hp := pc - 1; { to done }
-  { check digit <= 9: swap to test 9 < digit (invalid if true) }
-  Emit(oDU); EmitLB(9); Emit(oSW); Emit(oLT); Emit(oC1); Emit(oAN);
-  { result: 1 if 9 < digit (invalid). 0 if digit <= 9 (valid). }
-  { h0 hops on 0 (valid digit) → skip done-jump, go to accumulate. }
-  { Falls through on 1 (invalid) → zp + hp to done. }
-  Emit(oH0); Emit(byte(5)); { valid: skip zp+hp(3 bytes) → +5 from h0 }
-  Emit(oZP);
-  Emit(oHP); Emit(byte(0)); done_hp2 := pc - 1; { to done }
-  { accumulate: L = L * 10 + digit. DS has [digit]. }
-  EmitRegRd(12); EmitLB(10); Emit(oML); Emit(oAD); EmitRegWr(12);
-  EmitRegRd(11); Emit(oC1); Emit(oAD); EmitRegWr(11); { K++ }
-  h0back := pc;
-  Emit(oHP); Emit(byte(dloop - h0back)); { loop }
-  { done: patch jumps. DS should be empty (digit was consumed or dropped). }
-  code[done_hp] := byte(pc - (done_hp - 1));
-  code[done_hp2] := byte(pc - (done_hp2 - 1));
-  { result = if M then -L else L }
-  EmitRegRd(12);
-  EmitRegRd(13); Emit(oH0); Emit(byte(5)); { if 0 (positive), skip 3 bytes: c0+sw+sb }
-  Emit(oC0); Emit(oSW); Emit(oSB);
-  EmitRegRd(10); Emit(bWI);
-  Emit(oRT);
-end;
-
-{ ---- Branch / Control flow ---- }
+function AllocLabel: longint;
+begin result := nlabels; labels[nlabels] := NewLabel; inc(nlabels) end;
 
 function Here: longint;
+var idx: longint;
 begin
-  result := pc;
+  idx := AllocLabel;
+  WrLbl(labels[idx]);
+  result := idx;
 end;
 
 procedure FJump(var L: longint);
+var idx: longint;
 begin
-  { unconditional forward jump; L accumulates a fixup chain }
-  Emit(oJM);
-  Emit4(L);      { write previous chain head as placeholder }
-  L := pc - 4;   { new chain head = address of the 4-byte field }
-end;
-
-procedure FixLink(L: longint);
-var L1: longint;
-    target: longint;
-begin
-  { fix up a chain of forward jumps to point to current pc }
-  target := codebase + pc;
-  while (L > 0) and (L < pc) do begin
-    L1 := longint(code[L]) or (longint(code[L+1]) shl 8)
-        or (longint(code[L+2]) shl 16) or (longint(code[L+3]) shl 24);
-    code[L]   := byte(target);
-    code[L+1] := byte(target shr 8);
-    code[L+2] := byte(target shr 16);
-    code[L+3] := byte(target shr 24);
-    L := L1;
+  idx := AllocLabel;
+  Wr('jm >' + labels[idx] + ' ');
+  if L <> 0 then begin
+    { chain: not needed with labels, L just holds the label index }
   end;
+  L := idx;
 end;
 
 procedure CFJump(var x: Item);
+var lbl: string;
 begin
-  { conditional forward jump: jump if false }
-  { ensure boolean value is on the data stack }
   if x.mode <> mReg then load(x);
-  { TOS is boolean: 0=false, nonzero=true (1 or -1). }
-  { If true (nonzero), skip the jm. If false (0), take the jm. }
-  { h0 hops when TOS=0. So: if false, h0 does NOT skip, falls to... }
-  { Wait: we want false to jump away. h0 jumps when 0 (false). }
-  { So: h0 with offset past the body works if body is small. }
-  { For general case: if TOS nonzero (true), skip jm; if zero (false), fall to jm. }
-  { Use: h0 +5 to skip jm when false... no, h0 hops when 0! }
-  { OK: h0 hops when TOS=0. We want to jump (take jm) when false (0). }
-  { So DON'T invert. When false(0), h0 hops PAST the jm? No, we want to TAKE jm. }
-  { Solution: h0 skips when false. But we want false to take jm. }
-  { Actual: push value, if nonzero skip jm (continue to body). If zero fall to jm. }
-  { h0 hops when 0. We want 0 to fall to jm, nonzero to skip jm. }
-  { So we DON'T use h0 for this. Use: dup, h0 (if 0 hop to jm), zp, hop past jm. }
-  { Pattern: value on TOS. }
-  {   h0 +3   — if false(0), hop to the jm (which is 3 bytes ahead: h0+offset+zp) }
-  {   zp      — drop value (was true) }
-  {   hp +5   — skip the jm (5 bytes) }
-  {   jm <target> — jump to else/end }
-  { h0 pops TOS and hops if zero. }
-  { false(0): h0 hops past the hp to the jm. true(nonzero): h0 falls through. }
-  Emit(oH0);      { if false (0), hop past hp to jm }
-  Emit(byte(4));   { hop to h0_addr+4 = jm opcode }
-  Emit(oHP);       { true: unconditional hop past jm }
-  Emit(byte(7));   { hop to hp_addr+7 = past jm(1)+addr(4) = first instr after jm }
-  Emit(oJM);
-  Emit4(0);        { end of fixup chain (0 = no previous jump) }
-  x.a := pc - 4;  { chain head = address of this jm's target field }
+  { TOS is boolean. Jump to label if false (0). }
+  { b4a: use h0 for short hops or jm for general jumps. }
+  { Since h0 only takes a byte offset, use the pattern: }
+  { test value, if nonzero skip the jm, else take the jm }
+  x.a := AllocLabel;
+  lbl := labels[x.a];
+  { h0 04 = if zero, hop +4 (to jm). hp 07 = if nonzero, hop +7 (past jm). }
+  WrLn('9C 04 9B 07 jm >' + lbl);
 end;
 
 procedure BJump(L: longint);
 begin
-  { unconditional backward jump to L }
-  Emit(oJM);
-  Emit4(codebase + L);
+  WrLn('jm >' + labels[L]);
 end;
 
 procedure CBJump(var x: Item; L: longint);
 begin
-  { conditional backward jump for REPEAT..UNTIL: loop back when false }
-  { h0 pops and hops when 0. For UNTIL: exit when true, loop when false. }
-  { false(0) → h0 hops past hp to jm (loops back). true(nonzero) → falls to hp (exits). }
   if x.mode <> mReg then load(x);
-  Emit(oH0);      { if false (0), hop to jm }
-  Emit(byte(4));   { hop to h0_addr+4 = jm opcode }
-  Emit(oHP);       { true: skip jm, exit loop }
-  Emit(byte(7));   { hop to hp_addr+7 = past jm }
-  Emit(oJM);      { jump back to loop start }
-  Emit4(codebase + L);
+  { REPEAT..UNTIL: loop back when false (0). }
+  WrLn('9C 04 9B 07 jm >' + labels[L]);
 end;
 
 procedure Fixup(var x: Item);
 begin
-  FixLink(x.a);
+  { emit the label that the forward jump targets }
+  WrLbl(labels[x.a]);
 end;
 
-{ ---- Procedure call / entry / exit ---- }
+procedure FixLink(L: longint);
+begin
+  if L <> 0 then WrLbl(labels[L]);
+end;
+
+{ ---- Procedures ---- }
 
 procedure PrepCall(var x: Item; var r: longint);
 begin
-  { prepare for call: if x is indirect (proc var), load it }
   if x.mode > orb.clsPar then load(x);
-  r := 0; { not used for b4 (no register saving needed — stack-based) }
+  r := 0;
 end;
 
 procedure Call(var x: Item; r: longint);
 begin
   if x.mode = orb.clsConst then begin
-    { direct call to known address }
-    Emit(oCL);
-    Emit4(codebase + x.a);
+    { direct call: x.a is the procedure's label index or name }
+    Wr('>' + modname + '.P' + IntToStr(x.a) + ' ');
   end else begin
-    { indirect call via value on stack }
-    { b4 doesn't have indirect call opcode; store to temp register, invoke }
-    EmitRegWr(rG); { temporarily use G register }
-    Emit(oINV + rG); { invoke G }
+    Wr('!H ^H '); { indirect: save to H, invoke }
   end;
-  if x.typ^.base^.form <> orb.tNoTyp then begin
-    { function: result is on data stack }
+  WrLn('');
+  if x.typ^.base^.form <> orb.tNoTyp then
     x.mode := mReg;
-  end;
 end;
 
 procedure Enter(parblksize, locblksize: longint; int_: boolean);
 var npar, off: longint;
 begin
-  { procedure prologue }
-  { save old frame pointer }
-  EmitRegRd(rF);   { @F }
-  Emit(oDC);        { push to control stack }
-  { allocate frame for locals: use heap pointer }
-  EmitRegRd(rF + (ord('_') - ord('F'))); { @_ (heap pointer) }
-  EmitRegWr(rF);    { !F — set frame pointer }
-  { advance heap by local size }
+  WrComment('enter: parblk=' + IntToStr(parblksize) + ' locblk=' + IntToStr(locblksize));
+  Wr('@F dc @_ !F '); { save old FP, set FP = heap }
   if locblksize > 0 then begin
-    EmitPushInt(locblksize);
-    EmitRegRd(rF + (ord('_') - ord('F')));
-    Emit(oAD);
-    EmitRegWr(rF + (ord('_') - ord('F'))); { !_ }
+    WrPushInt(locblksize); Wr('@_ ad !_ '); { advance heap }
   end;
-  { store parameters from data stack into frame }
-  { params are on DS, last param on top. Store from highest offset down. }
-  npar := (parblksize - WordSize) div WordSize; { number of 4-byte params }
-  off := parblksize - WordSize; { highest param offset }
+  { store params from DS into frame }
+  npar := (parblksize - WordSize) div WordSize;
+  off := parblksize - WordSize;
   while off >= WordSize do begin
-    { TOS is the param for this offset; store it }
-    EmitRegRd(rF);
-    EmitPushInt(off);
-    Emit(oAD);
-    Emit(bWI);
+    Wr('@F '); WrPushInt(off); Wr('ad wi ');
     off := off - WordSize;
   end;
+  WrLn('');
 end;
 
 procedure Return(form: integer; var x: Item; size: longint; int_: boolean);
 begin
-  { procedure epilogue }
-  if form <> orb.tNoTyp then
-    load(x); { push return value onto data stack }
-  { restore heap pointer from frame pointer }
-  EmitRegRd(rF);
-  EmitRegWr(rF + (ord('_') - ord('F'))); { !_ }
-  { restore old frame pointer from control stack }
-  Emit(oCD);        { pop from control stack }
-  EmitRegWr(rF);    { !F }
-  { return }
-  Emit(oRT);
+  if form <> orb.tNoTyp then load(x);
+  WrLn('@F !_ cd !F rt');
 end;
 
-{ ---- FOR loop ---- }
+{ ---- FOR loops ---- }
 
 procedure For0(var x, y: Item);
-begin
-  load(y); { load initial value }
-end;
+begin load(y) end;
 
 procedure For1(var x, y, z, w: Item; var L: longint);
+var lbl: string;
 begin
-  { store initial value and check bounds }
-  Emit(oDU); { duplicate initial value for comparison }
-  load(z);   { load limit }
-  if w.a > 0 then begin
-    { ascending: jump out if init > limit }
-    Emit(oSW); Emit(oLT); { limit < init? }
-    Emit(oC1); Emit(oAN);
-  end else begin
-    { descending: jump out if init < limit }
-    Emit(oLT);
-    Emit(oC1); Emit(oAN);
-  end;
-  { if condition true, skip loop }
-  Emit(oH0);     { hop if zero (condition false = enter loop) }
-  Emit(byte(5));
-  Emit(oJM);
-  Emit4(0);
-  L := pc - 4;
-  { store initial value into loop variable }
+  { store initial value, check bounds }
+  Wr('du '); load(z);
+  L := AllocLabel; lbl := labels[L];
+  if w.a > 0 then Wr('sw lt c1 an ')
+  else Wr('lt c1 an ');
+  WrLn('9C 04 9B 07 jm >' + lbl);
   Store(x, y);
 end;
 
 procedure For2(var x, y, w: Item);
 begin
-  { increment loop variable by step }
-  load(x);
-  EmitPushInt(w.a);
-  Emit(oAD);
-  { store back }
-  Emit(oDU); { keep copy for next comparison }
+  load(x); WrPushInt(w.a); Wr('ad du ');
   Store(x, y);
 end;
 
-{ ---- Inline standard procedures ---- }
+{ ---- Standard procedures ---- }
 
 procedure Increment(upordown: longint; var x, y: Item);
-var z: Item;
+var saved: Item;
 begin
-  { INC(x) or INC(x, y) / DEC(x) or DEC(x, y) }
-  { load current value, add/subtract, store back }
-  z := x; { save target for store }
-  load(x); { push current value }
-  if y.typ^.form = orb.tNoTyp then
-    Emit(oC1)
-  else
-    load(y);
-  { sb does: -TOS + NOS. Stack is [n, 1]. sb gives -1 + n = n-1. Correct for DEC. }
-  if upordown = 0 then Emit(oAD) else Emit(oSB);
-  { now new value is on stack; store back to original location }
-  { emit store address }
-  if z.mode = orb.clsVar then begin
-    if z.r > 0 then begin
-      EmitRegRd(rF); EmitPushInt(z.a); Emit(oAD);
-    end else
-      EmitPushInt(GlobalBase + z.a);
-    if z.typ^.size = 1 then Emit(bWB) else Emit(bWI);
-  end else if z.mode = orb.clsPar then begin
-    EmitRegRd(rF); EmitPushInt(z.a); Emit(oAD); Emit(bRI);
-    if z.b <> 0 then begin EmitPushInt(z.b); Emit(oAD) end;
-    if z.typ^.size = 1 then Emit(bWB) else Emit(bWI);
+  saved := x;
+  load(x);
+  if y.typ^.form = orb.tNoTyp then Wr('c1 ')
+  else load(y);
+  if upordown = 0 then Wr('ad ') else Wr('sb ');
+  { store back }
+  if saved.mode = orb.clsVar then
+    WrStoreVar(saved.r, saved.a, saved.typ^.size)
+  else if saved.mode = orb.clsPar then begin
+    WrRegRd(6); WrPushInt(saved.a); Wr('ad ri ');
+    if saved.b <> 0 then begin WrPushInt(saved.b); Wr('ad ') end;
+    if saved.typ^.size = 1 then Wr('wb ') else Wr('wi ');
   end;
+  WrLn('');
 end;
 
 procedure Include(inorex: longint; var x, y: Item);
 begin
-  load(x);
-  load(y);
-  Emit(oC1); Emit(oSW); Emit(oSH); { 1 << y = bit mask }
-  if inorex = 0 then Emit(oOR) { INCL: set union }
-  else begin Emit(oNT); Emit(oAN) end; { EXCL: clear bit }
+  load(x); load(y); Wr('c1 sw sh ');
+  if inorex = 0 then Wr('or ') else Wr('nt an ');
   Store(x, y);
 end;
 
 procedure Assert_(var x: Item);
-begin
-  if x.mode <> mCond then loadCond(x);
-  load(x);
-  { if false (0), halt }
-  Emit(oH0);     { hop if zero }
-  Emit(byte(1));  { skip over halt }
-  Emit(oHL);      { halt on assertion failure }
-end;
+begin load(x); WrLn('9C 02 9B 01 hl') end;
 
 procedure New_(var x: Item);
 begin
-  { simplified: allocate from heap }
   loadAdr(x);
-  { push size of pointed-to type }
-  EmitPushInt(x.typ^.base^.size);
-  { get current heap pointer }
-  EmitRegRd(rF + (ord('_') - ord('F'))); { @_ }
-  Emit(oDU);
-  { advance heap }
-  Emit(oDC); { save addr on CS }
-  Emit(oAD); { new heap = old + size }
-  EmitRegWr(rF + (ord('_') - ord('F'))); { !_ }
-  Emit(oCD); { get allocated addr back }
-  { store pointer: stack has dest_addr, new_obj_addr }
-  Emit(oSW);
-  Emit(bWI); { write pointer }
+  WrPushInt(x.typ^.base^.size);
+  WrLn('@_ du dc ad !_ cd sw wi');
 end;
 
 procedure Pack(var x, y: Item);
-begin
-  ors.Mark('PACK not supported on b4vm');
-end;
+begin ors.Mark('PACK not supported') end;
 
 procedure Unpk(var x, y: Item);
-begin
-  ors.Mark('UNPK not supported on b4vm');
-end;
+begin ors.Mark('UNPK not supported') end;
 
 procedure Led(var x: Item);
-begin
-  load(x);
-  Emit(oZP); { just discard - no LEDs on b4vm }
-end;
+begin load(x); WrLn('zp') end;
 
 procedure Get_(var x, y: Item);
-begin
-  load(x); { address }
-  Emit(bRI); { read word at address }
-  Store(y, x); { store into y }
-end;
+begin load(x); Wr('ri '); Store(y, x) end;
 
 procedure Put_(var x, y: Item);
-begin
-  load(y); { value }
-  load(x); { address }
-  Emit(bWI);
-end;
+begin load(y); load(x); WrLn('wi') end;
 
 procedure Copy_(var x, y, z: Item);
-begin
-  ors.Mark('SYSTEM.COPY not supported');
-end;
+begin ors.Mark('SYSTEM.COPY not supported') end;
 
 procedure LDPSR(var x: Item);
-begin
-  ors.Mark('LDPSR not supported on b4vm');
-end;
+begin ors.Mark('LDPSR not supported') end;
 
 procedure LDREG(var x, y: Item);
-begin
-  ors.Mark('LDREG not supported on b4vm');
-end;
+begin ors.Mark('LDREG not supported') end;
 
-{ ---- Inline standard functions ---- }
+{ ---- Inline functions ---- }
 
 procedure Abs_(var x: Item);
 begin
-  if x.mode = orb.clsConst then
-    x.a := abs(x.a)
-  else begin
-    load(x);
-    { if negative, negate: dup, test < 0, if so negate }
-    Emit(oDU);
-    Emit(oC0);
-    Emit(oLT); { is TOS < 0? }
-    Emit(oH0); { hop if zero (not negative) }
-    Emit(byte(3)); { skip negate }
-    Emit(oC0); Emit(oSW); Emit(oSB); { 0 - x }
-  end;
+  if x.mode = orb.clsConst then x.a := abs(x.a)
+  else begin load(x); WrLn('du c0 lt c1 an 9C 05 c0 sw sb') end;
 end;
 
 procedure Odd_(var x: Item);
-begin
-  load(x);
-  Emit(oC1);
-  Emit(oAN); { x AND 1 }
-  x.typ := orb.boolType;
-end;
+begin load(x); Wr('c1 an '); x.typ := orb.boolType end;
 
 procedure Floor_(var x: Item);
-begin
-  ors.Mark('FLOOR not supported on b4vm (no REAL)');
-end;
+begin ors.Mark('FLOOR not supported (no REAL)') end;
 
 procedure Float_(var x: Item);
-begin
-  ors.Mark('FLT not supported on b4vm (no REAL)');
-end;
+begin ors.Mark('FLT not supported (no REAL)') end;
 
 procedure Ord_(var x: Item);
-begin
-  if x.mode <> mReg then load(x);
-end;
+begin if x.mode <> mReg then load(x) end;
 
 procedure Len_(var x: Item);
 begin
-  if x.typ^.len >= 0 then begin
-    x.mode := orb.clsConst;
-    x.a := x.typ^.len;
-  end else begin
-    { open array: length follows address on stack }
-    ors.Mark('open array LEN not yet implemented');
-  end;
+  if x.typ^.len >= 0 then begin x.mode := orb.clsConst; x.a := x.typ^.len end
+  else ors.Mark('open array LEN not yet implemented');
 end;
 
 procedure Shift(fct: longint; var x, y: Item);
 begin
   load(x);
-  if fct = 0 then begin { LSL }
-    load(y); Emit(oSH);
-  end else if fct = 1 then begin { ASR }
-    load(y); Emit(oC0); Emit(oSW); Emit(oSB); { negate shift count }
-    Emit(oSH);
-  end else begin { ROR - approximate with shifts }
-    load(y); Emit(oC0); Emit(oSW); Emit(oSB);
-    Emit(oSH);
-  end;
+  if fct = 0 then begin load(y); Wr('sh ') end { LSL }
+  else begin load(y); Wr('c0 sw sb sh ') end;   { ASR/ROR: negate shift }
   x.mode := mReg;
 end;
 
 procedure ADC_(var x, y: Item);
-begin load(x); load(y); Emit(oAD); x.mode := mReg end;
-
+begin load(x); load(y); Wr('ad '); x.mode := mReg end;
 procedure SBC_(var x, y: Item);
-begin load(x); load(y); Emit(oSW); Emit(oSB); x.mode := mReg end;
-
+begin load(x); load(y); Wr('sb '); x.mode := mReg end;
 procedure UML_(var x, y: Item);
-begin load(x); load(y); Emit(oML); x.mode := mReg end;
+begin load(x); load(y); Wr('ml '); x.mode := mReg end;
 
 procedure Bit_(var x, y: Item);
-begin
-  load(x); Emit(bRI);
-  load(y);
-  Emit(oC0); Emit(oSW); Emit(oSB); { negate for right shift }
-  Emit(oSH);
-  Emit(oC1); Emit(oAN);
-  x.mode := mReg; x.typ := orb.boolType;
-end;
+begin load(x); Wr('ri '); load(y); Wr('c0 sw sb sh c1 an '); x.mode := mReg; x.typ := orb.boolType end;
 
 procedure Register_(var x: Item);
-begin
-  ors.Mark('REG not supported on b4vm');
-  EmitPushInt(0);
-  x.mode := mReg;
-end;
+begin ors.Mark('REG not supported'); WrPushInt(0); x.mode := mReg end;
 
 procedure H_(var x: Item);
-begin
-  ors.Mark('H not supported on b4vm');
-  EmitPushInt(0);
-  x.mode := mReg;
-end;
+begin ors.Mark('H not supported'); WrPushInt(0); x.mode := mReg end;
 
 procedure Adr_(var x: Item);
 begin
-  if x.mode in [orb.clsVar, orb.clsPar] then
-    loadAdr(x)
-  else
-    ors.Mark('not addressable');
+  if x.mode in [orb.clsVar, orb.clsPar] then loadAdr(x)
+  else ors.Mark('not addressable');
 end;
 
 procedure Condition_(var x: Item);
-begin
-  ors.Mark('COND not supported on b4vm');
-end;
-
-{ ---- Type descriptors (simplified) ---- }
+begin ors.Mark('COND not supported') end;
 
 procedure BuildTD(T: orb.PType; var dc: longint);
-begin
-  { simplified: just record the size in the TD area }
-  T^.len := dc;
-  dc := dc + 16; { reserve 16 bytes per type descriptor }
-end;
+begin T^.len := dc; dc := dc + 16 end;
 
 procedure TypeTest(var x: Item; T: orb.PType; varpar, isguard: boolean);
 begin
-  { simplified type test: always pass for now }
-  if not isguard then begin
-    EmitPushInt(1); { always true }
-    x.mode := mReg;
-    x.typ := orb.boolType;
-  end;
+  if not isguard then begin WrPushInt(1); x.mode := mReg; x.typ := orb.boolType end;
+end;
+
+{ ---- Runtime library ---- }
+
+procedure EmitRuntime;
+begin
+  WrComment('--- runtime library ---');
+
+  WrLbl('rt.wch'); WrLn('lb 6F io rt');  { (ch --) write char: 'o'=$6F }
+  WrLbl('rt.wln'); WrLn('lb 0A lb 6F io rt');  { write newline }
+
+  { rt.wint: (n width --) write integer }
+  WrLbl('rt.wint');
+  WrLn('zp du 9C 07 jm >_wi.main');
+  WrLbl('_wi.zero'); WrLn('zp lb 30 lb 6F io rt');
+  WrLbl('_wi.main');
+  WrLn('du c0 lt c1 an 9C 0A lb 2D lb 6F io c0 sw sb');
+  WrLn('cd !I c0 sw');
+  WrComment('digit extraction loop: stack [count n]');
+  WrLbl('_wi.dloop');
+  WrLn('du lb 0A md lb 30 ad dc sw c1 ad sw lb 0A dv');
+  WrLn('du 9C 04 9B 07 jm >_wi.ddone');
+  WrLn('jm >_wi.dloop');
+  WrLbl('_wi.ddone'); WrLn('zp');
+  WrComment('print digits from CS: stack [count]');
+  WrLbl('_wi.ploop');
+  WrLn('cd lb 6F io c1 sb du 9C 04 9B 07 jm >_wi.pdone');
+  WrLn('jm >_wi.ploop');
+  WrLbl('_wi.pdone'); WrLn('zp @I dc rt');
+
+  { rt.rline: ( -- ) read line into buffer at $3C00 }
+  WrLbl('rt.rline');
+  WrLn('li 00003C00 lb FF lb 69 io li 00003BFC wi c0 li 00003BF8 wi rt');
+
+  { rt.rch: (addr --) read char from buffer }
+  WrLbl('rt.rch');
+  WrLn('li 00003BF8 ri li 00003C00 ad rb sw wi');
+  WrLn('li 00003BF8 ri c1 ad li 00003BF8 wi rt');
+
+  { rt.rint: (addr --) read line, parse int, store at addr }
+  WrLbl('rt.rint');
+  WrLn('!J rt.rline');
+  WrLn('c0 !K c0 !L c0 !M');
+  WrLn('li 00003C00 rb lb 2D eq c1 an 9C 06 c1 !M c1 !K');
+  WrLbl('_ri.dloop');
+  WrLn('@K li 00003C00 ad rb lb 30 sb');
+  WrLn('du c0 lt c1 an .i zp jm >_ri.done .t');
+  WrLn('du lb 09 sw lt c1 an .i zp jm >_ri.done .t');
+  WrLn('@L lb 0A ml ad !L @K c1 ad !K jm >_ri.dloop');
+  WrLbl('_ri.done');
+  WrLn('@L @M 9C 05 c0 sw sb @J wi rt');
+
+  WrComment('--- end runtime ---');
+  WrLn('');
 end;
 
 { ---- Module header and output ---- }
 
-var heapPatch: longint; { code offset of the heap init placeholder }
-
 procedure Header;
 begin
-  { module body entry point: procedures are already emitted, so pc is past them }
-  { codebase was already set in SetDataSize }
-  entry := codebase + pc;
-  { emit: set up global base register G }
-  EmitPushInt(GlobalBase);
-  EmitRegWr(rG);
-  { emit: initialize heap pointer _ }
-  Emit(oLI); heapPatch := pc; Emit4(0); { placeholder — patched in Close }
-  EmitRegWr(31);      { !_ }
+  WrComment('--- module body ---');
+  WrLbl(modname + '.init');
 end;
 
 procedure Close(var modid: ors.Ident; key, nofent: longint);
-var
-  img: array of byte;
-  f: file;
-  fname: string;
-  i: longint;
-  totalsize: longint;
-  strbase: longint;
+var i: longint;
 begin
-  { emit halt at end of module body }
-  Emit(oHL);
-
-  { calculate layout }
-  strbase := codebase + pc;
-  totalsize := strbase + strx;
-  { patch the heap init in Header to point past all code+data }
-  code[heapPatch]   := byte(totalsize);
-  code[heapPatch+1] := byte(totalsize shr 8);
-  code[heapPatch+2] := byte(totalsize shr 16);
-  code[heapPatch+3] := byte(totalsize shr 24);
-
-  { build memory image }
-  setlength(img, B4MemSize);
-  fillchar(img[0], B4MemSize, 0);
-
-  { write entry point to register \ (RGO) at byte offset $70 }
-  { register \ = ord('\') - ord('@') = 28, byte offset = 28*4 = $70 }
-  img[$70] := byte(entry);
-  img[$71] := byte(entry shr 8);
-  img[$72] := byte(entry shr 16);
-  img[$73] := byte(entry shr 24);
-
-  { also set IP register (RIP=$21) to entry point }
-  { RIP is at byte offset $21*4 = $84 }
-  img[$84] := byte(entry);
-  img[$85] := byte(entry shr 8);
-  img[$86] := byte(entry shr 16);
-  img[$87] := byte(entry shr 24);
-
-  { also set heap pointer (_=RHP at index $1F, offset $7C) }
-  { actually RHP = ord('_')-ord('@') = 31, offset = 31*4 = $7C }
-  i := totalsize;
-  img[$7C] := byte(i);
-  img[$7D] := byte(i shr 8);
-  img[$7E] := byte(i shr 16);
-  img[$7F] := byte(i shr 24);
-
-  { copy code into image }
-  for i := 0 to pc - 1 do
-    if codebase + i < B4MemSize then
-      img[codebase + i] := code[i];
-
-  { copy strings into image }
-  for i := 0 to strx - 1 do
-    if strbase + i < B4MemSize then
-      img[strbase + i] := byte(strbuf[i]);
-
-  { write .b4x file }
-  fname := modid + '.b4x';
-  assignfile(f, fname);
-  {$I-}
-  rewrite(f, 1);
-  {$I+}
-  if ioresult <> 0 then begin
-    writeln('Error: cannot create ', fname);
-    exit;
+  WrLn('hl');
+  WrLn('');
+  { emit string data }
+  if strx > 0 then begin
+    WrComment('--- string constants ---');
+    for i := 0 to strx - 1 do begin
+      if i mod 16 = 0 then begin
+        if i > 0 then WrLn('');
+        WrLbl('_str' + IntToStr(i));
+      end;
+      Wr(IntToHex(ord(strbuf[i]), 2) + ' ');
+    end;
+    WrLn('');
   end;
-  blockwrite(f, img[0], B4MemSize);
-  closefile(f);
-
-  writeln('  code size: ', pc, ' bytes');
-  writeln('  data size: ', varsize, ' bytes');
-  writeln('  strings:   ', strx, ' bytes');
-  writeln('  output:    ', fname);
+  writeln('  code output: ', modid, '.b4a');
+  system.close(out_);
 end;
+
+initialization
+  nlabels := 0;
+end.

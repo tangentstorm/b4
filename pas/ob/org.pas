@@ -1,73 +1,35 @@
 {$mode objfpc}{$H+}
 unit org;
-{ ORG - Code Generator for b4vm, replacing Wirth's RISC backend.
-  Emits b4 bytecode into a memory buffer, writes .b4x image files. }
+{ ORG - Code Generator for b4vm. Emits b4a assembly text. }
 interface
 uses ors, orb;
 
 const
   WordSize = 4;
-  maxCode = 15000; { max bytes of generated code }
   maxStrx = 2400;
-  maxTD = 120;
-
-  { b4 opcodes }
-  oAD = $80; oSB = $81; oML = $82; oDV = $83; oMD = $84;
-  oSH = $85; oAN = $86; oOR = $87; oXR = $88; oNT = $89;
-  oEQ = $8A; oLT = $8B;
-  oDU = $8C; oSW = $8D; oOV = $8E; oZP = $8F;
-  oDC = $90; oCD = $91;
-  bRB = $92; bRI = $93; bWB = $94; bWI = $95;
-  oLB = $96; oLI = $97; bRS = $98; oLS = $99;
-  oJM = $9A; oHP = $9B; oH0 = $9C; oCL = $9D; oRT = $9E; oNX = $9F;
-  oC0 = $C0; oC1 = $C1; oC2 = $F6; oN1 = $F7; oC4 = $F8;
-  oIO = $FD; oHL = $FF;
-
-  { b4 register opcodes: base + register_number }
-  oINV = $00; { invoke: $01..$1F }
-  oRDR = $20; { read:   $21..$3F }
-  oWRR = $40; { write:  $41..$5F }
-  oINC = $60; { stream: $61..$7F }
-
-  { named registers (index into register array) }
-  rF = ord('F') - ord('@'); { frame pointer = 6 }
-  rG = ord('G') - ord('@'); { global base = 7 }
 
   { internal item modes (beyond orb class values) }
-  mReg = 10;  { value is on the data stack (TOS) }
-  mRegI = 11; { address is on the data stack (TOS), needs dereference }
-  mCond = 12; { conditional: a=false-chain, b=true-chain, r=condition }
+  mReg = 10;   { value is on the data stack (TOS) }
+  mRegI = 11;  { address on DS, needs dereference }
+  mCond = 12;  { conditional }
 
 type
   Item = record
     mode: integer;
     typ: orb.PType;
-    a, b: longint;  { meaning depends on mode }
-    r: longint;      { register/condition }
+    a, b: longint;
+    r: longint;
     rdo: boolean;
   end;
 
 var
-  pc: longint;      { current code position (byte offset from code start) }
-  varsize: longint;  { total global variable size }
-  entry: longint;    { entry point address }
-  codebase: longint; { byte address where code starts in b4 memory }
-  strx: longint;     { string buffer index }
+  pc: longint;       { label counter for generating unique labels }
+  varsize: longint;
+  entry: longint;
+  strx: longint;
   tdx: longint;
-  { runtime routine addresses (absolute, set by EmitRuntime) }
-  rtWriteChar: longint;  { (ch --) write character to stdout }
-  rtWriteInt: longint;   { (n width --) write integer to stdout }
-  rtWriteLn: longint;    { ( -- ) write newline }
-  rtReadLine: longint;   { ( -- ) read line from stdin into buffer }
-  rtReadInt: longint;    { (addr --) parse int from buffer, store at addr }
-  rtReadChar: longint;   { (addr --) read char from buffer, store at addr }
-  rtInputBuf: longint;   { absolute address of input buffer in b4 memory }
-  rtInputPos: longint;   { absolute address of input position variable }
-  rtInputLen: longint;   { absolute address of input length variable }
-  rtPatches: array[0..15] of longint; { code offsets needing buffer addr patches }
-  rtPatchCount: longint;
-
-procedure EmitRuntime;
+  modname: ors.Ident; { current module name, used as label prefix }
+  out_: text;         { output file }
 
 procedure Open(v: integer);
 procedure SetDataSize(dc: longint);
@@ -77,15 +39,14 @@ procedure MakeRealItem(var x: Item; val: single);
 procedure MakeStringItem(var x: Item; len: longint);
 procedure MakeItem(var x: Item; y: orb.PObj; curlev: longint);
 
-{ emit helpers - used internally and by other org routines }
-procedure Emit(b: byte);
-procedure Emit4(v: longint);
-procedure EmitLI(v: longint);
-procedure EmitLB(v: byte);
-procedure EmitRegRd(r: byte);
-procedure EmitRegWr(r: byte);
+{ emit helpers }
+procedure EmitRuntime;
+procedure Wr(const s: string);    { write assembly text }
+procedure WrLn(const s: string);   { write line }
+procedure WrLbl(const s: string); { write label definition }
+procedure WrComment(const s: string);
+function NewLabel: string;        { generate unique label }
 
-{ forward declarations for procedures defined in later parts }
 procedure load(var x: Item);
 procedure loadAdr(var x: Item);
 procedure loadCond(var x: Item);
@@ -165,157 +126,123 @@ procedure BuildTD(T: orb.PType; var dc: longint);
 procedure TypeTest(var x: Item; T: orb.PType; varpar, isguard: boolean);
 
 implementation
-
 uses sysutils;
 
 const
-  GlobalBase = $0100; { where global variables start in b4 memory }
-  B4MemSize = 65536;  { total b4 memory image size }
+  GlobalBase = $0100;
 
 var
-  code: array[0..maxCode-1] of byte;
   strbuf: array[0..maxStrx-1] of char;
   version: integer;
+  labelCount: longint;
 
-{ ---- Emit helpers ---- }
+{ ---- Assembly output helpers ---- }
 
-procedure Emit(b: byte);
+procedure Wr(const s: string);
+begin write(out_, s) end;
+
+procedure WrLn(const s: string);
+begin writeln(out_, s) end;
+
+procedure WrLbl(const s: string);
+begin write(out_, ':', s, ' ') end;
+
+procedure WrComment(const s: string);
+begin writeln(out_, ' # ', s) end;
+
+function NewLabel: string;
 begin
-  if pc < maxCode then begin code[pc] := b; inc(pc) end
-  else ors.Mark('program too long');
+  result := '_L' + IntToStr(labelCount);
+  inc(labelCount);
 end;
 
-procedure Emit4(v: longint);
+procedure WrPushInt(v: longint);
 begin
-  { little-endian 32-bit }
-  Emit(byte(v));
-  Emit(byte(v shr 8));
-  Emit(byte(v shr 16));
-  Emit(byte(v shr 24));
+  if v = 0 then Wr('c0 ')
+  else if v = 1 then Wr('c1 ')
+  else if v = 2 then Wr('c2 ')
+  else if v = 4 then Wr('c4 ')
+  else if v = -1 then Wr('n1 ')
+  else if (v >= 0) and (v <= 255) then Wr('lb ' + IntToHex(v, 2) + ' ')
+  else Wr('li ' + IntToHex(v, 8) + ' ');
 end;
 
-procedure EmitLI(v: longint);
+procedure WrRegRd(r: byte);
+begin Wr('@' + chr(ord('@') + r) + ' ') end;
+
+procedure WrRegWr(r: byte);
+begin Wr('!' + chr(ord('@') + r) + ' ') end;
+
+procedure WrLoadVar(level: integer; offset: longint; size: longint);
 begin
-  { li <int32> — push 32-bit literal }
-  Emit(oLI);
-  Emit4(v);
+  if level > 0 then begin
+    WrRegRd(6); { @F }
+    WrPushInt(offset); Wr('ad ');
+  end else
+    WrPushInt(GlobalBase + offset);
+  if size = 1 then Wr('rb ') else Wr('ri ');
 end;
 
-procedure EmitLB(v: byte);
+procedure WrStoreVar(level: integer; offset: longint; size: longint);
 begin
-  { lb <byte> — push unsigned byte }
-  Emit(oLB);
-  Emit(v);
+  { value is already on DS; emit address then wi/wb }
+  if level > 0 then begin
+    WrRegRd(6); { @F }
+    WrPushInt(offset); Wr('ad ');
+  end else
+    WrPushInt(GlobalBase + offset);
+  if size = 1 then Wr('wb ') else Wr('wi ');
 end;
 
-procedure EmitPushInt(v: longint);
+procedure WrLoadAdr(level: integer; offset: longint);
 begin
-  { push an integer constant using the shortest encoding }
-  if v = 0 then Emit(oC0)
-  else if v = 1 then Emit(oC1)
-  else if v = 2 then Emit(oC2)
-  else if v = 4 then Emit(oC4)
-  else if v = -1 then Emit(oN1)
-  else if (v >= 0) and (v <= 255) then EmitLB(byte(v))
-  else EmitLI(v);
-end;
-
-procedure EmitRegRd(r: byte);
-begin
-  Emit(oRDR + r); { @R — read register to data stack }
-end;
-
-procedure EmitRegWr(r: byte);
-begin
-  Emit(oWRR + r); { !R — write data stack to register }
+  if level > 0 then begin
+    WrRegRd(6); WrPushInt(offset); Wr('ad ');
+  end else
+    WrPushInt(GlobalBase + offset);
 end;
 
 { ---- Item constructors ---- }
 
 procedure MakeConstItem(var x: Item; tp: orb.PType; val: longint);
-begin
-  x.mode := orb.clsConst;
-  x.typ := tp;
-  x.a := val;
-  x.b := 0;
-  x.r := 0;
-  x.rdo := false;
-end;
+begin x.mode := orb.clsConst; x.typ := tp; x.a := val; x.b := 0; x.r := 0; x.rdo := false end;
 
 procedure MakeRealItem(var x: Item; val: single);
-begin
-  { b4vm has no float support - store as int bits }
-  x.mode := orb.clsConst;
-  x.typ := orb.realType;
-  move(val, x.a, 4);
-end;
+begin x.mode := orb.clsConst; x.typ := orb.realType; move(val, x.a, 4) end;
 
 procedure MakeStringItem(var x: Item; len: longint);
 var i: longint;
 begin
-  x.mode := orb.clsConst;
-  x.typ := orb.strType;
-  x.a := strx;  { offset into string buffer }
-  x.b := len;   { length }
-  x.r := 0;
+  x.mode := orb.clsConst; x.typ := orb.strType; x.a := strx; x.b := len; x.r := 0;
   if strx + len + 4 < maxStrx then begin
     i := 0;
-    while len > 0 do begin
-      strbuf[strx] := ors.str[i];
-      inc(strx); inc(i); dec(len);
-    end;
+    while len > 0 do begin strbuf[strx] := ors.str[i]; inc(strx); inc(i); dec(len) end;
     while strx mod 4 <> 0 do begin strbuf[strx] := #0; inc(strx) end;
-  end else
-    ors.Mark('too many strings');
+  end else ors.Mark('too many strings');
 end;
 
 procedure MakeItem(var x: Item; y: orb.PObj; curlev: longint);
 begin
-  if y = nil then begin
-    x.mode := orb.clsConst; x.typ := orb.intType; x.a := 0;
-    exit;
-  end;
-  x.mode := y^.cls;
-  x.typ := y^.typ;
-  x.a := y^.val;
-  x.rdo := y^.rdo;
-  x.r := 0;
-  x.b := 0;
-  if y^.cls = orb.clsPar then
-    x.b := 0
-  else if y^.cls = orb.clsTyp then begin
-    x.a := y^.typ^.len;
-    x.r := -y^.lev;
-  end else if (y^.cls = orb.clsConst) and (y^.typ^.form = orb.tString) then
-    x.b := y^.lev
-  else
-    x.r := y^.lev;
+  if y = nil then begin x.mode := orb.clsConst; x.typ := orb.intType; x.a := 0; exit end;
+  x.mode := y^.cls; x.typ := y^.typ; x.a := y^.val; x.rdo := y^.rdo; x.r := 0; x.b := 0;
+  if y^.cls = orb.clsPar then x.b := 0
+  else if y^.cls = orb.clsTyp then begin x.a := y^.typ^.len; x.r := -y^.lev end
+  else if (y^.cls = orb.clsConst) and (y^.typ^.form = orb.tString) then x.b := y^.lev
+  else x.r := y^.lev;
   if (y^.lev > 0) and (y^.lev <> curlev) and (y^.cls <> orb.clsConst) then
     ors.Mark('level error, not accessible');
 end;
 
-{ ---- Open / SetDataSize / CheckRegs ---- }
-
 procedure Open(v: integer);
 begin
-  pc := 0;
-  tdx := 0;
-  strx := 0;
-  version := v;
-  codebase := 0; { set later by Header }
+  pc := 0; tdx := 0; strx := 0; version := v; labelCount := 0;
 end;
 
 procedure SetDataSize(dc: longint);
-begin
-  varsize := dc;
-  codebase := GlobalBase + varsize;
-  EmitRuntime; { emit runtime library at start of code }
-end;
+begin varsize := dc end;
 
 procedure CheckRegs;
-begin
-  if pc >= maxCode - 40 then ors.Mark('program too long');
-end;
+begin end;
 
 {$I org2.inc}
 {$I org3.inc}

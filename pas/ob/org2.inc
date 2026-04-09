@@ -1,198 +1,91 @@
-{ org2.inc — load/store, selectors, parameter passing }
+{ org2.inc — load/store, selectors, parameter passing (b4a text output) }
 
 procedure load(var x: Item);
-var addr: longint;
 begin
   case x.mode of
     orb.clsConst: begin
-      if x.typ^.form = orb.tProc then begin
-        { procedure constant — push its code address }
-        EmitPushInt(codebase + x.a);
-      end else
-        EmitPushInt(x.a);
+      if x.typ^.form = orb.tProc then
+        Wr('li >' + modname + '.' + 'P' + IntToStr(x.a) + ' ')
+      else
+        WrPushInt(x.a);
       x.mode := mReg;
     end;
     orb.clsVar: begin
-      { variable: r=level, a=offset }
-      if x.r > 0 then begin
-        { local variable: FP + offset }
-        EmitRegRd(rF);
-        EmitPushInt(x.a);
-        Emit(oAD);
-        if x.typ^.size = 1 then Emit(bRB) else Emit(bRI);
-      end else begin
-        { global variable: GlobalBase + offset }
-        addr := GlobalBase + x.a;
-        EmitPushInt(addr);
-        if x.typ^.size = 1 then Emit(bRB) else Emit(bRI);
-      end;
+      WrLoadVar(x.r, x.a, x.typ^.size);
       x.mode := mReg;
     end;
     orb.clsPar: begin
-      { VAR parameter: address is stored at FP+a, actual offset is b }
-      EmitRegRd(rF);
-      EmitPushInt(x.a);
-      Emit(oAD);
-      Emit(bRI); { load the address }
-      if x.b <> 0 then begin
-        EmitPushInt(x.b);
-        Emit(oAD);
-      end;
-      if x.typ^.size = 1 then Emit(bRB) else Emit(bRI);
+      WrRegRd(6); WrPushInt(x.a); Wr('ad ri ');
+      if x.b <> 0 then begin WrPushInt(x.b); Wr('ad ') end;
+      if x.typ^.size = 1 then Wr('rb ') else Wr('ri ');
       x.mode := mReg;
     end;
-    mCond: begin
-      { boolean condition — materialize as 0 or 1 on stack }
-      { a = false-chain, b = true-chain }
-      { We need to emit: if condition then push 1 else push 0 }
-      { For now, just mark as on stack }
-      { The conditional jump chains need to be fixed up }
-      { true path: push 1, jump over false }
-      FixLink(x.b);
-      Emit(oC1);
-      FJump(x.a);  { jump over the false case }
-      FixLink(x.a);
-      Emit(oC0);
-      FixLink(x.a);
-      x.mode := mReg;
-    end;
-    mReg: ; { value already on stack, nothing to do }
     mRegI: begin
-      { address is on stack (from dynamic Index); dereference it }
-      if x.typ^.size = 1 then Emit(bRB) else Emit(bRI);
+      if x.typ^.size = 1 then Wr('rb ') else Wr('ri ');
       x.mode := mReg;
     end;
+    mReg: ; { already on stack }
   end;
 end;
 
 procedure loadAdr(var x: Item);
-var addr: longint;
 begin
   case x.mode of
     orb.clsVar: begin
-      if x.r > 0 then begin
-        { local: FP + offset }
-        EmitRegRd(rF);
-        EmitPushInt(x.a);
-        Emit(oAD);
-      end else begin
-        { global: GlobalBase + offset }
-        addr := GlobalBase + x.a;
-        EmitPushInt(addr);
-      end;
+      WrLoadAdr(x.r, x.a);
       x.mode := mReg;
     end;
     orb.clsPar: begin
-      { VAR param: load address from frame }
-      EmitRegRd(rF);
-      EmitPushInt(x.a);
-      Emit(oAD);
-      Emit(bRI);
-      if x.b <> 0 then begin
-        EmitPushInt(x.b);
-        Emit(oAD);
-      end;
+      WrRegRd(6); WrPushInt(x.a); Wr('ad ri ');
+      if x.b <> 0 then begin WrPushInt(x.b); Wr('ad ') end;
       x.mode := mReg;
     end;
-  else
-    ors.Mark('address error');
+  else ors.Mark('address error');
   end;
 end;
 
 procedure loadCond(var x: Item);
 begin
   if x.typ^.form = orb.tBool then begin
-    if x.mode = orb.clsConst then begin
-      { constant boolean }
-      if x.a = 0 then x.r := 0  { always false }
-      else x.r := 1;  { always true }
-    end else begin
-      load(x);
-      { value is on stack; compare with 0 }
-      { we set up chains: a = false chain, b = true chain }
-      x.r := 1; { NE = true }
-    end;
-    x.mode := mCond;
-    x.a := 0; x.b := 0;
-  end else
-    ors.Mark('not Boolean?');
+    if x.mode <> mReg then load(x);
+    x.mode := mReg;
+  end else ors.Mark('not Boolean?');
 end;
 
 procedure Store(var x, y: Item);
 begin
-  load(y); { value on stack }
+  load(y);
   case x.mode of
-    orb.clsVar: begin
-      if x.r > 0 then begin
-        { local }
-        EmitRegRd(rF);
-        EmitPushInt(x.a);
-        Emit(oAD);
-      end else begin
-        { global }
-        EmitPushInt(GlobalBase + x.a);
-      end;
-      if x.typ^.size = 1 then Emit(bWB) else Emit(bWI);
-    end;
+    orb.clsVar: WrStoreVar(x.r, x.a, x.typ^.size);
     orb.clsPar: begin
-      EmitRegRd(rF);
-      EmitPushInt(x.a);
-      Emit(oAD);
-      Emit(bRI);
-      if x.b <> 0 then begin
-        EmitPushInt(x.b);
-        Emit(oAD);
-      end;
-      if x.typ^.size = 1 then Emit(bWB) else Emit(bWI);
+      WrRegRd(6); WrPushInt(x.a); Wr('ad ri ');
+      if x.b <> 0 then begin WrPushInt(x.b); Wr('ad ') end;
+      if x.typ^.size = 1 then Wr('wb ') else Wr('wi ');
     end;
     mReg, mRegI: begin
-      { address was saved to register H by Index/DeRef }
-      { load(y) already pushed value on DS }
-      EmitRegRd(8); { @H — push saved address }
-      if x.typ^.size = 1 then Emit(bWB) else Emit(bWI);
+      { address was saved to register H by Index }
+      Wr('@H wi ');
     end;
-  else
-    ors.Mark('bad mode in Store');
+  else ors.Mark('bad mode in Store');
   end;
+  WrLn('');
 end;
 
 procedure StoreStruct(var x, y: Item);
-var words: longint;
+var lbl: string;
 begin
-  { copy structured value: load dest addr, src addr, then copy word by word }
-  loadAdr(x);
-  loadAdr(y);
+  loadAdr(x); loadAdr(y);
   if x.typ^.size > 0 then begin
-    words := (x.typ^.size + 3) div 4;
-    EmitPushInt(words);
-    { loop: read word from src, write to dest, advance both, dec counter }
-    { TOS = count, NOS = src_addr, below = dest_addr }
-    Emit(oDC);        { move count to CS }
-    { loop top: }
-    Emit(oSW);        { swap so src is on top }
-    Emit(oDU);        { dup src addr }
-    Emit(bRI);        { read word from src }
-    Emit(oDC);        { stash word on CS }
-    Emit(oC4); Emit(oAD); { advance src by 4 }
-    Emit(oSW);        { swap so dest is on top }
-    Emit(oDU);        { dup dest addr }
-    Emit(oCD);        { get word from CS }
-    Emit(oSW);        { swap: addr word -> word addr }
-    Emit(bWI);        { write word }
-    Emit(oC4); Emit(oAD); { advance dest by 4 }
-    Emit(oSW);        { swap so src is back on top }
-    Emit(oNX);        { decrement CS counter, loop if >0 }
-    Emit(byte(-14));  { hop back to loop top }
-    Emit(oZP);        { drop src addr }
-    Emit(oZP);        { drop dest addr }
+    WrPushInt((x.typ^.size + 3) div 4);
+    lbl := NewLabel;
+    Wr('dc '); WrLbl(lbl); Wr('sw du ri dc c4 ad sw du cd sw wi c4 ad sw nx ');
+    WrPushInt(-(pc));  { placeholder — assembler handles this with label }
+    WrLn('zp zp');
   end;
 end;
 
 procedure CopyString(var x, y: Item);
-begin
-  { simplified: treat as StoreStruct }
-  StoreStruct(y, x);
-end;
+begin StoreStruct(y, x) end;
 
 procedure StrToChar(var x: Item);
 begin
@@ -203,17 +96,10 @@ end;
 
 procedure Field(var x: Item; y: orb.PObj);
 begin
-  { x := x.y — add field offset }
-  if x.mode = orb.clsVar then
-    x.a := x.a + y^.val
-  else if x.mode = orb.clsPar then
-    x.b := x.b + y^.val
+  if x.mode = orb.clsVar then x.a := x.a + y^.val
+  else if x.mode = orb.clsPar then x.b := x.b + y^.val
   else begin
-    { already have address on stack; add offset }
-    if y^.val <> 0 then begin
-      EmitPushInt(y^.val);
-      Emit(oAD);
-    end;
+    if y^.val <> 0 then begin WrPushInt(y^.val); Wr('ad ') end;
   end;
 end;
 
@@ -222,65 +108,42 @@ var s: longint;
 begin
   s := x.typ^.base^.size;
   if (y.mode = orb.clsConst) and (x.typ^.len >= 0) then begin
-    { constant index }
     if (y.a < 0) or (y.a >= x.typ^.len) then ors.Mark('bad index');
-    if x.mode = orb.clsVar then
-      x.a := x.a + y.a * s
-    else if x.mode = orb.clsPar then
-      x.b := x.b + y.a * s;
+    if x.mode = orb.clsVar then x.a := x.a + y.a * s
+    else if x.mode = orb.clsPar then x.b := x.b + y.a * s;
   end else begin
-    { dynamic index: compute address, save to register H for Store }
-    loadAdr(x);
-    load(y);
-    if s <> 1 then begin
-      EmitPushInt(s);
-      Emit(oML);
-    end;
-    Emit(oAD);
-    { save computed address to register H (temp) }
-    Emit(oDU);         { dup address: keep one on stack for load, save one }
-    EmitRegWr(8);      { !H — save to register H for later Store }
+    loadAdr(x); load(y);
+    if s <> 1 then begin WrPushInt(s); Wr('ml ') end;
+    Wr('ad du !H ');
     x.mode := mRegI;
   end;
 end;
 
 procedure DeRef(var x: Item);
 begin
-  load(x); { load pointer value = address }
-  { now TOS has the address of the pointed-to object }
+  load(x);
   x.mode := mRegI;
-  { the pointer value IS the address; mark for subsequent field/index }
 end;
 
 procedure ValueParam(var x: Item);
-begin
-  load(x); { push value onto data stack }
-end;
+begin load(x) end;
 
 procedure VarParam(var x: Item; ftype: orb.PType);
 begin
-  loadAdr(x); { push address onto data stack }
+  loadAdr(x);
   if (ftype^.form = orb.tArray) and (ftype^.len < 0) then begin
-    { open array: also push length }
-    if x.typ^.len >= 0 then
-      EmitPushInt(x.typ^.len)
-    else
-      EmitPushInt(0); { unknown length }
+    if x.typ^.len >= 0 then WrPushInt(x.typ^.len) else WrPushInt(0);
   end;
 end;
 
 procedure OpenArrayParam(var x: Item);
 begin
   loadAdr(x);
-  if x.typ^.len >= 0 then
-    EmitPushInt(x.typ^.len)
-  else
-    EmitPushInt(0);
+  if x.typ^.len >= 0 then WrPushInt(x.typ^.len) else WrPushInt(0);
 end;
 
 procedure StringParam(var x: Item);
 begin
-  { push address of string constant }
-  EmitPushInt(codebase + pc + varsize + x.a); { strings stored after code }
-  EmitPushInt(x.b); { length }
+  Wr('li >_str' + IntToStr(x.a) + ' ');
+  WrPushInt(x.b);
 end;

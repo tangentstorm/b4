@@ -3,7 +3,7 @@ unit orp;
 { ORP - Oberon Parser, ported from N. Wirth's ORP.Mod (2014)
   Adapted for Free Pascal, calling org.pas for b4vm code generation. }
 interface
-uses ors, orb, org;
+uses ors, orb, org, sysutils;
 
 procedure Module;
 
