@@ -61,25 +61,29 @@ end;
 
 procedure And1(var x: Item);
 begin
-  load(x); { first operand on stack }
+  { short-circuit: if left is false, skip right, result is false }
+  load(x);
+  Wr('.i '); { if left is true (nonzero), evaluate right }
 end;
 
 procedure And2(var x, y: Item);
 begin
   load(y);
-  Wr('an '); { bitwise AND then normalize }
+  Wr('.e c0 .t '); { else: left was false, push 0 (false) }
   x.mode := mReg;
 end;
 
 procedure Or1(var x: Item);
 begin
-  load(x); { first operand on stack }
+  { short-circuit: if left is true, skip right, result is true }
+  load(x);
+  Wr('nt .i '); { if left is false (nt makes 0), evaluate right }
 end;
 
 procedure Or2(var x, y: Item);
 begin
   load(y);
-  Wr('or '); { bitwise OR then normalize }
+  Wr('.e n1 .t '); { else: left was true, push -1 (true) }
   x.mode := mReg;
 end;
 
