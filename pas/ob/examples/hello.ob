@@ -1,16 +1,18 @@
-MODULE Hello;
-  IMPORT Out;
-  VAR i, f: INTEGER;
-  PROCEDURE Fact(n: INTEGER): INTEGER;
-    VAR r: INTEGER;
-  BEGIN r := 1; WHILE n > 1 DO r := r * n; DEC(n) END; RETURN r
-  END Fact;
-BEGIN
+module Hello;
+  import Out;
+  var i, f: INTEGER;
+
+  procedure Fact(n: INTEGER): INTEGER;
+    var r: INTEGER;
+  begin r := 1; while n > 1 do r := r * n; DEC(n) end; return r
+  end Fact;
+
+begin
   i := 1;
-  WHILE i <= 10 DO
+  while i <= 10 do
     f := Fact(i);
     Out.Int(f, 0); Out.Char(32);
     INC(i)
-  END;
+  end;
   Out.Ln
-END Hello.
+end Hello.

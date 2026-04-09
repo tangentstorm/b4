@@ -260,18 +260,15 @@ begin
 end;
 
 procedure comment;
+var depth: integer;
 begin
+  depth := 1;
   ReadCh;
-  repeat
-    while (not eof_reached) and (ch <> '*') do begin
-      if ch = '(' then begin
-        ReadCh;
-        if ch = '*' then comment;
-      end else
-        ReadCh;
-    end;
-    while ch = '*' do ReadCh;
-  until (ch = ')') or eof_reached;
+  while (not eof_reached) and (depth > 0) do begin
+    if ch = '{' then begin inc(depth); ReadCh end
+    else if ch = '}' then begin dec(depth); if depth > 0 then ReadCh end
+    else ReadCh;
+  end;
   if not eof_reached then ReadCh
   else Mark('unterminated comment');
 end;
@@ -288,11 +285,7 @@ begin
         else if ch = '#' then begin ReadCh; sym := sNEQ end
         else if ch = '$' then begin HexString; sym := sSTRING end
         else if ch = '&' then begin ReadCh; sym := sAND end
-        else if ch = '(' then begin
-          ReadCh;
-          if ch = '*' then begin sym := sNULL; comment end
-          else sym := sLPAREN;
-        end
+        else if ch = '(' then begin ReadCh; sym := sLPAREN end
         else if ch = ')' then begin ReadCh; sym := sRPAREN end
         else if ch = '*' then begin ReadCh; sym := sTIMES end
         else if ch = '+' then begin ReadCh; sym := sPLUS end
@@ -336,8 +329,8 @@ begin
     end
     else if ch < '{' then Identifier(sym)
     else begin
-      if ch = '{' then sym := sLBRACE
-      else if ch = '}' then sym := sRBRACE
+      if ch = '{' then begin sym := sNULL; comment end
+      else if ch = '}' then begin ReadCh; sym := sNULL end { stray close-brace }
       else if ch = '|' then sym := sBAR
       else if ch = '~' then sym := sNOT
       else if ch = #127 then sym := sUPTO
@@ -380,44 +373,44 @@ end;
 initialization
   k := 0;
   KWX[0] := 0; KWX[1] := 0;
-  EnterKW(sIF, 'IF');
-  EnterKW(sDO, 'DO');
-  EnterKW(sOF, 'OF');
-  EnterKW(sOR, 'OR');
-  EnterKW(sTO, 'TO');
-  EnterKW(sIN, 'IN');
-  EnterKW(sIS, 'IS');
-  EnterKW(sBY, 'BY');
+  EnterKW(sIF, 'if');
+  EnterKW(sDO, 'do');
+  EnterKW(sOF, 'of');
+  EnterKW(sOR, 'or');
+  EnterKW(sTO, 'to');
+  EnterKW(sIN, 'in');
+  EnterKW(sIS, 'is');
+  EnterKW(sBY, 'by');
   KWX[2] := k;
-  EnterKW(sEND, 'END');
-  EnterKW(sNIL, 'NIL');
-  EnterKW(sVAR, 'VAR');
-  EnterKW(sDIV, 'DIV');
-  EnterKW(sMOD, 'MOD');
-  EnterKW(sFOR, 'FOR');
+  EnterKW(sEND, 'end');
+  EnterKW(sNIL, 'nil');
+  EnterKW(sVAR, 'var');
+  EnterKW(sDIV, 'div');
+  EnterKW(sMOD, 'mod');
+  EnterKW(sFOR, 'for');
   KWX[3] := k;
-  EnterKW(sELSE, 'ELSE');
-  EnterKW(sTHEN, 'THEN');
-  EnterKW(sTRUE, 'TRUE');
-  EnterKW(sTYPE, 'TYPE');
-  EnterKW(sCASE, 'CASE');
+  EnterKW(sELSE, 'else');
+  EnterKW(sTHEN, 'then');
+  EnterKW(sTRUE, 'true');
+  EnterKW(sTYPE, 'type');
+  EnterKW(sCASE, 'case');
   KWX[4] := k;
-  EnterKW(sELSIF, 'ELSIF');
-  EnterKW(sFALSE, 'FALSE');
-  EnterKW(sARRAY, 'ARRAY');
-  EnterKW(sBEGIN, 'BEGIN');
-  EnterKW(sCONST, 'CONST');
-  EnterKW(sUNTIL, 'UNTIL');
-  EnterKW(sWHILE, 'WHILE');
+  EnterKW(sELSIF, 'elsif');
+  EnterKW(sFALSE, 'false');
+  EnterKW(sARRAY, 'array');
+  EnterKW(sBEGIN, 'begin');
+  EnterKW(sCONST, 'const');
+  EnterKW(sUNTIL, 'until');
+  EnterKW(sWHILE, 'while');
   KWX[5] := k;
-  EnterKW(sRECORD, 'RECORD');
-  EnterKW(sREPEAT, 'REPEAT');
-  EnterKW(sRETURN, 'RETURN');
-  EnterKW(sIMPORT, 'IMPORT');
-  EnterKW(sMODULE, 'MODULE');
+  EnterKW(sRECORD, 'record');
+  EnterKW(sREPEAT, 'repeat');
+  EnterKW(sRETURN, 'return');
+  EnterKW(sIMPORT, 'import');
+  EnterKW(sMODULE, 'module');
   KWX[6] := k;
-  EnterKW(sPOINTER, 'POINTER');
+  EnterKW(sPOINTER, 'pointer');
   KWX[7] := k; KWX[8] := k;
-  EnterKW(sPROCEDURE, 'PROCEDURE');
+  EnterKW(sPROCEDURE, 'procedure');
   KWX[9] := k;
 end.
