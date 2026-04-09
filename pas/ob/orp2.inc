@@ -439,6 +439,21 @@ begin
   tp^.form := orb.tNoTyp; tp^.base := nil;
   tp^.mno := -level; tp^.nofpar := 0;
   offset := 0; bot := nil;
+  if sym = ors.sLPAREN then begin
+    ors.Get(sym); { record extension }
+    if sym = ors.sIDENT then begin
+      qualident(obj0);
+      if obj0^.cls = orb.clsTyp then begin
+        if obj0^.typ^.form = orb.tRecord then begin
+          tp^.base := obj0^.typ;
+          tp^.nofpar := tp^.base^.nofpar + 1;
+          bot := tp^.base^.dsc; { inherit base fields }
+          offset := tp^.base^.size;
+        end else ors.Mark('invalid extension');
+      end else ors.Mark('type expected');
+    end else ors.Mark('ident expected');
+    Check(ors.sRPAREN, 'no )');
+  end;
   while sym = ors.sIDENT do begin
     n := 0; obj := bot;
     while sym = ors.sIDENT do begin
