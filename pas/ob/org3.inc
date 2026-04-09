@@ -60,19 +60,8 @@ begin
 end;
 
 procedure And1(var x: Item);
-var lbl: string;
 begin
-  { short-circuit AND: if false, skip second operand }
-  load(x);
-  lbl := NewLabel;
-  Wr('du h0 '); Wr('>'+lbl+' '); { if false, hop to label (assembler resolves) }
-  { Actually b4a h0 only takes a byte offset, not a label. }
-  { We need a different approach for short-circuit in b4a. }
-  { Use: dup, if zero jump over, drop dup and evaluate second operand. }
-  { Simpler: just evaluate both and AND them. No short-circuit for now. }
-  { TODO: implement proper short-circuit with jm labels }
-  Wr('zp ');  { drop the dup, just compute both sides }
-  x.a := 0; x.b := 0;
+  load(x); { first operand on stack }
 end;
 
 procedure And2(var x, y: Item);
@@ -84,9 +73,7 @@ end;
 
 procedure Or1(var x: Item);
 begin
-  load(x);
-  { no short-circuit for now — evaluate both sides }
-  x.a := 0; x.b := 0;
+  load(x); { first operand on stack }
 end;
 
 procedure Or2(var x, y: Item);
