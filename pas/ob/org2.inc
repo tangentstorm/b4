@@ -5,7 +5,7 @@ begin
   case x.mode of
     orb.clsConst: begin
       if x.typ^.form = orb.tProc then
-        Wr('li >' + modname + '_' + 'P' + IntToStr(x.a) + ' ')
+        Wr('li >' + x.lbl + ' ')
       else
         WrPushInt(x.a);
       x.mode := mReg;

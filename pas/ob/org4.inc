@@ -102,8 +102,7 @@ end;
 procedure Call(var x: Item; r: longint);
 begin
   if x.mode = orb.clsConst then begin
-    { direct call: x.a is the procedure's label index or name }
-    Wr(modname + '_P' + IntToStr(x.a) + ' ');
+    Wr(x.lbl + ' ');
   end else begin
     Wr('!H ^H '); { indirect: save to H, invoke }
   end;
@@ -361,6 +360,9 @@ end;
 
 procedure Close(var modid: ors.Ident; key, nofent: longint);
 var i: longint;
+    par: orb.PObj;
+    obj: orb.PObj;
+    smb: text;
 begin
   WrLn('hl');
   WrLbl(modid + '_heap');
@@ -380,6 +382,63 @@ begin
   end;
   writeln('  code output: ', modid, '.b4a');
   system.close(out_);
+
+  { write symbol file for module exports }
+  assign(smb, modid + '.smb');
+  rewrite(smb);
+  writeln(smb, 'MODULE ', modid);
+  obj := orb.topScope^.next;
+  while obj <> nil do begin
+    if obj^.expo then begin
+      case obj^.cls of
+        orb.clsConst: begin
+          if obj^.typ^.form = orb.tProc then begin
+            { procedure export }
+            write(smb, 'PROC ', obj^.name);
+            par := obj^.typ^.dsc;
+            while par <> nil do begin
+              if par^.cls = orb.clsPar then write(smb, ' VAR');
+              if par^.typ^.form = orb.tInt then write(smb, ' INTEGER')
+              else if par^.typ^.form = orb.tBool then write(smb, ' BOOLEAN')
+              else if par^.typ^.form = orb.tChar then write(smb, ' CHAR')
+              else write(smb, ' INTEGER');
+              par := par^.next;
+            end;
+            if obj^.typ^.base^.form <> orb.tNoTyp then begin
+              write(smb, ' :');
+              if obj^.typ^.base^.form = orb.tInt then write(smb, ' INTEGER')
+              else if obj^.typ^.base^.form = orb.tBool then write(smb, ' BOOLEAN')
+              else if obj^.typ^.base^.form = orb.tChar then write(smb, ' CHAR')
+              else write(smb, ' INTEGER');
+            end;
+            writeln(smb);
+          end else begin
+            { constant export }
+            write(smb, 'CONST ', obj^.name, ' ');
+            if obj^.typ = orb.intType then writeln(smb, 'INTEGER ', obj^.val)
+            else if obj^.typ = orb.boolType then writeln(smb, 'BOOLEAN ', obj^.val)
+            else if obj^.typ = orb.charType then writeln(smb, 'CHAR ', obj^.val)
+            else writeln(smb, 'INTEGER ', obj^.val);
+          end;
+        end;
+        orb.clsVar: begin
+          write(smb, 'VAR ', obj^.name, ' ');
+          if obj^.typ^.form = orb.tInt then writeln(smb, 'INTEGER')
+          else if obj^.typ^.form = orb.tBool then writeln(smb, 'BOOLEAN')
+          else if obj^.typ^.form = orb.tChar then writeln(smb, 'CHAR')
+          else if obj^.typ^.form = orb.tSet then writeln(smb, 'SET')
+          else writeln(smb, 'INTEGER');
+        end;
+        orb.clsTyp: begin
+          writeln(smb, 'TYPE ', obj^.name);
+        end;
+      end;
+    end;
+    obj := obj^.next;
+  end;
+  writeln(smb, 'END');
+  system.close(smb);
+  writeln('  symbol file: ', modid, '.smb');
 end;
 
 initialization

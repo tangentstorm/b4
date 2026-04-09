@@ -20,6 +20,7 @@ type
     a, b: longint;
     r: longint;
     rdo: boolean;
+    lbl: string[63]; { label for imported procedures }
   end;
 
 var
@@ -225,8 +226,12 @@ end;
 
 procedure MakeItem(var x: Item; y: orb.PObj; curlev: longint);
 begin
-  if y = nil then begin x.mode := orb.clsConst; x.typ := orb.intType; x.a := 0; exit end;
+  if y = nil then begin x.mode := orb.clsConst; x.typ := orb.intType; x.a := 0; x.lbl := ''; exit end;
   x.mode := y^.cls; x.typ := y^.typ; x.a := y^.val; x.rdo := y^.rdo; x.r := 0; x.b := 0;
+  x.lbl := '';
+  { for local procedures, set label to ModName_ProcName }
+  if (y^.cls = orb.clsConst) and (y^.typ <> nil) and (y^.typ^.form = orb.tProc) then
+    x.lbl := modname + '_' + y^.name;
   if y^.cls = orb.clsPar then x.b := 0
   else if y^.cls = orb.clsTyp then begin x.a := y^.typ^.len; x.r := -y^.lev end
   else if (y^.cls = orb.clsConst) and (y^.typ^.form = orb.tString) then x.b := y^.lev

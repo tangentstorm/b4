@@ -42,15 +42,22 @@ begin
   if sym = s then ors.Get(sym) else ors.Mark(msg);
 end;
 
+var lastImportLabel: string = '';
+
 procedure qualident(var obj: orb.PObj);
+var modobj: orb.PObj;
 begin
   obj := orb.thisObj;
   ors.Get(sym);
+  lastImportLabel := '';
   if obj = nil then begin ors.Mark('undef'); obj := dummy end;
   if (sym = ors.sPERIOD) and (obj^.cls = orb.clsMod) then begin
+    modobj := obj;
     ors.Get(sym);
     if sym = ors.sIDENT then begin
-      obj := orb.thisimport(obj);
+      obj := orb.thisimport(modobj);
+      if (obj <> nil) and (obj^.cls = orb.clsConst) and (obj^.typ^.form = orb.tProc) then
+        lastImportLabel := modobj^.name + '_' + obj^.name;
       ors.Get(sym);
       if obj = nil then begin ors.Mark('undef'); obj := dummy end;
     end else begin ors.Mark('identifier expected'); obj := dummy end;

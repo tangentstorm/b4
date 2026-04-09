@@ -39,7 +39,7 @@ begin
     if obj^.cls = orb.clsSFunc then
       StandFunc(x, obj^.val, obj^.typ)
     else begin
-      org.MakeItem(x, obj, level); selector(x);
+      org.MakeItem(x, obj, level); x.lbl := lastImportLabel; selector(x);
       if sym = ors.sLPAREN then begin
         ors.Get(sym);
         if (x.typ^.form = orb.tProc) and (x.typ^.base^.form <> orb.tNoTyp) then begin
@@ -293,7 +293,6 @@ begin
       repeat ors.Get(sym) until (sym = ors.sIDENT) or (sym >= ors.sIF);
     end;
     if sym = ors.sIDENT then begin
-      qualident(obj); org.MakeItem(x, obj, level);
       if x.mode = orb.clsSProc then StandProc(obj^.val)
       else begin
         selector(x);
@@ -320,7 +319,7 @@ begin
           if (x.typ^.form = orb.tProc) and (x.typ^.base^.form = orb.tNoTyp) then begin
             org.PrepCall(x, rx); ParamList(x); org.Call(x, rx);
           end else begin ors.Mark('not a procedure'); ParamList(x) end;
-        end else if x.typ^.form = orb.tProc then begin
+        end else if (x.typ <> nil) and (x.typ^.form = orb.tProc) then begin
           if x.typ^.nofpar > 0 then ors.Mark('missing parameters');
           if x.typ^.base^.form = orb.tNoTyp then begin
             org.PrepCall(x, rx); org.Call(x, rx)
@@ -356,7 +355,6 @@ begin
     end else if sym = ors.sFOR then begin
       ors.Get(sym);
       if sym = ors.sIDENT then begin
-        qualident(obj); org.MakeItem(x, obj, level); CheckInt(x); CheckReadOnly(x);
         if sym = ors.sBECOMES then begin
           ors.Get(sym); expression(y); CheckInt(y); org.For0(x, y);
           L0 := org.Here;
@@ -722,8 +720,8 @@ begin
       proc^.typ^.dsc := orb.topScope^.next;
     end;
     org.WrLn('');
-    org.WrLbl(org.modname + '_P' + IntToStr(proc^.val));
-    org.WrComment('PROCEDURE ' + procid);
+    org.WrLbl(org.modname + '_' + procid);
+    org.WrComment('procedure ' + procid);
     org.Enter(parblksize, locblksize, false);
     if sym = ors.sBEGIN then begin ors.Get(sym); StatSequence end;
     if sym = ors.sRETURN then begin
@@ -824,6 +822,135 @@ begin
   orb.topScope^.next := mod_;
 end;
 
+procedure ImportModule(const alias, modname_: ors.Ident);
+{ Read modname_.smb and create module object with exports }
+var mod_: orb.PObj;
+    proc, last: orb.PObj;
+    tp: orb.PType;
+    f: text;
+    line, tok, name: string;
+    p, val, npar: integer;
+
+  function NextWord(const s: string; var pos: integer): string;
+  var start: integer;
+  begin
+    while (pos <= length(s)) and (s[pos] = ' ') do inc(pos);
+    start := pos;
+    while (pos <= length(s)) and (s[pos] <> ' ') do inc(pos);
+    result := copy(s, start, pos - start);
+  end;
+
+  function TypeFromName(const s: string): orb.PType;
+  begin
+    if s = 'INTEGER' then result := orb.intType
+    else if s = 'BOOLEAN' then result := orb.boolType
+    else if s = 'CHAR' then result := orb.charType
+    else if s = 'SET' then result := orb.setType
+    else result := orb.intType;
+  end;
+
+begin
+  assignfile(f, modname_ + '.smb');
+  {$I-} reset(f); {$I+}
+  if ioresult <> 0 then begin
+    ors.Mark('symbol file not found: ' + modname_);
+    exit;
+  end;
+
+  { create module object }
+  new(mod_); fillchar(mod_^, sizeof(orb.TObj), 0);
+  mod_^.name := alias;
+  mod_^.cls := orb.clsMod;
+  mod_^.rdo := true;
+  mod_^.typ := orb.noType;
+  mod_^.dsc := nil;
+  last := nil;
+
+  { skip MODULE line }
+  readln(f, line);
+
+  while not eof(f) do begin
+    readln(f, line);
+    p := 1;
+    tok := NextWord(line, p);
+
+    if tok = 'CONST' then begin
+      name := NextWord(line, p);
+      tok := NextWord(line, p); { type name }
+      val := StrToInt(NextWord(line, p));
+      new(proc); fillchar(proc^, sizeof(orb.TObj), 0);
+      proc^.name := name;
+      proc^.cls := orb.clsConst;
+      proc^.typ := TypeFromName(tok);
+      proc^.val := val;
+      proc^.expo := true;
+      proc^.next := mod_^.dsc; mod_^.dsc := proc;
+    end
+
+    else if tok = 'VAR' then begin
+      name := NextWord(line, p);
+      tok := NextWord(line, p); { type name }
+      new(proc); fillchar(proc^, sizeof(orb.TObj), 0);
+      proc^.name := name;
+      proc^.cls := orb.clsVar;
+      proc^.typ := TypeFromName(tok);
+      proc^.val := 0; { offset resolved at link time via label }
+      proc^.lev := 0; { global }
+      proc^.expo := true;
+      proc^.next := mod_^.dsc; mod_^.dsc := proc;
+    end
+
+    else if tok = 'PROC' then begin
+      name := NextWord(line, p);
+      { create procedure type }
+      new(tp); fillchar(tp^, sizeof(orb.TType), 0);
+      tp^.form := orb.tProc;
+      tp^.size := org.WordSize;
+      tp^.base := orb.noType;
+      tp^.dsc := nil;
+      npar := 0;
+      { parse parameter types }
+      tok := NextWord(line, p);
+      while (tok <> '') and (tok <> ':') and (tok <> 'END') do begin
+        if tok = 'VAR' then begin
+          tok := NextWord(line, p); { get the actual type after VAR }
+          { TODO: mark as VAR param }
+        end;
+        if (tok <> '') and (tok <> ':') then begin
+          inc(npar);
+          { create param object }
+          new(last); fillchar(last^, sizeof(orb.TObj), 0);
+          last^.cls := orb.clsVar;
+          last^.typ := TypeFromName(tok);
+          last^.next := tp^.dsc; tp^.dsc := last;
+        end;
+        tok := NextWord(line, p);
+      end;
+      tp^.nofpar := npar;
+      { parse return type after : }
+      if tok = ':' then begin
+        tok := NextWord(line, p);
+        tp^.base := TypeFromName(tok);
+      end;
+      { create procedure constant }
+      new(proc); fillchar(proc^, sizeof(orb.TObj), 0);
+      proc^.name := name;
+      proc^.cls := orb.clsConst;
+      proc^.typ := tp;
+      proc^.val := 0; { address resolved via label }
+      proc^.expo := true;
+      proc^.next := mod_^.dsc; mod_^.dsc := proc;
+    end;
+  end;
+
+  closefile(f);
+
+  { link into top scope }
+  mod_^.next := orb.topScope^.next;
+  orb.topScope^.next := mod_;
+  writeln('  imported ', modname_);
+end;
+
 { ---- Module ---- }
 
 procedure Module;
@@ -854,9 +981,9 @@ begin
           else ors.Mark('id expected');
         end else impid1 := impid;
         { register built-in Out module }
-        if impid1 = 'Out' then RegisterOutModule(impid);
-        if impid1 = 'In' then RegisterInModule(impid);
-        if impid1 = 'SYSTEM' then begin
+        if impid1 = 'Out' then RegisterOutModule(impid)
+        else if impid1 = 'In' then RegisterInModule(impid)
+        else if impid1 = 'SYSTEM' then begin
           { link SYSTEM pseudo-module from orb.pas }
           new(smod); fillchar(smod^, sizeof(orb.TObj), 0);
           smod^.name := impid;
@@ -866,7 +993,8 @@ begin
           smod^.dsc := orb.system_;
           smod^.next := orb.topScope^.next;
           orb.topScope^.next := smod;
-        end;
+        end
+        else ImportModule(impid, impid1);
         if sym = ors.sCOMMA then ors.Get(sym)
         else if sym = ors.sIDENT then ors.Mark('comma missing');
       end;
