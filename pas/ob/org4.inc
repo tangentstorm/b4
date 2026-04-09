@@ -158,12 +158,12 @@ begin
   { h0 pops TOS and hops if zero. }
   { false(0): h0 hops past the hp to the jm. true(nonzero): h0 falls through. }
   Emit(oH0);      { if false (0), hop past hp to jm }
-  Emit(byte(4));   { hop to h0_addr+4 = past h0(1)+offset(1)+hp(1)+offset(1) = jm }
+  Emit(byte(4));   { hop to h0_addr+4 = jm opcode }
   Emit(oHP);       { true: unconditional hop past jm }
-  Emit(byte(5));   { skip 5 bytes (jm instruction) }
+  Emit(byte(7));   { hop to hp_addr+7 = past jm(1)+addr(4) = first instr after jm }
   Emit(oJM);
-  Emit4(x.a);     { chain to previous false-jump, 0 = end of chain }
-  x.a := pc - 4;  { update chain head }
+  Emit4(0);        { end of fixup chain (0 = no previous jump) }
+  x.a := pc - 4;  { chain head = address of this jm's target field }
 end;
 
 procedure BJump(L: longint);
@@ -180,9 +180,9 @@ begin
   { false(0) → h0 hops past hp to jm (loops back). true(nonzero) → falls to hp (exits). }
   if x.mode <> mReg then load(x);
   Emit(oH0);      { if false (0), hop to jm }
-  Emit(byte(4));   { hop past h0+offset+hp+offset to jm }
+  Emit(byte(4));   { hop to h0_addr+4 = jm opcode }
   Emit(oHP);       { true: skip jm, exit loop }
-  Emit(byte(5));
+  Emit(byte(7));   { hop to hp_addr+7 = past jm }
   Emit(oJM);      { jump back to loop start }
   Emit4(codebase + L);
 end;
@@ -320,7 +320,8 @@ begin
     Emit(oC1)
   else
     load(y);
-  if upordown = 0 then Emit(oAD) else begin Emit(oSW); Emit(oSB) end;
+  { sb does: -TOS + NOS. Stack is [n, 1]. sb gives -1 + n = n-1. Correct for DEC. }
+  if upordown = 0 then Emit(oAD) else Emit(oSB);
   { now new value is on stack; store back to original location }
   { emit store address }
   if z.mode = orb.clsVar then begin
