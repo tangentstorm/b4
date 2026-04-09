@@ -164,7 +164,8 @@ begin
   else if v = 4 then Wr('c4 ')
   else if v = -1 then Wr('n1 ')
   else if (v >= 0) and (v <= 255) then Wr('lb ' + IntToHex(v, 2) + ' ')
-  else Wr('li ' + IntToHex(v, 8) + ' ');
+  else Wr('li ' + IntToHex(byte(v), 2) + ' ' + IntToHex(byte(v shr 8), 2) + ' '
+           + IntToHex(byte(v shr 16), 2) + ' ' + IntToHex(byte(v shr 24), 2) + ' ');
 end;
 
 procedure WrRegRd(r: byte);

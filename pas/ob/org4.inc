@@ -11,12 +11,14 @@ var
 function AllocLabel: longint;
 begin result := nlabels; labels[nlabels] := NewLabel; inc(nlabels) end;
 
+var inWhile: boolean = false;
+
 function Here: longint;
-var idx: longint;
 begin
-  idx := AllocLabel;
-  WrLbl(labels[idx]);
-  result := idx;
+  { For WHILE loops, emit .w to save loop address }
+  Wr('.w ');
+  inWhile := true;
+  result := 0;
 end;
 
 procedure FJump(var L: longint);
@@ -34,19 +36,22 @@ procedure CFJump(var x: Item);
 var lbl: string;
 begin
   if x.mode <> mReg then load(x);
-  { TOS is boolean. Jump to label if false (0). }
-  { b4a: use h0 for short hops or jm for general jumps. }
-  { Since h0 only takes a byte offset, use the pattern: }
-  { test value, if nonzero skip the jm, else take the jm }
-  x.a := AllocLabel;
-  lbl := labels[x.a];
-  { h0 04 = if zero, hop +4 (to jm). hp 07 = if nonzero, hop +7 (past jm). }
-  WrLn('nt .i jm >' + lbl + ' .t');
+  if inWhile then begin
+    { WHILE context: use .d (h0 forward slot, paired with .o) }
+    Wr('.d ');
+    inWhile := false;
+  end else begin
+    { IF context: use nt .i jm >label .t }
+    x.a := AllocLabel;
+    lbl := labels[x.a];
+    WrLn('nt .i jm >' + lbl + ' .t');
+  end;
 end;
 
 procedure BJump(L: longint);
 begin
-  WrLn('jm ' + labels[L]);
+  { Use .o from the assembler: hops back to .w and patches .d }
+  WrLn('.o');
 end;
 
 procedure CBJump(var x: Item; L: longint);
@@ -58,8 +63,7 @@ end;
 
 procedure Fixup(var x: Item);
 begin
-  { emit the label that the forward jump targets }
-  WrLbl(labels[x.a]);
+  if x.a <> 0 then WrLbl(labels[x.a]);
 end;
 
 procedure FixLink(L: longint);
@@ -79,7 +83,7 @@ procedure Call(var x: Item; r: longint);
 begin
   if x.mode = orb.clsConst then begin
     { direct call: x.a is the procedure's label index or name }
-    Wr('>' + modname + '.P' + IntToStr(x.a) + ' ');
+    Wr(modname + '.P' + IntToStr(x.a) + ' ');
   end else begin
     Wr('!H ^H '); { indirect: save to H, invoke }
   end;
@@ -317,12 +321,16 @@ procedure Header;
 begin
   WrComment('--- module body ---');
   WrLbl(modname + '.init');
+  { initialize heap pointer to end of all code }
+  WrLn('li >' + modname + '.heap !_');
 end;
 
 procedure Close(var modid: ors.Ident; key, nofent: longint);
 var i: longint;
 begin
   WrLn('hl');
+  WrLbl(modid + '.heap');
+  WrLn('');
   WrLn('');
   { emit string data }
   if strx > 0 then begin
