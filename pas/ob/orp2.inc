@@ -140,6 +140,13 @@ begin
         if rel <= ors.sNEQ then org.IntRelation(rel, x, y)
         else ors.Mark('only = or #');
       end else ors.Mark('illegal comparison');
+    end else if ((x.typ^.form = orb.tArray) and (x.typ^.base^.form = orb.tChar)) or
+               (x.typ^.form = orb.tString) then begin
+      { string or char array comparison }
+      if ((y.typ^.form = orb.tArray) and (y.typ^.base^.form = orb.tChar)) or
+         (y.typ^.form = orb.tString) then
+        org.StringRelation(rel, x, y)
+      else ors.Mark('incompatible types');
     end else ors.Mark('incompatible types');
     x.typ := orb.boolType;
   end else if sym = ors.sIN then begin

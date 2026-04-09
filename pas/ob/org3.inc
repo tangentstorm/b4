@@ -127,7 +127,25 @@ procedure RealRelation(op: integer; var x, y: Item);
 begin ors.Mark('REAL not supported on b4vm') end;
 
 procedure StringRelation(op: integer; var x, y: Item);
-begin ors.Mark('string comparison not yet implemented') end;
+begin
+  { load addresses into registers K, L. Result bytes in M, N. }
+  if x.typ^.form = orb.tString then
+    Wr('li >_str' + IntToStr(x.a) + ' ')
+  else loadAdr(x);
+  Wr('!K ');
+  if y.typ^.form = orb.tString then
+    Wr('li >_str' + IntToStr(y.a) + ' ')
+  else loadAdr(y);
+  WrLn('!L');
+  { loop: read bytes into M and N, compare }
+  WrLn('.w @K rb !M @L rb !N @M @N eq @M an');
+  WrLn('.d @K c1 ad !K @L c1 ad !L .o');
+  { exit: compare final M and N }
+  WrLn('@M @N');
+  EmitCompare(op);
+  x.mode := mReg;
+  x.typ := orb.boolType;
+end;
 
 { ---- Set operators ---- }
 
