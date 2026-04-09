@@ -160,21 +160,12 @@ begin
   Emit(oH0); Emit(byte(5)); { hop past zp+hp(2) if digit >= 0 }
   Emit(oZP);
   Emit(oHP); Emit(byte(0)); done_hp := pc - 1; { to done }
-  { check digit <= 9 }
-  Emit(oDU); EmitLB(10); Emit(oLT); Emit(oC1); Emit(oAN);
-  { LT: digit < 10? result=1 if yes (valid digit). h0 hops on 0 (digit >= 10, invalid). }
-  { Non-zero (valid) falls through to accumulate. Zero (invalid) hops to done. }
-  { Wait: we want invalid to go to done. h0 hops on 0. 0 = digit >= 10 = invalid. }
-  { So h0 hopping on 0 goes to... we need it to go to done. }
-  { But h0's hop offset is limited. Let me use: if valid (1), hop past done-jump. }
-  Emit(oH0); Emit(byte(5)); { if invalid (0), fall to zp+hp. if valid (1)... wait }
-  { Flip: 1 = valid. h0 hops on 0 (invalid). Falls through on 1 (valid). }
-  { We want: invalid → done, valid → accumulate. }
-  { So: h0 on 0 (invalid) should hop TO done. But h0 hops forward by offset. }
-  { We can't hop to done directly (it's forward, unknown distance). }
-  { Instead: if valid (1, nonzero), h0 does NOT hop, falls to accumulate. }
-  { If invalid (0), h0 DOES hop. Hop past the accumulate code to done? No, we }
-  { don't know the distance. Use same zp+hp pattern: }
+  { check digit <= 9: swap to test 9 < digit (invalid if true) }
+  Emit(oDU); EmitLB(9); Emit(oSW); Emit(oLT); Emit(oC1); Emit(oAN);
+  { result: 1 if 9 < digit (invalid). 0 if digit <= 9 (valid). }
+  { h0 hops on 0 (valid digit) → skip done-jump, go to accumulate. }
+  { Falls through on 1 (invalid) → zp + hp to done. }
+  Emit(oH0); Emit(byte(5)); { valid: skip zp+hp(3 bytes) → +5 from h0 }
   Emit(oZP);
   Emit(oHP); Emit(byte(0)); done_hp2 := pc - 1; { to done }
   { accumulate: L = L * 10 + digit. DS has [digit]. }
