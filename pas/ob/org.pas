@@ -293,6 +293,7 @@ end;
 procedure SetDataSize(dc: longint);
 begin
   varsize := dc;
+  codebase := GlobalBase + varsize;
 end;
 
 procedure CheckRegs;

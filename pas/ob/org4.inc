@@ -101,6 +101,7 @@ begin
 end;
 
 procedure Enter(parblksize, locblksize: longint; int_: boolean);
+var npar, off: longint;
 begin
   { procedure prologue }
   { save old frame pointer }
@@ -117,9 +118,17 @@ begin
     EmitRegWr(rF + (ord('_') - ord('F'))); { !_ }
   end;
   { store parameters from data stack into frame }
-  { parameters were pushed by caller; we pop them into frame slots }
-  { parblksize is total param size in bytes, starting at offset WordSize }
-  { We store them in reverse order (last param first on stack) }
+  { params are on DS, last param on top. Store from highest offset down. }
+  npar := (parblksize - WordSize) div WordSize; { number of 4-byte params }
+  off := parblksize - WordSize; { highest param offset }
+  while off >= WordSize do begin
+    { TOS is the param for this offset; store it }
+    EmitRegRd(rF);
+    EmitPushInt(off);
+    Emit(oAD);
+    Emit(bWI);
+    off := off - WordSize;
+  end;
 end;
 
 procedure Return(form: integer; var x: Item; size: longint; int_: boolean);
@@ -429,7 +438,7 @@ end;
 procedure Header;
 begin
   { module body entry point: procedures are already emitted, so pc is past them }
-  codebase := GlobalBase + varsize;
+  { codebase was already set in SetDataSize }
   entry := codebase + pc;
   { emit: set up global base register G }
   EmitPushInt(GlobalBase);

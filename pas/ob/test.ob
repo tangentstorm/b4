@@ -1,9 +1,20 @@
 MODULE Test;
-  VAR i, sum: INTEGER;
+  VAR i, sum, r: INTEGER;
 
-  PROCEDURE Double(a: INTEGER): INTEGER;
-  BEGIN RETURN a + a
-  END Double;
+  PROCEDURE Add(a, b: INTEGER): INTEGER;
+  BEGIN RETURN a + b
+  END Add;
+
+  PROCEDURE Fact(n: INTEGER): INTEGER;
+    VAR result: INTEGER;
+  BEGIN
+    result := 1;
+    WHILE n > 1 DO
+      result := result * n;
+      DEC(n)
+    END;
+    RETURN result
+  END Fact;
 
 BEGIN
   i := 1;
@@ -12,5 +23,12 @@ BEGIN
     sum := sum + i;
     INC(i)
   END;
-  sum := Double(sum)
+  r := Add(sum, Fact(5));
+  (* r should be 55 + 120 = 175 *)
+
+  (* Write 'OK' to stdout using b4 io *)
+  (* This needs SYSTEM-level access which we don't have yet *)
+  (* For now, result is just in memory at global var r *)
+  r := Fact(6)
+  (* r should be 720 *)
 END Test.
