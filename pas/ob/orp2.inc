@@ -810,9 +810,11 @@ begin
     org.WrLn('');
     org.WrComment('jump to module body (entry point)');
     org.WrLn('jm >' + modid + '_init');
+    Declarations(dc); org.SetDataSize((dc + 3) div 4 * 4);
+    org.WrComment('reserve ' + IntToStr(org.varsize) + ' bytes for global variables at $0100');
+    org.WrLn(':0100 :+' + IntToHex(org.varsize, 2));
     org.WrLn('');
     org.EmitRuntime;
-    Declarations(dc); org.SetDataSize((dc + 3) div 4 * 4);
     while sym = ors.sPROCEDURE do begin ProcedureDecl; Check(ors.sSEMICOLON, 'no ;') end;
     org.Header;
     if sym = ors.sBEGIN then begin ors.Get(sym); StatSequence end;
