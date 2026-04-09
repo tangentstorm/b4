@@ -55,7 +55,7 @@ begin
     load(x);
     { boolean NOT: if 0 push 1, else push 0 }
     { use: eq with 0 — (x 0 eq) gives -1 when x=0, 0 when x<>0, then c1 an }
-    Wr('c0 eq c1 an ');
+    Wr('nt ');
   end;
 end;
 
@@ -78,7 +78,7 @@ end;
 procedure And2(var x, y: Item);
 begin
   load(y);
-  Wr('an c1 an '); { bitwise AND then normalize }
+  Wr('an '); { bitwise AND then normalize }
   x.mode := mReg;
 end;
 
@@ -92,7 +92,7 @@ end;
 procedure Or2(var x, y: Item);
 begin
   load(y);
-  Wr('or c1 an '); { bitwise OR then normalize }
+  Wr('or '); { bitwise OR then normalize }
   x.mode := mReg;
 end;
 
@@ -101,12 +101,12 @@ end;
 procedure EmitCompare(op: integer);
 begin
   case op of
-    ors.sEQL: Wr('eq c1 an ');
-    ors.sNEQ: Wr('eq nt c1 an ');
-    ors.sLSS: Wr('lt c1 an ');
-    ors.sGEQ: Wr('lt nt c1 an ');
-    ors.sGTR: Wr('sw lt c1 an ');
-    ors.sLEQ: Wr('sw lt nt c1 an ');
+    ors.sEQL: Wr('eq ');
+    ors.sNEQ: Wr('eq nt ');
+    ors.sLSS: Wr('lt ');
+    ors.sGEQ: Wr('lt nt ');
+    ors.sGTR: Wr('sw lt ');
+    ors.sLEQ: Wr('sw lt nt ');
   end;
 end;
 

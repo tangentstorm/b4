@@ -41,19 +41,19 @@ begin
   x.a := AllocLabel;
   lbl := labels[x.a];
   { h0 04 = if zero, hop +4 (to jm). hp 07 = if nonzero, hop +7 (past jm). }
-  WrLn('9C 04 9B 07 jm >' + lbl);
+  WrLn('nt .i jm >' + lbl + ' .t');
 end;
 
 procedure BJump(L: longint);
 begin
-  WrLn('jm >' + labels[L]);
+  WrLn('jm ' + labels[L]);
 end;
 
 procedure CBJump(var x: Item; L: longint);
 begin
   if x.mode <> mReg then load(x);
   { REPEAT..UNTIL: loop back when false (0). }
-  WrLn('9C 04 9B 07 jm >' + labels[L]);
+  WrLn('nt .i jm >' + labels[L] + ' .t');
 end;
 
 procedure Fixup(var x: Item);
@@ -123,9 +123,9 @@ begin
   { store initial value, check bounds }
   Wr('du '); load(z);
   L := AllocLabel; lbl := labels[L];
-  if w.a > 0 then Wr('sw lt c1 an ')
-  else Wr('lt c1 an ');
-  WrLn('9C 04 9B 07 jm >' + lbl);
+  if w.a > 0 then Wr('sw lt ')
+  else Wr('lt ');
+  WrLn('nt .i jm >' + lbl + ' .t');
   Store(x, y);
 end;
 
@@ -164,7 +164,7 @@ begin
 end;
 
 procedure Assert_(var x: Item);
-begin load(x); WrLn('9C 02 9B 01 hl') end;
+begin load(x); WrLn('nt .i hl .t') end;
 
 procedure New_(var x: Item);
 begin
@@ -202,7 +202,7 @@ begin ors.Mark('LDREG not supported') end;
 procedure Abs_(var x: Item);
 begin
   if x.mode = orb.clsConst then x.a := abs(x.a)
-  else begin load(x); WrLn('du c0 lt c1 an 9C 05 c0 sw sb') end;
+  else begin load(x); WrLn('du c0 lt .i c0 sw sb .t') end;
 end;
 
 procedure Odd_(var x: Item);
@@ -275,22 +275,15 @@ begin
 
   { rt.wint: (n width --) write integer }
   WrLbl('rt.wint');
-  WrLn('zp du 9C 07 jm >_wi.main');
+  WrLn('zp du .i jm >_wi.main .t');
   WrLbl('_wi.zero'); WrLn('zp lb 30 lb 6F io rt');
   WrLbl('_wi.main');
-  WrLn('du c0 lt c1 an 9C 0A lb 2D lb 6F io c0 sw sb');
+  WrLn('du c0 lt .i lb 2D lb 6F io c0 sw sb .t');
   WrLn('cd !I c0 sw');
   WrComment('digit extraction loop: stack [count n]');
-  WrLbl('_wi.dloop');
-  WrLn('du lb 0A md lb 30 ad dc sw c1 ad sw lb 0A dv');
-  WrLn('du 9C 04 9B 07 jm >_wi.ddone');
-  WrLn('jm >_wi.dloop');
-  WrLbl('_wi.ddone'); WrLn('zp');
+  WrLn('.w du .d du lb 0A md lb 30 ad dc sw c1 ad sw lb 0A dv .o zp');
   WrComment('print digits from CS: stack [count]');
-  WrLbl('_wi.ploop');
-  WrLn('cd lb 6F io c1 sb du 9C 04 9B 07 jm >_wi.pdone');
-  WrLn('jm >_wi.ploop');
-  WrLbl('_wi.pdone'); WrLn('zp @I dc rt');
+  WrLn('.w du .d cd lb 6F io c1 sb .o zp @I dc rt');
 
   { rt.rline: ( -- ) read line into buffer at $3C00 }
   WrLbl('rt.rline');
@@ -305,14 +298,14 @@ begin
   WrLbl('rt.rint');
   WrLn('!J rt.rline');
   WrLn('c0 !K c0 !L c0 !M');
-  WrLn('li 00003C00 rb lb 2D eq c1 an 9C 06 c1 !M c1 !K');
+  WrLn('li 00003C00 rb lb 2D eq .i c1 !M c1 !K .t');
   WrLbl('_ri.dloop');
   WrLn('@K li 00003C00 ad rb lb 30 sb');
-  WrLn('du c0 lt c1 an .i zp jm >_ri.done .t');
-  WrLn('du lb 09 sw lt c1 an .i zp jm >_ri.done .t');
+  WrLn('du c0 lt .i zp jm >_ri.done .t');
+  WrLn('du lb 09 sw lt .i zp jm >_ri.done .t');
   WrLn('@L lb 0A ml ad !L @K c1 ad !K jm >_ri.dloop');
   WrLbl('_ri.done');
-  WrLn('@L @M 9C 05 c0 sw sb @J wi rt');
+  WrLn('@L @M .i c0 sw sb .t @J wi rt');
 
   WrComment('--- end runtime ---');
   WrLn('');
