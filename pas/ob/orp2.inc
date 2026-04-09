@@ -267,6 +267,15 @@ begin
       if (x.typ^.form = orb.tPointer) and (x.typ^.base^.form = orb.tRecord) then
         org.New_(x)
       else ors.Mark('not a pointer to record');
+    end else if pno = 10 then begin
+      { SYSTEM.GET(addr, VAR val) }
+      CheckInt(x); org.Get_(x, y);
+    end else if pno = 11 then begin
+      { SYSTEM.PUT(addr, val) }
+      CheckInt(x); org.Put_(x, y);
+    end else if pno = 12 then begin
+      { SYSTEM.COPY }
+      org.Copy_(x, y, z);
     end;
   end else ors.Mark('wrong nof parameters');
 end;
@@ -817,7 +826,7 @@ end;
 
 procedure Module;
 var key: longint;
-    obj: orb.PObj;
+    obj, smod: orb.PObj;
     impid, impid1: ors.Ident;
 begin
   writeln('  compiling...');
@@ -845,6 +854,17 @@ begin
         { register built-in Out module }
         if impid1 = 'Out' then RegisterOutModule(impid);
         if impid1 = 'In' then RegisterInModule(impid);
+        if impid1 = 'SYSTEM' then begin
+          { link SYSTEM pseudo-module from orb.pas }
+          new(smod); fillchar(smod^, sizeof(orb.TObj), 0);
+          smod^.name := impid;
+          smod^.cls := orb.clsMod;
+          smod^.rdo := true;
+          smod^.typ := orb.noType;
+          smod^.dsc := orb.system_;
+          smod^.next := orb.topScope^.next;
+          orb.topScope^.next := smod;
+        end;
         if sym = ors.sCOMMA then ors.Get(sym)
         else if sym = ors.sIDENT then ors.Mark('comma missing');
       end;
