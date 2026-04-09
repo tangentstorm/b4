@@ -283,7 +283,29 @@ begin
       if ch < '0' then begin
         if ch = '"' then begin ScanString; sym := sSTRING end
         else if ch = '#' then begin ReadCh; sym := sNEQ end
-        else if ch = '$' then begin HexString; sym := sSTRING end
+        else if ch = '$' then begin
+          ReadCh;
+          if ch = '[' then begin ReadCh; sym := sLBRACE end  { $[ = set literal }
+          else begin { hex string $...$ }
+            { back up: HexString expects to read first digit }
+            { actually HexString already called ReadCh, undo not possible }
+            { re-implement inline: ch is first hex char }
+            slen := 0;
+            while (not eof_reached) and (ch <> '$') do begin
+              while (ch = ' ') or (ch = #9) or (ch = #13) or (ch = #10) do ReadCh;
+              if (ch >= '0') and (ch <= '9') then begin str[slen] := chr((ord(ch) - ord('0')) * 16); end
+              else if (ch >= 'A') and (ch <= 'F') then begin str[slen] := chr((ord(ch) - ord('A') + 10) * 16); end
+              else begin Mark('hexdig expected'); str[slen] := #0 end;
+              ReadCh;
+              if (ch >= '0') and (ch <= '9') then begin str[slen] := chr(ord(str[slen]) + ord(ch) - ord('0')); end
+              else if (ch >= 'A') and (ch <= 'F') then begin str[slen] := chr(ord(str[slen]) + ord(ch) - ord('A') + 10); end
+              else begin Mark('hexdig expected') end;
+              inc(slen);
+              ReadCh;
+            end;
+            ReadCh; sym := sSTRING;
+          end;
+        end
         else if ch = '&' then begin ReadCh; sym := sAND end
         else if ch = '(' then begin ReadCh; sym := sLPAREN end
         else if ch = ')' then begin ReadCh; sym := sRPAREN end

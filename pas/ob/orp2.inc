@@ -15,13 +15,13 @@ procedure set_(var x: org.Item);
 var y: org.Item;
 begin
   if sym >= ors.sIF then begin
-    if sym <> ors.sRBRACE then ors.Mark('} missing');
+    if sym <> ors.sRBRAK then ors.Mark('} missing');
     org.MakeConstItem(x, orb.setType, 0);
   end else begin
     element(x);
-    while (sym < ors.sRPAREN) or (sym > ors.sRBRACE) do begin
+    while (sym < ors.sRPAREN) or (sym > ors.sRBRAK) do begin
       if sym = ors.sCOMMA then ors.Get(sym)
-      else if sym <> ors.sRBRACE then ors.Mark('missing comma');
+      else if sym <> ors.sRBRAK then ors.Mark('missing comma');
       element(y); org.SetOp(ors.sPLUS, x, y);
     end;
   end;
@@ -68,7 +68,7 @@ begin
     ors.Get(sym); expression(x); Check(ors.sRPAREN, 'no )')
   end
   else if sym = ors.sLBRACE then begin
-    ors.Get(sym); set_(x); Check(ors.sRBRACE, 'no }')
+    ors.Get(sym); set_(x); Check(ors.sRBRAK, 'no ]')
   end
   else if sym = ors.sNOT then begin
     ors.Get(sym); factor(x); CheckBool(x); org.Not_(x)
