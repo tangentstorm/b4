@@ -1054,7 +1054,7 @@ begin
     org.WrLn('');
     Declarations(dc); org.SetDataSize((dc + 3) div 4 * 4);
     org.WrComment('jump to module body (entry point)');
-    org.WrLn('cl >' + modid + '_init hl');
+    org.WrLn('cl >' + modid + '_init'); org.WrLn('hl');
     if org.varsize > 0 then begin
       org.WrComment('reserve ' + IntToStr(org.varsize) + ' bytes for global variables');
       org.WrLbl('_globals');

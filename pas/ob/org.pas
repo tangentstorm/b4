@@ -134,7 +134,7 @@ implementation
 uses sysutils;
 
 const
-  GlobalBase = $0100;
+  GlobalBase = $0106; { $100 + 6 bytes for entry code (cl + hl) }
 
 var
   strbuf: array[0..maxStrx-1] of char;
