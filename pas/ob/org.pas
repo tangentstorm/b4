@@ -29,8 +29,10 @@ var
   entry: longint;
   strx: longint;
   tdx: longint;
-  modname: ors.Ident; { current module name, used as label prefix }
-  out_: text;         { output file }
+  modname: ors.Ident;
+  out_: text;
+  imports: array[0..15] of ors.Ident; { imported module names }
+  nimports: integer;
 
 procedure Open(v: integer);
 procedure SetDataSize(dc: longint);
@@ -41,6 +43,7 @@ procedure MakeStringItem(var x: Item; len: longint);
 procedure MakeItem(var x: Item; y: orb.PObj; curlev: longint);
 
 { emit helpers }
+procedure AddImport(const name: ors.Ident);
 procedure EmitRuntime;
 procedure Wr(const s: string);    { write assembly text }
 procedure WrLn(const s: string);   { write line }
@@ -243,6 +246,7 @@ end;
 procedure Open(v: integer);
 begin
   pc := 0; tdx := 0; strx := 0; version := v; labelCount := 0;
+  { don't reset nimports — imports are parsed before Open }
 end;
 
 procedure SetDataSize(dc: longint);

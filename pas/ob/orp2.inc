@@ -993,7 +993,7 @@ begin
   { link into top scope }
   mod_^.next := orb.topScope^.next;
   orb.topScope^.next := mod_;
-  writeln('  imported ', modname_);
+  writeln('  imported ', modname_); org.AddImport(modname_);
 end;
 
 { ---- Module ---- }
@@ -1059,7 +1059,7 @@ begin
       org.WrLn(':+' + IntToHex(org.varsize, 2));
     end;
     org.WrComment('jump to module body (entry point)');
-    org.WrLn('jm >' + modid + '_init');
+    org.WrLn('cl >' + modid + '_init hl');
     org.WrLn('');
     org.EmitRuntime;
     while sym = ors.sPROCEDURE do begin ProcedureDecl; Check(ors.sSEMICOLON, 'no ;') end;

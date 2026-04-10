@@ -308,6 +308,14 @@ begin
   if not isguard then begin WrPushInt(1); x.mode := mReg; x.typ := orb.boolType end;
 end;
 
+procedure AddImport(const name: ors.Ident);
+begin
+  if nimports < 16 then begin
+    imports[nimports] := name;
+    inc(nimports);
+  end;
+end;
+
 { ---- Runtime library ---- }
 
 procedure EmitRuntime;
@@ -365,11 +373,14 @@ end;
 { ---- Module header and output ---- }
 
 procedure Header;
+var i: integer;
 begin
   WrComment('--- module body ---');
   WrLbl(modname + '_init');
-  { initialize heap pointer to end of all code }
   WrLn('li >' + modname + '_heap !_');
+  { call imported module init procedures }
+  for i := 0 to nimports - 1 do
+    WrLn('cl >' + imports[i] + '_init');
 end;
 
 procedure Close(var modid: ors.Ident; key, nofent: longint);
@@ -378,7 +389,7 @@ var i: longint;
     obj: orb.PObj;
     smb: text;
 begin
-  WrLn('hl');
+  WrLn('rt'); { return from init call }
   WrLbl(modid + '_heap');
   WrLn('');
   WrLn('');
@@ -457,4 +468,5 @@ end;
 
 initialization
   nlabels := 0;
+  nimports := 0;
 end.
