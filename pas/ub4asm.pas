@@ -2,7 +2,7 @@
 unit ub4asm;
 interface uses ub4ops, ub4, classes, sysutils, strutils, character;
 
-  type ident = string[16];
+  type ident = string[32];
   type entry = record id: ident; adr: ub4.address end;
   var dict: array[0..4096] of entry; ents : word;
   type TFwd = record key: string; at: value end;

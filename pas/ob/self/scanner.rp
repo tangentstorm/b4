@@ -1,10 +1,7 @@
-{ Scanner test - first self-hosted Retro Pascal code }
-
+{ Scanner test }
 module Scanner;
   import Out;
-
   const MaxBuf = 64;
-
   var
     buf: array MaxBuf of CHAR;
     pos, len, ch, sym, ival, idlen: INTEGER;
@@ -14,16 +11,12 @@ module Scanner;
   procedure Init;
   begin
     buf[0] := 78X; buf[1] := 20X; buf[2] := 3AX; buf[3] := 3DX;
-    buf[4] := 20X; buf[5] := 34X; buf[6] := 32X; buf[7] := 20X;
-    buf[8] := 2BX; buf[9] := 20X; buf[10] := 79X; buf[11] := 0X;
-    len := 11; pos := 0
+    buf[4] := 20X; buf[5] := 34X; buf[6] := 32X; buf[7] := 0X;
+    len := 7; pos := 0
   end Init;
 
   procedure ReadCh;
-  begin
-    if pos < len then ch := ORD(buf[pos]); INC(pos)
-    else ch := 0
-    end
+  begin if pos < len then ch := ORD(buf[pos]); INC(pos) else ch := 0 end
   end ReadCh;
 
   procedure Classify;
@@ -33,18 +26,13 @@ module Scanner;
   end Classify;
 
   procedure ScanNumber;
-  begin
-    ival := 0;
-    while isdig do
-      ival := ival * 10 + ch - 30H;
-      ReadCh; Classify
-    end;
+  begin ival := 0;
+    while isdig do ival := ival * 10 + ch - 30H; ReadCh; Classify end;
     sym := 21
   end ScanNumber;
 
   procedure ScanIdent;
-  begin
-    idlen := 0;
+  begin idlen := 0;
     while islet or isdig do
       if idlen < 31 then id[idlen] := CHR(ch); INC(idlen) end;
       ReadCh; Classify
@@ -59,39 +47,27 @@ module Scanner;
     if ch = 0 then sym := 0
     elsif islet then ScanIdent
     elsif isdig then ScanNumber
-    elsif ch = 2BH then sym := 6; ReadCh
-    elsif ch = 2DH then sym := 7; ReadCh
-    elsif ch = 2AH then sym := 1; ReadCh
-    elsif ch = 3DH then sym := 9; ReadCh
-    elsif ch = 3BH then sym := 52; ReadCh
     elsif ch = 3AH then
       ReadCh;
       if ch = 3DH then sym := 42; ReadCh
       else sym := 41
       end
-    elsif ch = 2EH then sym := 18; ReadCh
     else sym := 0; ReadCh
     end
   end Scan;
-
-  procedure PrintId;
-    var i, c: INTEGER;
-  begin
-    i := 0;
-    while i < idlen do
-      c := ORD(id[i]);
-      Out.Char(c);
-      INC(i)
-    end
-  end PrintId;
 
 begin
   Init; ReadCh;
   Scan;
   while sym # 0 do
-    if sym = 31 then PrintId
-    elsif sym = 21 then Out.Int(ival, 0)
-    else Out.Char(91); Out.Int(sym, 0); Out.Char(93)
+    if sym = 31 then
+      Out.Char(73); Out.Char(58);
+      Out.Int(idlen, 0)
+    elsif sym = 21 then
+      Out.Char(78); Out.Char(58);
+      Out.Int(ival, 0)
+    else
+      Out.Char(91); Out.Int(sym, 0); Out.Char(93)
     end;
     Out.Char(32);
     Scan

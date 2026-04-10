@@ -177,7 +177,7 @@ end;
 
 initialization
   byteType := NewType(tInt, 1);
-  boolType := NewType(tBool, 1);
+  boolType := NewType(tBool, 4);  { 4 bytes so nt works correctly }
   charType := NewType(tChar, 1);
   intType  := NewType(tInt, 4);
   realType := NewType(tReal, 4);
