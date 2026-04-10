@@ -383,9 +383,30 @@ begin
       Check(ors.sOF, 'OF expected');
       L0 := 0;
       if (sym <> ors.sEND) and (sym <> ors.sBAR) then begin
-        { first arm: label : statements }
-        expression(y); CheckConst(y); { case label must be constant }
-        org.Wr('@N '); org.WrPushInt(y.a); org.Wr('eq ');
+        { parse case labels: val1, val2, lo..hi, ... : statements }
+        { first label }
+        expression(y); CheckConst(y);
+        if sym = ors.sUPTO then begin
+          { range: y..z }
+          ors.Get(sym); expression(z); CheckConst(z);
+          org.Wr('@N '); org.WrPushInt(y.a); org.Wr('lt nt ');  { N >= lo }  { N >= y }
+          org.Wr('@N '); org.WrPushInt(z.a); org.Wr('sw lt nt ');  { N <= hi } { N <= z }
+          org.Wr('an ');
+        end else begin
+          org.Wr('@N '); org.WrPushInt(y.a); org.Wr('eq ');
+        end;
+        while sym = ors.sCOMMA do begin
+          ors.Get(sym); expression(y); CheckConst(y);
+          if sym = ors.sUPTO then begin
+            ors.Get(sym); expression(z); CheckConst(z);
+            org.Wr('@N '); org.WrPushInt(y.a); org.Wr('lt nt ');  { N >= lo }
+            org.Wr('@N '); org.WrPushInt(z.a); org.Wr('sw lt nt ');  { N <= hi }
+            org.Wr('an ');
+          end else begin
+            org.Wr('@N '); org.WrPushInt(y.a); org.Wr('eq ');
+          end;
+          org.Wr('or '); { OR with previous label match }
+        end;
         org.CFJump(x);
         Check(ors.sCOLON, ': expected');
         StatSequence;
@@ -393,8 +414,28 @@ begin
           ors.Get(sym);
           org.FJump(L0);
           org.Fixup(x);
+          { parse labels for this arm }
           expression(y); CheckConst(y);
-          org.Wr('@N '); org.WrPushInt(y.a); org.Wr('eq ');
+          if sym = ors.sUPTO then begin
+            ors.Get(sym); expression(z); CheckConst(z);
+            org.Wr('@N '); org.WrPushInt(y.a); org.Wr('lt nt ');  { N >= lo }
+            org.Wr('@N '); org.WrPushInt(z.a); org.Wr('sw lt nt ');  { N <= hi }
+            org.Wr('an ');
+          end else begin
+            org.Wr('@N '); org.WrPushInt(y.a); org.Wr('eq ');
+          end;
+          while sym = ors.sCOMMA do begin
+            ors.Get(sym); expression(y); CheckConst(y);
+            if sym = ors.sUPTO then begin
+              ors.Get(sym); expression(z); CheckConst(z);
+              org.Wr('@N '); org.WrPushInt(y.a); org.Wr('lt nt ');  { N >= lo }
+              org.Wr('@N '); org.WrPushInt(z.a); org.Wr('sw lt nt ');  { N <= hi }
+              org.Wr('an ');
+            end else begin
+              org.Wr('@N '); org.WrPushInt(y.a); org.Wr('eq ');
+            end;
+            org.Wr('or ');
+          end;
           org.CFJump(x);
           Check(ors.sCOLON, ': expected');
           StatSequence;

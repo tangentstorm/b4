@@ -155,6 +155,7 @@ begin
   if w.a > 0 then Wr('sw lt nt ')  { current <= limit }
   else Wr('lt nt ');                 { current >= limit }
   Wr('.d ');
+  inWhile := false; { consumed — don't affect nested CFJumps }
   L := 0;
 end;
 
