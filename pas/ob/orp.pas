@@ -259,6 +259,11 @@ begin
           org.Shift(fct - 7, x, y); restyp := x.typ;
         end else ors.Mark('bad type');
       end;
+      16: begin { VAL — type cast }
+        if (x.mode = orb.clsTyp) then begin
+          restyp := x.typ; x := y
+        end else ors.Mark('casting not allowed');
+      end;
       17: org.Adr_(x); { ADR }
       18: begin { SIZE }
         if x.mode = orb.clsTyp then org.MakeConstItem(x, orb.intType, x.typ^.size)
