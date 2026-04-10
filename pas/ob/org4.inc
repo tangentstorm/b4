@@ -142,24 +142,33 @@ end;
 { ---- FOR loops ---- }
 
 procedure For0(var x, y: Item);
-begin load(y) end;
+begin
+  { store initial value to loop variable }
+  load(y); Store(x, y);
+end;
 
 procedure For1(var x, y, z, w: Item; var L: longint);
-var lbl: string;
 begin
-  { store initial value, check bounds }
-  Wr('du '); load(z);
-  L := AllocLabel; lbl := labels[L];
-  if w.a > 0 then Wr('sw lt ')
-  else Wr('lt ');
-  WrLn('nt .i jm >' + lbl + ' .t');
-  Store(x, y);
+  { compare loop variable with limit }
+  { Note: Here() already emitted .w }
+  load(x); load(z);
+  if w.a > 0 then Wr('sw lt nt ')  { current <= limit }
+  else Wr('lt nt ');                 { current >= limit }
+  Wr('.d ');
+  L := 0;
 end;
 
 procedure For2(var x, y, w: Item);
+var saved: Item;
 begin
-  load(x); WrPushInt(w.a); Wr('ad du ');
-  Store(x, y);
+  { increment loop variable by step }
+  saved := x;
+  load(x); WrPushInt(w.a); Wr('ad ');
+  if saved.mode = orb.clsVar then
+    WrStoreVar(saved.r, saved.a, saved.typ^.size)
+  else
+    Wr('@P wi ');
+  WrLn('');
 end;
 
 { ---- Standard procedures ---- }

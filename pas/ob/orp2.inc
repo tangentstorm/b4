@@ -357,6 +357,7 @@ begin
     end else if sym = ors.sFOR then begin
       ors.Get(sym);
       if sym = ors.sIDENT then begin
+        qualident(obj); org.MakeItem(x, obj, level); if lastImportLabel <> '' then x.lbl := lastImportLabel; CheckInt(x); CheckReadOnly(x);
         if sym = ors.sBECOMES then begin
           ors.Get(sym); expression(y); CheckInt(y); org.For0(x, y);
           L0 := org.Here;
@@ -366,9 +367,10 @@ begin
             ors.Get(sym); expression(w); CheckConst(w); CheckInt(w)
           end else org.MakeConstItem(w, orb.intType, 1);
           Check(ors.sDO, 'no DO');
+          y := x; { save loop var item BEFORE For1 modifies it }
           org.For1(x, y, z, w, L1);
           StatSequence; Check(ors.sEND, 'no END');
-          org.For2(x, y, w); org.BJump(L0); org.FixLink(L1);
+          org.For2(y, y, w); org.BJump(L0); org.FixLink(L1);
           obj^.rdo := false;
         end else ors.Mark(':= expected');
       end else ors.Mark('identifier expected');
