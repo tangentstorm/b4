@@ -1,0 +1,8 @@
+MODULE Adder;
+  IMPORT In, Out;
+  VAR a, b: INTEGER;
+BEGIN
+  In.Int(a);
+  In.Int(b);
+  Out.Int(a + b, 0); Out.Ln
+END Adder.

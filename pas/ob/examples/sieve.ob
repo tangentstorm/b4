@@ -1,0 +1,37 @@
+MODULE Sieve;
+  (* Sieve of Eratosthenes - find primes up to 100 *)
+  CONST N = 100;
+  VAR
+    sieve: ARRAY N OF BOOLEAN;
+    i, j, count: INTEGER;
+
+BEGIN
+  (* initialize: assume all are prime *)
+  i := 2;
+  WHILE i < N DO
+    sieve[i] := TRUE;
+    INC(i)
+  END;
+
+  (* sieve *)
+  i := 2;
+  WHILE i * i < N DO
+    IF sieve[i] THEN
+      j := i * i;
+      WHILE j < N DO
+        sieve[j] := FALSE;
+        j := j + i
+      END
+    END;
+    INC(i)
+  END;
+
+  (* count primes *)
+  count := 0;
+  i := 2;
+  WHILE i < N DO
+    IF sieve[i] THEN INC(count) END;
+    INC(i)
+  END
+  (* count = 25, the number of primes below 100 *)
+END Sieve.

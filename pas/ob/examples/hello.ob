@@ -1,0 +1,18 @@
+module Hello;
+  import Out;
+  var i, f: INTEGER;
+
+  procedure Fact(n: INTEGER): INTEGER;
+    var r: INTEGER;
+  begin r := 1; while n > 1 do r := r * n; DEC(n) end; return r
+  end Fact;
+
+begin
+  i := 1;
+  while i <= 10 do
+    f := Fact(i);
+    Out.Int(f, 0); Out.Char(32);
+    INC(i)
+  end;
+  Out.Ln
+end Hello.

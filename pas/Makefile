@@ -15,7 +15,8 @@ B4IX = b4ix$(EXE)
 B4A = b4a$(EXE)
 B4D = b4d$(EXE)
 MKOPTBL = mkoptbl$(EXE)
-BINS = $(B4) $(B4X) $(B4I) $(B4H) $(B4IX) $(B4A) $(B4D) $(MKOPTBL)
+OBERONC = oberonc$(EXE)
+BINS = $(B4) $(B4X) $(B4I) $(B4H) $(B4IX) $(B4A) $(B4D) $(MKOPTBL) $(OBERONC)
 
 main:
 	@echo 'usage : make <target> ARGS="..."'
@@ -32,6 +33,7 @@ main:
 	@echo ' runix: build/run b4ix (fancy interpreter)'
 	@echo ' runa : build/run b4a (batch assembler)'
 	@echo ' rund : build/run b4d (disassembler)'
+	@echo ' oberonc : compile the Oberon-07 to b4vm compiler'
 	@echo ' colortest: build/run colortest'
 
 always:
@@ -107,5 +109,15 @@ colortest: uhw_vt.pas colortest.pas
 	$(FPC) -B colortest.pas
 	./colortest
 
+$(OBERONC): ob/oberonc.pas ob/orp.pas ob/org.pas ob/orb.pas ob/ors.pas ob/org2.inc ob/org3.inc ob/org4.inc ob/orp2.inc
+	$(FPC) -o$(OBERONC) -Fuob -B ob/oberonc.pas
+
+oberonc: $(OBERONC)
+
+test-oberonc: $(OBERONC) $(B4)
+	./$(OBERONC) ob/test.ob
+	echo "--- running on b4vm ---"
+	./$(B4) -l test.b4x
+
 clean:
-	@rm -f *.o *.ppu *.exe $(BINS) link*.res *~
+	@rm -f *.o *.ppu *.exe $(BINS) link*.res *~ ob/*.o ob/*.ppu

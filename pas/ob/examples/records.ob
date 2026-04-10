@@ -1,0 +1,15 @@
+MODULE Records;
+  (* Demonstrate record types *)
+  TYPE
+    Point = RECORD x, y: INTEGER END;
+
+  VAR
+    p: Point;
+    sum: INTEGER;
+
+BEGIN
+  p.x := 3;
+  p.y := 4;
+  sum := p.x + p.y
+  (* sum = 7 *)
+END Records.

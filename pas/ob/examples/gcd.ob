@@ -1,0 +1,17 @@
+MODULE GCD;
+  VAR result: INTEGER;
+
+  PROCEDURE Gcd(a, b: INTEGER): INTEGER;
+  BEGIN
+    WHILE a # b DO
+      IF a > b THEN a := a - b
+      ELSE b := b - a
+      END
+    END;
+    RETURN a
+  END Gcd;
+
+BEGIN
+  result := Gcd(36, 24)
+  (* result = 12 *)
+END GCD.
