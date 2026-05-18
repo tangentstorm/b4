@@ -1,0 +1,10 @@
+name = "b4"
+version = "0.1.0"
+defaultTargets = ["b4"]
+
+[[lean_lib]]
+name = "B4"
+
+[[lean_exe]]
+name = "b4"
+root = "Main"
