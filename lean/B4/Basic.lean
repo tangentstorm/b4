@@ -12,6 +12,67 @@ def RCS_OFF : Nat := 152
 def RST_OFF : Nat := 160
 def RDB_OFF : Nat := 164
 
+inductive Register where
+  | PC | DS | CS | ST | DB | RED | BLU | GRN | HERE | T | X | Y | Z
+  | R (n : Nat)
+deriving BEq, Inhabited
+
+def Register.toNat : Register → Nat
+  | PC => 33
+  | DS => 35
+  | CS => 38
+  | ST => 40
+  | DB => 41
+  | RED => 42
+  | BLU => 43
+  | GRN => 44
+  | HERE => 31
+  | T => 20
+  | X => 24
+  | Y => 25
+  | Z => 26
+  | R n => n % 32
+
+inductive Op where
+  | nop
+  | ad | sb | ml | dv | md | sh | an | or | xr | nt | eq | lt
+  | du | sw | ov | zp
+  | dc | cd
+  | rb | ri | wb | wi
+  | lb (v : UInt8)
+  | li (v : UInt32)
+  | rs | ls
+  | jm (addr : UInt32)
+  | hp (dist : Int8)
+  | h0 (dist : Int8)
+  | cl (addr : UInt32)
+  | rt
+  | nx (dist : Int8)
+  | c0 | c1 | c2 | n1 | c4
+  | io | db | hl
+  | invoke (r : Register)
+  | read   (r : Register)
+  | write  (r : Register)
+  | stream (r : Register)
+deriving BEq, Inhabited
+
+def Op.toByte : Op → UInt8
+  | nop => 0
+  | ad => 0x80 | sb => 0x81 | ml => 0x82 | dv => 0x83
+  | md => 0x84 | sh => 0x85 | an => 0x86 | or => 0x87
+  | xr => 0x88 | nt => 0x89 | eq => 0x8A | lt => 0x8B
+  | du => 0x8C | sw => 0x8D | ov => 0x8E | zp => 0x8F
+  | dc => 0x90 | cd => 0x91 | rb => 0x92 | ri => 0x93
+  | wb => 0x94 | wi => 0x95 | lb _ => 0x96 | li _ => 0x97
+  | rs => 0x98 | ls => 0x99 | jm _ => 0x9A | hp _ => 0x9B
+  | h0 _ => 0x9C | cl _ => 0x9D | rt => 0x9E | nx _ => 0x9F
+  | c0 => 0xC0 | c1 => 0xC1 | c2 => 0xF6 | n1 => 0xF7 | c4 => 0xF8
+  | io => 0xFD | db => 0xFE | hl => 0xFF
+  | invoke r => r.toNat.toUInt8
+  | read r   => 0x20 + r.toNat.toUInt8
+  | write r  => 0x40 + r.toNat.toUInt8
+  | stream r => 0x60 + r.toNat.toUInt8
+
 structure State where
   mem : ByteArray
   ds  : Array UInt32
@@ -301,5 +362,29 @@ partial def run (s : State) : State :=
     run (step s)
   else
     s
+
+def assemble (ops : List Op) : ByteArray :=
+  let rec loop (acc : ByteArray) (ops : List Op) : ByteArray :=
+    match ops with
+    | [] => acc
+    | op :: os =>
+      let acc := acc.push op.toByte
+      let acc := match op with
+        | Op.lb v => acc.push v
+        | Op.li v => 
+            let acc := acc.push v.toUInt8
+            let acc := acc.push (v >>> 8).toUInt8
+            let acc := acc.push (v >>> 16).toUInt8
+            acc.push (v >>> 24).toUInt8
+        | Op.jm v | Op.cl v =>
+            let acc := acc.push v.toUInt8
+            let acc := acc.push (v >>> 8).toUInt8
+            let acc := acc.push (v >>> 16).toUInt8
+            acc.push (v >>> 24).toUInt8
+        | Op.hp v | Op.h0 v | Op.nx v =>
+            acc.push v.toUInt8
+        | _ => acc
+      loop acc os
+  loop ByteArray.empty ops
 
 end B4
