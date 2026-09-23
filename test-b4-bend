@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")"
+make -C bend check b4i
+python3 bend/test.py

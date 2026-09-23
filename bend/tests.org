@@ -1,0 +1,287 @@
+#+title: Bend B4 strict faults and regression tests
+#+tanco-format: 0.2
+
+The four tests named below replace legacy expectations in b4-tests.org.
+Invalid branch targets fault before changing either IP or the control stack.
+All other shared tests are included unchanged by test.py.
+
+* TEST op.jm
+#+begin_src b4a
+> :100 jm 78 56 34 12
+> /s ?i ?c ?s /q
+ip: 100
+cs: []
+state: na invalid-address at 100
+#+end_src
+
+* TEST op.cl
+#+begin_src b4a
+> :100 cl 78 56 34 12
+> /s ?i ?c ?s /q
+ip: 100
+cs: []
+state: na invalid-address at 100
+#+end_src
+
+* TEST op.hp.forward-wrap
+#+begin_src b4a
+> :100 hp 80
+> /s ?i ?s /q
+ip: 100
+state: na invalid-address at 100
+#+end_src
+
+* TEST op.hp.backward-oob
+#+begin_src b4a
+> :100 hp -5
+> /s ?i ?s /q
+ip: 100
+state: na invalid-address at 100
+#+end_src
+
+* TEST bend.states
+#+begin_src b4a
+> ?s /o ?s /t ?s /q
+state: ti
+state: vo
+state: ti
+#+end_src
+
+* TEST bend.underflow.atomic
+#+begin_src b4a
+> 12 ad ?s ?d ?c ?i
+state: na data-underflow at 100
+ds: [12]
+cs: []
+ip: 100
+> /t 3 ad ?d ?s /q
+ds: [15]
+state: ti
+#+end_src
+
+* TEST bend.control-underflow
+#+begin_src b4a
+> cd ?s ?d ?c /q
+state: na control-underflow at 100
+ds: []
+cs: []
+#+end_src
+
+* TEST bend.return-underflow
+#+begin_src b4a
+> rt ?s ?i /q
+state: na control-underflow at 100
+ip: 100
+#+end_src
+
+* TEST bend.divide-zero
+#+begin_src b4a
+> 123 0 dv ?d ?s ?i /q
+ds: [123 0]
+state: na division-by-zero at 100
+ip: 100
+#+end_src
+
+* TEST bend.modulo-zero
+#+begin_src b4a
+> 123 0 md ?d ?s /q
+ds: [123 0]
+state: na division-by-zero at 100
+#+end_src
+
+* TEST bend.shift-range
+#+begin_src b4a
+> 1 20 sh ?d ?s
+ ds: [1 20]
+ state: na shift-out-of-range at 100
+> /C 1 -20 sh ?d ?s /q
+ ds: [1 -20]
+ state: na shift-out-of-range at 100
+#+end_src
+
+* TEST bend.signed-arithmetic
+#+begin_src b4a
+> -7 3 dv -7 3 md 7 -3 dv 7 -3 md ?d /q
+ds: [-2 -1 -2 1]
+#+end_src
+
+* TEST bend.wrap32
+#+begin_src b4a
+> 7FFFFFFF 1 ad FFFFFFFF 1 ad 80000000 -1 dv 80000000 -1 md ?d /q
+ds: [-80000000 0 -80000000 0]
+#+end_src
+
+* TEST bend.signed-compare
+#+begin_src b4a
+> -1 0 lt 80000000 7FFFFFFF lt 0 -1 lt ?d /q
+ds: [-1 -1 0]
+#+end_src
+
+* TEST bend.logical-right-shift
+#+begin_src b4a
+> FFFFFFFF -1 sh 1 1F sh 80000000 -1F sh ?d /q
+ds: [7FFFFFFF -80000000 1]
+#+end_src
+
+* TEST bend.read-oob
+#+begin_src b4a
+> 10000 rb ?d ?s /q
+ds: [10000]
+state: na invalid-address at 100
+#+end_src
+
+* TEST bend.write-atomic
+#+begin_src b4a
+> :100 AA BB CC DD
+> 12345678 -1 wi ?d ?s ?100 /q
+ds: [12345678 -1]
+state: na invalid-address at 100
+AA BB CC DD .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
+* TEST bend.cell-boundary
+#+begin_src b4a
+> 12345678 FFFC wi FFFC ri ?d
+ ds: [12345678]
+> FFFD ri ?d ?s /q
+ ds: [12345678 FFFD]
+ state: na invalid-address at 100
+#+end_src
+
+* TEST bend.byte-truncation
+#+begin_src b4a
+> 1234 FFFF wb FFFF rb FFFF rs ?d /q
+ds: [34 34]
+#+end_src
+
+* TEST bend.fetch-oob
+#+begin_src b4a
+> :FFFE c1 c2
+> :100 jm FE FF 00 00
+> /s /s /s ?d ?i /s ?d ?i ?s /q
+ds: [1 2]
+ip: 10000
+ds: [1 2]
+ip: 10000
+state: na invalid-address at 10000
+#+end_src
+
+* TEST bend.literal-oob
+#+begin_src b4a
+> :FFFF lb
+> :100 jm FF FF 00 00
+> /s /s ?d ?i ?s /q
+ds: []
+ip: FFFF
+state: na invalid-address at FFFF
+#+end_src
+
+* TEST bend.bad-opcode
+#+begin_src b4a
+> :100 A0
+> /s ?d ?i ?s /q
+ds: []
+ip: 100
+state: na unsupported-opcode at 100
+#+end_src
+
+* TEST bend.bad-device
+#+begin_src b4a
+> 41 78 io ?d ?s /q
+ds: [41 78]
+state: na unsupported-device at 100
+#+end_src
+
+* TEST bend.h0-atomic
+#+begin_src b4a
+> :100 h0 FF
+> 0 /s ?d ?i ?s /q
+ds: [0]
+ip: 100
+state: na invalid-address at 100
+#+end_src
+
+* TEST bend.h0-untaken
+#+begin_src b4a
+> :100 h0 FF
+> 1 /s ?d ?i ?s /q
+ds: []
+ip: 102
+state: ti
+#+end_src
+
+* TEST bend.next-atomic
+#+begin_src b4a
+> :100 nx FF
+> 2 dc /s ?c ?i ?s /q
+cs: [2]
+ip: 100
+state: na invalid-address at 100
+#+end_src
+
+* TEST bend.next-zero
+#+begin_src b4a
+> :100 nx FF
+> 0 dc /s ?c ?i ?s /q
+cs: []
+ip: 102
+state: ti
+#+end_src
+
+* TEST bend.call-return
+#+begin_src b4a
+> :100 cl 10 01 00 00 c2 hl
+> :110 c1 rt
+> /g ?d ?c ?s /q
+ds: [1 2]
+cs: []
+state: ti
+#+end_src
+
+* TEST bend.top-return
+#+begin_src b4a
+> :100 rt
+> 0 dc /s ?c ?i ?s /q
+cs: []
+ip: 101
+state: ti
+#+end_src
+
+* TEST bend.bad-return
+#+begin_src b4a
+> :100 rt
+> 10000 dc /s ?c ?i ?s /q
+cs: [10000]
+ip: 100
+state: na invalid-address at 100
+#+end_src
+
+* TEST bend.fault-inside-call
+#+begin_src b4a
+> :A c1 ad rt
+> ^A ?d ?i ?c ?s /q
+ds: [1]
+ip: 101
+cs: [0]
+state: na data-underflow at 101
+#+end_src
+
+* TEST bend.repair-and-retry
+#+begin_src b4a
+> :100 ad hl
+> 1 /g ?d ?i ?s
+ ds: [1]
+ ip: 100
+ state: na data-underflow at 100
+> 2 /g ?d ?s /q
+ ds: [3]
+ state: ti
+#+end_src
+
+* TEST bend.offline-calculator
+#+begin_src b4a
+> 1 2 /o ad ?d ?s /t ad ?d /q
+ds: [1 2]
+state: vo
+ds: [3]
+#+end_src
