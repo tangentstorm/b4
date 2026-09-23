@@ -78,3 +78,6 @@ pas/b4a
 pas/b4i
 pas/b4ix
 pas/b4.out
+
+# tanco for ./test-b4-bend
+.venv/

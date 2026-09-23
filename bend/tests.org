@@ -1,18 +1,8 @@
 #+title: Bend B4 strict faults and regression tests
 #+tanco-format: 0.2
 
-The four tests named below replace legacy expectations in b4-tests.org.
-Invalid branch targets fault before changing either IP or the control stack.
-All other shared tests are included unchanged by test.py.
-
-* TEST op.jm
-#+begin_src b4a
-> :100 jm 78 56 34 12
-> /s ?i ?c ?s /q
-ip: 100
-cs: []
-state: na invalid-address at 100
-#+end_src
+Extra Bend checks. ./test-b4-bend runs b4-tests.org through tanco as well.
+Out-of-range hops and calls fault and leave ip unchanged.
 
 * TEST op.cl
 #+begin_src b4a

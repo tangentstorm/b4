@@ -113,8 +113,11 @@ def write_half(mem: Array<U32>, +a: U32, +v: U32) -> Array<U32>:
   mem[U32.add(a, 1)] <- hi
 
 def write_cell(mem: Array<U32>, +a: U32, +v: U32) -> Array<U32>:
+  # The top byte is stored at a+3 so this matches little_endian_store.
+  b2 b3 = U32.and(U32.shrn(v, 16n), 255) U32.and(U32.shrn(v, 24n), 255)
   mem = write_half(mem, a, v)
-  write_half(mem, U32.add(a, 2), U32.shrn(v, 16n))
+  mem[U32.add(a, 2)] <- b2
+  mem[U32.add(a, 3)] <- b3
 
 def boot() -> VM:
   mem = [0 : U32^16n]
@@ -626,7 +629,8 @@ def operands(op: U32, mem: Array<U32>, +ds: List<&2, U32>, cs: List<&2, U32>, +i
     case 153:
       (mem, check(U32.is_lt(ip, 65535), Address{}))
     case 154:
-      check_target(U32.is_lt(ip, 65532), mem, U32.add(ip, 1))
+      # b4-tests.org op.jm takes any readable target. jump clamps below 256.
+      (mem, check(U32.is_lt(ip, 65532), Address{}))
     case 155:
       check_hop(U32.is_lt(ip, 65535), mem, ip)
     case 156:

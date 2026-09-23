@@ -317,7 +317,7 @@ def L.fetch_fault(mem, ds, cs, ip, control, out, invalid):
 
 def L.run_successor(vm, n):
   match vm:
-    case V.VM{mem, ds, cs, ip, V.Control{V.Ru{}, reason, at}, out}:
+    case V.VM{mem, ds, cs, +ip, V.Control{V.Ru{}, +reason, +at}, +out}:
       {==}
     case V.VM{mem, ds, cs, ip, V.Control{V.Vo{}, reason, at}, out}:
       Equal.sym(V.VM, V.run(n, V.VM{mem, ds, cs, ip, V.Control{V.Vo{}, reason, at}, out}), V.VM{mem, ds, cs, ip, V.Control{V.Vo{}, reason, at}, out}, L.run_idle_vo(mem, ds, cs, ip, V.Control{V.Vo{}, reason, at}, out, n, reason, at))
