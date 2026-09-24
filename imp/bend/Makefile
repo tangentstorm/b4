@@ -10,7 +10,7 @@ check:
 	$(BEND) PROOF.bend
 
 test:
-	../test-b4-bend
+	../../test bend
 
 clean:
 	rm -f b4i b4i.js fleet-test

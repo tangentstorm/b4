@@ -1,7 +1,7 @@
 #+title: Bend B4 strict faults and regression tests
 #+tanco-format: 0.2
 
-Extra Bend checks. ./test-b4-bend runs b4-tests.org through tanco as well.
+Extra Bend checks. `./test bend` runs b4-tests.org through tanco as well.
 Out-of-range hops and calls fault and leave ip unchanged.
 
 * TEST op.cl

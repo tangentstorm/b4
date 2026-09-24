@@ -1,0 +1,39 @@
+#!/bin/sh
+# ./test jlang [b4 b4h]
+set -eu
+ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
+. "$ROOT/imp/common.sh"
+cd "$ROOT"
+ensure_tanco
+
+if [ $# -eq 0 ]; then
+  set -- b4 b4h
+fi
+
+for suite in "$@"; do
+  case $suite in
+    b4)
+      if ! command -v jconsole >/dev/null 2>&1; then
+        echo "jlang: jconsole not found" >&2
+        exit 1
+      fi
+      cd "$ROOT/imp/jlang"
+      tanco_run "$ROOT/b4-tests.org" -c "jconsole b4i.ijs"
+      cd "$ROOT"
+      ;;
+    b4h)
+      if ! command -v ijconsole >/dev/null 2>&1; then
+        echo "jlang: ijconsole not found" >&2
+        exit 1
+      fi
+      cd "$ROOT/imp/jlang"
+      tanco_run "$ROOT/b4h-tests.org" -c "ijconsole b4h.ijs"
+      cd "$ROOT"
+      ;;
+    *)
+      echo "jlang: unknown suite '$suite'" >&2
+      echo "suites: b4 b4h" >&2
+      exit 2
+      ;;
+  esac
+done

@@ -259,7 +259,7 @@ The server maintains **multiple persistent child processes**, one for each VM in
 
 - Runs independently with its own memory, stacks, and registers
 - Maintains state across tool calls (labels, assembled code persist)
-- Can use either Pascal (`pas/b4i`) or JavaScript (`js/b4i.mjs`) implementation
+- Can use either Pascal (`imp/pas/b4i`) or JavaScript (`imp/js/dist/b4i.mjs`) implementation
 - Auto-restarts if it crashes
 
 Commands are sent via stdin and responses collected from stdout, allowing for efficient execution without restart overhead.
@@ -268,8 +268,8 @@ Commands are sent via stdin and responses collected from stdout, allowing for ef
 
 **Server won't start:**
 - Check that Node.js version is 18 or later
-- For Pascal: Ensure `pas/b4i` is compiled (run `make` in the `pas` directory)
-- For JavaScript: Ensure `js/b4i.mjs` exists
+- For Pascal: Ensure `imp/pas/b4i` is compiled (run `make` in the `imp/pas` directory)
+- For JavaScript: Ensure `imp/js/dist/b4i.mjs` exists (`npm run build` in `imp/js`)
 
 **Commands timeout or hang:**
 - The server uses a simple 100ms timeout for responses

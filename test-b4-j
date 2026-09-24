@@ -1,3 +1,0 @@
-#!/bin/sh
-cd jlang
-tanco run -t ../b4-tests.org -c "jconsole b4i.ijs"

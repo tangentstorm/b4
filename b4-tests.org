@@ -28,7 +28,7 @@ the =-t= parameter, and a command to run with the =-c= parameter.
 The command is generally an implementation of [[docs/b4i.org][b4i]] (the b4
 interactive assembler) in some host language.
 
-See the =test-b4-*= scripts in this repository for examples.
+See =./test= in this repository for examples.
 
 * debugger interface
 ** =/q= : quit

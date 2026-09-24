@@ -1,0 +1,38 @@
+#!/bin/sh
+# ./test gd [b4]
+# The Godot project lives in a sibling checkout, ../b4-gd.
+set -eu
+ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
+. "$ROOT/imp/common.sh"
+cd "$ROOT"
+ensure_tanco
+
+if [ $# -eq 0 ]; then
+  set -- b4
+fi
+
+# godot prints a version header and a blank line that cannot be suppressed.
+export SKIP_LINES=2
+# godot 4.2.1 will not read stdin from a pipe on windows.
+export INPUT_PATH=../b4-gd/input.txt
+
+DEFAULT_GODOT="~/Downloads/Godot_v4.3-stable_win64.exe/Godot_v4.3-stable_win64_console.exe"
+if [ -n "${GODOT:-}" ]; then
+  GODOT_PATH=$GODOT
+else
+  GODOT_PATH=$DEFAULT_GODOT
+fi
+export GODOT=$GODOT_PATH
+
+for suite in "$@"; do
+  case $suite in
+    b4)
+      tanco_run b4-tests.org -- "$GODOT" --path ../b4-gd --headless --script cli.gd -- input.txt
+      ;;
+    *)
+      echo "gd: unknown suite '$suite'" >&2
+      echo "suites: b4" >&2
+      exit 2
+      ;;
+  esac
+done

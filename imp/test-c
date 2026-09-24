@@ -1,0 +1,26 @@
+#!/bin/sh
+# ./test c [b4h]
+set -eu
+ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
+. "$ROOT/imp/common.sh"
+cd "$ROOT"
+ensure_tanco
+
+if [ $# -eq 0 ]; then
+  set -- b4h
+fi
+
+(cd "$ROOT/imp/c" && make)
+
+for suite in "$@"; do
+  case $suite in
+    b4h)
+      tanco_run b4h-tests.org -- imp/c/b4h
+      ;;
+    *)
+      echo "c: unknown suite '$suite'" >&2
+      echo "suites: b4h" >&2
+      exit 2
+      ;;
+  esac
+done
