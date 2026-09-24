@@ -6,6 +6,10 @@ in the top level directory.
 
 Current focus is implementing the machine in bend.
 
+Git workflow:
+
+- Do not commit to `main`. Commit on a branch and open a pull request for review.
+
 When using Bend:
 
 - run `bend guide` to learn it
