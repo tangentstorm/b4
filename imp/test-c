@@ -4,6 +4,10 @@ set -eu
 ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 . "$ROOT/imp/common.sh"
 cd "$ROOT"
+if [ "${1:-}" = "--list" ]; then
+  echo "b4h"
+  exit 0
+fi
 ensure_tanco
 
 if [ $# -eq 0 ]; then

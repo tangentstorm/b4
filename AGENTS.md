@@ -2,8 +2,9 @@ B4 is a small forth-like virtual machine that
 runs atop many different software stacks.
 
 We use 'tanco' to test. Implementations live in `imp/`.
-Run `./test` for every language, `./test pas` for Pascal, or
-`./test pas b4 b4i` for selected suites.
+Run `./test` for every language, `./test pas` for Pascal,
+`./test pas b4 b4i` for selected suites, or `./test -- b4` for the
+basic suite on every implementation.
 
 Current focus is implementing the machine in bend.
 

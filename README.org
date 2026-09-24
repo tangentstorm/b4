@@ -58,7 +58,7 @@ Implementations:
 - [[https://github.com/tangentstorm/b4-gd][b4-gd]], implemented in GDScript for [[https://docs.godotengine.org/en/stable/][Godot 4]].
 
 The implementations are kept in sync through the tests in [[./b4-tests.org]].
-Run them with =./test=, =./test pas=, or =./test pas b4 b4i=.
+Run them with =./test=, =./test pas=, =./test pas b4 b4i=, or =./test -- b4=.
 
 See [[file:./b4a/bios.b4a][bios.b4a]] for an example of b4 assembly language.
 
