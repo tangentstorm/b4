@@ -81,3 +81,7 @@ pas/b4.out
 
 # tanco for ./test-b4-bend
 .venv/
+
+# Bend build artifacts
+bend/b4i
+bend/b4i.js

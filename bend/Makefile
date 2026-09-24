@@ -13,4 +13,4 @@ test:
 	../test-b4-bend
 
 clean:
-	rm -f b4i fleet-test
+	rm -f b4i b4i.js fleet-test
