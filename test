@@ -1,12 +1,109 @@
 #!/bin/sh
-(cd pas; make b4i) \
-&& echo "== b4-tests.org ================" \
-&& tanco run -t b4-tests.org -- pas/b4i \
-&& echo "== b4i-tests.org ===============" \
-&& tanco run -t b4i-tests.org -- pas/b4i \
-&& echo "== bios-tests.org ==============" \
-&& tanco run -t bios-tests.org -- pas/b4i -a b4a/bios.b4a \
-&& echo "== pre-tests.org ===============" \
-&& tanco run -t pre-tests.org -- pas/b4i -a b4a/bios.b4a -a b4a/pre.b4a \
-&& echo "== b4s-tests.org ===============" \
-&& tanco run -t b4s-tests.org -- pas/b4i -a b4a/bios.b4a -a b4a/pre.b4a -a b4a/b4s.b4a
+# ./test                  every implementation, every suite
+# ./test pas              every Pascal suite
+# ./test pas b4 b4i       selected Pascal suites
+# ./test -- b4            the b4 suite on every implementation that has it
+set -eu
+cd "$(dirname "$0")"
+
+LANGS="pas js jlang lil c bend gd"
+
+usage() {
+  echo "usage: ./test [language] [suite ...]" >&2
+  echo "       ./test -- suite ..." >&2
+  echo "languages: pas js jlang (j) lil c bend gd" >&2
+  echo "  ./test              test every implementation" >&2
+  echo "  ./test pas          every Pascal suite" >&2
+  echo "  ./test pas b4 b4i   those Pascal suites" >&2
+  echo "  ./test -- b4        the b4 suite for every implementation" >&2
+  exit 2
+}
+
+run_lang() {
+  lang=$1
+  shift
+  case $lang in
+    j) lang=jlang ;;
+  esac
+  script=imp/test-$lang
+  if [ ! -f "$script" ]; then
+    echo "unknown language: $lang" >&2
+    usage
+  fi
+  sh "$script" "$@"
+}
+
+has_suite() {
+  lang=$1
+  want=$2
+  for suite in $(sh "imp/test-$lang" --list); do
+    if [ "$suite" = "$want" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+run_all() {
+  fail=0
+  for lang in $LANGS; do
+    echo "######## $lang ########"
+    if run_lang "$lang" "$@"; then
+      :
+    else
+      echo "FAILED $lang" >&2
+      fail=1
+    fi
+  done
+  exit $fail
+}
+
+if [ $# -eq 0 ]; then
+  run_all
+fi
+
+if [ "$1" = "--" ]; then
+  shift
+  if [ $# -eq 0 ]; then
+    usage
+  fi
+  for want in "$@"; do
+    found=
+    for lang in $LANGS; do
+      if has_suite "$lang" "$want"; then
+        found=1
+        break
+      fi
+    done
+    if [ -z "$found" ]; then
+      echo "unknown suite: $want" >&2
+      usage
+    fi
+  done
+  fail=0
+  for lang in $LANGS; do
+    selected=
+    for want in "$@"; do
+      if has_suite "$lang" "$want"; then
+        selected="$selected $want"
+      fi
+    done
+    echo "######## $lang ########"
+    if [ -z "$selected" ]; then
+      echo "skip $lang: no $* suite"
+      continue
+    fi
+    # shellcheck disable=SC2086
+    if run_lang "$lang" $selected; then
+      :
+    else
+      echo "FAILED $lang" >&2
+      fail=1
+    fi
+  done
+  exit $fail
+fi
+
+lang=$1
+shift
+run_lang "$lang" "$@"

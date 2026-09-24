@@ -47,7 +47,7 @@ Edit `%APPDATA%\Claude\claude_desktop_config.json`:
 }
 ```
 
-**Note:** On Windows, make sure you have Git Bash installed, as the server uses `bash` to run the `pas/b4i` executable.
+**Note:** On Windows, make sure you have Git Bash installed, as the server uses `bash` to run the `imp/pas/b4i` executable.
 
 #### Linux
 
@@ -152,18 +152,18 @@ https://git-scm.com/download/win
 
 Make sure `bash` is in your system PATH.
 
-### "pas/b4i not found"
+### "imp/pas/b4i not found"
 
 Make sure the B4i interpreter is compiled:
 
 ```bash
-cd pas
+cd imp/pas
 make b4i
 ```
 
 Or compile manually:
 ```bash
-cd pas
+cd imp/pas
 fpc b4i.pas
 ```
 
@@ -171,9 +171,9 @@ fpc b4i.pas
 
 If commands seem to hang or timeout:
 
-1. Test the `pas/b4i` executable directly:
+1. Test the `imp/pas/b4i` executable directly:
    ```bash
-   echo "?d /q" | pas/b4i
+   echo "?d /q" | imp/pas/b4i
    ```
 
 2. Increase the timeout in `index.js` (currently 100ms):

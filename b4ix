@@ -1,5 +1,5 @@
-(cd pas && make b4ix) && \
-pas/b4ix \
+(cd imp/pas && make b4ix) && \
+imp/pas/b4ix \
   -a b4a/bios.b4a \
   -a b4a/pre.b4a \
   -a b4a/b4s.b4a \

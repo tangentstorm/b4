@@ -27,7 +27,7 @@ main:
 	@echo 'clean : remove fpc residue'
 	@echo '  run : build/run b4 (stdio)'
 	@echo ' runx : build/run b4x (graphical)'
-	@echo ' runf : build/run b4f (b4 $ARGS -a ../b4a/b4f.b4a)'
+	@echo ' runf : build/run b4f (b4 $ARGS -a ../../b4a/b4f.b4a)'
 	@echo ' runi : build/run b4i (plain interpreter)'
 	@echo ' runh : build/run b4h (hex debugger mode)'
 	@echo ' runix: build/run b4ix (fancy interpreter)'
@@ -48,7 +48,7 @@ runx: $(B4X)
 	./$(B4X) $(ARGS)
 
 runf: $(B4)
-	./$(B4) $(ARGS) -a ../b4a/b4f.b4a
+	./$(B4) $(ARGS) -a ../../b4a/b4f.b4a
 
 runi: $(B4I)
 	./$(B4I) $(ARGS)

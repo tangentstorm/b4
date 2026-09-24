@@ -1,3 +1,0 @@
-#!/bin/sh
-(cd pas; make b4i) && \
-tanco run -t pre-tests.org -- pas/b4i -a b4a/pre.b4a

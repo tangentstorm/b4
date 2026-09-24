@@ -1,0 +1,36 @@
+#!/bin/sh
+# ./test js [b4 b4i b4h]
+set -eu
+ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
+. "$ROOT/imp/common.sh"
+cd "$ROOT"
+if [ "${1:-}" = "--list" ]; then
+  echo "b4 b4i b4h"
+  exit 0
+fi
+ensure_tanco
+
+if [ $# -eq 0 ]; then
+  set -- b4 b4i b4h
+fi
+
+(cd "$ROOT/imp/js" && npm run build)
+
+for suite in "$@"; do
+  case $suite in
+    b4)
+      tanco_run b4-tests.org -- node imp/js/dist/b4i.mjs
+      ;;
+    b4i)
+      tanco_run b4i-tests.org -- node imp/js/dist/b4i.mjs
+      ;;
+    b4h)
+      tanco_run b4h-tests.org -- node imp/js/dist/b4h.mjs
+      ;;
+    *)
+      echo "js: unknown suite '$suite'" >&2
+      echo "suites: b4 b4i b4h" >&2
+      exit 2
+      ;;
+  esac
+done

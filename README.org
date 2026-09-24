@@ -46,15 +46,19 @@ then =zp rt= removes that original =5= that's been sitting on the stack the whol
 
 *b4* is a tiny virtual machine, with a forth-like flavor.
 
-There are currently five implementations:
+Implementations:
 
-- [[./jlang/]], implemented in [[https://code.jsoftware.com/wiki/Main_Page][J]].
-- [[./pas/]], implemented in [[https://www.freepascal.org/][free pascal]].
-- [[./lil/]], implemented in [[https://beyondloom.com/decker/lil.html][lil]].
-- [[./js/]], implemented in javascript.
+- [[./imp/jlang/]], implemented in [[https://code.jsoftware.com/wiki/Main_Page][J]].
+- [[./imp/pas/]], implemented in [[https://www.freepascal.org/][free pascal]].
+- [[./imp/lil/]], implemented in [[https://beyondloom.com/decker/lil.html][lil]].
+- [[./imp/js/]], implemented in javascript.
+- [[./imp/c/]], implemented in C.
+- [[./imp/bend/]], implemented in [[https://github.com/HigherOrderCO/bend][Bend]].
+- [[./imp/lean/]], implemented in Lean.
 - [[https://github.com/tangentstorm/b4-gd][b4-gd]], implemented in GDScript for [[https://docs.godotengine.org/en/stable/][Godot 4]].
 
-The implementations are kept in sync through the tests in [[./b4-tests.org]]
+The implementations are kept in sync through the tests in [[./b4-tests.org]].
+Run them with =./test=, =./test pas=, =./test pas b4 b4i=, or =./test -- b4=.
 
 See [[file:./b4a/bios.b4a][bios.b4a]] for an example of b4 assembly language.
 

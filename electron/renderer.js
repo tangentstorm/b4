@@ -1,6 +1,6 @@
 
 // note: we need this to register the <b4-repl> custom element
-import { B4ReplCmpt } from '../js/b4-repl.mjs';
+import { B4ReplCmpt } from '../imp/js/b4-repl.mjs';
 
 /**
  * This file is loaded via the <script> tag in the index.html file and will

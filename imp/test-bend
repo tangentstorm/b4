@@ -1,0 +1,32 @@
+#!/bin/sh
+# ./test bend [b4]
+# The b4 suite is the shared document plus Bend's own checks.
+set -eu
+ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
+. "$ROOT/imp/common.sh"
+cd "$ROOT"
+if [ "${1:-}" = "--list" ]; then
+  echo "b4"
+  exit 0
+fi
+ensure_tanco
+
+if [ $# -eq 0 ]; then
+  set -- b4
+fi
+
+(cd "$ROOT/imp/bend" && make check b4i)
+
+for suite in "$@"; do
+  case $suite in
+    b4)
+      tanco_run b4-tests.org -- imp/bend/b4i
+      tanco_run imp/bend/tests.org -- imp/bend/b4i
+      ;;
+    *)
+      echo "bend: unknown suite '$suite'" >&2
+      echo "suites: b4" >&2
+      exit 2
+      ;;
+  esac
+done

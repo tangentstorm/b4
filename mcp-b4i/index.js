@@ -17,8 +17,8 @@ const __dirname = dirname(__filename);
 
 // Paths to different b4i implementations
 const B4I_PATHS = {
-  pas: join(__dirname, "..", "pas", "b4i"),
-  js: join(__dirname, "..", "js", "b4i.mjs"),
+  pas: join(__dirname, "..", "imp", "pas", "b4i"),
+  js: join(__dirname, "..", "imp", "js", "dist", "b4i.mjs"),
 };
 
 class B4iInstance {
@@ -38,7 +38,7 @@ class B4iInstance {
 
     // Check if implementation exists
     if (this.impl === "pas" && !existsSync(implPath)) {
-      const errMsg = `Pascal binary not found at ${implPath}. Build it with 'make -C pas' or use impl: "js" instead.`;
+      const errMsg = `Pascal binary not found at ${implPath}. Build it with 'make -C imp/pas' or use impl: "js" instead.`;
       console.error(`b4i[${this.name}] ${errMsg}`);
       this.startError = errMsg;
       return;

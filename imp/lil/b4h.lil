@@ -8,6 +8,7 @@ on exists dnm fnm do
 end
 
 p: if exists["." "mb4.deck"] "mb4.deck"
+   elseif exists["imp/lil" "mb4.deck"] "imp/lil/mb4.deck"
    elseif exists["lil" "mb4.deck"] "lil/mb4.deck"
    else panic["couldn't find mb4.deck"] end
 dek:readdeck[p]

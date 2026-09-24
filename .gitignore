@@ -27,14 +27,14 @@ GEMINI.md
 b4i.b4x
 
 # TypeScript/JavaScript
-js/node_modules/
-js/dist/
-js/package-lock.json
+imp/js/node_modules/
+imp/js/dist/
+imp/js/package-lock.json
 *.tsbuildinfo
 
 # C build artifacts
-c/b4h
-c/b4i
+imp/c/b4h
+imp/c/b4i
 *~
 *#
 *.#*
@@ -64,24 +64,24 @@ GEMINI.md
 b4i.b4x
 
 # TypeScript/JavaScript
-js/node_modules/
-js/dist/
-js/package-lock.json
+imp/js/node_modules/
+imp/js/dist/
+imp/js/package-lock.json
 *.tsbuildinfo
 
 # C build artifacts
-c/b4h
-c/b4i
-pas/b4x
-pas/b4h
-pas/b4a
-pas/b4i
-pas/b4ix
-pas/b4.out
+imp/c/b4h
+imp/c/b4i
+imp/pas/b4x
+imp/pas/b4h
+imp/pas/b4a
+imp/pas/b4i
+imp/pas/b4ix
+imp/pas/b4.out
 
-# tanco for ./test-b4-bend
+# tanco for ./test
 .venv/
 
 # Bend build artifacts
-bend/b4i
-bend/b4i.js
+imp/bend/b4i
+imp/bend/b4i.js
