@@ -1,0 +1,3 @@
+[submodule "imp/gd"]
+	path = imp/gd
+	url = https://github.com/tangentstorm/b4-gd.git
