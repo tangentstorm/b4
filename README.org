@@ -55,7 +55,9 @@ Implementations:
 - [[./imp/c/]], implemented in C.
 - [[./imp/bend/]], implemented in [[https://github.com/HigherOrderCO/bend][Bend]].
 - [[./imp/lean/]], implemented in Lean.
-- [[https://github.com/tangentstorm/b4-gd][b4-gd]], implemented in GDScript for [[https://docs.godotengine.org/en/stable/][Godot 4]].
+- [[./imp/gd/]], implemented in GDScript for [[https://docs.godotengine.org/en/stable/][Godot 4]].
+  This is a submodule of [[https://github.com/tangentstorm/b4-gd][b4-gd]]. Godot projects should use that repository, not this one.
+  Clone with =git clone --recurse-submodules=, or run =git submodule update --init imp/gd= afterward.
 
 The implementations are kept in sync through the tests in [[./b4-tests.org]].
 Run them with =./test=, =./test pas=, =./test pas b4 b4i=, or =./test -- b4=.
