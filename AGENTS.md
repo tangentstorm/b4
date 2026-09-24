@@ -10,7 +10,7 @@ Current focus is implementing the machine in bend.
 
 Git workflow:
 
-- Do not commit to `main`. Commit on a branch and open a pull request for review.
+- Do not commit to `main`. Commit on a branch and open a pull request against `main` for review.
 
 When using Bend:
 
