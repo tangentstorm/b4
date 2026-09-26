@@ -2,9 +2,9 @@
 #
 # 2^8 by 2^6 tiles, each a 16x16 block, is 2^14 machines. The picture
 # is written to mandelbrot.png: 4096 by 1024 grayscale pixels.
-# Coordinates are Q12.12 fixed point. b4 has no floats, and `sh` is a
-# logical shift, so the bytecode subroutine fxmul finishes a signed
-# product with an arithmetic shift built from integer ops.
+# Coordinates are IEEE binary32. The custom ops fa, fs, fm, fl, and fi
+# keep those bit patterns on the data stack, so a product is one
+# instruction.
 # A tile inside the set runs every iteration. A tile outside escapes
 # early and halts, so the machines do not take the same number of steps.
 import Base
@@ -35,7 +35,7 @@ def span(+d: Nat) -> U32:
       U32.mul(span(p), 2)
 
 def code() -> List<&2, U32>:
-  130 <> 140 <> 153 <> 225 <> 133 <> 247 <> 130 <> 140 <> 150 <> 20 <> 133 <> 141 <> 143 <> 141 <> 153 <> 244 <> 133 <> 135 <> 158 <> 151 <> 0 <> 3 <> 0 <> 0 <> 72 <> 73 <> 74 <> 192 <> 71 <> 192 <> 70 <> 41 <> 150 <> 16 <> 130 <> 38 <> 128 <> 150 <> 3 <> 130 <> 151 <> 0 <> 224 <> 255 <> 255 <> 128 <> 67 <> 42 <> 150 <> 16 <> 130 <> 39 <> 128 <> 150 <> 8 <> 130 <> 151 <> 0 <> 240 <> 255 <> 255 <> 128 <> 68 <> 192 <> 65 <> 192 <> 66 <> 192 <> 69 <> 37 <> 150 <> 16 <> 138 <> 137 <> 156 <> 57 <> 33 <> 33 <> 157 <> 0 <> 1 <> 0 <> 0 <> 34 <> 34 <> 157 <> 0 <> 1 <> 0 <> 0 <> 142 <> 142 <> 128 <> 151 <> 0 <> 64 <> 0 <> 0 <> 139 <> 137 <> 156 <> 6 <> 143 <> 143 <> 155 <> 27 <> 33 <> 34 <> 157 <> 0 <> 1 <> 0 <> 0 <> 193 <> 133 <> 36 <> 128 <> 66 <> 129 <> 35 <> 128 <> 65 <> 37 <> 193 <> 128 <> 69 <> 154 <> 69 <> 1 <> 0 <> 0 <> 37 <> 40 <> 148 <> 40 <> 193 <> 128 <> 72 <> 38 <> 193 <> 128 <> 70 <> 38 <> 150 <> 16 <> 139 <> 137 <> 156 <> 16 <> 192 <> 70 <> 39 <> 193 <> 128 <> 71 <> 39 <> 150 <> 16 <> 139 <> 137 <> 156 <> 8 <> 255 <> 154 <> 31 <> 1 <> 0 <> 0 <> 154 <> 29 <> 1 <> 0 <> 0 <> []
+  151 <> 0 <> 3 <> 0 <> 0 <> 72 <> 73 <> 74 <> 192 <> 71 <> 192 <> 70 <> 41 <> 150 <> 16 <> 130 <> 38 <> 128 <> 165 <> 151 <> 0 <> 0 <> 64 <> 58 <> 162 <> 151 <> 0 <> 0 <> 0 <> 192 <> 160 <> 67 <> 42 <> 150 <> 16 <> 130 <> 39 <> 128 <> 165 <> 151 <> 0 <> 0 <> 0 <> 59 <> 162 <> 151 <> 0 <> 0 <> 128 <> 191 <> 160 <> 68 <> 192 <> 65 <> 192 <> 66 <> 192 <> 69 <> 37 <> 150 <> 16 <> 138 <> 137 <> 156 <> 45 <> 33 <> 33 <> 162 <> 34 <> 34 <> 162 <> 142 <> 142 <> 160 <> 151 <> 0 <> 0 <> 128 <> 64 <> 164 <> 137 <> 156 <> 6 <> 143 <> 143 <> 155 <> 23 <> 33 <> 34 <> 162 <> 140 <> 160 <> 36 <> 160 <> 66 <> 161 <> 35 <> 160 <> 65 <> 37 <> 193 <> 128 <> 69 <> 154 <> 58 <> 1 <> 0 <> 0 <> 37 <> 40 <> 148 <> 40 <> 193 <> 128 <> 72 <> 38 <> 193 <> 128 <> 70 <> 38 <> 150 <> 16 <> 139 <> 137 <> 156 <> 16 <> 192 <> 70 <> 39 <> 193 <> 128 <> 71 <> 39 <> 150 <> 16 <> 139 <> 137 <> 156 <> 8 <> 255 <> 154 <> 12 <> 1 <> 0 <> 0 <> 154 <> 10 <> 1 <> 0 <> 0 <> []
 
 def poke(code: List<&2, U32>, mem: Array<U32>, +addr: U32) -> Array<U32>:
   match code:
@@ -50,7 +50,7 @@ def blank() -> Array<U32>:
 def machine(+code: List<&2, U32>, +index: U32) -> V.VM:
   tx = U32.and(index, 255)
   ty = U32.shrn(index, 8n)
-  V.VM{poke(code, blank(), 256), tx <> ty <> [], [], 275,
+  V.VM{poke(code, blank(), 256), tx <> ty <> [], [], 256,
     V.Control{V.Ru{}, V.Clear{}, 0}, ""}
 
 type Swarm is Type:
@@ -69,7 +69,7 @@ def grow(+code: List<&2, U32>, +d: Nat, +index: U32) -> Swarm:
 def search(swarm: Swarm) -> Swarm:
   match swarm:
     case One{vm}:
-      One{V.run(pow2n(19n), vm)}
+      One{V.run(pow2n(18n), vm)}
     case Both{left, right}:
       a b = search(left) search(right)
       Both{a, b}
