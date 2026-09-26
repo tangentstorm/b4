@@ -219,6 +219,61 @@ def return_control(top: Bool, control: Control) -> Control:
     case False{}:
       control
 
+# $A0..$A5 keep IEEE binary32 bit patterns in ordinary stack cells.
+
+def f32_of(+bits: U32) -> F32:
+  U32{w} = bits
+  F32{w}
+
+def f_bits(x: F32) -> U32:
+  F32.bits(x)
+
+def fadd(a: U32, b: U32) -> U32:
+  f_bits(F32.add(f32_of(a), f32_of(b)))
+
+def fsub(a: U32, b: U32) -> U32:
+  f_bits(F32.sub(f32_of(a), f32_of(b)))
+
+def fmul(a: U32, b: U32) -> U32:
+  f_bits(F32.mul(f32_of(a), f32_of(b)))
+
+def fdiv(a: U32, b: U32) -> U32:
+  f_bits(F32.div(f32_of(a), f32_of(b)))
+
+def flt(a: U32, b: U32) -> U32:
+  truth(F32.is_lt(f32_of(a), f32_of(b)))
+
+def itof_signed(neg: Bool, +n: U32) -> F32:
+  match neg:
+    case False{}:
+      U32.to_f32(n)
+    case True{}:
+      F32.neg(U32.to_f32(negate(n)))
+
+def itof_go(+n: U32) -> F32:
+  itof_signed(negative(n), n)
+
+def itof(n: U32) -> U32:
+  f_bits(itof_go(n))
+
+def push_calc(vm: VM, y: U32) -> VM:
+  VM{mem, ds, cs, ip, control, output} = vm
+  VM{mem, y <> ds, cs, ip, control, output}
+
+def calc2(vm: VM, f: U32 -> U32 -> U32) -> VM:
+  VM{mem, ds, cs, ip, control, output} = vm
+  pair(U32, List<&2, U32>, VM, pop(ds), b => ds => (
+    pair(U32, List<&2, U32>, VM, pop(ds), a => ds => (
+      push_calc(VM{mem, ds, cs, ip, control, output}, f(a, b))
+    ))
+  ))
+
+def calc1(vm: VM, f: U32 -> U32) -> VM:
+  VM{mem, ds, cs, ip, control, output} = vm
+  pair(U32, List<&2, U32>, VM, pop(ds), a => ds => (
+    push_calc(VM{mem, ds, cs, ip, control, output}, f(a))
+  ))
+
 def microcode(op: U32, vm: VM) -> VM:
   match op:
     case 0:
@@ -423,6 +478,18 @@ def microcode(op: U32, vm: VM) -> VM:
         +n = next_counter(a)
         next_jump(U32.is_zero(n), mem, ds, cs, n, ip, control, output)
       ))
+    case 160:
+      calc2(vm, fadd)
+    case 161:
+      calc2(vm, fsub)
+    case 162:
+      calc2(vm, fmul)
+    case 163:
+      calc2(vm, fdiv)
+    case 164:
+      calc2(vm, flt)
+    case 165:
+      calc1(vm, itof)
     case 253:
       VM{mem, ds, cs, +ip, control, output} = vm
       pair(U32, List<&2, U32>, VM, pop(ds), cmd => ds => (
@@ -523,6 +590,18 @@ def need_data(op: U32) -> Nat:
       1n
     case 156:
       1n
+    case 160:
+      2n
+    case 161:
+      2n
+    case 162:
+      2n
+    case 163:
+      2n
+    case 164:
+      2n
+    case 165:
+      1n
     case 253:
       2n
     case +other:
@@ -540,7 +619,7 @@ def need_control(op: U32) -> Nat:
       0n
 
 def supported(+op: U32) -> Bool:
-  Bool.or(U32.is_lt(op, 160),
+  Bool.or(U32.is_lt(op, 166),
     Bool.or(U32.is_eq(op, 192), Bool.or(U32.is_eq(op, 193),
       Bool.or(Bool.and(U32.is_ge(op, 246), U32.is_le(op, 248)),
         Bool.and(U32.is_ge(op, 253), U32.is_le(op, 255))))))
