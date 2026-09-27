@@ -1,6 +1,7 @@
 # 16384 B4 machines in a window on the Windows desktop. Each square is one
 # machine. A click attaches the b4i line (typed in this process) to that
-# machine. @@ holds its id, y * 128 + x.
+# machine. In this window @@ stores that machine's id, y * 128 + x.
+# /all sends one b4i line to every machine.
 import Base
 import ./vm.bend as V
 import ./text.bend as T
@@ -258,6 +259,75 @@ def command(got: V.VM & Grid, text: String, labels: Map<&2, U32>, assembling: Bo
   (vm, grid) = got
   from_shell(I.line(text, I.Shell{vm, labels, assembling, False{}, ""}), grid, x, y, prior, pending)
 
+type Cast is Type:
+  Cast{grid: Grid, labels: Map<&2, U32>, report: String, quit: Bool, hit: Bool}
+
+def drop_text(text: String) -> String:
+  match text:
+    case SNil{}:
+      ""
+    case SCon{c, rest}:
+      drop_text(rest)
+
+def kept(on: Bool, report: String) -> String:
+  match on:
+    case True{}:
+      report
+    case False{}:
+      drop_text(report)
+
+def cast_shell(shell: I.Shell, +id: U32, +on: Bool) -> Cast:
+  I.Shell{vm, labels, assembling, quit, report} = shell
+  Cast{Cell{stamp(vm, id)}, labels, kept(on, report), quit, on}
+
+def cast_cell(vm: V.VM, +text: String, +labels: Map<&2, U32>, +id: U32, on: Bool) -> Cast:
+  cast_shell(I.line(text, I.Shell{vm, labels, False{}, False{}, ""}), id, on)
+
+def take_map(hit: Bool, mine: Map<&2, U32>, other: Map<&2, U32>) -> Map<&2, U32>:
+  match hit:
+    case True{}:
+      mine
+    case False{}:
+      other
+
+def glue(a: Cast, b: Cast, c: Cast, d: Cast) -> Cast:
+  Cast{ga, la, ra, qa, +ha} = a
+  Cast{gb, lb, rb, qb, +hb} = b
+  Cast{gc, lc, rc, qc, +hc} = c
+  Cast{gd, ld, rd, qd, +hd} = d
+  Cast{Quad{ga, gb, gc, gd}, take_map(ha, la, take_map(hb, lb, take_map(hc, lc, ld))), ra ++ rb ++ rc ++ rd, Bool.or(Bool.or(qa, qb), Bool.or(qc, qd)), Bool.or(Bool.or(ha, hb), Bool.or(hc, hd))}
+
+def cast_grid(+d: Nat, +ox: U32, +oy: U32, +sx: U32, +sy: U32, grid: Grid, +text: String, +labels: Map<&2, U32>) -> Cast:
+  match d grid:
+    case 0n Cell{vm}:
+      cast_cell(vm, text, labels, machine_id(ox, oy), Bool.and(U32.is_eq(ox, sx), U32.is_eq(oy, sy)))
+    case 0n Quad{tl, tr, bl, br}:
+      gone = discard(Quad{tl, tr, bl, br})
+      cast_cell(fresh(0), text, labels, 0, False{})
+    case 1n+p Cell{vm}:
+      cast_cell(vm, text, labels, machine_id(ox, oy), Bool.and(U32.is_eq(ox, sx), U32.is_eq(oy, sy)))
+    case 1n+p Quad{tl, tr, bl, br}:
+      +step = span(p)
+      glue(cast_grid(p, ox, oy, sx, sy, tl, text, labels), cast_grid(p, U32.add(ox, step), oy, sx, sy, tr, text, labels), cast_grid(p, ox, U32.add(oy, step), sx, sy, bl, text, labels), cast_grid(p, U32.add(ox, step), U32.add(oy, step), sx, sy, br, text, labels))
+
+def join_words(words: List<&2, String>) -> String:
+  match words:
+    case Nil{}:
+      ""
+    case h <> Nil{}:
+      h
+    case h <> t:
+      h ++ " " ++ join_words(t)
+
+def taken(got: Cast, +x: U32, +y: U32, prior: String, quit: Bool, pending: String) -> Desk:
+  Cast{grid, labels, report, stop, hit} = got
+  Desk{Board{grid, x, y}, labels, False{}, prior ++ report ++ "all 16384\n", Bool.or(quit, stop), pending}
+
+def broadcast(text: String, desk: Desk) -> Desk:
+  Desk{board, +labels, assembling, report, quit, pending} = desk
+  Board{grid, +x, +y} = board
+  taken(cast_grid(7n, 0, 0, x, y, grid, text, labels), x, y, report, quit, pending)
+
 def say(desk: Desk, text: String) -> Desk:
   Desk{board, labels, assembling, report, quit, pending} = desk
   Desk{board, labels, assembling, report ++ text, quit, pending}
@@ -272,6 +342,10 @@ def route(words: List<&2, String>, text: String, desk: Desk) -> Desk:
     case "/q" <> Nil{}:
       Desk{board, labels, assembling, report, quit, pending} = desk
       Desk{board, labels, assembling, report, True{}, pending}
+    case "/all" <> Nil{}:
+      say(desk, "usage: /all command\n")
+    case "/all" <> rest:
+      broadcast(join_words(rest), desk)
     case _:
       apply_line(text, desk)
 
@@ -351,6 +425,7 @@ def with_view(stage: Stage) -> Stage:
 
 def main() -> IO(Unit):
   do IO<Unit>:
-    IO.write("b4 machines. click a square. @@ is that machine's id. ?@ prints it. /q quits.\n")
+    IO.write("b4 machines. click a square. @@ is that machine's id. ?@ prints it.\n")
+    IO.write("/all sends the rest of the line to every machine. /q quits.\n")
     window : Window <- IO.try(Window, Window.open("b4 machines", 512, 512))
     loop(staged(view(Board{grow(7n, 0, 0), 0, 0}), window, Map.new(&2, U32), False{}, "", False{}, ""))
