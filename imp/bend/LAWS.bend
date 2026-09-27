@@ -429,7 +429,7 @@ law unknown_opcode:
   for control: V.Control
   for out: String
   for a: U32
-  {V.execute(160,
+  {V.execute(191,
     V.VM{mem, ds, cs, ip, control,                           out}) ==
     V.VM{mem, ds, cs, ip, V.Control{V.Na{}, V.Opcode{}, ip}, out} : V.VM}
 

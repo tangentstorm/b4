@@ -168,7 +168,7 @@ state: na invalid-address at FFFF
 
 * TEST bend.bad-opcode
 #+begin_src b4a
-> :100 A0
+> :100 BF
 > /s ?d ?i ?s /q
 ds: []
 ip: 100
@@ -274,4 +274,56 @@ state: na data-underflow at 101
 ds: [1 2]
 state: vo
 ds: [3]
+#+end_src
+
+Float primitives keep IEEE binary32 bits in a stack cell.
+1.0 is 3F800000, 2.0 is 40000000, 3.0 is 40400000, and 0.5 is 3F000000.
+A negative bit pattern prints as signed hex, so -1.0 shows up as -40800000.
+
+* TEST bend.fa
+#+begin_src b4a
+> 3F800000 40000000 fa ?d /q
+ds: [40400000]
+#+end_src
+
+* TEST bend.fs
+#+begin_src b4a
+> 40400000 3F800000 fs ?d /q
+ds: [40000000]
+#+end_src
+
+* TEST bend.fm
+#+begin_src b4a
+> 3FC00000 40000000 fm ?d /q
+ds: [40400000]
+#+end_src
+
+* TEST bend.fd
+#+begin_src b4a
+> 3F800000 40000000 fd ?d /q
+ds: [3F000000]
+#+end_src
+
+* TEST bend.fl
+#+begin_src b4a
+> 3F800000 40000000 fl ?d /q
+ds: [-1]
+#+end_src
+
+* TEST bend.fl.false
+#+begin_src b4a
+> 40000000 3F800000 fl ?d /q
+ds: [0]
+#+end_src
+
+* TEST bend.fi
+#+begin_src b4a
+> 02 fi ?d /q
+ds: [40000000]
+#+end_src
+
+* TEST bend.fi.negative
+#+begin_src b4a
+> n1 fi ?d /q
+ds: [-40800000]
 #+end_src

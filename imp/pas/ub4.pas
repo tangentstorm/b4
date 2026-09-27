@@ -588,6 +588,50 @@ procedure wl(a:address);
     writeln('")');
   end;
 
+function pun_to_value(w: longword): value;
+begin
+  move(w, result, sizeof(result));
+end;
+
+function f32_of(v: value): single;
+var rec: record case byte of 0: (i: longword); 1: (s: single); end;
+begin
+  rec.i := longword(v);
+  f32_of := rec.s;
+end;
+
+function f32bin(a, b: value; which: byte): value;
+var
+  ra, rb, rr: record case byte of 0: (i: longword); 1: (s: single); end;
+  old: TFPUExceptionMask;
+begin
+  ra.i := longword(a);
+  rb.i := longword(b);
+  old := GetExceptionMask;
+  SetExceptionMask(old + [exInvalidOp, exDenormalized, exZeroDivide,
+    exOverflow, exUnderflow, exPrecision]);
+  case which of
+    0: rr.s := ra.s + rb.s;
+    1: rr.s := ra.s - rb.s;
+    2: rr.s := ra.s * rb.s;
+    else rr.s := ra.s / rb.s;
+  end;
+  SetExceptionMask(old);
+  f32bin := pun_to_value(rr.i);
+end;
+
+function f32lt(a, b: value): boolean;
+begin
+  f32lt := f32_of(a) < f32_of(b);
+end;
+
+function f32from(a: value): value;
+var rr: record case byte of 0: (i: longword); 1: (s: single); end;
+begin
+  rr.s := a;
+  f32from := pun_to_value(rr.i);
+end;
+
 
 procedure runop(op : byte);
   var t : value;
@@ -635,6 +679,12 @@ procedure runop(op : byte);
       $9F : {nx} begin if toc > 0 then begin t:=cpop; dec(t); cput(t) end;
                    if toc = 0 then begin zap(cpop); inc(rg[RIP]) end
                    else hop end;
+      $A0 : {fa} begin t:=dpop; dput(f32bin(dpop, t, 0)) end;
+      $A1 : {fs} begin t:=dpop; dput(f32bin(dpop, t, 1)) end;
+      $A2 : {fm} begin t:=dpop; dput(f32bin(dpop, t, 2)) end;
+      $A3 : {fd} begin t:=dpop; dput(f32bin(dpop, t, 3)) end;
+      $A4 : {fl} begin t:=dpop; if f32lt(dpop, t) then dput(-1) else dput(0) end;
+      $A5 : {fi} dput(f32from(dpop));
       $BE : {tm} term.invoke(chr(dpop));
       $C0 : {c0} dput(0);
       $C1 : {c1} dput(1);

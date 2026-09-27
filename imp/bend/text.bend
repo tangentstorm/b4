@@ -108,7 +108,7 @@ def find_name(xs: List<&2, String>, +name: String, +index: U32) -> U32:
       V.pick(String.eq(h, name), index, find_name(t, name, U32.add(index, 1)))
 
 def core_names() -> List<&2, String>:
-  String.split("ad sb ml dv md sh an or xr nt eq lt du sw ov zp dc cd rb ri wb wi lb li rs ls jm hp h0 cl rt nx", ' ')
+  String.split("ad sb ml dv md sh an or xr nt eq lt du sw ov zp dc cd rb ri wb wi lb li rs ls jm hp h0 cl rt nx fa fs fm fd fl fi", ' ')
 
 def opcode(s: String) -> U32:
   match s:
@@ -156,7 +156,7 @@ def byte_other(reg: Bool, +x: U32) -> String:
     case True{}:
       register_name(U32.div(x, 32), U32.mod(x, 32))
     case False{}:
-      Bool.pick(String, U32.is_lt(x, 160), name_at(core_names(), U32.sub(x, 128)), hex_fixed(2n, x, ""))
+      Bool.pick(String, U32.is_lt(x, 166), name_at(core_names(), U32.sub(x, 128)), hex_fixed(2n, x, ""))
 
 def byte(x: U32) -> String:
   match x:
