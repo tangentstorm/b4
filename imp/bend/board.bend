@@ -2,6 +2,12 @@
 # the grid: each square is one machine. A click there attaches the repl.
 # The right half is that repl. Keys typed in the window go to the gold
 # square. In this window @@ stores that machine's id, y * 128 + x.
+# @X is the column, 0 on the left. @Y is the row, 0 at the top.
+# Each square runs one pixel and stores the color in register A.
+# Real increases as @Y falls; imaginary increases with @X.
+# /u hex arms every machine in ti (calculator mode). The high byte says
+# what the low 24 bits are: 0 runs that opcode, 1 pushes an unsigned
+# number, 2 pushes a signed one. 0 itself is a no-op. Vo stays offline.
 # /all sends one b4i line to every machine. Letters arrive lower case, so
 # a two-character register word such as ?a or !a is read as ?A or !A.
 # ?d ?c ?s and ?i stay queries.
@@ -20,7 +26,7 @@ type Grid is Type:
   Quad{tl: Grid, tr: Grid, bl: Grid, br: Grid}
 
 type Board is Type:
-  Board{grid: Grid, x: U32, y: U32}
+  Board{grid: Grid, x: U32, y: U32, uniform: U32}
 
 type Way is Data:
   TL{}
@@ -38,20 +44,38 @@ type Desk is Type:
 def machine_id(+x: U32, +y: U32) -> U32:
   U32.add(U32.mul(y, 128), x)
 
-def fresh(+id: U32) -> V.VM:
-  mem = [0 : U32^12n]
-  mem = V.write_cell(mem, 0, id)
-  mem = V.write_cell(mem, 124, 256)
-  mem[256] <- 33
-  mem[257] <- 193
-  mem[258] <- 128
-  mem[259] <- 65
-  mem[260] <- 154
-  mem[261] <- 0
-  mem[262] <- 1
-  mem[263] <- 0
-  mem[264] <- 0
-  V.VM{mem, [], [], 256, V.Control{V.Ru{}, V.Clear{}, 0}, ""}
+# One pixel from @X and @Y. n reaches 64 inside the set. Outside,
+# (n - 1) mod 7 picks white, two golds, then four blues.
+def code() -> List<&2, U32>:
+  56 <> 165 <> 151 <> 6 <> 131 <> 193 <> 60 <> 162 <> 151 <> 0 <> 0 <> 192 <> 191 <> 160 <> 68 <> 151 <> 0 <> 0 <> 128 <> 63 <> 57 <> 165 <> 151 <> 6 <> 131 <> 193 <> 60 <> 162 <> 161 <> 67 <> 192 <> 65 <> 192 <> 66 <> 192 <> 69 <> 37 <> 150 <> 64 <> 138 <> 137 <> 156 <> 66 <> 33 <> 140 <> 162 <> 34 <> 140 <> 162 <> 160 <> 151 <> 0 <> 0 <> 128 <> 64 <> 164 <> 156 <> 33 <> 33 <> 140 <> 162 <> 34 <> 140 <> 162 <> 33 <> 34 <> 162 <> 151 <> 0 <> 0 <> 0 <> 64 <> 162 <> 36 <> 160 <> 66 <> 161 <> 35 <> 160 <> 65 <> 37 <> 193 <> 128 <> 69 <> 154 <> 36 <> 1 <> 0 <> 0 <> 37 <> 193 <> 129 <> 150 <> 7 <> 132 <> 150 <> 2 <> 133 <> 151 <> 0 <> 2 <> 0 <> 0 <> 128 <> 147 <> 65 <> 255 <> 192 <> 65 <> 255 <> []
+
+def poke(code: List<&2, U32>, mem: Array<U32>, +addr: U32) -> Array<U32>:
+  match code:
+    case Nil{}:
+      mem
+    case b <> rest:
+      poke(rest, mem[addr] <- b, U32.add(addr, 1))
+
+def colors(mem: Array<U32>) -> Array<U32>:
+  mem = V.write_cell(mem, 512, 16777215)
+  mem = V.write_cell(mem, 516, 16765469)
+  mem = V.write_cell(mem, 520, 11702016)
+  mem = V.write_cell(mem, 524, 4198376)
+  mem = V.write_cell(mem, 528, 1910681)
+  mem = V.write_cell(mem, 532, 85)
+  V.write_cell(mem, 536, 51)
+
+# @X is byte 96 and @Y is byte 100. The pixel program runs to a halt
+# here, so the first frame already holds the color in register A.
+def fresh(+x: U32, +y: U32) -> V.VM:
+  mem = colors(poke(code(), [0 : U32^12n], 256))
+  mem = V.write_cell(mem, 0, machine_id(x, y))
+  mem = V.write_cell(mem, 96, x)
+  mem = V.write_cell(mem, 100, y)
+  V.run(4096n, V.VM{mem, [], [], 256, V.Control{V.Ru{}, V.Clear{}, 0}, ""})
+
+def idle() -> V.VM:
+  V.VM{[0 : U32^12n], [], [], 256, V.Control{V.Ti{}, V.Clear{}, 0}, ""}
 
 def span(+n: Nat) -> U32:
   match n:
@@ -63,18 +87,64 @@ def span(+n: Nat) -> U32:
 def grow(+d: Nat, +ox: U32, +oy: U32) -> Grid:
   match d:
     case 0n:
-      Cell{fresh(machine_id(ox, oy))}
+      Cell{fresh(ox, oy)}
     case 1n+p:
       +step = span(p)
       a b c d = grow(p, ox, oy) grow(p, U32.add(ox, step), oy) grow(p, ox, U32.add(oy, step)) grow(p, U32.add(ox, step), U32.add(oy, step))
       Quad{a, b, c, d}
 
+# Register A is the square's color, 0xAARRGGBB. The window draws the
+# low 24 bits, so the top byte does not change opacity.
 def ink(on: Bool, +shade: U32) -> U32:
   match on:
     case True{}:
       16763904
     case False{}:
-      U32.mul(U32.and(shade, 255), 65793)
+      U32.and(shade, 16777215)
+
+# A 24-bit sign lives in bit 23. The high byte of the uniform is the kind.
+def sign24(+n: U32) -> U32:
+  +low = U32.and(n, 16777215)
+  Bool.pick(U32, U32.is_ne(U32.and(low, 8388608), 0), U32.or(low, 4278190080), low)
+
+def run_op(+op: U32, vm: V.VM) -> V.VM:
+  match op:
+    case 0:
+      vm
+    case _:
+      V.execute(op, vm)
+
+def perform(+kind: U32, +n: U32, vm: V.VM) -> V.VM:
+  match kind:
+    case 0:
+      run_op(U32.and(n, 255), vm)
+    case 1:
+      V.push(vm, U32.and(n, 16777215))
+    case 2:
+      V.push(vm, sign24(n))
+    case _:
+      vm
+
+def deliver_go(idle: Bool, +n: U32, vm: V.VM) -> V.VM:
+  match idle:
+    case True{}:
+      vm
+    case False{}:
+      perform(U32.shrn(n, 24n), n, vm)
+
+# Ti listens. Ru keeps stepping. Zero is the idle no-op, so a quiet
+# frame does not touch a waiting machine.
+def deliver(+n: U32, vm: V.VM) -> V.VM:
+  deliver_go(U32.is_zero(n), n, vm)
+
+def listen(+n: U32, vm: V.VM) -> V.VM:
+  match vm:
+    case V.VM{mem, ds, cs, ip, V.Control{V.Ti{}, reason, at}, output}:
+      deliver(n, V.VM{mem, ds, cs, ip, V.Control{V.Ti{}, reason, at}, output})
+    case V.VM{mem, ds, cs, ip, V.Control{V.Ru{}, reason, at}, output}:
+      V.tick(V.VM{mem, ds, cs, ip, V.Control{V.Ru{}, reason, at}, output})
+    case V.VM{mem, ds, cs, ip, control, output}:
+      V.VM{mem, ds, cs, ip, control, output}
 
 def shade(vm: V.VM, on: Bool) -> V.VM & U32:
   V.VM{mem, ds, cs, ip, control, output} = vm
@@ -82,15 +152,15 @@ def shade(vm: V.VM, on: Bool) -> V.VM & U32:
     (V.VM{mem, ds, cs, ip, control, output}, ink(on, a))
   ))
 
-def painted(vm: V.VM, on: Bool) -> V.VM & U32:
-  shade(V.tick(vm), on)
+def painted(vm: V.VM, on: Bool, +uniform: U32) -> V.VM & U32:
+  shade(listen(uniform, vm), on)
 
 def as_cell(got: V.VM & U32) -> Grid & Image:
   (vm, col) = got
   (Cell{vm}, Pix{col})
 
-def cell_at(vm: V.VM, +ox: U32, +oy: U32, +sx: U32, +sy: U32) -> Grid & Image:
-  as_cell(painted(vm, Bool.and(U32.is_eq(ox, sx), U32.is_eq(oy, sy))))
+def cell_at(vm: V.VM, +ox: U32, +oy: U32, +sx: U32, +sy: U32, +uniform: U32) -> Grid & Image:
+  as_cell(painted(vm, Bool.and(U32.is_eq(ox, sx), U32.is_eq(oy, sy)), uniform))
 
 def join(wa: Grid & Image, wb: Grid & Image, wc: Grid & Image, wd: Grid & Image) -> Grid & Image:
   (ga, ia) = wa
@@ -111,21 +181,21 @@ def discard(grid: Grid) -> U32:
       a b c d = discard(tl) discard(tr) discard(bl) discard(br)
       U32.add(U32.add(a, b), U32.add(c, d))
 
-def frame(+d: Nat, +ox: U32, +oy: U32, +sx: U32, +sy: U32, grid: Grid) -> Grid & Image:
+def frame(+d: Nat, +ox: U32, +oy: U32, +sx: U32, +sy: U32, +uniform: U32, grid: Grid) -> Grid & Image:
   match d grid:
     case 0n Cell{vm}:
-      cell_at(vm, ox, oy, sx, sy)
+      cell_at(vm, ox, oy, sx, sy, uniform)
     case 0n Quad{tl, tr, bl, br}:
       gone = discard(Quad{tl, tr, bl, br})
-      cell_at(fresh(0), ox, oy, sx, sy)
+      cell_at(idle(), ox, oy, sx, sy, uniform)
     case 1n+p Cell{vm}:
-      cell_at(vm, ox, oy, sx, sy)
+      cell_at(vm, ox, oy, sx, sy, uniform)
     case 1n+p Quad{tl, tr, bl, br}:
       +step = span(p)
-      wa wb wc wd = frame(p, ox, oy, sx, sy, tl)
-        frame(p, U32.add(ox, step), oy, sx, sy, tr)
-        frame(p, ox, U32.add(oy, step), sx, sy, bl)
-        frame(p, U32.add(ox, step), U32.add(oy, step), sx, sy, br)
+      wa wb wc wd = frame(p, ox, oy, sx, sy, uniform, tl)
+        frame(p, U32.add(ox, step), oy, sx, sy, uniform, tr)
+        frame(p, ox, U32.add(oy, step), sx, sy, uniform, bl)
+        frame(p, U32.add(ox, step), U32.add(oy, step), sx, sy, uniform, br)
       join(wa, wb, wc, wd)
 
 def as_u32(n: Nat) -> U32:
@@ -292,10 +362,10 @@ def join_br(got: V.VM & Grid, tl: Grid, tr: Grid, bl: Grid) -> V.VM & Grid:
 def walk(path: Path, grid: Grid) -> V.VM & Grid:
   match path grid:
     case End{} Cell{vm}:
-      (vm, Cell{fresh(0)})
+      (vm, Cell{idle()})
     case End{} Quad{tl, tr, bl, br}:
       gone = discard(Quad{tl, tr, bl, br})
-      (fresh(0), Cell{fresh(0)})
+      (idle(), Cell{idle()})
     case Go{TL{}, rest} Quad{tl, tr, bl, br}:
       join_tl(walk(rest, tl), tr, bl, br)
     case Go{TR{}, rest} Quad{tl, tr, bl, br}:
@@ -306,7 +376,7 @@ def walk(path: Path, grid: Grid) -> V.VM & Grid:
       join_br(walk(rest, br), tl, tr, bl)
     case Go{way, rest} Cell{vm}:
       gone = sink(vm)
-      (fresh(0), Cell{fresh(0)})
+      (idle(), Cell{idle()})
 
 def put_tl(child: Grid, tr: Grid, bl: Grid, br: Grid) -> Grid:
   Quad{child, tr, bl, br}
@@ -342,15 +412,18 @@ def put(path: Path, grid: Grid, vm: V.VM) -> Grid:
 
 def stamp(vm: V.VM, +id: U32) -> V.VM:
   V.VM{mem, ds, cs, ip, control, output} = vm
-  V.VM{V.write_cell(mem, 0, id), ds, cs, ip, control, output}
+  mem = V.write_cell(mem, 0, id)
+  mem = V.write_cell(mem, 96, U32.and(id, 127))
+  mem = V.write_cell(mem, 100, U32.shrn(id, 7n))
+  V.VM{mem, ds, cs, ip, control, output}
 
-def from_shell(shell: I.Shell, grid: Grid, +x: U32, +y: U32, prior: String, pending: String, input: String, lines: List<&2, String>) -> Desk:
+def from_shell(shell: I.Shell, grid: Grid, +x: U32, +y: U32, +uniform: U32, prior: String, pending: String, input: String, lines: List<&2, String>) -> Desk:
   I.Shell{vm, labels, assembling, quit, report} = shell
-  Desk{Board{put(bits(7n, x, y), grid, stamp(vm, machine_id(x, y))), x, y}, labels, assembling, prior ++ report, quit, pending, input, lines}
+  Desk{Board{put(bits(7n, x, y), grid, stamp(vm, machine_id(x, y))), x, y, uniform}, labels, assembling, prior ++ report, quit, pending, input, lines}
 
-def command(got: V.VM & Grid, text: String, labels: Map<&2, U32>, assembling: Bool, +x: U32, +y: U32, prior: String, pending: String, input: String, lines: List<&2, String>) -> Desk:
+def command(got: V.VM & Grid, text: String, labels: Map<&2, U32>, assembling: Bool, +x: U32, +y: U32, +uniform: U32, prior: String, pending: String, input: String, lines: List<&2, String>) -> Desk:
   (vm, grid) = got
-  from_shell(I.line(text, I.Shell{vm, labels, assembling, False{}, ""}), grid, x, y, prior, pending, input, lines)
+  from_shell(I.line(text, I.Shell{vm, labels, assembling, False{}, ""}), grid, x, y, uniform, prior, pending, input, lines)
 
 type Cast is Type:
   Cast{grid: Grid, labels: Map<&2, U32>, report: String, quit: Bool, hit: Bool}
@@ -389,7 +462,7 @@ def cast_grid(+d: Nat, +ox: U32, +oy: U32, +sx: U32, +sy: U32, grid: Grid, +text
       cast_cell(vm, text, labels, machine_id(ox, oy), Bool.and(U32.is_eq(ox, sx), U32.is_eq(oy, sy)))
     case 0n Quad{tl, tr, bl, br}:
       gone = discard(Quad{tl, tr, bl, br})
-      cast_cell(fresh(0), text, labels, 0, False{})
+      cast_cell(idle(), text, labels, 0, False{})
     case 1n+p Cell{vm}:
       cast_cell(vm, text, labels, machine_id(ox, oy), Bool.and(U32.is_eq(ox, sx), U32.is_eq(oy, sy)))
     case 1n+p Quad{tl, tr, bl, br}:
@@ -405,14 +478,14 @@ def join_words(words: List<&2, String>) -> String:
     case h <> t:
       h ++ " " ++ join_words(t)
 
-def taken(got: Cast, +x: U32, +y: U32, prior: String, quit: Bool, pending: String, input: String, lines: List<&2, String>) -> Desk:
+def taken(got: Cast, +x: U32, +y: U32, +uniform: U32, prior: String, quit: Bool, pending: String, input: String, lines: List<&2, String>) -> Desk:
   Cast{grid, labels, report, stop, hit} = got
-  Desk{Board{grid, x, y}, labels, False{}, prior ++ report ++ "all 16384\n", Bool.or(quit, stop), pending, input, lines}
+  Desk{Board{grid, x, y, uniform}, labels, False{}, prior ++ report ++ "all 16384\n", Bool.or(quit, stop), pending, input, lines}
 
 def broadcast(text: String, desk: Desk) -> Desk:
   Desk{board, +labels, assembling, report, quit, pending, input, lines} = desk
-  Board{grid, +x, +y} = board
-  taken(cast_grid(7n, 0, 0, x, y, grid, text, labels), x, y, report, quit, pending, input, lines)
+  Board{grid, +x, +y, +uniform} = board
+  taken(cast_grid(7n, 0, 0, x, y, grid, text, labels), x, y, uniform, report, quit, pending, input, lines)
 
 def say(desk: Desk, text: String) -> Desk:
   Desk{board, labels, assembling, report, quit, pending, input, lines} = desk
@@ -420,14 +493,34 @@ def say(desk: Desk, text: String) -> Desk:
 
 def apply_line(text: String, desk: Desk) -> Desk:
   Desk{board, +labels, +assembling, report, quit, pending, input, lines} = desk
-  Board{grid, +x, +y} = board
-  command(walk(bits(7n, x, y), grid), text, labels, assembling, x, y, report, pending, input, lines)
+  Board{grid, +x, +y, +uniform} = board
+  command(walk(bits(7n, x, y), grid), text, labels, assembling, x, y, uniform, report, pending, input, lines)
+
+def with_uniform(+n: U32, desk: Desk) -> Desk:
+  Desk{board, labels, assembling, report, quit, pending, input, lines} = desk
+  Board{grid, x, y, uniform} = board
+  gone = U32.add(uniform, 0)
+  Desk{Board{grid, x, y, n}, labels, assembling, report, quit, pending, input, lines}
+
+def arm_go(parsed: Maybe<&2, U32>, desk: Desk) -> Desk:
+  match parsed:
+    case Some{n}:
+      with_uniform(n, desk)
+    case None{}:
+      say(desk, "usage: /u hex\n")
+
+def arm(word: String, desk: Desk) -> Desk:
+  arm_go(T.read_hex(word), desk)
 
 def route(words: List<&2, String>, text: String, desk: Desk) -> Desk:
   match words:
     case "/q" <> Nil{}:
       Desk{board, labels, assembling, report, quit, pending, input, lines} = desk
       Desk{board, labels, assembling, report, True{}, pending, input, lines}
+    case "/u" <> Nil{}:
+      say(desk, "usage: /u hex\n")
+    case "/u" <> word <> Nil{}:
+      arm(word, desk)
     case "/all" <> Nil{}:
       say(desk, "usage: /all command\n")
     case "/all" <> rest:
@@ -455,11 +548,12 @@ def pump(chunk: String, desk: Desk) -> Desk:
 def keep_board(closed: Bool, board: Board, labels: Map<&2, U32>, assembling: Bool, report: String, quit: Bool, pending: String, input: String, lines: List<&2, String>) -> Desk:
   match closed:
     case True{}:
-      Board{grid, x, y} = board
+      Board{grid, x, y, uniform} = board
       gone = discard(grid)
+      idle_word = uniform
       quiet = drop_text(input)
       rest = drop_lines(lines)
-      Desk{Board{Cell{fresh(0)}, 0, 0}, labels, assembling, report, True{}, pending, "", Nil{}}
+      Desk{Board{Cell{idle()}, 0, 0, 0}, labels, assembling, report, True{}, pending, "", Nil{}}
     case False{}:
       Desk{board, labels, assembling, report, quit, pending, input, lines}
 
@@ -645,17 +739,17 @@ def typing(down: Bool, +code: U32, desk: Desk) -> Desk:
     case True{}:
       keyed(code, desk)
 
-def place(stay: Bool, +nx: U32, +ny: U32, grid: Grid, labels: Map<&2, U32>, assembling: Bool, report: String, quit: Bool, pending: String, input: String, lines: List<&2, String>) -> Desk:
+def place(stay: Bool, +nx: U32, +ny: U32, grid: Grid, +uniform: U32, labels: Map<&2, U32>, assembling: Bool, report: String, quit: Bool, pending: String, input: String, lines: List<&2, String>) -> Desk:
   match stay:
     case True{}:
-      Desk{Board{grid, nx, ny}, labels, assembling, report, quit, pending, input, lines}
+      Desk{Board{grid, nx, ny, uniform}, labels, assembling, report, quit, pending, input, lines}
     case False{}:
-      Desk{Board{grid, nx, ny}, labels, assembling, report, quit, pending, input, keep(("@@ " ++ T.hex_fixed(8n, machine_id(nx, ny), "")) <> lines)}
+      Desk{Board{grid, nx, ny, uniform}, labels, assembling, report, quit, pending, input, keep(("@@ " ++ T.hex_fixed(8n, machine_id(nx, ny), "")) <> lines)}
 
 def retarget(+nx: U32, +ny: U32, desk: Desk) -> Desk:
   Desk{board, labels, assembling, report, quit, pending, input, lines} = desk
-  Board{grid, x, y} = board
-  place(Bool.and(U32.is_eq(nx, x), U32.is_eq(ny, y)), nx, ny, grid, labels, assembling, report, quit, pending, input, lines)
+  Board{grid, x, y, uniform} = board
+  place(Bool.and(U32.is_eq(nx, x), U32.is_eq(ny, y)), nx, ny, grid, uniform, labels, assembling, report, quit, pending, input, lines)
 
 def aim(panel: Bool, +px: U32, +py: U32, desk: Desk) -> Desk:
   match panel:
@@ -694,14 +788,14 @@ def prompt(input: String) -> String:
 
 def beside(got: Grid & Image, +x: U32, +y: U32, +lines: List<&2, String>, +entry: String) -> Board & Image:
   (grid, tiles) = got
-  (Board{grid, x, y}, Qua{tiles, console(9n, 0, 0, lines, entry), Pix{1713186}, Pix{1713186}})
+  (Board{grid, x, y, 0}, Qua{tiles, console(9n, 0, 0, lines, entry), Pix{1713186}, Pix{1713186}})
 
 def scene(board: Board, +lines: List<&2, String>, +entry: String) -> Board & Image:
-  Board{grid, +x, +y} = board
-  beside(frame(7n, 0, 0, x, y, grid), x, y, lines, entry)
+  Board{grid, +x, +y, uniform} = board
+  beside(frame(7n, 0, 0, x, y, uniform, grid), x, y, lines, entry)
 
 def hello() -> List<&2, String>:
-  "@@ 00000000" <> ("/all broadcasts. /q quits." <> ("click a square, then type." <> Nil{}))
+  "@@ 00000000" <> ("/u hex arms every ti machine. /q quits." <> ("click a square, then type." <> Nil{}))
 
 type Stage is Type:
   Stage{window: Window, board: Board, image: Image, labels: Map<&2, U32>, assembling: Bool, report: String, quit: Bool, pending: String, input: String, lines: List<&2, String>}
@@ -726,7 +820,7 @@ def with_view(stage: Stage) -> Stage:
 
 @unsafe def loop(stage: Stage) -> IO(Unit):
   match stage:
-    case Stage{window, Board{grid, x, y}, image, labels, assembling, report, True{}, pending, input, lines}:
+    case Stage{window, Board{grid, x, y, uniform}, image, labels, assembling, report, True{}, pending, input, lines}:
       gone = discard(grid)
       dropped = Image.drop(image)
       quiet = drop_text(input)
@@ -744,6 +838,7 @@ def with_view(stage: Stage) -> Stage:
 def main() -> IO(Unit):
   do IO<Unit>:
     IO.write("b4 machines. the repl is the panel on the right. click a square, then type.\n")
-    IO.write("@@ is that machine's id. ?a reads register a. /all broadcasts. /q quits.\n")
+    IO.write("@@ is the machine id. @x is the column and @y is the row. ?a is the color.\n")
+    IO.write("/u hex arms every ti machine. high byte 0 runs an opcode, 1 pushes unsigned, 2 pushes signed.\n")
     window : Window <- IO.try(Window, Window.open("b4 machines", 1024, 512))
-    loop(staged(scene(Board{grow(7n, 0, 0), 0, 0}, hello(), prompt("")), window, Map.new(&2, U32), False{}, "", False{}, "", "", hello()))
+    loop(staged(scene(Board{grow(7n, 0, 0), 0, 0, 0}, hello(), prompt("")), window, Map.new(&2, U32), False{}, "", False{}, "", "", hello()))
