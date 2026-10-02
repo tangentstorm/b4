@@ -1,0 +1,20 @@
+# rn.b4a : the `rn` op, in plain b4a
+#
+# rnd ( -- n ) pushes the next random number, exactly as the `rn` op ($A6) does,
+# and advances the same seed: the system cell at $B4 (it starts at 0, so a run
+# draws the same numbers every time; seed it from `ct` for different ones).
+#
+# The generator: a Weyl sequence by the golden ratio, seed := seed + $9E3779B9,
+# and the output is the seed scrambled by MurmurHash3's 32-bit finalizer:
+#   z ^= z >> 16;  z *= $85EBCA6B;  z ^= z >> 13;  z *= $C2B2AE35;  z ^= z >> 16
+# (`sh` by a negative amount is a logical shift right; `ml` wraps mod 2^32.)
+
+:rnd
+  li B9 79 37 9E lb B4 ri ad      # (-z) z = seed + golden-ratio step
+  du lb B4 wi                     # (z-z) seed := z
+  du ls F0 sh xr                  # z ^= z >> 16
+  li 6B CA EB 85 ml               # z *= $85EBCA6B
+  du ls F3 sh xr                  # z ^= z >> 13
+  li 35 AE B2 C2 ml               # z *= $C2B2AE35
+  du ls F0 sh xr                  # z ^= z >> 16
+  rt

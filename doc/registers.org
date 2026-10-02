@@ -130,3 +130,18 @@ The intent is for @@ to serve
 | =^]= |                                             |
 | =@^= | LAST : dictionary list ptr                  |
 | =@_= | HERE : top of heap/write head for assembler |
+
+* system cells
+
+The bytes =$80..$FF= after the registers hold the machine's own state. Those an
+implementation keeps there (the Lean one, at least):
+
+| address | what                                                   |
+|---------+--------------------------------------------------------|
+| =$84=     | instruction pointer                                    |
+| =$8C=     | data stack height                                      |
+| =$98=     | control stack height                                   |
+| =$A0=     | run state (1 running, 0 halted)                        |
+| =$A4=     | debug flag                                             |
+| =$B4=     | seed of =rn= (starts at 0)                               |
+| =$B8=     | host clock for =ct=, seconds since the unix epoch        |

@@ -1,5 +1,6 @@
 import B4
 import Std
+import Std.Time
 
 def toB4Mat (v : UInt32) : String :=
   let i := B4.toInt32 v
@@ -52,6 +53,8 @@ def mnemonics : Array String :=
   let m := m.set! 0x94 "wb" |>.set! 0x95 "wi" |>.set! 0x96 "lb" |>.set! 0x97 "li"
   let m := m.set! 0x98 "rs" |>.set! 0x99 "ls" |>.set! 0x9A "jm" |>.set! 0x9B "hp"
   let m := m.set! 0x9C "h0" |>.set! 0x9D "cl" |>.set! 0x9E "rt" |>.set! 0x9F "nx"
+  let m := m.set! 0xA0 "fa" |>.set! 0xA1 "fs" |>.set! 0xA2 "fm" |>.set! 0xA3 "fd"
+  let m := m.set! 0xA4 "fl" |>.set! 0xA5 "fi" |>.set! 0xA6 "rn" |>.set! 0xA7 "ct"
   let m := m.set! 0xBE "tm" |>.set! 0xC0 "c0" |>.set! 0xC1 "c1" |>.set! 0xF6 "c2"
   let m := m.set! 0xF7 "n1" |>.set! 0xF8 "c4" |>.set! 0xFD "io" |>.set! 0xFE "db"
   let m := m.set! 0xFF "hl"
@@ -79,6 +82,8 @@ def getOp (s : String) : Option UInt8 :=
   | "h0" => some 0x9C | "cl" => some 0x9D | "rt" => some 0x9E | "nx" => some 0x9F
   | "c0" => some 0xC0 | "c1" => some 0xC1 | "c2" => some 0xF6 | "n1" => some 0xF7
   | "c4" => some 0xF8 | "io" => some 0xFD | "db" => some 0xFE | "hl" => some 0xFF
+  | "fa" => some 0xA0 | "fs" => some 0xA1 | "fm" => some 0xA2 | "fd" => some 0xA3
+  | "fl" => some 0xA4 | "fi" => some 0xA5 | "rn" => some 0xA6 | "ct" => some 0xA7
   | ".." => some 0x00
   | _ =>
     let cs := s.toList
@@ -110,7 +115,10 @@ partial def loop (s : State) : IO Unit := do
   let line ← stdin.getLine
   if line.isEmpty then return
   
-  let mut s' := s
+  -- the host's clock, for `ct`: seconds since the unix epoch
+  let now ← Std.Time.Timestamp.now
+  let mut s' := { s with vm := { s.vm with
+    mem := B4.setVal s.vm.mem B4.RCK_OFF now.toSecondsSinceUnixEpoch.toInt.toNat.toUInt32 } }
   let chars := line.toList
   let mut i := 0
   while i < chars.length do
