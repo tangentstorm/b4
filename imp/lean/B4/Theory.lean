@@ -88,10 +88,15 @@ theorem toNat_toUInt32 {n : Nat} (h : n < 2 ^ 32) : n.toUInt32.toNat = n := by
 
 /-- A well-formed state: memory and stacks of their sizes, stack heights in range. -/
 structure WF (s : State) : Prop where
+  /-- The memory is 64 KB. -/
   mem : s.mem.size = MAXBYTE
+  /-- The data stack has its size. -/
   ds : s.ds.size = STACKSZ
+  /-- The control stack has its size. -/
   cs : s.cs.size = STACKSZ
+  /-- The data stack's height is in range. -/
   dsh : getDSH s ≤ STACKSZ
+  /-- The control stack's height is in range. -/
   csh : getCSH s ≤ STACKSZ
 
 /-- The data stack, bottom first. -/
