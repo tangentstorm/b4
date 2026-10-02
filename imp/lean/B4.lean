@@ -2,3 +2,4 @@
 -- Import modules here that should be built as part of the library.
 import B4.Basic
 import B4.Theory
+import B4.Swarm

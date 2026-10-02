@@ -299,6 +299,95 @@ theorem getRDB_setRDB (s : State) (v : UInt32) (hm : s.mem.size = MAXBYTE) :
   unfold getRDB setRDB
   rw [getVal_setVal_self _ _ _ (by rw [hm]; unfold RDB_OFF MAXBYTE; omega)]
 
+
+/-! ### The clock register -/
+
+/-- The clock lives in register `T` (`R20`), the cell at byte `80`: the time of
+Hehner's timed programs, kept by the machine. -/
+def CLK_OFF : Nat := 4 * Register.T.toNat
+
+/-- The clock. -/
+def getClk (s : State) : UInt32 := getVal s.mem CLK_OFF
+
+/-- Set the clock. -/
+def setClk (s : State) (v : UInt32) : State := { s with mem := setVal s.mem CLK_OFF v }
+
+@[simp] theorem getClk_setIP (s : State) (v : Nat) : getClk (setIP s v) = getClk s := by
+  simp only [getClk, setIP]
+  rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, RIP_OFF, Register.toNat]; omega)]
+
+@[simp] theorem getIP_setClk (s : State) (v : UInt32) : getIP (setClk s v) = getIP s := by
+  simp only [getIP, setClk]
+  rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, RIP_OFF, Register.toNat]; omega)]
+
+@[simp] theorem getClk_setDSH (s : State) (v : Nat) : getClk (setDSH s v) = getClk s := by
+  simp only [getClk, setDSH]
+  rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, RDS_OFF, Register.toNat]; omega)]
+
+@[simp] theorem getDSH_setClk (s : State) (v : UInt32) : getDSH (setClk s v) = getDSH s := by
+  simp only [getDSH, setClk]
+  rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, RDS_OFF, Register.toNat]; omega)]
+
+@[simp] theorem getClk_setCSH (s : State) (v : Nat) : getClk (setCSH s v) = getClk s := by
+  simp only [getClk, setCSH]
+  rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, RCS_OFF, Register.toNat]; omega)]
+
+@[simp] theorem getCSH_setClk (s : State) (v : UInt32) : getCSH (setClk s v) = getCSH s := by
+  simp only [getCSH, setClk]
+  rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, RCS_OFF, Register.toNat]; omega)]
+
+@[simp] theorem getClk_setRST (s : State) (v : UInt32) : getClk (setRST s v) = getClk s := by
+  simp only [getClk, setRST]
+  rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, RST_OFF, Register.toNat]; omega)]
+
+@[simp] theorem getRST_setClk (s : State) (v : UInt32) : getRST (setClk s v) = getRST s := by
+  simp only [getRST, setClk]
+  rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, RST_OFF, Register.toNat]; omega)]
+
+@[simp] theorem getClk_setRDB (s : State) (v : UInt32) : getClk (setRDB s v) = getClk s := by
+  simp only [getClk, setRDB]
+  rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, RDB_OFF, Register.toNat]; omega)]
+
+@[simp] theorem getRDB_setClk (s : State) (v : UInt32) : getRDB (setClk s v) = getRDB s := by
+  simp only [getRDB, setClk]
+  rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, RDB_OFF, Register.toNat]; omega)]
+
+@[simp] theorem high_setClk (s : State) (v : UInt32) : high (setClk s v) = high s :=
+  high_setVal s _ _ (by simp only [CLK_OFF, Register.toNat]; omega)
+
+@[simp] theorem ob_setClk (s : State) (v : UInt32) : (setClk s v).ob = s.ob := rfl
+
+@[simp] theorem ds_setClk (s : State) (v : UInt32) : (setClk s v).ds = s.ds := rfl
+
+@[simp] theorem cs_setClk (s : State) (v : UInt32) : (setClk s v).cs = s.cs := rfl
+
+@[simp] theorem size_setClk (s : State) (v : UInt32) : (setClk s v).mem.size = s.mem.size := by
+  simp [setClk]
+
+theorem getClk_setClk (s : State) (v : UInt32) (hm : s.mem.size = MAXBYTE) : getClk (setClk s v) = v := by
+  unfold getClk setClk
+  rw [getVal_setVal_self _ _ _ (by rw [hm]; simp only [CLK_OFF, Register.toNat, MAXBYTE]; omega)]
+
+@[simp] theorem getClk_dpush (s : State) (v : UInt32) : getClk (dpush s v) = getClk s := by
+  unfold dpush; simp only; split
+  · rw [getClk_setDSH]; rfl
+  · rfl
+
+@[simp] theorem getClk_dpop (s : State) : getClk (dpop s).2 = getClk s := by
+  unfold dpop; simp only; split
+  · simp only; rw [getClk_setDSH]
+  · rfl
+
+@[simp] theorem getClk_cpush (s : State) (v : UInt32) : getClk (cpush s v) = getClk s := by
+  unfold cpush; simp only; split
+  · rw [getClk_setCSH]; rfl
+  · rfl
+
+@[simp] theorem getClk_cpop (s : State) : getClk (cpop s).2 = getClk s := by
+  unfold cpop; simp only; split
+  · simp only; rw [getClk_setCSH]
+  · rfl
+
 /-! ### The stacks -/
 
 theorem take_set_succ (a : Array UInt32) (h : Nat) (v : UInt32) (hh : h < a.size) :
@@ -436,30 +525,31 @@ structure Same (s s' : State) : Prop where
   db : getRDB s' = getRDB s
   high : high s' = high s
   ob : s'.ob = s.ob
+  clk : getClk s' = getClk s
 
-theorem Same.refl (s : State) : Same s s := ⟨rfl, rfl, rfl, rfl, rfl⟩
+theorem Same.refl (s : State) : Same s s := ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 theorem Same.trans {s₁ s₂ s₃ : State} (h₁ : Same s₁ s₂) (h₂ : Same s₂ s₃) : Same s₁ s₃ :=
   ⟨h₂.cs.trans h₁.cs, h₂.st.trans h₁.st, h₂.db.trans h₁.db, h₂.high.trans h₁.high,
-    h₂.ob.trans h₁.ob⟩
+    h₂.ob.trans h₁.ob, h₂.clk.trans h₁.clk⟩
 
 theorem dpush_same (s : State) (v : UInt32) (hw : WF s) (h : getDSH s < STACKSZ) :
     WF (dpush s v) ∧ getIP (dpush s v) = getIP s ∧ dstack (dpush s v) = dstack s ++ [v] ∧
       Same s (dpush s v) := by
   obtain ⟨w, i, d, c, r, b, hh, o⟩ := dpush_view s v hw h
-  exact ⟨w, i, d, c, r, b, hh, o⟩
+  exact ⟨w, i, d, c, r, b, hh, o, getClk_dpush s v⟩
 
 theorem dpop_same (s : State) (xs : List UInt32) (v : UInt32) (hw : WF s)
     (hd : dstack s = xs ++ [v]) :
     (dpop s).1 = v ∧ WF (dpop s).2 ∧ getIP (dpop s).2 = getIP s ∧ dstack (dpop s).2 = xs ∧
       Same s (dpop s).2 := by
   obtain ⟨e, w, i, d, c, r, b, hh, o⟩ := dpop_view s xs v hw hd
-  exact ⟨e, w, i, d, c, r, b, hh, o⟩
+  exact ⟨e, w, i, d, c, r, b, hh, o, getClk_dpop s⟩
 
 theorem setIP_same (s : State) (n : Nat) (hw : WF s) (hn : n < 2 ^ 32) :
     WF (setIP s n) ∧ getIP (setIP s n) = n ∧ dstack (setIP s n) = dstack s ∧ Same s (setIP s n) := by
   obtain ⟨w, i, d, c, r, b, hh, o⟩ := setIP_view s n hw hn
-  exact ⟨w, i, d, c, r, b, hh, o⟩
+  exact ⟨w, i, d, c, r, b, hh, o, getClk_setIP s n⟩
 
 /-- An instruction that leaves the pointer alone, then moves on one. -/
 theorem step_next (s : State) (op : UInt8) (ds : List UInt32) (hip : 256 ≤ getIP s)
@@ -782,5 +872,63 @@ theorem runOp_hl (s : State) : runOp s 0xFF = setRST s 0 := by
 theorem step_hl (s : State) (hw : WF s) (hip : 256 ≤ getIP s) (hop : high s (getIP s) = 0xFF) :
     getRST (step s) = 0 := by
   rw [step_of s _ hip hop, runOp_hl, getRST_setIP, getRST_setRST _ _ hw.mem]
+
+
+theorem runOp_rdT (s : State) : runOp s 0x34 = dpush s (getClk s) := by
+  simp [runOp, getClk, CLK_OFF, Register.toNat]
+
+/-- `@T`: push the clock. -/
+theorem step_rdT (s : State) (xs : List UInt32) (hw : WF s) (hip : 256 ≤ getIP s)
+    (hlt : getIP s + 1 < 2 ^ 32) (hop : high s (getIP s) = 0x34) (hd : dstack s = xs)
+    (hfit : xs.length < STACKSZ) :
+    WF (step s) ∧ getIP (step s) = getIP s + 1 ∧ dstack (step s) = xs ++ [getClk s] ∧
+      Same s (step s) := by
+  refine step_next s _ _ hip hlt hop ?_
+  rw [runOp_rdT]
+  have hl : getDSH s < STACKSZ := by rw [← dstack_length s hw, hd]; exact hfit
+  obtain ⟨w, i, d, sm⟩ := dpush_same s (getClk s) hw hl
+  exact ⟨w, i, by rw [d, hd], sm⟩
+
+theorem runOp_wrT (s : State) : runOp s 0x54 =
+    (let (v, s) := dpop s; setClk s v) := by
+  simp [runOp, setClk, CLK_OFF, Register.toNat]
+
+/-- `!T`: pop into the clock. -/
+theorem step_wrT (s : State) (xs : List UInt32) (v : UInt32) (hw : WF s) (hip : 256 ≤ getIP s)
+    (hlt : getIP s + 1 < 2 ^ 32) (hop : high s (getIP s) = 0x54) (hd : dstack s = xs ++ [v]) :
+    WF (step s) ∧ getIP (step s) = getIP s + 1 ∧ dstack (step s) = xs ∧ getClk (step s) = v ∧
+      cstack (step s) = cstack s ∧ getRST (step s) = getRST s ∧ getRDB (step s) = getRDB s ∧
+      high (step s) = high s ∧ (step s).ob = s.ob := by
+  rw [step_of s _ hip hop, runOp_wrT]
+  obtain ⟨e1, w1, i1, d1, sm1⟩ := dpop_same s xs v hw hd
+  simp only
+  rw [e1]
+  generalize hs1 : (dpop s).2 = s1 at *
+  have w2 : WF (setClk s1 v) :=
+    ⟨by simpa using w1.mem, w1.ds, w1.cs, by rw [getDSH_setClk]; exact w1.dsh,
+      by rw [getCSH_setClk]; exact w1.csh⟩
+  obtain ⟨w3, i3, d3, sm3⟩ := setIP_same (setClk s1 v) (getIP (setClk s1 v) + 1) w2
+    (by rw [getIP_setClk, i1]; omega)
+  refine ⟨w3, by rw [i3, getIP_setClk, i1], by rw [d3, dstack, getDSH_setClk]; exact d1,
+    by rw [sm3.clk, getClk_setClk _ _ w1.mem], ?_, ?_, ?_, ?_, ?_⟩
+  · rw [sm3.cs, cstack, getCSH_setClk]; exact sm1.cs
+  · rw [sm3.st, getRST_setClk]; exact sm1.st
+  · rw [sm3.db, getRDB_setClk]; exact sm1.db
+  · rw [sm3.high, high_setClk]; exact sm1.high
+  · rw [sm3.ob]; exact sm1.ob
+
+/-- `wi` into high memory leaves the clock alone. -/
+theorem step_wi_clk (s : State) (xs : List UInt32) (v a : UInt32) (hw : WF s)
+    (hip : 256 ≤ getIP s) (hop : high s (getIP s) = 0x95) (hd : dstack s = xs ++ [v, a])
+    (ha : 256 ≤ a.toNat) : getClk (step s) = getClk s := by
+  rw [step_of s _ hip hop, runOp_wi]
+  obtain ⟨e1, w1, i1, d1, sm1⟩ := dpop_same s (xs ++ [v]) a hw (by simpa using hd)
+  obtain ⟨e2, w2, i2, d2, sm2⟩ := dpop_same _ xs v w1 d1
+  simp only
+  rw [e1, e2, getClk_setIP]
+  have := (sm1.trans sm2).clk
+  unfold getClk at this ⊢
+  rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, Register.toNat]; omega)]
+  exact this
 
 end B4
