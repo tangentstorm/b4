@@ -31,6 +31,9 @@ structure Swarm where
   chans : Nat → List Msg
   /-- Each machine's read cursor on each channel. -/
   rd : List (Nat → Nat)
+  /-- The machine that may write each channel: a send by any other waits forever.
+  With one writer per channel, the order in which machines run does not matter. -/
+  owner : Nat → Option Nat
 
 /-- `'s'`: send. -/
 def SEND : UInt32 := 0x73
@@ -46,6 +49,9 @@ def running (s : State) : Bool := getRST s == 1 && getRDB s == 0
 
 /-- The later of two times. -/
 def later (a b : UInt32) : UInt32 := if a.toNat < b.toNat then b else a
+
+/-- The channel a send at the top of the stack is for. -/
+def sendChan (s : State) : Nat := (dpop (dpop s).2).1.toNat
 
 /-- Machine `i` sends: pop the command, the channel and the value. -/
 def Swarm.send (w : Swarm) (i : Nat) (s : State) : Swarm :=
@@ -79,7 +85,8 @@ def Swarm.stepAt (w : Swarm) (i : Nat) : Option Swarm :=
   | none => none
   | some s =>
     if running s then
-      if ioCmd s = some SEND then some (w.send i s)
+      if ioCmd s = some SEND then
+        if w.owner (sendChan s) = some i then some (w.send i s) else none
       else if ioCmd s = some RECV then w.recv i s
       else some { w with ms := w.ms.set i (step s) }
     else none
@@ -118,7 +125,8 @@ theorem Swarm.Steps.single {a b : Swarm} (h : Swarm.Step a b) : Swarm.Steps a b 
 
 theorem Swarm.stepAt_eq {w : Swarm} {i : Nat} {s : State} (h : w.ms[i]? = some s)
     (hr : running s = true) :
-    w.stepAt i = if ioCmd s = some SEND then some (w.send i s)
+    w.stepAt i = if ioCmd s = some SEND then
+        (if w.owner (sendChan s) = some i then some (w.send i s) else none)
       else if ioCmd s = some RECV then w.recv i s
       else some { w with ms := w.ms.set i (step s) } := by
   simp [Swarm.stepAt, h, hr]
@@ -130,8 +138,9 @@ theorem Swarm.stepAt_other {w : Swarm} {i : Nat} {s : State} (h : w.ms[i]? = som
   rw [Swarm.stepAt_eq h hr, ite_eq_right hs, ite_eq_right hv]
 
 theorem Swarm.stepAt_send {w : Swarm} {i : Nat} {s : State} (h : w.ms[i]? = some s)
-    (hr : running s = true) (hs : ioCmd s = some SEND) : w.stepAt i = some (w.send i s) := by
-  rw [Swarm.stepAt_eq h hr, ite_eq_left hs]
+    (hr : running s = true) (hs : ioCmd s = some SEND) (ho : w.owner (sendChan s) = some i) :
+    w.stepAt i = some (w.send i s) := by
+  rw [Swarm.stepAt_eq h hr, ite_eq_left hs, ite_eq_left ho]
 
 theorem Swarm.stepAt_recv {w : Swarm} {i : Nat} {s : State} (h : w.ms[i]? = some s)
     (hr : running s = true) (hv : ioCmd s = some RECV) : w.stepAt i = w.recv i s := by
@@ -147,8 +156,10 @@ def loadCode (code : List UInt8) : State :=
   let m := (code.zipIdx).foldl (fun m (b, k) => m.set! (0x100 + k) b) mkInitialState.mem
   setRST (setIP { mkInitialState with mem := m } 0x100) 1
 
-/-- A swarm of machines, no messages, nothing read. -/
-def Swarm.ofMachines (ms : List State) : Swarm := ⟨ms, fun _ => [], ms.map fun _ _ => 0⟩
+/-- A swarm of machines, no messages, nothing read, each channel written by the
+machine `owner` names. -/
+def Swarm.ofMachines (ms : List State) (owner : Nat → Option Nat) : Swarm :=
+  ⟨ms, fun _ => [], ms.map fun _ _ => 0, owner⟩
 
 namespace SwarmDemo
 
@@ -159,7 +170,7 @@ def sender : List UInt8 := (assemble [.li 2, .li 0, .li 0x73, .io, .hl]).toList
 def receiver : List UInt8 := (assemble [.li 0, .li 0x72, .io, .li 0x200, .wi, .hl]).toList
 
 /-- The two, run together. -/
-def demo : Swarm := (Swarm.ofMachines [loadCode receiver, loadCode sender]).run 100
+def demo : Swarm := (Swarm.ofMachines [loadCode receiver, loadCode sender] fun _ => some 1).run 100
 
 -- The receiver has `2` at `0x200`, and its clock is `1`: the message took a unit of time.
 #eval (demo.ms.map fun s => (getVal s.mem 0x200, getClk s), demo.chans 0)

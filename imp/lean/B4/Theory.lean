@@ -931,4 +931,132 @@ theorem step_wi_clk (s : State) (xs : List UInt32) (v a : UInt32) (hw : WF s)
   rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [CLK_OFF, Register.toNat]; omega)]
   exact this
 
+
+/-! ### The control stack: `dc`, `cd`, `cl`, `rt` -/
+
+/-- What a step that changes only the stacks and the pointer leaves alone. -/
+structure Frame (s s' : State) : Prop where
+  st : getRST s' = getRST s
+  db : getRDB s' = getRDB s
+  high : high s' = high s
+  ob : s'.ob = s.ob
+  clk : getClk s' = getClk s
+
+theorem Frame.of_same {s s' : State} (h : Same s s') : Frame s s' := ⟨h.st, h.db, h.high, h.ob, h.clk⟩
+
+theorem Frame.trans {s₁ s₂ s₃ : State} (h₁ : Frame s₁ s₂) (h₂ : Frame s₂ s₃) : Frame s₁ s₃ :=
+  ⟨h₂.st.trans h₁.st, h₂.db.trans h₁.db, h₂.high.trans h₁.high, h₂.ob.trans h₁.ob,
+    h₂.clk.trans h₁.clk⟩
+
+theorem cpush_frame (s : State) (v : UInt32) (hw : WF s) (h : getCSH s < STACKSZ) :
+    WF (cpush s v) ∧ getIP (cpush s v) = getIP s ∧ dstack (cpush s v) = dstack s ∧
+      cstack (cpush s v) = cstack s ++ [v] ∧ Frame s (cpush s v) := by
+  obtain ⟨w, i, d, c, r, b, hh, o⟩ := cpush_view s v hw h
+  exact ⟨w, i, d, c, ⟨r, b, hh, o, getClk_cpush s v⟩⟩
+
+theorem cpop_frame (s : State) (xs : List UInt32) (v : UInt32) (hw : WF s)
+    (hd : cstack s = xs ++ [v]) :
+    (cpop s).1 = v ∧ WF (cpop s).2 ∧ getIP (cpop s).2 = getIP s ∧ dstack (cpop s).2 = dstack s ∧
+      cstack (cpop s).2 = xs ∧ Frame s (cpop s).2 := by
+  obtain ⟨e, w, i, d, c, r, b, hh, o⟩ := cpop_view s xs v hw hd
+  exact ⟨e, w, i, d, c, ⟨r, b, hh, o, getClk_cpop s⟩⟩
+
+theorem setIP_frame (s : State) (n : Nat) (hw : WF s) (hn : n < 2 ^ 32) :
+    WF (setIP s n) ∧ getIP (setIP s n) = n ∧ dstack (setIP s n) = dstack s ∧
+      cstack (setIP s n) = cstack s ∧ Frame s (setIP s n) := by
+  obtain ⟨w, i, d, sm⟩ := setIP_same s n hw hn
+  exact ⟨w, i, d, sm.cs, Frame.of_same sm⟩
+
+theorem runOp_dc (s : State) : runOp s 0x90 = (let (v, s) := dpop s; cpush s v) := by
+  simp [runOp]
+
+/-- `dc`: move the top of the data stack to the control stack. -/
+theorem step_dc (s : State) (xs : List UInt32) (v : UInt32) (hw : WF s) (hip : 256 ≤ getIP s)
+    (hlt : getIP s + 1 < 2 ^ 32) (hop : high s (getIP s) = 0x90) (hd : dstack s = xs ++ [v])
+    (hc : (cstack s).length < STACKSZ) :
+    WF (step s) ∧ getIP (step s) = getIP s + 1 ∧ dstack (step s) = xs ∧
+      cstack (step s) = cstack s ++ [v] ∧ Frame s (step s) := by
+  rw [step_of s _ hip hop, runOp_dc]
+  obtain ⟨e₁, w₁, i₁, d₁, sm₁⟩ := dpop_same s xs v hw hd
+  simp only
+  rw [e₁]
+  have hcs : getCSH (dpop s).2 < STACKSZ := by
+    rw [← cstack_length _ w₁, sm₁.cs]; exact hc
+  obtain ⟨w₂, i₂, d₂, c₂, f₂⟩ := cpush_frame _ v w₁ hcs
+  obtain ⟨w₃, i₃, d₃, c₃, f₃⟩ := setIP_frame _ (getIP (cpush (dpop s).2 v) + 1) w₂
+    (by rw [i₂, i₁]; omega)
+  exact ⟨w₃, by rw [i₃, i₂, i₁], by rw [d₃, d₂, d₁], by rw [c₃, c₂, sm₁.cs],
+    (Frame.of_same sm₁).trans (f₂.trans f₃)⟩
+
+theorem runOp_cd (s : State) : runOp s 0x91 = (let (v, s) := cpop s; dpush s v) := by
+  simp [runOp]
+
+/-- `cd`: move the top of the control stack to the data stack. -/
+theorem step_cd (s : State) (cs : List UInt32) (v : UInt32) (hw : WF s) (hip : 256 ≤ getIP s)
+    (hlt : getIP s + 1 < 2 ^ 32) (hop : high s (getIP s) = 0x91) (hc : cstack s = cs ++ [v])
+    (hd : (dstack s).length < STACKSZ) :
+    WF (step s) ∧ getIP (step s) = getIP s + 1 ∧ dstack (step s) = dstack s ++ [v] ∧
+      cstack (step s) = cs ∧ Frame s (step s) := by
+  rw [step_of s _ hip hop, runOp_cd]
+  obtain ⟨e₁, w₁, i₁, d₁, c₁, f₁⟩ := cpop_frame s cs v hw hc
+  simp only
+  rw [e₁]
+  have hds : getDSH (cpop s).2 < STACKSZ := by
+    rw [← dstack_length _ w₁, d₁]; exact hd
+  obtain ⟨w₂, i₂, d₂, sm₂⟩ := dpush_same _ v w₁ hds
+  obtain ⟨w₃, i₃, d₃, c₃, f₃⟩ := setIP_frame _ (getIP (dpush (cpop s).2 v) + 1) w₂
+    (by rw [i₂, i₁]; omega)
+  exact ⟨w₃, by rw [i₃, i₂, i₁], by rw [d₃, d₂, d₁], by rw [c₃, sm₂.cs, c₁],
+    f₁.trans ((Frame.of_same sm₂).trans f₃)⟩
+
+theorem runOp_cl (s : State) : runOp s 0x9D =
+    go (cpush s (getIP s + 5).toUInt32) (getVal (cpush s (getIP s + 5).toUInt32).mem (getIP s + 1)).toNat := by
+  simp [runOp]
+
+theorem high_cpush (s : State) (v : UInt32) (hw : WF s) (h : getCSH s < STACKSZ) :
+    high (cpush s v) = high s := (cpush_view s v hw h).2.2.2.2.2.2.1
+
+/-- `cl a`: push the address after the instruction on the control stack, and jump to `a`. -/
+theorem step_cl (s : State) (hw : WF s) (hip : 256 ≤ getIP s) (hlt : getIP s + 5 < MAXBYTE)
+    (hop : high s (getIP s) = 0x9D) (ha : 256 ≤ (word (high s) (getIP s + 1)).toNat)
+    (hc : (cstack s).length < STACKSZ) :
+    WF (step s) ∧ getIP (step s) = (word (high s) (getIP s + 1)).toNat ∧
+      dstack (step s) = dstack s ∧ cstack (step s) = cstack s ++ [(getIP s + 5).toUInt32] ∧
+      Frame s (step s) := by
+  rw [step_of s _ hip hop, runOp_cl]
+  have hcs : getCSH s < STACKSZ := by rw [← cstack_length _ hw]; exact hc
+  obtain ⟨w₁, i₁, d₁, c₁, f₁⟩ := cpush_frame s (getIP s + 5).toUInt32 hw hcs
+  have hword : getVal (cpush s (getIP s + 5).toUInt32).mem (getIP s + 1) = word (high s) (getIP s + 1) := by
+    rw [getVal_high _ _ w₁ (by omega) (by omega), f₁.high]
+  rw [hword, go_eq _ _ ha]
+  have hlt32 : (word (high s) (getIP s + 1)).toNat < 2 ^ 32 := UInt32.toNat_lt _
+  obtain ⟨w₂, i₂, d₂, c₂, f₂⟩ := setIP_frame _ ((word (high s) (getIP s + 1)).toNat - 1) w₁ (by omega)
+  obtain ⟨w₃, i₃, d₃, c₃, f₃⟩ := setIP_frame _
+    (getIP (setIP (cpush s (getIP s + 5).toUInt32) ((word (high s) (getIP s + 1)).toNat - 1)) + 1) w₂
+    (by rw [i₂]; omega)
+  exact ⟨w₃, by rw [i₃, i₂]; omega, by rw [d₃, d₂, d₁], by rw [c₃, c₂, c₁], f₁.trans (f₂.trans f₃)⟩
+
+theorem runOp_rt (s : State) : runOp s 0x9E =
+    (let (a, s) := cpop s; if a == 0 then setRST s 0 else setIP s (a.toNat - 1)) := by
+  simp [runOp]
+
+/-- `rt`: return to the address on top of the control stack. -/
+theorem step_rt (s : State) (cs : List UInt32) (a : UInt32) (hw : WF s) (hip : 256 ≤ getIP s)
+    (hop : high s (getIP s) = 0x9E) (hc : cstack s = cs ++ [a]) (ha : 256 ≤ a.toNat) :
+    WF (step s) ∧ getIP (step s) = a.toNat ∧ dstack (step s) = dstack s ∧ cstack (step s) = cs ∧
+      Frame s (step s) := by
+  rw [step_of s _ hip hop, runOp_rt]
+  obtain ⟨e₁, w₁, i₁, d₁, c₁, f₁⟩ := cpop_frame s cs a hw hc
+  simp only
+  rw [e₁]
+  have hne : (a == 0) = false := by
+    simp only [beq_eq_false_iff_ne]; intro h; subst h; simp at ha
+  rw [hne]
+  simp only [Bool.false_eq_true, ↓reduceIte]
+  have hlt32 : a.toNat < 2 ^ 32 := UInt32.toNat_lt _
+  obtain ⟨w₂, i₂, d₂, c₂, f₂⟩ := setIP_frame _ (a.toNat - 1) w₁ (by omega)
+  obtain ⟨w₃, i₃, d₃, c₃, f₃⟩ := setIP_frame _ (getIP (setIP (cpop s).2 (a.toNat - 1)) + 1) w₂
+    (by rw [i₂]; omega)
+  exact ⟨w₃, by rw [i₃, i₂]; omega, by rw [d₃, d₂, d₁], by rw [c₃, c₂, c₁], f₁.trans (f₂.trans f₃)⟩
+
 end B4
