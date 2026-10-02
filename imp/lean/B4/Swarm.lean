@@ -11,7 +11,12 @@ through the `io` instruction, as b4 reaches any device:
 * `v c 's' io` — send `v` on channel `c`, stamped with the machine's clock;
 * `c 'r' io` — receive the next message on `c`: push its value, and move the
   clock to one past the time it was sent if that is later (a message takes one
-  unit of time to arrive); if there is none yet, the machine waits.
+  unit of time to arrive); if there is none yet, the machine waits;
+* `c 'k' io` — check whether the next message on `c` has arrived (Hehner's `√c`):
+  push `-1` if it was sent before the machine's clock, else `0`; if there is none
+  yet, the machine waits — until the message comes, or until the swarm is stuck
+  and this is the earliest of the machines waiting so (`Swarm.settle`), when no
+  message can come in time and the answer is `0`.
 
 The clock is register `T` (`getClk`). Any other `io` command, and every other
 instruction, is the machine's own `step`; a machine on its own, outside a swarm,
@@ -39,6 +44,8 @@ structure Swarm where
 def SEND : UInt32 := 0x73
 /-- `'r'`: receive. -/
 def RECV : UInt32 := 0x72
+/-- `'k'`: check. -/
+def CHECK : UInt32 := 0x6B
 
 /-- The `io` command a machine is about to run, if its next instruction is `io`. -/
 def ioCmd (s : State) : Option UInt32 :=
@@ -78,8 +85,22 @@ def Swarm.recv (w : Swarm) (i : Nat) (s : State) : Option Swarm :=
                   rd := w.rd.set i fun c' => if c' = c.toNat then r + 1 else
                     (w.rd.getD i fun _ => 0) c' }
 
+/-- Machine `i` answers a check, `-1` or `0`, and moves on. -/
+def Swarm.answer (w : Swarm) (i : Nat) (s : State) (b : Bool) : Swarm :=
+  let s₂ := (dpop (dpop s).2).2
+  let s₃ := dpush s₂ (if b then 0xFFFFFFFF else 0)
+  { w with ms := w.ms.set i (setIP s₃ (getIP s₃ + 1)) }
+
+/-- Machine `i` checks, if the message is there: whether it was sent before now. -/
+def Swarm.check (w : Swarm) (i : Nat) (s : State) : Option Swarm :=
+  let c := (dpop (dpop s).2).1
+  let r := (w.rd.getD i fun _ => 0) c.toNat
+  match (w.chans c.toNat)[r]? with
+  | none => none
+  | some m => some (w.answer i s (decide (m.2.toNat < (getClk s).toNat)))
+
 /-- **One step of machine `i`**, if it can take one: it must be running, and a
-receive must find its message. -/
+receive or a check must find its message. -/
 def Swarm.stepAt (w : Swarm) (i : Nat) : Option Swarm :=
   match w.ms[i]? with
   | none => none
@@ -88,6 +109,7 @@ def Swarm.stepAt (w : Swarm) (i : Nat) : Option Swarm :=
       if ioCmd s = some SEND then
         if w.owner (sendChan s) = some i then some (w.send i s) else none
       else if ioCmd s = some RECV then w.recv i s
+      else if ioCmd s = some CHECK then w.check i s
       else some { w with ms := w.ms.set i (step s) }
     else none
 
@@ -102,6 +124,33 @@ def Swarm.sweep (w : Swarm) : Swarm × Bool :=
 def Swarm.run : Nat → Swarm → Swarm
   | 0, w => w
   | n + 1, w => if w.sweep.2 then Swarm.run n w.sweep.1 else w
+
+/-- When no machine can move: the machine waiting at a check with the earliest
+clock, if any, answers `0` — every other machine has halted, or waits at a
+receive, or at a check no earlier, so no message can come in time for it. -/
+def Swarm.settle (w : Swarm) : Option Swarm :=
+  let waiting := (List.range w.ms.length).filter fun i =>
+    match w.ms[i]? with
+    | some s => running s && ioCmd s == some CHECK
+    | none => false
+  let earliest := waiting.foldl (fun best i =>
+    match best, w.ms[i]?, (best.bind (w.ms[·]?)) with
+    | none, _, _ => some i
+    | some b, some s, some sb => if (getClk s).toNat < (getClk sb).toNat then some i else some b
+    | some b, _, _ => some b) none
+  match earliest with
+  | some i => (w.ms[i]?).map fun s => w.answer i s false
+  | none => none
+
+/-- Run for at most `n` rounds, settling checks when no machine can move. -/
+def Swarm.runK : Nat → Swarm → Swarm
+  | 0, w => w
+  | n + 1, w =>
+    let w := Swarm.run (n + 1) w
+    if w.sweep.2 then w else
+      match w.settle with
+      | some w' => Swarm.runK n w'
+      | none => w
 
 /-- A step of some machine. -/
 def Swarm.Step (w w' : Swarm) : Prop := ∃ i, w.stepAt i = some w'
@@ -128,14 +177,17 @@ theorem Swarm.stepAt_eq {w : Swarm} {i : Nat} {s : State} (h : w.ms[i]? = some s
     w.stepAt i = if ioCmd s = some SEND then
         (if w.owner (sendChan s) = some i then some (w.send i s) else none)
       else if ioCmd s = some RECV then w.recv i s
+      else if ioCmd s = some CHECK then w.check i s
       else some { w with ms := w.ms.set i (step s) } := by
   simp [Swarm.stepAt, h, hr]
 
-/-- An instruction that is not a send or a receive is the machine's own step. -/
+/-- An instruction that is not a send, a receive or a check is the machine's own
+step. -/
 theorem Swarm.stepAt_other {w : Swarm} {i : Nat} {s : State} (h : w.ms[i]? = some s)
-    (hr : running s = true) (hs : ioCmd s ≠ some SEND) (hv : ioCmd s ≠ some RECV) :
+    (hr : running s = true) (hs : ioCmd s ≠ some SEND) (hv : ioCmd s ≠ some RECV)
+    (hk : ioCmd s ≠ some CHECK) :
     w.stepAt i = some { w with ms := w.ms.set i (step s) } := by
-  rw [Swarm.stepAt_eq h hr, ite_eq_right hs, ite_eq_right hv]
+  rw [Swarm.stepAt_eq h hr, ite_eq_right hs, ite_eq_right hv, ite_eq_right hk]
 
 theorem Swarm.stepAt_send {w : Swarm} {i : Nat} {s : State} (h : w.ms[i]? = some s)
     (hr : running s = true) (hs : ioCmd s = some SEND) (ho : w.owner (sendChan s) = some i) :
@@ -145,6 +197,11 @@ theorem Swarm.stepAt_send {w : Swarm} {i : Nat} {s : State} (h : w.ms[i]? = some
 theorem Swarm.stepAt_recv {w : Swarm} {i : Nat} {s : State} (h : w.ms[i]? = some s)
     (hr : running s = true) (hv : ioCmd s = some RECV) : w.stepAt i = w.recv i s := by
   rw [Swarm.stepAt_eq h hr, ite_eq_right (by rw [hv]; decide), ite_eq_left hv]
+
+theorem Swarm.stepAt_check {w : Swarm} {i : Nat} {s : State} (h : w.ms[i]? = some s)
+    (hr : running s = true) (hv : ioCmd s = some CHECK) : w.stepAt i = w.check i s := by
+  rw [Swarm.stepAt_eq h hr, ite_eq_right (by rw [hv]; decide),
+    ite_eq_right (by rw [hv]; decide), ite_eq_left hv]
 
 theorem running_iff (s : State) : running s = true ↔ Running s := by
   simp [running, Running]
