@@ -558,4 +558,224 @@ theorem step_li (s : State) (xs : List UInt32) (hw : WF s) (hip : 256 ≤ getIP 
     sm1.trans (sm2.trans sm3)⟩
 
 
+
+/-- `step_binop` for each binary instruction: its operation. -/
+theorem step_binop' (s : State) (op : UInt8) (f : UInt32 → UInt32 → UInt32) (xs : List UInt32)
+    (x y : UInt32) (hw : WF s) (hip : 256 ≤ getIP s) (hlt : getIP s + 1 < 2 ^ 32)
+    (hop : high s (getIP s) = op) (hd : dstack s = xs ++ [x, y])
+    (hr : ∀ s, runOp s op = (let (y, s) := dpop s; let (x, s) := dpop s; dpush s (f x y))) :
+    WF (step s) ∧ getIP (step s) = getIP s + 1 ∧ dstack (step s) = xs ++ [f x y] ∧
+      Same s (step s) :=
+  step_binop s op f xs x y hw hip hlt hop hd (hr s)
+
+theorem runOp_nt (s : State) : runOp s 0x89 =
+    (let (x, s) := dpop s; dpush s (x ^^^ 0xFFFFFFFF)) := by
+  simp [runOp]
+
+/-- `nt`: complement the top of the stack. -/
+theorem step_nt (s : State) (xs : List UInt32) (x : UInt32) (hw : WF s) (hip : 256 ≤ getIP s)
+    (hlt : getIP s + 1 < 2 ^ 32) (hop : high s (getIP s) = 0x89) (hd : dstack s = xs ++ [x]) :
+    WF (step s) ∧ getIP (step s) = getIP s + 1 ∧ dstack (step s) = xs ++ [x ^^^ 0xFFFFFFFF] ∧
+      Same s (step s) := by
+  refine step_next s _ _ hip hlt hop ?_
+  rw [runOp_nt]
+  obtain ⟨e1, w1, i1, d1, sm1⟩ := dpop_same s xs x hw hd
+  have hl : getDSH (dpop s).2 < STACKSZ := by
+    have h1 := dstack_length _ w1; have h2 := dstack_length s hw; have h3 := hw.dsh
+    rw [d1] at h1; rw [hd] at h2; simp at h2; omega
+  obtain ⟨w2, i2, d2, sm2⟩ := dpush_same _ (x ^^^ 0xFFFFFFFF) w1 hl
+  simp only
+  rw [e1]
+  exact ⟨w2, by rw [i2, i1], by rw [d2, d1], sm1.trans sm2⟩
+
+theorem runOp_ri (s : State) : runOp s 0x93 =
+    (let (a, s) := dpop s; dpush s (getVal s.mem a.toNat)) := by
+  simp [runOp]
+
+/-- `ri`: replace an address on the stack by the word there. -/
+theorem step_ri (s : State) (xs : List UInt32) (a : UInt32) (hw : WF s) (hip : 256 ≤ getIP s)
+    (hlt : getIP s + 1 < 2 ^ 32) (hop : high s (getIP s) = 0x93) (hd : dstack s = xs ++ [a])
+    (ha : 256 ≤ a.toNat) (hb : a.toNat + 3 < MAXBYTE) :
+    WF (step s) ∧ getIP (step s) = getIP s + 1 ∧
+      dstack (step s) = xs ++ [word (high s) a.toNat] ∧ Same s (step s) := by
+  refine step_next s _ _ hip hlt hop ?_
+  rw [runOp_ri]
+  obtain ⟨e1, w1, i1, d1, sm1⟩ := dpop_same s xs a hw hd
+  have hl : getDSH (dpop s).2 < STACKSZ := by
+    have h1 := dstack_length _ w1; have h2 := dstack_length s hw; have h3 := hw.dsh
+    rw [d1] at h1; rw [hd] at h2; simp at h2; omega
+  obtain ⟨w2, i2, d2, sm2⟩ := dpush_same _ (getVal (dpop s).2.mem a.toNat) w1 hl
+  simp only
+  rw [e1]
+  refine ⟨w2, by rw [i2, i1], ?_, sm1.trans sm2⟩
+  rw [d2, d1, getVal_high _ _ w1 ha hb, sm1.high]
+
+/-- High memory after a word is written at `a`. -/
+def writeWord (m : Nat → UInt8) (a : Nat) (v : UInt32) : Nat → UInt8 := fun i =>
+  if i = a then v.toUInt8 else if i = a + 1 then (v >>> 8).toUInt8
+  else if i = a + 2 then (v >>> 16).toUInt8 else if i = a + 3 then (v >>> 24).toUInt8 else m i
+
+theorem get!_setVal (m : ByteArray) (a : Nat) (v : UInt32) (hs : a + 3 < m.size) (i : Nat) :
+    (setVal m a v).get! i = writeWord m.get! a v i := by
+  unfold setVal writeWord
+  simp only [hs, ↓reduceIte]
+  by_cases h0 : i = a
+  · subst h0
+    rw [get!_set!_ne _ _ _ _ (by omega), get!_set!_ne _ _ _ _ (by omega),
+      get!_set!_ne _ _ _ _ (by omega), get!_set!_self _ _ _ (by omega)]; simp
+  by_cases h1 : i = a + 1
+  · subst h1
+    rw [get!_set!_ne _ _ _ _ (by omega), get!_set!_ne _ _ _ _ (by omega),
+      get!_set!_self _ _ _ (by simp; omega)]; simp
+  by_cases h2 : i = a + 2
+  · subst h2
+    rw [get!_set!_ne _ _ _ _ (by omega), get!_set!_self _ _ _ (by simp; omega)]; simp
+  by_cases h3 : i = a + 3
+  · subst h3
+    rw [get!_set!_self _ _ _ (by simp; omega)]; simp
+  rw [get!_set!_ne _ _ _ _ (by omega), get!_set!_ne _ _ _ _ (by omega),
+    get!_set!_ne _ _ _ _ (by omega), get!_set!_ne _ _ _ _ (by omega)]
+  simp [h0, h1, h2, h3]
+
+theorem high_setVal_high (s : State) (a : Nat) (v : UInt32) (hw : WF s) (ha : 256 ≤ a)
+    (hb : a + 3 < MAXBYTE) :
+    high { s with mem := setVal s.mem a v } = writeWord (high s) a v := by
+  funext i
+  have hs : a + 3 < s.mem.size := by rw [hw.mem]; exact hb
+  unfold high
+  simp only
+  rw [get!_setVal _ _ _ hs]
+  unfold writeWord
+  by_cases hi : 256 ≤ i
+  · simp [hi]
+  · simp [hi, show i ≠ a by omega, show i ≠ a + 1 by omega, show i ≠ a + 2 by omega,
+      show i ≠ a + 3 by omega]
+
+theorem word_writeWord_self (m : Nat → UInt8) (a : Nat) (v : UInt32) : word (writeWord m a v) a = v := by
+  simp [word, writeWord]
+  exact bytes_word v
+
+theorem word_writeWord_of_disjoint (m : Nat → UInt8) (a b : Nat) (v : UInt32)
+    (h : a + 4 ≤ b ∨ b + 4 ≤ a) : word (writeWord m a v) b = word m b := by
+  unfold word writeWord
+  simp only [show b ≠ a by omega, show b ≠ a + 1 by omega, show b ≠ a + 2 by omega,
+    show b ≠ a + 3 by omega, show b + 1 ≠ a by omega, show b + 1 ≠ a + 1 by omega,
+    show b + 1 ≠ a + 2 by omega, show b + 1 ≠ a + 3 by omega, show b + 2 ≠ a by omega,
+    show b + 2 ≠ a + 1 by omega, show b + 2 ≠ a + 2 by omega, show b + 2 ≠ a + 3 by omega,
+    show b + 3 ≠ a by omega, show b + 3 ≠ a + 1 by omega, show b + 3 ≠ a + 2 by omega,
+    show b + 3 ≠ a + 3 by omega, ↓reduceIte]
+
+
+theorem runOp_wi (s : State) : runOp s 0x95 =
+    (let (a, s) := dpop s; let (v, s) := dpop s; { s with mem := setVal s.mem a.toNat v }) := by
+  simp [runOp]
+
+/-- Writing high memory leaves the registers and the stacks alone. -/
+theorem setVal_high_regs (s : State) (a : Nat) (v : UInt32) (ha : 256 ≤ a) :
+    let s' := { s with mem := setVal s.mem a v }
+    getIP s' = getIP s ∧ getDSH s' = getDSH s ∧ getCSH s' = getCSH s ∧ getRST s' = getRST s ∧
+      getRDB s' = getRDB s := by
+  simp only [getIP, getDSH, getCSH, getRST, getRDB]
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>
+    rw [getVal_setVal_of_disjoint _ _ _ _ (by simp only [RIP_OFF, RDS_OFF, RCS_OFF, RST_OFF, RDB_OFF]; omega)]
+
+/-- `wi`: store the second item at the address on top. -/
+theorem step_wi (s : State) (xs : List UInt32) (v a : UInt32) (hw : WF s) (hip : 256 ≤ getIP s)
+    (hlt : getIP s + 1 < 2 ^ 32) (hop : high s (getIP s) = 0x95) (hd : dstack s = xs ++ [v, a])
+    (ha : 256 ≤ a.toNat) (hb : a.toNat + 3 < MAXBYTE) :
+    WF (step s) ∧ getIP (step s) = getIP s + 1 ∧ dstack (step s) = xs ∧
+      cstack (step s) = cstack s ∧ getRST (step s) = getRST s ∧ getRDB (step s) = getRDB s ∧
+      high (step s) = writeWord (high s) a.toNat v ∧ (step s).ob = s.ob := by
+  rw [step_of s _ hip hop, runOp_wi]
+  obtain ⟨e1, w1, i1, d1, sm1⟩ := dpop_same s (xs ++ [v]) a hw (by simpa using hd)
+  obtain ⟨e2, w2, i2, d2, sm2⟩ := dpop_same _ xs v w1 d1
+  simp only
+  rw [e1, e2]
+  generalize hs2 : (dpop (dpop s).2).2 = s2 at *
+  obtain ⟨r1, r2, r3, r4, r5⟩ := setVal_high_regs s2 a.toNat v ha
+  have w3 : WF { s2 with mem := setVal s2.mem a.toNat v } :=
+    ⟨by simpa using w2.mem, w2.ds, w2.cs, by rw [r2]; exact w2.dsh, by rw [r3]; exact w2.csh⟩
+  obtain ⟨w4, i4, d4, sm4⟩ := setIP_same _ (getIP { s2 with mem := setVal s2.mem a.toNat v } + 1)
+    w3 (by rw [r1]; omega)
+  have hsm := sm1.trans sm2
+  refine ⟨w4, by rw [i4, r1, i2, i1], by rw [d4, dstack, r2]; exact d2, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [sm4.cs, cstack, r3]; exact hsm.cs
+  · rw [sm4.st, r4]; exact hsm.st
+  · rw [sm4.db, r5]; exact hsm.db
+  · rw [sm4.high, high_setVal_high _ _ _ w2 ha hb, hsm.high]
+  · rw [sm4.ob]; exact hsm.ob
+
+/-- `go`: a jump into high memory lands one before its target, for the step's move on. -/
+theorem go_eq (s : State) (a : Nat) (ha : 256 ≤ a) : go s a = setIP s (a - 1) := by
+  unfold go; simp [show ¬ a < 0x100 by omega]
+
+theorem runOp_jm (s : State) : runOp s 0x9A = go s (getVal s.mem (getIP s + 1)).toNat := by
+  simp [runOp]
+
+/-- `jm a`: jump to the address after the instruction. -/
+theorem step_jm (s : State) (hw : WF s) (hip : 256 ≤ getIP s) (hlt : getIP s + 5 < MAXBYTE)
+    (hop : high s (getIP s) = 0x9A) (ha : 256 ≤ (word (high s) (getIP s + 1)).toNat) :
+    WF (step s) ∧ getIP (step s) = (word (high s) (getIP s + 1)).toNat ∧
+      dstack (step s) = dstack s ∧ Same s (step s) := by
+  rw [step_of s _ hip hop, runOp_jm, getVal_high s _ hw (by omega) (by omega), go_eq _ _ ha]
+  have hlt32 : (word (high s) (getIP s + 1)).toNat < 2 ^ 32 := UInt32.toNat_lt _
+  obtain ⟨w1, i1, d1, sm1⟩ := setIP_same s ((word (high s) (getIP s + 1)).toNat - 1) hw (by omega)
+  obtain ⟨w2, i2, d2, sm2⟩ := setIP_same _ (getIP (setIP s ((word (high s) (getIP s + 1)).toNat - 1)) + 1)
+    w1 (by rw [i1]; omega)
+  exact ⟨w2, by rw [i2, i1]; omega, by rw [d2, d1], sm1.trans sm2⟩
+
+
+/-- A byte as a signed distance. -/
+def sbyte (b : UInt8) : Int := if b >= 128 then (b.toNat : Int) - 256 else (b.toNat : Int)
+
+theorem runOp_h0 (s : State) : runOp s 0x9C =
+    (let (v, s) := dpop s; if v == 0 then hop s else setIP s (getIP s + 1)) := by
+  simp [runOp]
+
+/-- `h0 d`: pop; if it was zero, hop by `d` from this instruction, else go past it. -/
+theorem step_h0 (s : State) (xs : List UInt32) (v : UInt32) (hw : WF s) (hip : 256 ≤ getIP s)
+    (hlt : getIP s + 2 < MAXBYTE) (hop : high s (getIP s) = 0x9C) (hd : dstack s = xs ++ [v])
+    (ht : 256 ≤ (Int.ofNat (getIP s) + sbyte (high s (getIP s + 1))).toNat)
+    (ht' : (Int.ofNat (getIP s) + sbyte (high s (getIP s + 1))).toNat < MAXBYTE) :
+    WF (step s) ∧
+      getIP (step s) = (if v = 0 then (Int.ofNat (getIP s) + sbyte (high s (getIP s + 1))).toNat
+        else getIP s + 2) ∧
+      dstack (step s) = xs ∧ Same s (step s) := by
+  rw [step_of s _ hip hop, runOp_h0]
+  obtain ⟨e1, w1, i1, d1, sm1⟩ := dpop_same s xs v hw hd
+  simp only
+  rw [e1]
+  generalize hs1 : (dpop s).2 = s1 at *
+  have hb : s1.mem.get! (getIP s1 + 1) = high s (getIP s + 1) := by
+    rw [i1, ← sm1.high]; simp [high]; omega
+  by_cases hv : v = 0
+  · subst hv
+    simp only [beq_self_eq_true, ↓reduceIte]
+    unfold B4.hop
+    simp only
+    rw [hb]
+    have hsb : (if high s (getIP s + 1) ≥ 128 then ((high s (getIP s + 1)).toNat : Int) - 256
+        else ((high s (getIP s + 1)).toNat : Int)) = sbyte (high s (getIP s + 1)) := rfl
+    rw [hsb, i1, go_eq _ _ ht]
+    obtain ⟨w2, i2, d2, sm2⟩ := setIP_same s1 ((Int.ofNat (getIP s) + sbyte (high s (getIP s + 1))).toNat - 1)
+      w1 (by unfold MAXBYTE at ht'; omega)
+    obtain ⟨w3, i3, d3, sm3⟩ := setIP_same _ (getIP (setIP s1
+      ((Int.ofNat (getIP s) + sbyte (high s (getIP s + 1))).toNat - 1)) + 1) w2
+      (by rw [i2]; unfold MAXBYTE at ht'; omega)
+    exact ⟨w3, by rw [i3, i2]; omega, by rw [d3, d2, d1], sm1.trans (sm2.trans sm3)⟩
+  · have : (v == 0) = false := by simpa using hv
+    simp only [this, Bool.false_eq_true, ↓reduceIte]
+    obtain ⟨w2, i2, d2, sm2⟩ := setIP_same s1 (getIP s1 + 1) w1 (by rw [i1]; unfold MAXBYTE at hlt; omega)
+    obtain ⟨w3, i3, d3, sm3⟩ := setIP_same _ (getIP (setIP s1 (getIP s1 + 1)) + 1) w2
+      (by rw [i2, i1]; unfold MAXBYTE at hlt; omega)
+    exact ⟨w3, by rw [i3, i2, i1]; simp [hv], by rw [d3, d2, d1], sm1.trans (sm2.trans sm3)⟩
+
+theorem runOp_hl (s : State) : runOp s 0xFF = setRST s 0 := by
+  simp [runOp]
+
+/-- `hl`: halt — the machine stops running. -/
+theorem step_hl (s : State) (hw : WF s) (hip : 256 ≤ getIP s) (hop : high s (getIP s) = 0xFF) :
+    getRST (step s) = 0 := by
+  rw [step_of s _ hip hop, runOp_hl, getRST_setIP, getRST_setRST _ _ hw.mem]
+
 end B4
