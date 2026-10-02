@@ -49,23 +49,26 @@ def later (a b : UInt32) : UInt32 := if a.toNat < b.toNat then b else a
 
 /-- Machine `i` sends: pop the command, the channel and the value. -/
 def Swarm.send (w : Swarm) (i : Nat) (s : State) : Swarm :=
-  let (_, s) := dpop s
-  let (c, s) := dpop s
-  let (v, s) := dpop s
-  { w with ms := w.ms.set i (setIP s (getIP s + 1)),
-           chans := fun c' => if c' = c.toNat then w.chans c' ++ [(v, getClk s)] else w.chans c' }
+  let s₁ := (dpop s).2
+  let c := (dpop s₁).1
+  let s₂ := (dpop s₁).2
+  let v := (dpop s₂).1
+  let s₃ := (dpop s₂).2
+  { w with ms := w.ms.set i (setIP s₃ (getIP s₃ + 1)),
+           chans := fun c' => if c' = c.toNat then w.chans c' ++ [(v, getClk s₃)] else w.chans c' }
 
 /-- Machine `i` receives, if the message is there. -/
 def Swarm.recv (w : Swarm) (i : Nat) (s : State) : Option Swarm :=
-  let (_, s) := dpop s
-  let (c, s) := dpop s
+  let s₁ := (dpop s).2
+  let c := (dpop s₁).1
+  let s₂ := (dpop s₁).2
   let r := (w.rd.getD i fun _ => 0) c.toNat
   match (w.chans c.toNat)[r]? with
   | none => none
-  | some (v, τ) =>
-    let s := dpush s v
-    let s := setClk s (later (getClk s) (τ + 1))
-    some { w with ms := w.ms.set i (setIP s (getIP s + 1)),
+  | some m =>
+    let s₃ := dpush s₂ m.1
+    let s₄ := setClk s₃ (later (getClk s₃) (m.2 + 1))
+    some { w with ms := w.ms.set i (setIP s₄ (getIP s₄ + 1)),
                   rd := w.rd.set i fun c' => if c' = c.toNat then r + 1 else
                     (w.rd.getD i fun _ => 0) c' }
 
