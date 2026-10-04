@@ -1,5 +1,6 @@
 import B4.AsmSyntax
 import B4.Theory
+import B4.Heap
 
 /-!
 # mm: a memory allocator in b4a
@@ -15,8 +16,8 @@ whether it is used (`0` if free) — followed by its data.
   it. It answers the address of the data, or `0` if no block is big enough.
 * `mm-free ( a -- )` marks the block free again.
 
-`MM.Blk` and `MM.alloc` are the same algorithm on a list of blocks, the model the
-code is meant to follow. For now they are related only by a random test (the
+`MM.alloc` is the same algorithm on a list of blocks (`B4.Heap.alloc`, in
+bytes: a header of 12, a split at 16), the model the code is meant to follow. For now they are related only by a random test (the
 machine and the model agree); proving it is still to do.
 -/
 
@@ -75,52 +76,32 @@ def code : Asm.Program := b4a! r#"
 
 /-! ### The model -/
 
-/-- A block: the size of its data, and whether it is used. -/
-structure Blk where
-  size : Nat
-  used : Bool
-  deriving Repr, DecidableEq, Inhabited
+/-- A block: the size of its data, in bytes, and whether it is used. -/
+abbrev Blk := Heap.Blk
 
-/-- Absorb the free blocks at the front of `bs` into a free block of `size`. -/
-def absorb (size : Nat) : List Blk → Nat × List Blk
-  | b :: bs => if b.used then (size, b :: bs) else absorb (size + 12 + b.size) bs
-  | [] => (size, [])
-
-theorem absorb_length (size : Nat) : ∀ bs : List Blk, (absorb size bs).2.length ≤ bs.length
-  | [] => by simp [absorb]
-  | b :: bs => by
-    unfold absorb
-    split
-    · simp
-    · have := absorb_length (size + 12 + b.size) bs; simp only [List.length_cons]; omega
+/-- Absorb the free blocks at the front of `bs` into a free block of `size`
+(headers of 12 bytes). -/
+abbrev absorb (size : Nat) (bs : List Blk) : Nat × List Blk := Heap.absorb 12 size bs
 
 /-- Take a free block of `size` for `n`, splitting off the rest when it is at
 least 16 bytes. -/
-def claim (n size : Nat) : List Blk :=
-  if size ≥ n + 16 then [⟨n, true⟩, ⟨size - n - 12, false⟩] else [⟨size, true⟩]
+abbrev claim (n size : Nat) : List Blk := Heap.claim 12 16 n size
 
-/-- **`mm-alloc`, on the blocks**: the offset of the block taken from the start
-of the heap, if one is big enough, and the blocks after — merged as far as the
-search went, even when none is. -/
-def alloc (n : Nat) : List Blk → Option Nat × List Blk
-  | [] => (none, [])
-  | b :: bs =>
-    if b.used then
-      let r := alloc n bs
-      (r.1.map (· + 12 + b.size), b :: r.2)
-    else
-      have := absorb_length b.size bs
-      if n ≤ (absorb b.size bs).1 then (some 0, claim n (absorb b.size bs).1 ++ (absorb b.size bs).2)
-      else
-        let r := alloc n (absorb b.size bs).2
-        (r.1.map (· + 12 + (absorb b.size bs).1), ⟨(absorb b.size bs).1, false⟩ :: r.2)
-termination_by bs => bs.length
-decreasing_by all_goals simp only [List.length_cons]; omega
+/-- **`mm-alloc`, on the blocks**: `Heap.alloc` in bytes, a header of 12 and a
+split at 16 — the offset of the block taken from the start of the heap, if one
+is big enough, and the blocks after, merged as far as the search went. -/
+abbrev alloc (n : Nat) (bs : List Blk) : Option Nat × List Blk := Heap.alloc 12 16 n bs
 
 /-- **`mm-free`, on the blocks**: the block at offset `o` is free. -/
-def free (o : Nat) : List Blk → List Blk
-  | [] => []
-  | b :: bs => if o = 0 then { b with used := false } :: bs else b :: free (o - 12 - b.size) bs
+abbrev free (o : Nat) (bs : List Blk) : List Blk := Heap.free 12 o bs
+
+/-- **Bytes are four times cells**: the byte model on blocks four times the size
+does what the model in cells (`Heap.alloc 3 4`, the allocator of Hehner's
+language) does, with offsets four times. -/
+theorem alloc_cells (n : Nat) (bs : List Blk) :
+    alloc (4 * n) (bs.map (Heap.Blk.scale 4)) =
+      ((Heap.alloc 3 4 n bs).1.map (4 * ·), (Heap.alloc 3 4 n bs).2.map (Heap.Blk.scale 4)) :=
+  Heap.alloc_scale (k := 4) (by decide) 3 4 n bs
 
 /-- Round up to whole cells. -/
 def round (n : Nat) : Nat := (n + 3) / 4 * 4
