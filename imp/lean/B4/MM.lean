@@ -16,7 +16,8 @@ whether it is used (`0` if free) — followed by its data.
 * `mm-free ( a -- )` marks the block free again.
 
 `MM.Blk` and `MM.alloc` are the same algorithm on a list of blocks, the model the
-proofs (`B4.MMTheory`) relate the code to.
+code is meant to follow. For now they are related only by a random test (the
+machine and the model agree); proving it is still to do.
 -/
 
 namespace B4.MM
