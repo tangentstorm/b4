@@ -1,0 +1,89 @@
+#+title: tests for b4's extension ops
+#+tanco-format: 0.2
+
+These ops live in the range $A0..$BF, which is free for each implementation to
+use (see [[file:doc/opcodes.org][doc/opcodes.org]]). So far the Lean implementation has them all;
+the float ops follow the Bend implementation.
+
+* floating point
+Floats are IEEE binary32 bit patterns kept in ordinary cells.
+
+** TEST op.fa : =fa= float add
+#+begin_src b4a
+> 3F800000 40000000 fa ?d /q
+ds: [40400000]
+#+end_src
+
+1.0 + 2.0 = 3.0
+
+** TEST op.fs : =fs= float subtract
+#+begin_src b4a
+> 3F800000 40000000 fs ?d /q
+ds: [-40800000]
+#+end_src
+
+1.0 - 2.0 = -1.0, whose bits are $BF800000.
+
+** TEST op.fm : =fm= float multiply
+#+begin_src b4a
+> 40400000 40000000 fm ?d /q
+ds: [40C00000]
+#+end_src
+
+** TEST op.fd : =fd= float divide
+#+begin_src b4a
+> 40400000 40000000 fd ?d /q
+ds: [3FC00000]
+#+end_src
+
+** TEST op.fl : =fl= float less than
+#+begin_src b4a
+> 3F800000 40000000 fl 40000000 3F800000 fl ?d /q
+ds: [-1 0]
+#+end_src
+
+** TEST op.fi : =fi= integer to float
+#+begin_src b4a
+> 07 fi -2 fi ?d /q
+ds: [40E00000 -40000000]
+#+end_src
+
+* random numbers and the clock
+
+** TEST op.rn : =rn= random number
+#+begin_src b4a
+> rn rn ?d /q
+ds: [-6D35D0F2 3CD6E3F3]
+#+end_src
+
+The seed is the system cell at $B4, which starts at 0, so these are the first
+two numbers of every run. =rn= adds $9E3779B9 to the seed and pushes the seed
+scrambled by MurmurHash3's finalizer.
+
+** TEST op.rn.seed : seeding =rn=
+#+begin_src b4a
+> rn zp 00 B4 wi rn ?d /q
+ds: [-6D35D0F2]
+#+end_src
+
+Writing the seed back to 0 starts the sequence over.
+
+** TEST b4a.rnd : =rn= in plain b4a
+#+begin_src b4a
+> :rnd li B9 79 37 9E lb B4 ri ad du lb B4 wi du ls F0 sh xr li 6B CA EB 85 ml du ls F3 sh xr li 35 AE B2 C2 ml du ls F0 sh xr rt
+> rnd rnd ?d
+ds: [-6D35D0F2 3CD6E3F3]
+> 00 B4 wi zp zp rn rn ?d /q
+ds: [-6D35D0F2 3CD6E3F3]
+#+end_src
+
+The routine of [[file:b4a/rn.b4a][b4a/rn.b4a]] draws the same numbers as the op, from the same seed.
+
+** TEST op.ct : =ct= clock time
+#+begin_src b4a
+> 0 ct lt ?d /q
+ds: [-1]
+#+end_src
+
+=ct= pushes the host's clock, in seconds since the unix epoch, which the
+implementation keeps in the system cell at $B8. (It is later than 1970.)

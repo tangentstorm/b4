@@ -21,7 +21,7 @@ $60| +@ +A +B +C +D +E +F +G +H +I +J +K +L +M +N +O
 $70| +P +Q +R +S +T +U +V +W +X +Y +Z +[ +\ +] +^ +_
 $80| ad sb ml dv md sh an or xr nt eq lt du sw ov zp
 $90| dc cd rb ri wb wi lb li rs ls jm hp h0 cl rt nx
-$A0| __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __
+$A0| fa fs fm fd fl fi rn ct __ __ __ __ __ __ __ __
 $B0| __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ tm
 $C0| c0 c1 ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 $D0| ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
@@ -255,6 +255,27 @@ For example, the following b4a code puts the numbers 0 2 4 onto =ds=, leaving
 #+begin_src b4a
   :F c0 !X c2 +X c2 +X c2 +X rt
 #+end_src
+
+** extension ops
+
+These live in the user-defined range =$A0..$BF=, so not every implementation
+has them; the Lean implementation has all of them, and the Bend implementation
+the float ops. See [[file:../b4x-tests.org][b4x-tests.org]].
+
+Floats are IEEE binary32 bit patterns kept in ordinary cells.
+
+- fa :: =$A0= float add ~(xy -- r)~
+- fs :: =$A1= float subtract ~(xy -- r)~
+- fm :: =$A2= float multiply ~(xy -- r)~
+- fd :: =$A3= float divide ~(xy -- r)~
+- fl :: =$A4= float less than? ~(xy -- b)~
+- fi :: =$A5= signed integer to float ~(n -- r)~
+- rn :: =$A6= random number ~( -- n)~. Adds =$9E3779B9= to the seed in the
+  system cell at =$B4= (which starts at 0, so every run draws the same numbers
+  until a program seeds it) and pushes the new seed scrambled by MurmurHash3's
+  32-bit finalizer. [[file:../b4a/rn.b4a][b4a/rn.b4a]] is the same generator in plain b4a.
+- ct :: =$A7= clock time ~( -- n)~. Pushes the host's clock, in seconds since
+  the unix epoch, which the implementation keeps in the system cell at =$B8=.
 
 ** reserved ops
 

@@ -1,0 +1,33 @@
+#!/bin/sh
+# ./test lean [b4 b4x]
+set -eu
+ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
+. "$ROOT/imp/common.sh"
+cd "$ROOT"
+if [ "${1:-}" = "--list" ]; then
+  echo "b4 b4x"
+  exit 0
+fi
+ensure_tanco
+
+if [ $# -eq 0 ]; then
+  set -- b4 b4x
+fi
+
+(cd "$ROOT/imp/lean" && lake build b4)
+
+for suite in "$@"; do
+  case $suite in
+    b4)
+      tanco_run b4-tests.org -- imp/lean/.lake/build/bin/b4
+      ;;
+    b4x)
+      tanco_run b4x-tests.org -- imp/lean/.lake/build/bin/b4
+      ;;
+    *)
+      echo "lean: unknown suite '$suite'" >&2
+      echo "suites: b4 b4x" >&2
+      exit 2
+      ;;
+  esac
+done

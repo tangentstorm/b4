@@ -11,9 +11,15 @@ def RDS_OFF : Nat := 140
 def RCS_OFF : Nat := 152
 def RST_OFF : Nat := 160
 def RDB_OFF : Nat := 164
+/-- The seed of `rn`, a system cell: it starts at `0`, so every run draws the
+same numbers unless a program seeds it (from `ct`, say). -/
+def RSD_OFF : Nat := 180
+/-- The host's clock (seconds since the unix epoch), a system cell the
+implementation keeps up to date and `ct` reads. -/
+def RCK_OFF : Nat := 184
 
 inductive Register where
-  | PC | DS | CS | ST | DB | RED | BLU | GRN | HERE | T | X | Y | Z
+  | PC | DS | CS | ST | DB | RED | BLU | GRN | HERE | T | X | Y | Z | SD | CK
   | R (n : Nat)
 deriving BEq, Inhabited
 
@@ -31,6 +37,8 @@ def Register.toNat : Register → Nat
   | X => 24
   | Y => 25
   | Z => 26
+  | SD => 45
+  | CK => 46
   | R n => n % 32
 
 inductive Op where
@@ -49,6 +57,8 @@ inductive Op where
   | rt
   | nx (dist : Int8)
   | c0 | c1 | c2 | n1 | c4
+  | fa | fs | fm | fd | fl | fi
+  | rn | ct
   | io | db | hl
   | invoke (r : Register)
   | read   (r : Register)
@@ -67,6 +77,8 @@ def Op.toByte : Op → UInt8
   | rs => 0x98 | ls => 0x99 | jm _ => 0x9A | hp _ => 0x9B
   | h0 _ => 0x9C | cl _ => 0x9D | rt => 0x9E | nx _ => 0x9F
   | c0 => 0xC0 | c1 => 0xC1 | c2 => 0xF6 | n1 => 0xF7 | c4 => 0xF8
+  | fa => 0xA0 | fs => 0xA1 | fm => 0xA2 | fd => 0xA3 | fl => 0xA4 | fi => 0xA5
+  | rn => 0xA6 | ct => 0xA7
   | io => 0xFD | db => 0xFE | hl => 0xFF
   | invoke r => r.toNat.toUInt8
   | read r   => 0x20 + r.toNat.toUInt8
@@ -158,9 +170,8 @@ def toInt32 (v : UInt32) : Int :=
   let n := v.toNat
   if n >= 0x80000000 then (n : Int) - 0x100000000 else (n : Int)
 
-def fromInt32 (i : Int) : UInt32 :=
-  let n := if i < 0 then i + 0x100000000 else i
-  UInt32.ofNat (n.toNat % 0x100000000)
+/-- An integer as a word, modulo `2^32` (two's complement). -/
+def fromInt32 (i : Int) : UInt32 := UInt32.ofNat (i % 0x100000000).toNat
 
 -- Relative jumps
 def go (s : State) (addr : Nat) : State :=
@@ -172,6 +183,30 @@ def hop (s : State) : State :=
   let dist := s.mem.get! (ip + 1)
   let d : Int := if dist >= 128 then (dist.toNat : Int) - 256 else (dist.toNat : Int)
   go s (Int.ofNat ip + d).toNat
+
+/-! The floating-point ops keep IEEE binary32 bit patterns in ordinary cells,
+as the Bend implementation does. -/
+
+/-- A binary32 operation on bit patterns. -/
+def f32op (f : Float32 → Float32 → Float32) (x y : UInt32) : UInt32 :=
+  (f (Float32.ofBits x) (Float32.ofBits y)).toBits
+
+/-- `fl`: whether one float is less than another, as a b4 binary. -/
+def f32lt (x y : UInt32) : UInt32 :=
+  if Float32.ofBits x < Float32.ofBits y then 0xFFFFFFFF else 0
+
+/-- `fi`: a signed integer as a float. -/
+def itof (x : UInt32) : UInt32 := (Float32.ofInt (toInt32 x)).toBits
+
+/-- The step of `rn`'s generator: a Weyl sequence, by the golden ratio. -/
+def rnNext (seed : UInt32) : UInt32 := seed + 0x9E3779B9
+
+/-- `rn`'s output: the seed, scrambled (MurmurHash3's finalizer). A bijection,
+so every seed gives a different number. -/
+def mix32 (z : UInt32) : UInt32 :=
+  let z := (z ^^^ (z >>> 16)) * 0x85EBCA6B
+  let z := (z ^^^ (z >>> 13)) * 0xC2B2AE35
+  z ^^^ (z >>> 16)
 
 -- Opcode implementation
 def runOp (s : State) (op : UInt8) : State :=
@@ -331,6 +366,34 @@ def runOp (s : State) (op : UInt8) : State :=
             let (_, s) := cpop s
             setIP s (getIP s + 1)
         else s
+    | 0xA0 => -- fa
+        let (y, s) := dpop s
+        let (x, s) := dpop s
+        dpush s (f32op (· + ·) x y)
+    | 0xA1 => -- fs
+        let (y, s) := dpop s
+        let (x, s) := dpop s
+        dpush s (f32op (· - ·) x y)
+    | 0xA2 => -- fm
+        let (y, s) := dpop s
+        let (x, s) := dpop s
+        dpush s (f32op (· * ·) x y)
+    | 0xA3 => -- fd
+        let (y, s) := dpop s
+        let (x, s) := dpop s
+        dpush s (f32op (· / ·) x y)
+    | 0xA4 => -- fl
+        let (y, s) := dpop s
+        let (x, s) := dpop s
+        dpush s (f32lt x y)
+    | 0xA5 => -- fi
+        let (x, s) := dpop s
+        dpush s (itof x)
+    | 0xA6 => -- rn
+        let seed := rnNext (getVal s.mem RSD_OFF)
+        dpush { s with mem := setVal s.mem RSD_OFF seed } (mix32 seed)
+    | 0xA7 => -- ct
+        dpush s (getVal s.mem RCK_OFF)
     | 0xC0 => dpush s 0
     | 0xC1 => dpush s 1
     | 0xF6 => dpush s 2

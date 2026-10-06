@@ -6,12 +6,12 @@
 set -eu
 cd "$(dirname "$0")"
 
-LANGS="pas js jlang lil c bend gd"
+LANGS="pas js jlang lil c bend gd lean"
 
 usage() {
   echo "usage: ./test [language] [suite ...]" >&2
   echo "       ./test -- suite ..." >&2
-  echo "languages: pas js jlang (j) lil c bend gd" >&2
+  echo "languages: pas js jlang (j) lil c bend gd lean" >&2
   echo "  ./test              test every implementation" >&2
   echo "  ./test pas          every Pascal suite" >&2
   echo "  ./test pas b4 b4i   those Pascal suites" >&2

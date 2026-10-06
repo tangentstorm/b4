@@ -19,6 +19,8 @@ syntax "T" : b4_reg
 syntax "X" : b4_reg
 syntax "Y" : b4_reg
 syntax "Z" : b4_reg
+syntax "SD" : b4_reg
+syntax "CK" : b4_reg
 syntax "R" num : b4_reg
 
 syntax "ad" : b4_op
@@ -58,6 +60,14 @@ syntax "c1" : b4_op
 syntax "c2" : b4_op
 syntax "n1" : b4_op
 syntax "c4" : b4_op
+syntax "fa" : b4_op
+syntax "fs" : b4_op
+syntax "fm" : b4_op
+syntax "fd" : b4_op
+syntax "fl" : b4_op
+syntax "fi" : b4_op
+syntax "rn" : b4_op
+syntax "ct" : b4_op
 syntax "io" : b4_op
 syntax "db" : b4_op
 syntax "hl" : b4_op
@@ -82,6 +92,8 @@ macro_rules
   | `(b4_reg_term% X) => `(Register.X)
   | `(b4_reg_term% Y) => `(Register.Y)
   | `(b4_reg_term% Z) => `(Register.Z)
+  | `(b4_reg_term% SD) => `(Register.SD)
+  | `(b4_reg_term% CK) => `(Register.CK)
   | `(b4_reg_term% R $n) => `(Register.R $n)
 
 syntax "b4_op_term%" b4_op : term
@@ -126,6 +138,14 @@ macro_rules
   | `(b4_op_term% c2) => `(Op.c2)
   | `(b4_op_term% n1) => `(Op.n1)
   | `(b4_op_term% c4) => `(Op.c4)
+  | `(b4_op_term% fa) => `(Op.fa)
+  | `(b4_op_term% fs) => `(Op.fs)
+  | `(b4_op_term% fm) => `(Op.fm)
+  | `(b4_op_term% fd) => `(Op.fd)
+  | `(b4_op_term% fl) => `(Op.fl)
+  | `(b4_op_term% fi) => `(Op.fi)
+  | `(b4_op_term% rn) => `(Op.rn)
+  | `(b4_op_term% ct) => `(Op.ct)
   | `(b4_op_term% io) => `(Op.io)
   | `(b4_op_term% db) => `(Op.db)
   | `(b4_op_term% hl) => `(Op.hl)
