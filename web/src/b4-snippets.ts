@@ -116,6 +116,15 @@ export class B4Snippets extends HTMLElement {
 
   setVM(vm: B4VM) { this.vm = vm; }
 
+  /** Seed or replace a snippet (used by cart booters). */
+  setSnippet(name: string, code: string, select = true) {
+    this.snippets[name] = code;
+    this.save();
+    if (!this.listEl || !this.editorView) return; // not connected yet
+    this.renderList();
+    if (select) this.select(name);
+  }
+
   private save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.snippets));
   }

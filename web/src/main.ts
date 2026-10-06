@@ -8,6 +8,7 @@ import type { B4Snippets } from './b4-snippets';
 import './b4-grid-editor';
 import './b4-palette-editor';
 import './b4-help';
+import { mountLd28 } from './b4-ld28';
 
 // The <b4-repl> element creates its own B4PromiseWrapper internally.
 // We extract the underlying B4VM so the memory browser can share it.
@@ -88,6 +89,14 @@ if (memShadow) {
 
 const snippets = document.querySelector('b4-snippets')! as B4Snippets;
 snippets.setVM(vm);
+
+// LD28 map-editor cart (b4-gd#6): toolbar + localStorage levels; logic in .b4
+const params = new URLSearchParams(location.search);
+const wantLd28 = !params.has('cart') || params.get('cart') === 'ld28';
+if (wantLd28) {
+  const ld28 = mountLd28(vm, document.querySelector('#ld28-host')!, snippets);
+  ld28.boot();
+}
 
 // Wrap b4i to refresh the memory browser after each command
 const origB4i = vm.b4i.bind(vm);

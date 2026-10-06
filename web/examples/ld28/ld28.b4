@@ -1,0 +1,54 @@
+# ld28 — Ludum Dare 28 live map-editor (CoffeeScript+d3 → b4)
+# Grid 24×16, cell 10px (fits 320×200). Room bytes at $800.
+# Registers: A=hero cell index, B=paint tool (0..5)
+# Tools: 0 empty  1 wall  2 door  3 hero  4 baddie  5 gold
+# Host sets B from the toolbar; mouse paint + gravity run in :U.
+
+__code__
+:rmbase li $800 rt ;
+:cell rmbase ad rt ;
+:gw lb 18 rt ;
+:gh lb 10 rt ;
+:cw lb 0A rt ;
+:tox gw md rt ;
+:toy gw dv rt ;
+:clr c0 .w du li $180 lt .d du cell c0 sw wb c1 ad .o zp rt ;
+:get cell rb rt ;
+:into get c1 eq .i c0 .e n1 .t rt ;
+:move @A cell c0 sw wb !A @A cell lb 03 sw wb rt ;
+:nudge @A ad du into .i move .e zp .t rt ;
+:step @A toy c1 ad gh lt .i gw nudge .t rt ;
+:mx @W li $3FF an rt ;
+:my @W ls F6 sh li $3FF an rt ;
+:mbtn @W li $4000000 an rt ;
+:mcell mx cw dv my cw dv du gh lt .i sw du gw lt .i sw gw ml ad .e zp zp n1 .t .e zp zp n1 .t rt ;
+:paint @B lb 03 eq .i move .e @B sw cell wb .t rt ;
+:color du c0 eq .i zp li $FF666666 rt .t du c1 eq .i zp li $FF999999 rt .t du c2 eq .i zp li $FF66CC99 rt .t du lb 03 eq .i zp li $FF99CCFF rt .t du c4 eq .i zp li $FFEE2244 rt .t zp li $FFFFCC44 rt ;
+:draw-cell du get color lb 'f gm du tox cw ml sw toy cw ml cw cw lb 'b gm rt ;
+:I clr c0 !A c1 !B rt ;
+:U mbtn .i mcell du n1 eq .i zp .e paint .t .t @T c1 an c0 eq .i step .t rt ;
+:R li $FF444444 lb 'f gm lb 'X gm c0 .w du li $180 lt .d du draw-cell c1 ad .o zp rt ;
+^I
+'p gm
+
+__gfx__
+
+__map__
+
+__palette__
+666666
+999999
+66cc99
+99ccff
+ee2244
+ffcc44
+000000
+ffffff
+ff004d
+ffa300
+ffec27
+00e436
+29adff
+83769c
+ff77a8
+ffccaa
