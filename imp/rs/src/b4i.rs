@@ -511,16 +511,22 @@ impl B4 {
     }
 }
 
-pub fn run(b4: &mut B4, lines: impl Iterator<Item = std::io::Result<String>>) -> i32 {
+pub fn run(b4: &mut B4) -> i32 {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match b4.args(&args) {
         Ok(true) => return 0,
         Ok(false) => {}
         Err(crate::vm::Stop(code)) => return code,
     }
-    for line in lines {
-        let Ok(line) = line else { break };
-        match b4.line(&line) {
+    loop {
+        let mut line = String::new();
+        match std::io::stdin().read_line(&mut line) {
+            Ok(0) | Err(_) => break,
+            Ok(_) => {}
+        }
+        let line = line.strip_suffix('\n').unwrap_or(&line);
+        let line = line.strip_suffix('\r').unwrap_or(line);
+        match b4.line(line) {
             Ok(true) => return 0,
             Ok(false) => {}
             Err(crate::vm::Stop(code)) => return code,

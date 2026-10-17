@@ -6,11 +6,13 @@ pub type Value = i32;
 
 pub const STACKSIZE: i32 = 256;
 pub const MAXCELL: usize = 16383;
-pub const MEMSIZE: usize = MAXCELL * 4 + 1;
+pub const MEMSIZE: usize = (MAXCELL + 1) * 4;
 pub const MINCTRL: usize = MAXCELL - STACKSIZE as usize;
 pub const MAXDATA: usize = MINCTRL - 1;
 pub const MINDATA: usize = MAXDATA - STACKSIZE as usize;
 pub const MINHEAP: Value = 256;
+pub const DS_BASE: usize = MINDATA * 4;
+pub const CS_BASE: usize = MINCTRL * 4;
 
 pub const RGO: usize = (b'\\' - b'@') as usize;
 pub const RLP: usize = (b'^' - b'@') as usize;
@@ -127,8 +129,8 @@ impl Vm {
     pub fn fail<T>(&mut self, msg: &str) -> R<T> {
         let ip = self.rg(RIP);
         let op = self.mem.get(ip as usize).copied().map(opname).unwrap_or_default();
-        let ds = self.write_stack("ds: ", MINDATA, self.rg(RDS));
-        let cs = self.write_stack("cs: ", MINCTRL, self.rg(RCS));
+        let ds = self.write_stack("ds: ", DS_BASE, self.rg(RDS));
+        let cs = self.write_stack("cs: ", CS_BASE, self.rg(RCS));
         self.say(&format!("{msg}\nip: {ip} op: {op}\n{ds}\n{cs}"));
         Err(Stop(1))
     }
@@ -141,7 +143,7 @@ impl Vm {
     }
 
     pub fn rdval(&mut self, a: Value) -> R<Value> {
-        if a < 0 || a as usize + 4 >= MEMSIZE {
+        if a < 0 || a as usize + 4 > MEMSIZE {
             return self.fail("read past mem(rdval)");
         }
         Ok(self.raw_rd(a as usize))
@@ -169,7 +171,7 @@ impl Vm {
         if n + 1 == STACKSIZE {
             return self.fail("overflow(ds)");
         }
-        self.raw_wr(MINDATA + 4 * n as usize, v);
+        self.raw_wr(DS_BASE + 4 * n as usize, v);
         self.set_rg(RDS, n + 1);
         Ok(())
     }
@@ -180,7 +182,7 @@ impl Vm {
             return self.fail("underflow(ds)");
         }
         self.set_rg(RDS, n - 1);
-        Ok(self.raw_rd(MINDATA + 4 * (n - 1) as usize))
+        Ok(self.raw_rd(DS_BASE + 4 * (n - 1) as usize))
     }
 
     pub fn tos(&mut self) -> R<Value> {
@@ -188,7 +190,7 @@ impl Vm {
         if n < 1 {
             return self.fail("underflow(tos)");
         }
-        Ok(self.raw_rd(MINDATA + 4 * (n - 1) as usize))
+        Ok(self.raw_rd(DS_BASE + 4 * (n - 1) as usize))
     }
 
     fn nos(&mut self) -> R<Value> {
@@ -196,7 +198,7 @@ impl Vm {
         if n < 2 {
             return self.fail("underflow(nos)");
         }
-        Ok(self.raw_rd(MINDATA + 4 * (n - 2) as usize))
+        Ok(self.raw_rd(DS_BASE + 4 * (n - 2) as usize))
     }
 
     pub fn dswp(&mut self) -> R<()> {
@@ -211,7 +213,7 @@ impl Vm {
         if n + 1 == STACKSIZE {
             return self.fail("overflow(cs)");
         }
-        self.raw_wr(MINCTRL + 4 * n as usize, v);
+        self.raw_wr(CS_BASE + 4 * n as usize, v);
         self.set_rg(RCS, n + 1);
         Ok(())
     }
@@ -222,7 +224,7 @@ impl Vm {
             return self.fail("underflow(cs)");
         }
         self.set_rg(RCS, n - 1);
-        Ok(self.raw_rd(MINCTRL + 4 * (n - 1) as usize))
+        Ok(self.raw_rd(CS_BASE + 4 * (n - 1) as usize))
     }
 
     fn toc(&mut self) -> R<Value> {
@@ -230,15 +232,15 @@ impl Vm {
         if n < 1 {
             return self.fail("underflow(toc)");
         }
-        Ok(self.raw_rd(MINCTRL + 4 * (n - 1) as usize))
+        Ok(self.raw_rd(CS_BASE + 4 * (n - 1) as usize))
     }
 
     pub fn ds(&self) -> String {
-        self.write_stack("ds: ", MINDATA, self.rg(RDS))
+        self.write_stack("ds: ", DS_BASE, self.rg(RDS))
     }
 
     pub fn cs(&self) -> String {
-        self.write_stack("cs: ", MINCTRL, self.rg(RCS))
+        self.write_stack("cs: ", CS_BASE, self.rg(RCS))
     }
 
     pub fn go(&mut self, a: Value) {

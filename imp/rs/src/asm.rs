@@ -130,6 +130,7 @@ impl Dict {
 
     pub fn clear(&mut self) {
         self.ents.clear();
+        self.fwds.clear();
     }
 }
 

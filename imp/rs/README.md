@@ -10,11 +10,17 @@ The layout matches Pascal's, so programs that read the VM's internals see the sa
 - registers in the first 0x100 bytes, including the private ones at 0x80 and up (ip, stack heights, state, debug flag);
 - the data and control stacks in RAM, 256 cells each.
 
+Where it deliberately differs from Pascal:
+- **RAM** is the whole 65,536 bytes; Pascal's array stops 3 bytes short.
+- **The stacks** start at cells `mindata` and `minctrl`. Pascal used those cell indices as byte offsets, so data-stack entry 64 landed on control-stack entry 0.
+- **`/C`** also drops pending forward references.
+
 It also has the same float ops (`fa`..`fi`), the `tm` stub, and the `io` device: files, processes, args, env, stdin and sleep.
 
 ```sh
 cargo build --release          # target/release/b4i, target/release/b4h
 ./test rs                      # from the repo root: b4 b4i bios pre b4s b4h
+cargo test                     # the regression tests in tests/
 ```
 
 Use it as a library with `b4::B4::new(Box::new(std::io::stdout()))`, then `b4.line("2 3 ad ?d")`. The `vm` field holds the machine and `dict` the assembler's labels.
