@@ -7,10 +7,9 @@ import { B4VM } from './b4.mjs'
 
 interface ProcEntry { proc: ChildProcess; inbuf: string }
 
-let nextProcId = 0
-const procs: Map<number, ProcEntry> = new Map()
-
 export function addNativeIo(vm: B4VM): void {
+  let nextProcId = 0
+  const procs: Map<number, ProcEntry> = new Map()
   vm.onBye = () => process.exit(0)
 
   vm.addIo('o', (vm) => { // output character directly to stdout
