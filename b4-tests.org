@@ -61,6 +61,15 @@ which of these should it be?
 cs: [] # should be an empty array
 #+end_src
 
+** TEST io.query-not-a-register : =?0= dumps memory, it isn't a register query
+A two-character =?X= queries register =X= only when =X= is a register
+character. Otherwise it is an ordinary memory query.
+#+begin_src b4a
+> :0 ad sb
+> ?0 /q
+ad sb .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+#+end_src
+
 ** TEST io.hex : hex numbers are pushed to the data stack
 #+begin_src b4a
 > FF CC ?d /q

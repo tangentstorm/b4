@@ -316,3 +316,19 @@ lb C2 li ^D ^C ^B ^A rt .. .. .. .. .. .. .. ..
 #+end_src
 
 Using =$= in front of a number makrs
+
+* TEST b4i.clear-kills-procs : =/C= stops the processes =io 'p'= started
+The child below creates a marker file after one second. =/C= runs
+before that, so the marker must never appear.
+#+begin_src b4a
+> :400 ".b4-clear-marker" 0
+> 400 'd io
+> :300 "sleep 1; touch .b4-clear-marker" 0
+> 300 'p io zp
+> /C
+> :400 ".b4-clear-marker" 0
+> 7D0 'S io
+> 400 'x io ?d
+ds: [0]
+> 400 'd io /q
+#+end_src
