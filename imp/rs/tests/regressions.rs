@@ -82,3 +82,40 @@ fn each_stack_holds_256_cells() {
         assert_eq!(b.vm.cpop().unwrap(), i);
     }
 }
+
+#[test]
+fn a_two_character_query_that_is_not_a_register_is_a_memory_query() {
+    let mut b = b4();
+    b.vm.mem[0] = 0x80;
+    assert!(b.line("?0").is_ok());
+    assert!(b.line("?a ?_").is_ok());
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn clear_kills_the_processes_io_p_started() {
+    let me = std::process::id().to_string();
+    let children = || -> Vec<u32> {
+        std::fs::read_dir("/proc")
+            .unwrap()
+            .flatten()
+            .filter_map(|e| e.file_name().to_str()?.parse::<u32>().ok())
+            .filter(|p| {
+                let stat = std::fs::read_to_string(format!("/proc/{p}/stat")).unwrap_or_default();
+                let cmd = std::fs::read(format!("/proc/{p}/cmdline")).unwrap_or_default();
+                stat.rsplit(')').next().and_then(|r| r.split_whitespace().nth(1)) == Some(me.as_str())
+                    && String::from_utf8_lossy(&cmd).contains("b4-clear-test")
+            })
+            .collect()
+    };
+    let mut b = b4();
+    b.line(":300 \"sleep 30 # b4-clear-test\" 0").unwrap();
+    b.line("300 'p io").unwrap();
+    assert_eq!(b.vm.dpop().unwrap(), 0);
+    let kids = children();
+    assert!(!kids.is_empty(), "io 'p' started nothing");
+    b.line("/C").unwrap();
+    for k in kids {
+        assert!(!std::path::Path::new(&format!("/proc/{k}")).exists(), "/C left child {k} running");
+    }
+}

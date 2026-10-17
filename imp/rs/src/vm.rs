@@ -97,7 +97,10 @@ impl Vm {
         self.set_rg(RED, MINHEAP);
         self.set_rg(RBP, MAXCELL as Value);
         for p in self.procs.iter_mut() {
-            *p = None;
+            if let Some(mut p) = p.take() {
+                let _ = p.child.kill();
+                let _ = p.child.wait();
+            }
         }
     }
 

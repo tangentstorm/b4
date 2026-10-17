@@ -427,7 +427,7 @@ impl B4 {
                 None => return self.err("unknown !word"),
             },
             '?' => {
-                if c.len() == 2 {
+                if c.len() == 2 && is_reg_char(c[1].to_ascii_uppercase()).is_some() {
                     let s = format!("{:08X}", self.vm.rg(regn(c[1])));
                     self.say(&s);
                 } else if c.len() == 3 && c[1] == '@' {
