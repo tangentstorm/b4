@@ -4,37 +4,37 @@ Interactive assembler, debugger, and shell for B4. Execute assembly mnemonics di
 
 * Implementation Comparison
 
-(updated 2026-03-11)
+(updated 2026-10-17)
 
-| Feature               | Pascal | Lil | J  | JS | Godot | Level |
-|-----------------------+--------+-----+----+----+-------+-------|
-| **Core VM State**       |        |     |    |    |       |       |
-| ~?d~ (data stack)       | y      | y   | y  | y  | y     |     0 |
-| ~?c~ (control stack)    | y      | y   | y  | y  | y     |     0 |
-| ~?i~ (IP)               | y      | y   | y  | y  | y     |     0 |
-| ~?R~ (register)         | y      | NO  | y  | y  | NO    |     0 |
-| ~?100~ (mem dump)       | y      | y   | y  | y  | y     |     0 |
-| **VM Control**          |        |     |    |    |       |       |
-| ~/q~ (quit)             | y      | y   | y  | y  | y     |     0 |
-| ~/s~ (step)             | y      | y   | y  | y  | y     |     0 |
-| ~/g~ (go)               | y      | NO  | NO | NO | NO    |     0 |
-| ~/f~ (show fwd refs)    | y      | NO  | NO | NO | NO    |     0 |
-| ~/C~ (clear)            | y      | y   | y  | y  | y     |     0 |
-| ~/R~ (reset VM)         | y      | y   | NO | y  | NO    |     1 |
-| **Assembly**            |        |     |    |    |       |       |
-| ~:100 AA BB~            | y      | y   | y  | y  | y     |     0 |
-| ~:foo ...~              | y      | y   | y  | y  | y     |     0 |
-| Calculator mode       | y      | y   | y  | y  | y     |     0 |
-| **Enhanced Features**   |        |     |    |    |       |       |
-| ~/p~ (print dict)       | y      | NO  | NO | NO | NO    |     1 |
-| ~/a <file>~ (assemble)  | y      | NO  | NO | NO | NO    |     1 |
-| ~/i <file>~ (interpret) | y      | NO  | NO | NO | NO    |     1 |
-| ~/d [path]~ (cd)        | y      | NO  | NO | NO | NO    |     1 |
-| String literals ~"..."~ | y      | NO  | NO | y  | NO    |     1 |
-| Forward refs ~>label~   | y      | NO  | NO | NO | NO    |     1 |
-| Command-line ~-a -i~    | y      | y   | NO | NO | y     |     1 |
-| Control flow ~.i .t .e~ | y      | y   | NO | y  | NO    |     1 |
-| ~.^~ (linked list)      | y      | y   | NO | NO | NO    |     1 |
+| Feature               | Pascal | Rust | Lil | J  | JS | Godot | Level |
+|-----------------------+--------+------+-----+----+----+-------+-------|
+| **Core VM State**       |        |      |     |    |    |       |       |
+| ~?d~ (data stack)       | y      | y    | y   | y  | y  | y     |     0 |
+| ~?c~ (control stack)    | y      | y    | y   | y  | y  | y     |     0 |
+| ~?i~ (IP)               | y      | y    | y   | y  | y  | y     |     0 |
+| ~?R~ (register)         | y      | y    | NO  | y  | y  | NO    |     0 |
+| ~?100~ (mem dump)       | y      | y    | y   | y  | y  | y     |     0 |
+| **VM Control**          |        |      |     |    |    |       |       |
+| ~/q~ (quit)             | y      | y    | y   | y  | y  | y     |     0 |
+| ~/s~ (step)             | y      | y    | y   | y  | y  | y     |     0 |
+| ~/g~ (go)               | y      | y    | NO  | NO | NO | NO    |     0 |
+| ~/f~ (show fwd refs)    | y      | y    | NO  | NO | NO | NO    |     0 |
+| ~/C~ (clear)            | y      | y    | y   | y  | y  | y     |     0 |
+| ~/R~ (reset VM)         | y      | y    | y   | NO | y  | NO    |     1 |
+| **Assembly**            |        |      |     |    |    |       |       |
+| ~:100 AA BB~            | y      | y    | y   | y  | y  | y     |     0 |
+| ~:foo ...~              | y      | y    | y   | y  | y  | y     |     0 |
+| Calculator mode       | y      | y    | y   | y  | y  | y     |     0 |
+| **Enhanced Features**   |        |      |     |    |    |       |       |
+| ~/p~ (print dict)       | y      | y    | NO  | NO | NO | NO    |     1 |
+| ~/a <file>~ (assemble)  | y      | y    | NO  | NO | NO | NO    |     1 |
+| ~/i <file>~ (interpret) | y      | y    | NO  | NO | NO | NO    |     1 |
+| ~/d [path]~ (cd)        | y      | y    | NO  | NO | NO | NO    |     1 |
+| String literals ~"..."~ | y      | y    | NO  | NO | y  | NO    |     1 |
+| Forward refs ~>label~   | y      | y    | NO  | NO | NO | NO    |     1 |
+| Command-line ~-a -i~    | y      | y    | y   | NO | NO | y     |     1 |
+| Control flow ~.i .t .e~ | y      | y    | y   | NO | y  | NO    |     1 |
+| ~.^~ (linked list)      | y      | y    | y   | NO | NO | NO    |     1 |
 
 *Level 0* features are required for =b4-tests.org= compatibility.
 *Level 1* features are optional enhancements, soon to be provided "for free" via =b4i.b4a=.

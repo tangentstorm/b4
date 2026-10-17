@@ -53,6 +53,7 @@ Implementations:
 - [[./imp/lil/]], implemented in [[https://beyondloom.com/decker/lil.html][lil]].
 - [[./imp/js/]], implemented in javascript.
 - [[./imp/c/]], implemented in C.
+- [[./imp/rs/]], implemented in [[https://www.rust-lang.org/][Rust]].
 - [[./imp/bend/]], implemented in [[https://github.com/HigherOrderCO/bend][Bend]].
 - [[./imp/lean/]], implemented in Lean.
 - [[./imp/gd/]], implemented in GDScript for [[https://docs.godotengine.org/en/stable/][Godot 4]].
