@@ -32,15 +32,15 @@
 :009C  # RCZ = $27; {cs size (max height)}
 :00A0  # RST = $28; {state flag}
 :00A4  # RDB = $29; {debug flag}
-:00A8  # RED = $2A; {used by the debugger's editor}
-:00AC  # RBP = $2B; {internal breakpoint}
+:00A8  # $2A
+:00AC  # $2B
 :00B0  # $2C
 :00B4  # $2D
 :00B8  # $2E
 :00BC  # $2F
 :00C0  # $30
-:00C4  # $31
-:00C8  # $32
+:00C4  # RED = $31; {used by the debugger's editor}
+:00C8  # RBP = $32; {internal breakpoint}
 :00CC  # $33
 :00D0  # $34
 :00D4  # $35
