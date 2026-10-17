@@ -44,7 +44,7 @@ type
   end;
 
 var
-  mem  : array[0..maxcell*cellsize] of byte;
+  mem  : array[0..maxbyte] of byte;
   disk : file of block;
   term : uhw.TB4Device;
   vw   : byte = 4;
@@ -75,8 +75,8 @@ const {-- these are all offsets into the mem array --}
 //  RTB = $3C; {address of term buffer}
 {$TYPEDADDRESS OFF}
   rg: ^regs = @mem[0];
-  ds : ^stack = @mem[mindata];
-  cs : ^stack = @mem[minctrl];
+  ds : ^stack = @mem[mindata*cellsize];
+  cs : ^stack = @mem[minctrl*cellsize];
 {$TYPEDADDRESS ON}
 {$MACRO OFF}
 
@@ -165,7 +165,7 @@ function rdval(adr:address) : value;
   { read a longint (little-endian) }
   var p : ^value;
   begin
-    if (adr+4)>=length(mem) then fail('read past mem(rdval)');
+    if (adr+4)>length(mem) then fail('read past mem(rdval)');
     {$TYPEDADDRESS off}
     p := @mem[adr];
     {$TYPEDADDRESS on}
