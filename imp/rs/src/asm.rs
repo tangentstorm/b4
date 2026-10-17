@@ -125,7 +125,7 @@ impl Reader {
 
 impl Dict {
     pub fn find(&self, s: &str) -> Option<Value> {
-        self.ents.iter().find(|e| e.0 == s).map(|e| e.1)
+        self.ents.iter().rev().find(|e| e.0 == s).map(|e| e.1)
     }
 
     pub fn clear(&mut self) {

@@ -14,6 +14,15 @@ available in the pascal version's assembler.
   ds: [2 3]
 #+end_src
 
+* TEST b4i.redefine : the newest definition of a label wins
+A label defined again shadows the earlier definition, as in Forth.
+#+begin_src b4a
+  > :foo c1 rt
+  > :foo c2 rt
+  > foo ?d /q
+  ds: [2]
+#+end_src
+
 * TEST b4i.addr : Interactive assembler: assemble to any address
 #+begin_src b4a
   > :100 ^A ^B
