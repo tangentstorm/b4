@@ -99,7 +99,7 @@ main =: {{
           else. dput ord 1{tok end.
         case. '`' do. dput rega 1{tok
         case. '?' do.
-          if. 2=#tok do. echo _8 {. (8$'0'),hfd rget__vm rgn__vm 1{tok
+          if. (2=#tok) *. (1{tok) e. '@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_abcdefghijklmnopqrstuvwxyz' do. echo _8 {. (8$'0'),hfd rget__vm rgn__vm 1{tok
           elseif. ('x'={:tok) *. isHEX }: }.tok do. showhexmem addr }. }:tok
           else. showmem addr }.tok end.
         case. do.

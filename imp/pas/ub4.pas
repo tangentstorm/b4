@@ -119,6 +119,10 @@ procedure boot;
     rg[RBP] := maxcell;
     { initialize process array }
     for i := 0 to 15 do begin
+      if procs[i].active then begin
+        procs[i].proc.Terminate(0);
+        procs[i].proc.Free;
+      end;
       procs[i].active := false;
       procs[i].outbuf := '';
     end;

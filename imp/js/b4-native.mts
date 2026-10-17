@@ -81,6 +81,21 @@ export function addNativeIo(vm: B4VM): void {
     }
   })
 
+  vm.onClear = () => {
+    for (let entry of procs.values()) entry.proc.kill()
+    procs.clear()
+  }
+
+  vm.addIo('d', (vm) => { // delete file: (filename-ptr --)
+    let name = vm._readStr(vm.dpop())
+    try { fs.unlinkSync(name) } catch {}
+  })
+
+  vm.addIo('x', (vm) => { // file exists: (filename-ptr -- bool)
+    let name = vm._readStr(vm.dpop())
+    vm.dput(fs.existsSync(name) && fs.statSync(name).isFile() ? -1 : 0)
+  })
+
   vm.addIo('k', (vm) => { // kill process: (handle --)
     let handle = vm.dpop()
     let entry = procs.get(handle)
