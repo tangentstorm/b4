@@ -67,3 +67,18 @@ fn clear_drops_pending_forward_references() {
     b.line(":later").unwrap();
     assert_eq!(&b.vm.mem[0x100..0x104], &[0xAA, 0xBB, 0xCC, 0xDD]);
 }
+
+#[test]
+fn each_stack_holds_256_cells() {
+    let mut b = b4();
+    for i in 0..256 {
+        b.vm.dput(i).unwrap();
+        b.vm.cput(i).unwrap();
+    }
+    assert!(b.vm.dput(256).is_err());
+    assert!(b.vm.cput(256).is_err());
+    for i in (0..256).rev() {
+        assert_eq!(b.vm.dpop().unwrap(), i);
+        assert_eq!(b.vm.cpop().unwrap(), i);
+    }
+}

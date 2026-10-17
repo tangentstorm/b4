@@ -168,7 +168,7 @@ impl Vm {
 
     pub fn dput(&mut self, v: Value) -> R<()> {
         let n = self.rg(RDS);
-        if n + 1 == STACKSIZE {
+        if n >= STACKSIZE {
             return self.fail("overflow(ds)");
         }
         self.raw_wr(DS_BASE + 4 * n as usize, v);
@@ -210,7 +210,7 @@ impl Vm {
 
     pub fn cput(&mut self, v: Value) -> R<()> {
         let n = self.rg(RCS);
-        if n + 1 == STACKSIZE {
+        if n >= STACKSIZE {
             return self.fail("overflow(cs)");
         }
         self.raw_wr(CS_BASE + 4 * n as usize, v);
