@@ -1,17 +1,17 @@
 #!/bin/sh
-# ./test rs [b4 b4i bios pre b4s b4h]
+# ./test rs [b4 b4i bios pre b4s b4h mem]
 set -eu
 ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 . "$ROOT/imp/common.sh"
 cd "$ROOT"
 if [ "${1:-}" = "--list" ]; then
-  echo "b4 b4i bios pre b4s b4h"
+  echo "b4 b4i bios pre b4s b4h mem"
   exit 0
 fi
 ensure_tanco
 
 if [ $# -eq 0 ]; then
-  set -- b4 b4i bios pre b4s b4h
+  set -- b4 b4i bios pre b4s b4h mem
 fi
 
 (cd "$ROOT/imp/rs" && cargo build --release --quiet)
@@ -37,9 +37,12 @@ for suite in "$@"; do
     b4h)
       tanco_run b4h-tests.org -- $BIN/b4h
       ;;
+    mem)
+      tanco_run mem-tests.org -- $BIN/b4i
+      ;;
     *)
       echo "rs: unknown suite '$suite'" >&2
-      echo "suites: b4 b4i bios pre b4s b4h" >&2
+      echo "suites: b4 b4i bios pre b4s b4h mem" >&2
       exit 2
       ;;
   esac
