@@ -131,6 +131,7 @@ procedure clear_dict;
       dict[i].id := ''; dict[i].adr := 0
     end;
     ents := 0;
+    SetLength(fwds, 0);
   end;
 
 

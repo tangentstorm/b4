@@ -1,0 +1,29 @@
+#+title: b4 memory layout tests
+#+tanco-format: 0.2
+
+* About this file
+These tests check the VM's memory layout: the size of RAM and what
+=/C= clears. (The stacks' separation is =op.dc-deep= in b4-tests.org.) They are separate from
+[[file:b4i-tests.org][b4i-tests.org]] because not every implementation
+has the full 64KB of RAM yet.
+
+* TEST mem.full-64k : the last cell of the 64KB address space is usable
+#+begin_src b4a
+  > 12345678 FFFC wi FFFC ri ?d
+  ds: [12345678]
+  > AB FFFF wb FFFF rb ?d /q
+  ds: [12345678 AB]
+#+end_src
+
+* TEST mem.clear-forward-refs : =/C= drops pending forward references
+A forward reference recorded before =/C= must not be resolved into the
+memory assembled after it. =/C= clears RAM, so the reference has
+nothing left to point into.
+#+begin_src b4a
+  > :100 >later
+  > /C
+  > :100 AA BB CC DD
+  > :later
+  > ?100x /q
+  AA BB CC DD 00 00 00 00 00 00 00 00 00 00 00 00
+#+end_src

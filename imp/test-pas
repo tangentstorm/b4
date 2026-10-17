@@ -5,13 +5,13 @@ ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 . "$ROOT/imp/common.sh"
 cd "$ROOT"
 if [ "${1:-}" = "--list" ]; then
-  echo "b4 b4i bios pre b4s b4h b4a"
+  echo "b4 b4i bios pre b4s b4h mem b4a"
   exit 0
 fi
 ensure_tanco
 
 if [ $# -eq 0 ]; then
-  set -- b4 b4i bios pre b4s b4h b4a
+  set -- b4 b4i bios pre b4s b4h mem b4a
 fi
 
 b4i_built=
@@ -44,6 +44,10 @@ for suite in "$@"; do
       need_b4i
       tanco_run b4s-tests.org -- imp/pas/b4i -a b4a/bios.b4a -a b4a/pre.b4a -a b4a/b4s.b4a
       ;;
+    mem)
+      need_b4i
+      tanco_run mem-tests.org -- imp/pas/b4i
+      ;;
     b4h)
       (cd "$ROOT/imp/pas" && make b4h)
       tanco_run b4h-tests.org -- imp/pas/b4h
@@ -55,7 +59,7 @@ for suite in "$@"; do
       ;;
     *)
       echo "pas: unknown suite '$suite'" >&2
-      echo "suites: b4 b4i bios pre b4s b4h b4a" >&2
+      echo "suites: b4 b4i bios pre b4s b4h mem b4a" >&2
       exit 2
       ;;
   esac
