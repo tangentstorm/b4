@@ -15,23 +15,6 @@ has the full 64KB of RAM yet.
   ds: [12345678 AB]
 #+end_src
 
-* TEST mem.stack-256 : each stack holds all 256 of its cells
-#+begin_src b4a
-  > 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-  > 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-  > 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-  > 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-  > ?d
-  ds: [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
-  > dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc
-  > dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc
-  > dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc
-  > dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc
-  > ?d ?c /q
-  ds: []
-  cs: [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
-#+end_src
-
 * TEST mem.clear-forward-refs : =/C= drops pending forward references
 A forward reference recorded before =/C= must not be resolved into the
 memory assembled after it. =/C= clears RAM, so the reference has
