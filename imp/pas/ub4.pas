@@ -198,7 +198,7 @@ procedure mset(a:address; v:value);
 
 procedure dput( val : value );
   begin
-    if rg[RDS]+1 = datasize then fail('overflow(ds)');
+    if rg[RDS] >= datasize then fail('overflow(ds)');
     ds[rg[RDS]] := val;
     inc(rg[RDS]);
   end;
@@ -235,7 +235,7 @@ function dpon:value; { pop the nos }
 
 procedure cput( val : value );
   begin
-    if rg[RCS]+1 = ctrlsize then fail('overflow(cs)');
+    if rg[RCS] >= ctrlsize then fail('overflow(cs)');
     cs[rg[RCS]] := val;
     inc(rg[RCS]);
   end;
