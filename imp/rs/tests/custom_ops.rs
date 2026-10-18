@@ -61,8 +61,18 @@ fn built_in_bytes_and_names_cannot_be_taken() {
     assert!(b.vm.add_op(0xA8, "ad", |_| Ok(())).is_err());
     assert!(b.vm.add_op(0xA8, "dd", |_| Ok(())).is_err());
     assert!(b.vm.add_op(0xA8, "toolong", |_| Ok(())).is_err());
-    assert!(b.vm.add_op(0xA6, "dd", |vm| vm.dput(1)).is_ok());
-    b.line("dd").unwrap();
+}
+
+#[test]
+fn names_are_two_lower_case_letters_not_already_in_use() {
+    let (mut b, _) = b4();
+    for bad in ["AA", "Ab", "a1", "a_", "z", "abc", "é", ""] {
+        assert!(b.vm.add_op(0xA8, bad, |_| Ok(())).is_err(), "{bad:?} was accepted");
+    }
+    assert!(b.vm.add_op(0xA8, "dd", |_| Ok(())).is_err(), "a name already in use was accepted");
+    assert!(b.vm.add_op(0xA6, "zz", |_| Ok(())).is_err(), "a byte already in use was taken again");
+    assert!(b.vm.add_op(0xA8, "zz", |vm| vm.dput(1)).is_ok());
+    b.line("zz").unwrap();
     assert_eq!(b.vm.dpop().unwrap(), 1);
 }
 

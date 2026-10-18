@@ -101,13 +101,12 @@ impl Vm {
         if byte < 0x80 || !opname(byte).is_empty() {
             return Err(format!("{byte:02X} is a built-in op ({})", opname(byte)));
         }
-        if name.len() != 2 || crate::asm::b4op(name).is_some() {
-            return Err(format!("{name:?} must be two characters and not a built-in op name"));
+        if name.len() != 2 || !name.bytes().all(|c| c.is_ascii_lowercase()) || crate::asm::b4op(name).is_some() {
+            return Err(format!("{name:?} must be two lower-case ascii letters, not a built-in op name"));
         }
-        if self.custom.iter().any(|c| c.name == name && c.byte != byte) {
-            return Err(format!("{name} already names op {:02X}", self.custom.iter().find(|c| c.name == name).unwrap().byte));
+        if let Some(c) = self.custom.iter().find(|c| c.name == name || c.byte == byte) {
+            return Err(format!("op {:02X} is already {}", c.byte, c.name));
         }
-        self.custom.retain(|c| c.byte != byte);
         self.custom.push(CustomOp { byte, name: name.to_owned(), run: Some(Box::new(run)) });
         Ok(())
     }
