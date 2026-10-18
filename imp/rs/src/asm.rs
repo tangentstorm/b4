@@ -294,7 +294,7 @@ impl Asm<'_> {
     }
 
     fn op(&mut self, r: &Reader, code: &str) -> R<Value> {
-        match b4op(code) {
+        match self.vm.op_byte(code) {
             Some(b) => Ok(b as Value),
             None => self.die(r, &format!("invalid op: {code}")),
         }
@@ -359,7 +359,7 @@ impl Asm<'_> {
                     }
                 }
             }
-            Tag::Ref => match b4op(s) {
+            Tag::Ref => match self.vm.op_byte(s) {
                 Some(b) => self.emit(here, b as Value)?,
                 None => {
                     let a = self.find_addr(r, s)?;

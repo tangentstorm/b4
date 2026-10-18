@@ -1,5 +1,5 @@
-use crate::asm::{b4op, is_reg_char, try_hex, Asm, Dict};
-use crate::vm::{b4mat, opname, rega, regn, Value, Vm, R, RCS, RDB, RDS, RED, RHP, RIP, RST};
+use crate::asm::{is_reg_char, try_hex, Asm, Dict};
+use crate::vm::{b4mat, rega, regn, Value, Vm, R, RCS, RDB, RDS, RED, RHP, RIP, RST};
 use std::io::Write;
 
 pub struct B4 {
@@ -88,7 +88,8 @@ impl B4 {
     }
 
     fn wrap_op(&mut self, op: u8) -> R<()> {
-        self.log_state(&opname(op));
+        let name = self.vm.op_name(op);
+        self.log_state(&name);
         self.vm.runop(op)
     }
 
@@ -126,7 +127,7 @@ impl B4 {
         let mut s = String::new();
         for i in 0..16 {
             let v = self.vm.bget(a + i)?;
-            let t = opname(v);
+            let t = self.vm.op_name(v);
             s.push_str(if t.is_empty() { format!("{v:02X}") } else { t }.as_str());
             s.push(' ');
         }
@@ -182,7 +183,7 @@ impl B4 {
         for row in 0..16u8 {
             s.push_str(&format!("${:02X}| ", row * 16));
             for col in 0..16u8 {
-                let t = opname(row * 16 + col);
+                let t = self.vm.op_name(row * 16 + col);
                 s.push_str(&format!("{:<3}", if t.is_empty() { "  ".to_owned() } else { t }));
             }
             s.push('\n');
@@ -453,7 +454,7 @@ impl B4 {
                     self.vm.dput(v)?;
                 } else if let Some(a) = self.dict.find(tok) {
                     self.wrap_call(a)?;
-                } else if let Some(op) = b4op(tok) {
+                } else if let Some(op) = self.vm.op_byte(tok) {
                     if op < 0x20 {
                         let a = self.vm.rg(op as usize);
                         self.wrap_call(a)?;

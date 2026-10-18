@@ -73,19 +73,65 @@ struct Proc {
     done: bool,
 }
 
+pub type OpFn = Box<dyn FnMut(&mut Vm) -> R<()>>;
+
+struct CustomOp {
+    byte: u8,
+    name: String,
+    run: Option<OpFn>,
+}
+
 pub struct Vm {
     pub mem: Vec<u8>,
     pub ob: Vec<u8>,
     pub out: Box<dyn Write>,
     pub args: Vec<String>,
     procs: Vec<Option<Proc>>,
+    custom: Vec<CustomOp>,
 }
 
 impl Vm {
     pub fn new(out: Box<dyn Write>) -> Vm {
-        let mut vm = Vm { mem: vec![0; MEMSIZE], ob: vec![], out, args: std::env::args().collect(), procs: (0..16).map(|_| None).collect() };
+        let mut vm = Vm { mem: vec![0; MEMSIZE], ob: vec![], out, args: std::env::args().collect(), procs: (0..16).map(|_| None).collect(), custom: vec![] };
         vm.boot();
         vm
+    }
+
+    pub fn add_op(&mut self, byte: u8, name: &str, run: impl FnMut(&mut Vm) -> R<()> + 'static) -> Result<(), String> {
+        if byte < 0x80 || !opname(byte).is_empty() {
+            return Err(format!("{byte:02X} is a built-in op ({})", opname(byte)));
+        }
+        if name.len() != 2 || crate::asm::b4op(name).is_some() {
+            return Err(format!("{name:?} must be two characters and not a built-in op name"));
+        }
+        if self.custom.iter().any(|c| c.name == name && c.byte != byte) {
+            return Err(format!("{name} already names op {:02X}", self.custom.iter().find(|c| c.name == name).unwrap().byte));
+        }
+        self.custom.retain(|c| c.byte != byte);
+        self.custom.push(CustomOp { byte, name: name.to_owned(), run: Some(Box::new(run)) });
+        Ok(())
+    }
+
+    pub fn op_byte(&self, code: &str) -> Option<u8> {
+        crate::asm::b4op(code).or_else(|| self.custom.iter().find(|c| c.name == code).map(|c| c.byte))
+    }
+
+    pub fn op_name(&self, b: u8) -> String {
+        let n = opname(b);
+        if !n.is_empty() {
+            return n;
+        }
+        self.custom.iter().find(|c| c.byte == b).map_or(n, |c| c.name.clone())
+    }
+
+    fn run_custom(&mut self, op: u8) -> R<()> {
+        let Some(i) = self.custom.iter().position(|c| c.byte == op) else { return Ok(()) };
+        let Some(mut run) = self.custom[i].run.take() else { return self.fail(&format!("op {} called itself", self.custom[i].name)) };
+        let r = run(self);
+        if let Some(c) = self.custom.iter_mut().find(|c| c.byte == op && c.run.is_none()) {
+            c.run = Some(run);
+        }
+        r
     }
 
     pub fn boot(&mut self) {
@@ -131,7 +177,7 @@ impl Vm {
 
     pub fn fail<T>(&mut self, msg: &str) -> R<T> {
         let ip = self.rg(RIP);
-        let op = self.mem.get(ip as usize).copied().map(opname).unwrap_or_default();
+        let op = self.mem.get(ip as usize).copied().map(|b| self.op_name(b)).unwrap_or_default();
         let ds = self.write_stack("ds: ", DS_BASE, self.rg(RDS));
         let cs = self.write_stack("cs: ", CS_BASE, self.rg(RCS));
         self.say(&format!("{msg}\nip: {ip} op: {op}\n{ds}\n{cs}"));
@@ -704,7 +750,7 @@ impl Vm {
             0xFD => self.opio()?,
             0xFE => self.set_rg(RDB, 1),
             0xFF => self.set_rg(RST, 0),
-            _ => {}
+            _ => self.run_custom(op)?,
         }
         Ok(())
     }
