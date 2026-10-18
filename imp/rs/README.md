@@ -24,3 +24,5 @@ cargo test                     # the regression tests in tests/
 ```
 
 Use it as a library with `b4::B4::new(Box::new(std::io::stdout()))`, then `b4.line("2 3 ad ?d")`. The `vm` field holds the machine and `dict` the assembler's labels.
+
+A host program can add its own ops, as the JS version's `addOp` does. `b4.vm.add_op(0xA6, "dd", |vm| { let x = vm.dpop()?; vm.dput(x * 2) })` makes byte A6 run the closure. The assembler, `b4i` and the memory dump then know it as `dd`. A name must be two lower-case ascii letters that aren't a built-in mnemonic. Each name and byte can be taken once, and only bytes with no built-in op can be taken.
