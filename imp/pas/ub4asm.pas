@@ -202,6 +202,7 @@ begin
     begin
       a := dict[i].adr;
       result := true;
+      break;
     end
   until i = 0
 end;

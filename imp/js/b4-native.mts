@@ -7,10 +7,9 @@ import { B4VM } from './b4.mjs'
 
 interface ProcEntry { proc: ChildProcess; inbuf: string }
 
-let nextProcId = 0
-const procs: Map<number, ProcEntry> = new Map()
-
 export function addNativeIo(vm: B4VM): void {
+  let nextProcId = 0
+  const procs: Map<number, ProcEntry> = new Map()
   vm.onBye = () => process.exit(0)
 
   vm.addIo('o', (vm) => { // output character directly to stdout
@@ -79,6 +78,21 @@ export function addNativeIo(vm: B4VM): void {
     } else {
       vm.dput(-1)
     }
+  })
+
+  vm.onClear = () => {
+    for (let entry of procs.values()) entry.proc.kill()
+    procs.clear()
+  }
+
+  vm.addIo('d', (vm) => { // delete file: (filename-ptr --)
+    let name = vm._readStr(vm.dpop())
+    try { fs.unlinkSync(name) } catch {}
+  })
+
+  vm.addIo('x', (vm) => { // file exists: (filename-ptr -- bool)
+    let name = vm._readStr(vm.dpop())
+    vm.dput(fs.existsSync(name) && fs.statSync(name).isFile() ? -1 : 0)
   })
 
   vm.addIo('k', (vm) => { // kill process: (handle --)

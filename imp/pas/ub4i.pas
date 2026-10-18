@@ -365,7 +365,7 @@ begin
         '!' : if (length(tok)=2) and isRegChar(tok[2],r) then rg^[r] := dpop
               else if ub4asm.find(copy(tok,2,length(tok)-1), addr) then wrval(addr, dpop)
               else err('unknown !word');
-        '?'  : if length(tok)=2 then begin
+        '?'  : if (length(tok)=2) and ub4asm.isRegChar(upcase(tok[2]), r) then begin
                  WriteLn(Format('%.8x',[rg^[regn(tok[2])]])); end
                else if (length(tok)=3) and (tok[2]='@') then begin
                  a := rdval(rega(tok[3]));

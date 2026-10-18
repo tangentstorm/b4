@@ -87,6 +87,7 @@ export class B4VM {
   out: OutputFunction;
   onBye: (() => void) | null;
   onSemi: (() => void) | null;
+  onClear: (() => void) | null;
   private _savedHere: number;
   private _conb: Map<string, number>;
   private _cobn: Map<number, string>;
@@ -115,6 +116,7 @@ export class B4VM {
     this.out = console.log;
     this.onBye = null;
     this.onSemi = null;
+    this.onClear = null;
     this._savedHere = 0;
   }
 
@@ -124,6 +126,7 @@ export class B4VM {
   }
 
   clear(): void {
+    if (this.onClear) this.onClear()
     this.reset()
     this.ram = new Uint8Array(4096).fill(0)
     this._labels = {}

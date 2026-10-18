@@ -14,6 +14,15 @@ available in the pascal version's assembler.
   ds: [2 3]
 #+end_src
 
+* TEST b4i.redefine : the newest definition of a label wins
+A label defined again shadows the earlier definition, as in Forth.
+#+begin_src b4a
+  > :foo c1 rt
+  > :foo c2 rt
+  > foo ?d /q
+  ds: [2]
+#+end_src
+
 * TEST b4i.addr : Interactive assembler: assemble to any address
 #+begin_src b4a
   > :100 ^A ^B
@@ -316,3 +325,32 @@ lb C2 li ^D ^C ^B ^A rt .. .. .. .. .. .. .. ..
 #+end_src
 
 Using =$= in front of a number makrs
+
+** TEST b4a.redefine : assembled code calls the newest definition of a label
+=foo= is defined twice, at 100 and 102. =bar=, assembled after both,
+must call the one at 102.
+#+begin_src b4a
+> :foo c1 rt
+> :foo c2 rt
+> :bar foo rt
+> ?104
+cl ^B ^A .. .. rt .. .. .. .. .. .. .. .. .. ..
+> bar ?d /q
+ds: [2]
+#+end_src
+
+* TEST b4i.clear-kills-procs : =/C= stops the processes =io 'p'= started
+The child below creates a marker file after one second. =/C= runs
+before that, so the marker must never appear.
+#+begin_src b4a
+> :400 ".b4-clear-marker" 0
+> 400 'd io
+> :300 "sleep 1; touch .b4-clear-marker" 0
+> 300 'p io zp
+> /C
+> :400 ".b4-clear-marker" 0
+> 7D0 'S io
+> 400 'x io ?d
+ds: [0]
+> 400 'd io /q
+#+end_src
